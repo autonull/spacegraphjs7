@@ -289,7 +289,7 @@ verdict in `docs/screenshots/review.json`; the commits are `dd39f30`, `643185c` 
 Recommended resume order:
 
 1. Read this file, `TODO4.md:259-280` (gates), `AGENTS.md`, `app/pi/README.md`, and the screenshot
-   gallery (`docs/screenshots/pi-agent-*.png`). Run `ctx_resume` if the session tool is available.
+   gallery (`docs/screenshots/pi/pi-agent-*.png`). Run `ctx_resume` if the session tool is available.
 2. Stabilize Phase 1 first. Verify with:
    ```
    pnpm --filter pi check:fast

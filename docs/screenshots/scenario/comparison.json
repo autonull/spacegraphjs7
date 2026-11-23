@@ -9,8 +9,8 @@
       "variant": "workflow scenario with the generic chapter grid (?domain=workflow&layout=chapters)",
       "data": "src/layout/chapters.ts — one position authority; the host applies the result through its model",
       "gates": ["browser", "screenshots"],
-      "incumbentImage": "docs/screenshots/scenario-workflow-chapters/incumbent.png",
-      "variantImage": "docs/screenshots/scenario-workflow-chapters/variant.png",
+      "incumbentImage": "docs/screenshots/labs/scenario-workflow-chapters/incumbent.png",
+      "variantImage": "docs/screenshots/labs/scenario-workflow-chapters/variant.png",
       "images": "regenerable pair captured by pnpm --filter demo test:e2e scenario-compare.spec.ts",
       "decision": "pending human review; ADR 0008 default gate not closed"
     }

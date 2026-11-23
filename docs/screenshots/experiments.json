@@ -1,0 +1,118 @@
+{
+  "rule": "ADR 0008 — a default visual change needs incumbent/variant evidence and a logged human decision. This file indexes pending work; it never records a verdict.",
+  "experiments": [
+    {
+      "id": "chapters-wide",
+      "host": "pi",
+      "status": "pending",
+      "hypothesis": "Viewport-derived chapter columns pack a wide canvas better than the fixed two-column default.",
+      "incumbent": "?graphLayout=chapters (library default: two columns)",
+      "variant": "?graphLayout=chapters&graphColumns=4 on a 2400x1000 canvas",
+      "pair": {
+        "incumbent": "docs/screenshots/pi/pi-agent-chapters.png",
+        "variant": "docs/screenshots/pi/pi-agent-chapters-wide.png"
+      },
+      "command": "pnpm --filter pi shot chapters,chapters-wide",
+      "decision": "docs/screenshots/graph-layout/comparison.json#chapters-wide"
+    },
+    {
+      "id": "ui-menus",
+      "host": "pi",
+      "status": "pending",
+      "hypothesis": "Grouped controls in a toggled overlay beat a permanent command bar for the five UI tasks.",
+      "incumbent": "?ui=full — permanent command bar",
+      "variant": "?ui=menus — controls mounted under their original ids in an overlay",
+      "pair": {
+        "incumbent": "docs/screenshots/labs/ui-presets/menus/incumbent.png",
+        "variant": "docs/screenshots/labs/ui-presets/menus/variant.png"
+      },
+      "command": "pnpm --filter pi exec playwright test --config playwright.config.ts tests/ui-compare.spec.ts --grep menus",
+      "decision": "docs/screenshots/labs/ui-presets/comparison.json#ui-preset-menus"
+    },
+    {
+      "id": "ui-statusline",
+      "host": "pi",
+      "status": "pending",
+      "hypothesis": "Four labelled status sections read better than one attention line.",
+      "incumbent": "?ui=full — single attention line",
+      "variant": "?ui=statusline — attention, event, counters and view sections",
+      "pair": {
+        "incumbent": "docs/screenshots/labs/ui-presets/statusline/incumbent.png",
+        "variant": "docs/screenshots/labs/ui-presets/statusline/variant.png"
+      },
+      "command": "pnpm --filter pi exec playwright test --config playwright.config.ts tests/ui-compare.spec.ts --grep statusline",
+      "decision": "docs/screenshots/labs/ui-presets/comparison.json#ui-preset-statusline"
+    },
+    {
+      "id": "ui-preset-menus",
+      "host": "pi",
+      "status": "pending",
+      "hypothesis": "Comparison-decision view of the menus chrome pair (same evidence as ui-menus).",
+      "incumbent": "?ui=full",
+      "variant": "?ui=menus",
+      "pair": {
+        "incumbent": "docs/screenshots/labs/ui-presets/menus/incumbent.png",
+        "variant": "docs/screenshots/labs/ui-presets/menus/variant.png"
+      },
+      "command": "pnpm --filter pi compare:ui",
+      "decision": "docs/screenshots/labs/ui-presets/comparison.json#ui-preset-menus"
+    },
+    {
+      "id": "ui-preset-statusline",
+      "host": "pi",
+      "status": "pending",
+      "hypothesis": "Comparison-decision view of the status strip pair (same evidence as ui-statusline).",
+      "incumbent": "?ui=full",
+      "variant": "?ui=statusline",
+      "pair": {
+        "incumbent": "docs/screenshots/labs/ui-presets/statusline/incumbent.png",
+        "variant": "docs/screenshots/labs/ui-presets/statusline/variant.png"
+      },
+      "command": "pnpm --filter pi compare:ui",
+      "decision": "docs/screenshots/labs/ui-presets/comparison.json#ui-preset-statusline"
+    },
+    {
+      "id": "scenario-workflow-chapters",
+      "host": "demo",
+      "status": "pending",
+      "hypothesis": "The generic chapter grid transfers to a second domain through one position source without a renderer branch.",
+      "incumbent": "?domain=workflow&layout=grid",
+      "variant": "?domain=workflow&layout=chapters",
+      "pair": {
+        "incumbent": "docs/screenshots/labs/scenario-workflow-chapters/incumbent.png",
+        "variant": "docs/screenshots/labs/scenario-workflow-chapters/variant.png"
+      },
+      "command": "cd app/demo && pnpm exec playwright test --config playwright.config.ts tests/scenario-compare.spec.ts --workers=1",
+      "decision": "docs/screenshots/scenario/comparison.json"
+    },
+    {
+      "id": "multi-octave-range",
+      "host": "pi",
+      "status": "pending",
+      "hypothesis": "Drawing one hierarchy at 1x, 1/2x and 1/4x in one frame makes self-similar structure visible at fit zoom.",
+      "incumbent": "?shot=dynamic-range — scale floor on starfield",
+      "variant": "?shot=octaves — opt-in multi-octave layout, plus ?shot=octaves-near zoom evidence",
+      "pair": {
+        "incumbent": "docs/screenshots/pi/pi-agent-dynamic-range.png",
+        "variant": "docs/screenshots/pi/pi-agent-octaves.png"
+      },
+      "command": "pnpm --filter pi shot octaves,dynamic-range,octaves-near",
+      "decision": "docs/screenshots/graph-layout/comparison.json#multi-octave-range"
+    },
+    {
+      "id": "scale-lab-geometry",
+      "host": "demo",
+      "status": "pending",
+      "hypothesis": "Tight ring geometry with step colouring per octave reads more clearly than the incumbent ring or a golden-angle spiral.",
+      "incumbent": "?variant=incumbent — radius 0.85, depth 2, ring, flat palette",
+      "variant": "?variant=variant&radius=0.7&depth=2&shape=ring&phase=0&palette=steps",
+      "pair": {
+        "incumbent": "docs/screenshots/labs/scale-lab/ring-070-d2/incumbent.png",
+        "variant": "docs/screenshots/labs/scale-lab/ring-070-d2/variant.png"
+      },
+      "command": "cd app/demo && pnpm exec playwright test --config playwright.config.ts tests/scale-lab.spec.ts --workers=1",
+      "decision": "docs/screenshots/labs/scale-lab/comparison.json",
+      "note": "Ring geometry stays clean; spiral candidates (spiral-070-d3, spiral-050-d3) overlap at these radii. Step colouring made the octave hierarchy legible without a renderer change. No Pi default flip; porting the palette back needs a separate opt-in host-side colour seam and a human verdict."
+    }
+  ]
+}

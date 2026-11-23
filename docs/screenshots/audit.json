@@ -9,7 +9,7 @@
       "docs/adr/0015-bounded-aspect-refit.md",
       "docs/adr/0016-flux-edges-and-field.md",
       "AGENTS.md",
-      "all 21 docs/screenshots/pi-agent-*.png files (read directly, not via review notes)",
+      "all 21 docs/screenshots/pi/pi-agent-*.png files (read directly, not via review notes)",
       "live app at http://localhost:5175 with PI_LOCAL_FEED=1"
     ],
     "method": "Every gallery PNG inspected first. Live routes then driven in headless Chromium through Playwright with __pi hooks and DOM measurements (getBoundingClientRect, getComputedStyle, commandMode, viewport). Findings use tracked PNG paths as evidence plus a reproduce recipe; no review.json verdict was copied as evidence.",
@@ -28,7 +28,7 @@
       "shot": "light-theme",
       "route": "http://localhost:5175/?shot=light-theme",
       "observation": "The bottom-left HUD readout is effectively invisible: computed #hud color is rgb(22,22,22) over a #canvas background of rgb(5,10,18), a 1.1:1 contrast ratio. The text 'execution/auto \u00b7 flat/turn \u00b7 settled' is nearly absent from the gallery PNG. Cards, flux edges and the light-theme field still read; only the HUD value is wrong. The HUD remains grayscale, as required, so this is a token-value failure, not a color-language failure.",
-      "evidence": "docs/screenshots/pi-agent-light.png",
+      "evidence": "docs/screenshots/pi/pi-agent-light.png",
       "reproduce": "page.goto('/?shot=light-theme'); getComputedStyle(document.querySelector('#hud')).color; getComputedStyle(document.querySelector('#canvas')).backgroundColor; contrast ratio 1.1:1 computed from those two values.",
       "measured": {
         "hudColor": "rgb(22,22,22)",
@@ -44,7 +44,7 @@
       "shot": "catalog",
       "route": "http://localhost:5175/?shot=catalog",
       "observation": "After opening the drawer with #proof-line, all 19 preset/experiment rows are plain <summary> elements with a measured height of 18px (range 18-55px), far below the 44px target used by the rest of the HUD. The drawer leaves the graph visible, but the launch targets are small and give no square-surface affordance.",
-      "evidence": "docs/screenshots/pi-agent-catalog.png",
+      "evidence": "docs/screenshots/pi/pi-agent-catalog.png",
       "reproduce": "page.goto('/?shot=catalog'); page.locator('#proof-line').click(); evaluate getBoundingClientRect().height for every '#catalog .catalog-card summary'; minimum 18px, count 19.",
       "measured": {
         "rows": 19,
@@ -60,7 +60,7 @@
       "shot": "fit-narrow-near, fit-narrow-mid, dense-type, policy",
       "route": "http://localhost:5175/?shot=fit-narrow-near",
       "observation": "Grid-packed child cards cover about 40-47% of their parent card area in the fit shots (DOM rect measurement). At mid/near octaves on the 900px canvas and in the dense-type and policy shots, primary labels truncate to 'Tur...', 'assist...' and 'appr...'; parent metadata/bar rows disappear under the child. The role of a truncated card is ambiguous without the transcript, so packing reduces information density rather than adding it.",
-      "evidence": "docs/screenshots/pi-agent-fit-narrow-near.png",
+      "evidence": "docs/screenshots/pi/pi-agent-fit-narrow-near.png",
       "reproduce": "page.goto('/?shot=fit-narrow-near') at 900x1000; list textContent and getBoundingClientRect of '#canvas [data-rung]' and compute pairwise intersection over the smaller card area; largest parent/child fractions 43-47%.",
       "measured": {
         "unitReadOverlapPct": 45,
@@ -80,7 +80,7 @@
       "shot": "node-detail",
       "route": "http://localhost:5175/?shot=node-detail",
       "observation": "The focus lens is anchored directly over the revealed 'test failed' node: its detail panel overlaps the source card by 65% of the smaller rect and covers the failed status chip and part of the Turn 5 card. The lens tabs themselves are 44-59px tall, so the issue is placement, not hit area.",
-      "evidence": "docs/screenshots/pi-agent-node-detail.png",
+      "evidence": "docs/screenshots/pi/pi-agent-node-detail.png",
       "reproduce": "page.goto('/?shot=node-detail'); compare getBoundingClientRect of '#focus-lens' with the '#canvas [data-rung]' whose text starts 'test failed'; largest overlap 65% of smaller rect. Tab sizes measured in the same run: 52x44, 45x44, 59x44, 59x44, 44x44.",
       "measured": {
         "lensToSourceOverlapPct": 65,
@@ -95,8 +95,8 @@
       "shot": "cockpit, node-detail",
       "route": "http://localhost:5175/?shot=cockpit",
       "observation": "Status glyphs and arrowheads do read without a legend, but the long cross-unit flux filaments ('approve' to 'Unit', 'Run' to 'read') span the whole canvas and cross unrelated unit cards. The causal relation is visible as a filament yet cannot be followed through the intervening scopes. This is the topology limitation already acknowledged in TODO6 section 1, not a regression from ADR 0016.",
-      "evidence": "docs/screenshots/pi-agent-in-action.png",
-      "reproduce": "page.goto('/?shot=cockpit') at 1600x1000 and follow the translucent ribbon from the 'approve' card to the right-hand 'Unit' scope; also visible in docs/screenshots/pi-agent-node-detail.png.",
+      "evidence": "docs/screenshots/pi/pi-agent-in-action.png",
+      "reproduce": "page.goto('/?shot=cockpit') at 1600x1000 and follow the translucent ribbon from the 'approve' card to the right-hand 'Unit' scope; also visible in docs/screenshots/pi/pi-agent-node-detail.png.",
       "suggested_change": "Bundle cross-unit filaments or tint them by source scope so the relation stays traceable; preserve the relation instead of deleting it."
     },
     {
@@ -106,7 +106,7 @@
       "shot": "fit-narrow-mid, fit-narrow-far",
       "route": "http://localhost:5175/?shot=fit-narrow-mid",
       "observation": "At a 900px viewport the command bar wraps onto two rows (focus moves to the second row), moving the canvas top from about y=62 on wide shots to y=112 and reducing vertical room for the graph. The status chip text itself is not clipped (292x26, scrollWidth == clientWidth), so this is a space cost, not text loss.",
-      "evidence": "docs/screenshots/pi-agent-fit-narrow-mid.png",
+      "evidence": "docs/screenshots/pi/pi-agent-fit-narrow-mid.png",
       "reproduce": "page.goto('/?shot=fit-narrow-mid') at 900x1000; measure '#command-bar' row count and '#attention' rect; compare with '/?shot=fit-wide-mid' at 1600x1000.",
       "measured": {
         "narrowCanvasTopPx": 112,
@@ -121,7 +121,7 @@
       "shot": "recursion, fractal",
       "route": "http://localhost:5175/?shot=recursion",
       "observation": "At bounded depth 3 the inner graph chips render as roughly 6-10px rectangles with sub-8px labels. Spokes, ports and status color are visible; chip names are not. The settled and intermediate frames pass their gates, but the gallery PNG does not communicate which inner chip is which. This disagrees with the existing 'depth-3 legible' note on label legibility only.",
-      "evidence": "docs/screenshots/pi-agent-recursion.png",
+      "evidence": "docs/screenshots/pi/pi-agent-recursion.png",
       "reproduce": "page.goto('/?shot=recursion'); open the INNER tab (already pinned in the shot) and zoom the PNG; measure the text bounding boxes of '#focus-lens' inner chips.",
       "suggested_change": "Reveal inner chip names on hover/focus or enlarge the inner lens within the existing 420x300 clamp before adding more depth."
     },
@@ -133,7 +133,7 @@
       "shot": "cockpit, node-detail",
       "route": "http://localhost:5175/?shot=cockpit",
       "observation": "The square red status chip with the exclamation glyph identifies the single failure, and causal filaments carry a small arrowhead at the target end. Corners are square (0px radius) and the one severity channel is consistent across cards. No legend is needed for these two signals.",
-      "evidence": "docs/screenshots/pi-agent-in-action.png",
+      "evidence": "docs/screenshots/pi/pi-agent-in-action.png",
       "reproduce": "page.goto('/?shot=cockpit'); inspect '#attention' and the arrowed ribbon ending at the 'read' card; grammar gate app/pi/tests/grammar.spec.ts:41.",
       "suggested_change": null
     },
@@ -145,7 +145,7 @@
       "shot": "deep-focus, node-detail",
       "route": "http://localhost:5175/?shot=deep-focus",
       "observation": "The five lens controls (DETAIL, INNER, SIGNALS, ACTIONS, PIN) measure 44-59px wide and 44px tall; tabs switch the inspector and the connector remains visible when pinned. Placement is a separate finding (AUDIT-04); the controls themselves are reachable.",
-      "evidence": "docs/screenshots/pi-agent-deep-focus.png",
+      "evidence": "docs/screenshots/pi/pi-agent-deep-focus.png",
       "reproduce": "page.goto('/?shot=node-detail'); measure '#focus-lens .inspector-tabs button' and '#inspector-pin' rects; see app/pi/tests/grammar.spec.ts:135.",
       "suggested_change": null
     },
@@ -169,7 +169,7 @@
       "shot": "cockpit, layout-stacked, layout-floating",
       "route": "http://localhost:5175/?shot=layout-floating",
       "observation": "The transcript stays readable in side, stacked and collapsed floating arrangements; toggling and resizing are reachable from HUD controls, and the collapsed panel keeps a labelled 'Transcript' affordance on the canvas. The floating shot gives the graph the full field without hiding the panel.",
-      "evidence": "docs/screenshots/pi-agent-layout-floating.png",
+      "evidence": "docs/screenshots/pi/pi-agent-layout-floating.png",
       "reproduce": "page.goto('/?shot=layout-floating'); click '#transcript-toggle' twice; see app/pi/tests/browser.spec.ts:87.",
       "suggested_change": null
     },
@@ -193,7 +193,7 @@
       "shot": "fit-wide-far, fit-wide-mid, fit-wide-near, aurora-map, neon-cockpit, dynamic-range",
       "route": "http://localhost:5175/?shot=fit-wide-mid",
       "observation": "On the wide canvas all three octaves keep labels and topology legible: the far octave reads as topology by core LOD, mid and near keep card text. No rounded rectangles, fog, backdrop-filter or blend modes appear in the shots; the field is gradient-based (opacity 0.56 dark, 0.14 light). Dynamic-range cards clip at the canvas edge at the scale floor, which is expected for that shot.",
-      "evidence": "docs/screenshots/pi-agent-fit-wide-mid.png",
+      "evidence": "docs/screenshots/pi/pi-agent-fit-wide-mid.png",
       "reproduce": "page.goto('/?shot=fit-wide-mid'); inspect '#field' computed opacity and '#canvas [data-rung]' border radius; compare the three wide fit PNGs.",
       "suggested_change": null
     }

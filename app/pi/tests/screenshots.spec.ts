@@ -53,7 +53,9 @@ const boot = async (page: Page, shot: Shot): Promise<string[]> => {
 for (const shot of shots) {
     test(`shot: ${shot.id} — ${shot.title}`, async ({ page }) => {
         const errors = await boot(page, shot);
-        await page.screenshot({ path: resolve(OUT, shot.file), animations: 'disabled' });
+        const file = resolve(OUT, shot.file);
+        mkdirSync(dirname(file), { recursive: true });
+        await page.screenshot({ path: file, animations: 'disabled' });
         expect(errors).toEqual([]);
     });
 }

@@ -19,5 +19,6 @@ docs/screenshots/retro-style/
 docs/screenshots/capture/
 docs/screenshots/index.html
 docs/screenshots/*.prev
+docs/screenshots/**/*.prev
 tsconfig.tsbuildinfo
 packages/*/tsconfig.tsbuildinfo

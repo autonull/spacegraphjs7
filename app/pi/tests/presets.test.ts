@@ -101,7 +101,7 @@ describe('UI comparison scaffolding', () => {
         expect(comparison.decisions).toHaveLength(UI_PRESETS.length - 1);
         for (const decision of comparison.decisions) {
             expect(decision.status).toContain('default not flipped');
-            expect(decision.data).toBe('docs/screenshots/ui-presets/comparison.json');
+            expect(decision.data).toBe('docs/screenshots/labs/ui-presets/comparison.json');
             expect(decision.gates.length).toBeGreaterThan(0);
             expect(decision.incumbentImage).toContain('/incumbent.png');
             expect(decision.variantImage).toContain('/variant.png');

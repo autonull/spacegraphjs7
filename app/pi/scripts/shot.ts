@@ -7,6 +7,7 @@ import { SHOTS } from '../src/shots';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const watch = args.includes('--watch') || args.includes('-w');
+const sheetOnly = args.includes('--sheet');
 const positional = args.filter((arg) => !arg.startsWith('-'));
 const id = positional[0] ?? 'all';
 const requested = id.split(',').map((entry) => entry.trim()).filter(Boolean);
@@ -18,16 +19,27 @@ interface ReviewEntry {
     readonly verdict?: 'kept' | 'rejected';
     readonly note?: string;
 }
-const reviewPath = resolve(out, 'review.json');
-const loadReview = (): Record<string, ReviewEntry> => {
-    if (!existsSync(reviewPath)) return {};
+interface ExperimentEntry {
+    readonly id: string;
+    readonly host: string;
+    readonly status: string;
+    readonly hypothesis: string;
+    readonly command: string;
+}
+interface Experiments {
+    readonly rule: string;
+    readonly experiments: readonly ExperimentEntry[];
+}
+const loadJSON = <T>(file: string): T | undefined => {
+    if (!existsSync(file)) return undefined;
     try {
-        return JSON.parse(readFileSync(reviewPath, 'utf8')) as Record<string, ReviewEntry>;
+        return JSON.parse(readFileSync(file, 'utf8')) as T;
     } catch {
-        return {};
+        return undefined;
     }
 };
-const review = loadReview();
+const review = loadJSON<Record<string, ReviewEntry>>(resolve(out, 'review.json')) ?? {};
+const experiments = loadJSON<Experiments>(resolve(out, 'experiments.json'));
 const escapeHtml = (value: string): string =>
     value.replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char]!);
 
@@ -68,6 +80,13 @@ const contactSheet = (): void => {
             : `<a href="http://localhost:${process.env.SG_PI_PORT ?? 5175}/?shot=${shot.id}"><img src="${shot.file}?v=${stamp}" alt="${shot.title}"></a>`;
         return `<figure>${pair}<figcaption><b>${shot.title}</b><br><code>${shot.id}</code> · ${shot.question}</figcaption><div class="review" data-shot="${shot.id}">${verdict}${note}</div></figure>`;
     }).join('\n');
+    const pending = (experiments?.experiments ?? []).filter((entry) => entry.status === 'pending');
+    const experimentCards = pending
+        .map(
+            (entry) =>
+                `<article class="experiment"><b>${escapeHtml(entry.id)}</b> · ${escapeHtml(entry.host)} · <em>${escapeHtml(entry.status)}</em><p>${escapeHtml(entry.hypothesis)}</p><code>${escapeHtml(entry.command)}</code></article>`,
+        )
+        .join('\n');
     const refresh = watch ? '<meta http-equiv="refresh" content="4">' : '';
     writeFileSync(
         resolve(out, 'index.html'),
@@ -76,8 +95,11 @@ const contactSheet = (): void => {
 h1{font-size:15px;letter-spacing:.08em;text-transform:uppercase}figure{margin:0 0 24px;max-width:1100px}
 img{display:block;width:100%;border:1px solid #333}.pair{display:flex;gap:8px}.pair>*{flex:1}figcaption{padding:8px 0;color:#999;line-height:1.5}
 b{color:#fff}.review{display:flex;gap:8px;align-items:flex-start}.review select,.review textarea{background:#111;color:#eee;border:1px solid #444;font:inherit;padding:4px}.review textarea{flex:1;resize:vertical}
-#copy-review{background:#111;color:#7cf;border:1px solid #444;font:inherit;padding:6px 10px;cursor:pointer;margin-bottom:16px}</style></head><body>
+#copy-review{background:#111;color:#7cf;border:1px solid #444;font:inherit;padding:6px 10px;cursor:pointer;margin-bottom:16px}
+h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin:28px 0 12px;color:#7cf}
+.experiment{max-width:1100px;padding:10px 12px;margin:0 0 8px;border:1px solid #333;background:#101014}.experiment p{margin:6px 0;color:#bbb}.experiment em{color:#e8c46a;font-style:normal}.experiment code{color:#7fd1d5}</style></head><body>
 <h1>Screenshot studio · ${out}</h1><button type="button" id="copy-review">Copy review JSON</button>${cards || '<p>No captures yet.</p>'}
+${pending.length ? `<h2>Pending experiments · ${pending.length}</h2>${experimentCards}` : ''}
 <script>
 const key='spacegraph:review';let saved={};try{saved=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
 document.querySelectorAll('.review').forEach((row)=>{const id=row.dataset.shot,v=row.querySelector('[data-review-verdict]'),n=row.querySelector('[data-review-note]'),s=saved[id];
@@ -116,11 +138,11 @@ const fingerprint = (): string =>
         })
         .join('|');
 
-if (!capture()) process.exit(1);
-contactSheet();
+if (sheetOnly || capture()) contactSheet();
+else process.exit(1);
 console.log(`\nScreenshot studio: file://${resolve(out, 'index.html')}`);
 
-if (watch) {
+if (watch && !sheetOnly) {
     let last = fingerprint();
     console.log('Watching source files. Ctrl-C to stop.');
     const poll = async (): Promise<void> => {

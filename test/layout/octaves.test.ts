@@ -44,4 +44,18 @@ describe('multi-octave layout', () => {
         expect(result.bounds.max.x).toBeGreaterThan(result.bounds.min.x);
         expect(result.bounds.max.y).toBeGreaterThan(result.bounds.min.y);
     });
+
+    it('places a spiral deterministically and differently from a ring', () => {
+        const ids = ['root', 'a', 'b', 'c', 'd'];
+        const parentOf = new Map(ids.slice(1).map((id) => [id, 'root']));
+        const options = { card, shape: 'spiral' as const, radiusFactor: 1, rootRadiusFactor: 1, phase: 0.2 };
+        const spiral = octaveLayout(ids, parentOf, options);
+        const ring = octaveLayout(ids, parentOf, { ...options, shape: 'ring' });
+        expect(spiral.positions).toEqual(octaveLayout(ids, parentOf, options).positions);
+        const distances = ids
+            .slice(1)
+            .map((id) => Math.hypot(spiral.positions.get(id)!.x, spiral.positions.get(id)!.y));
+        expect(new Set(distances.map((value) => Math.round(value))).size).toBeGreaterThan(1);
+        expect(spiral.positions.get('a')).not.toEqual(ring.positions.get('a'));
+    });
 });

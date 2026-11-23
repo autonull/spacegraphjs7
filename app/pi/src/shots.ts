@@ -55,7 +55,7 @@ const octaveShot = (aspect: 'wide' | 'narrow', octave: number): Shot => {
     const narrow = aspect === 'narrow';
     return {
         id: `fit-${aspect}-${label}`,
-        file: `pi-agent-fit-${aspect}-${label}.png`,
+        file: `pi/pi-agent-fit-${aspect}-${label}.png`,
         title: `Fit ${aspect} · ${label} (2^${octave})`,
         question: `Does the graph fit and stay legible at ${2 ** octave}× zoom on a ${aspect} canvas?`,
         scenario: 'rich',
@@ -72,7 +72,7 @@ const octaveShot = (aspect: 'wide' | 'narrow', octave: number): Shot => {
 
 const uiShot = (id: string, title: string, question: string): Shot => ({
     id: `ui-${id}`,
-    file: `pi-agent-ui-${id}.png`,
+    file: `pi/pi-agent-ui-${id}.png`,
     title,
     question,
     scenario: 'rich',
@@ -98,7 +98,7 @@ export const SHOTS: readonly Shot[] = [
     uiShot('light-shell', 'UI · Light view', 'Does the light view need the shell themed too?'),
     {
         id: 'cockpit',
-        file: 'pi-agent-in-action.png',
+        file: 'pi/pi-agent-in-action.png',
         title: 'Agent cockpit',
         question: 'What does the dense, compact multi-turn run look like at one glance?',
         scenario: 'rich',
@@ -112,7 +112,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'node-detail',
-        file: 'pi-agent-node-detail.png',
+        file: 'pi/pi-agent-node-detail.png',
         title: 'Node detail',
         question: 'What does LOD reveal when the camera closes into one failing node and its inner layout?',
         scenario: 'rich',
@@ -127,7 +127,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'deep-focus',
-        file: 'pi-agent-deep-focus.png',
+        file: 'pi/pi-agent-deep-focus.png',
         title: 'Deep focus',
         question: 'How much can one node carry when the camera commits to it? (opt-in scale)',
         scenario: 'rich',
@@ -143,7 +143,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'fractal',
-        file: 'pi-agent-fractal.png',
+        file: 'pi/pi-agent-fractal.png',
         title: 'Fractal lens',
         question: 'Does a two-level inner layout make recursive scope structure legible?',
         scenario: 'rich',
@@ -160,7 +160,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'dense-type',
-        file: 'pi-agent-dense-type.png',
+        file: 'pi/pi-agent-dense-type.png',
         title: 'Dense typography',
         question: 'Do tighter cards and a higher label floor pack more of the run without overlap?',
         scenario: 'rich',
@@ -173,7 +173,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'living-graph',
-        file: 'pi-agent-living-graph.png',
+        file: 'pi/pi-agent-living-graph.png',
         title: 'Living graph',
         question: 'Does a longer activity tail and slower rung/camera blending make state changes easier to follow?',
         scenario: 'rich',
@@ -184,7 +184,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'recursion',
-        file: 'pi-agent-recursion.png',
+        file: 'pi/pi-agent-recursion.png',
         title: 'Bounded recursion',
         question: 'Does a three-level inner graph stay legible and bounded inside one focused node?',
         scenario: 'rich',
@@ -202,7 +202,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'dynamic-range',
-        file: 'pi-agent-dynamic-range.png',
+        file: 'pi/pi-agent-dynamic-range.png',
         title: 'Dynamic range',
         question: 'How far out can the scene zoom before the overview stops communicating structure?',
         scenario: 'rich',
@@ -215,7 +215,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'octaves',
-        file: 'pi-agent-octaves.png',
+        file: 'pi/pi-agent-octaves.png',
         title: 'Multi-octave range',
         question: 'Does one hierarchy drawn at 1x, 1/2x and 1/4x make zoom legible as a fractal range?',
         scenario: 'rich',
@@ -229,7 +229,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'octaves-near',
-        file: 'pi-agent-octaves-near.png',
+        file: 'pi/pi-agent-octaves-near.png',
         title: 'Multi-octave range · near',
         question: 'Does zooming into one octave promote the smallest cards to legible detail?',
         scenario: 'rich',
@@ -243,7 +243,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'layout-stacked',
-        file: 'pi-agent-layout-stacked.png',
+        file: 'pi/pi-agent-layout-stacked.png',
         title: 'Stacked layout',
         question: 'Does a transcript below the graph preserve the descent spine at wide widths?',
         scenario: 'rich',
@@ -254,7 +254,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'layout-floating',
-        file: 'pi-agent-layout-floating.png',
+        file: 'pi/pi-agent-layout-floating.png',
         title: 'Floating layout',
         question: 'How much canvas does a floating transcript give back to the graph?',
         scenario: 'rich',
@@ -265,7 +265,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'neon-cockpit',
-        file: 'pi-agent-neon-cockpit.png',
+        file: 'pi/pi-agent-neon-cockpit.png',
         title: 'Neon cockpit',
         question: 'Does an emissive palette make the run easier to scan without hiding the HUD?',
         scenario: 'rich',
@@ -278,7 +278,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'aurora-map',
-        file: 'pi-agent-aurora-map.png',
+        file: 'pi/pi-agent-aurora-map.png',
         title: 'Aurora map',
         question: 'Is a cool low-glare palette legible on the full-scope map?',
         scenario: 'rich',
@@ -288,7 +288,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'timeline-rows',
-        file: 'pi-agent-timeline-rows.png',
+        file: 'pi/pi-agent-timeline-rows.png',
         title: 'Timeline · horizontal stripes',
         question: 'Are stacked turn rows legible when time runs top-to-bottom?',
         scenario: 'rich',
@@ -301,7 +301,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'chapters',
-        file: 'pi-agent-chapters.png',
+        file: 'pi/pi-agent-chapters.png',
         title: 'Chapters · turn subgraphs',
         question: 'Does one card per turn, with its work inside, read as a compact story?',
         scenario: 'rich',
@@ -314,7 +314,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'chapters-wide',
-        file: 'pi-agent-chapters-wide.png',
+        file: 'pi/pi-agent-chapters-wide.png',
         title: 'Chapters · wide columns',
         question: 'Does a viewport-derived wider chapter grid keep every turn card legible?',
         scenario: 'rich',
@@ -329,7 +329,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'ergonomic',
-        file: 'pi-agent-ergonomic.png',
+        file: 'pi/pi-agent-ergonomic.png',
         title: 'Ergonomic packing',
         question: 'Does a measured, surface-fitted grid read better than a hand-picked arrangement?',
         scenario: 'rich',
@@ -342,7 +342,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'light-theme',
-        file: 'pi-agent-light.png',
+        file: 'pi/pi-agent-light.png',
         title: 'Light theme',
         question: 'Which theme variant keeps the canonical fixture legible in daylight?',
         scenario: 'rich',
@@ -353,7 +353,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'catalog',
-        file: 'pi-agent-catalog.png',
+        file: 'pi/pi-agent-catalog.png',
         title: 'Proof catalog',
         question: 'Can a visitor launch every preset and sampled experiment from one surface?',
         scenario: 'rich',
@@ -362,7 +362,7 @@ export const SHOTS: readonly Shot[] = [
     },
     {
         id: 'policy',
-        file: 'pi-agent-preset.png',
+        file: 'pi/pi-agent-preset.png',
         title: 'Live policy',
         question: 'Does the launched preset show where each live knob value came from?',
         scenario: 'rich',

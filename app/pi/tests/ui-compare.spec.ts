@@ -26,7 +26,7 @@ const capture = async (page: Page, presetID: string, ui: string, file: string): 
 
 for (const preset of UI_PRESETS.filter((entry) => entry.id !== 'full')) {
     test(`compare: ${preset.id}`, async ({ page }) => {
-        const dir = resolve(OUT, 'ui-presets', preset.id);
+        const dir = resolve(OUT, 'labs', 'ui-presets', preset.id);
         mkdirSync(dir, { recursive: true });
         await capture(page, preset.id, 'full', resolve(dir, 'incumbent.png'));
         await capture(page, preset.id, preset.id, resolve(dir, 'variant.png'));

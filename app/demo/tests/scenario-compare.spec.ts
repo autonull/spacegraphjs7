@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const OUT =
     process.env.SG_SCENARIO_SHOTS ??
-    resolve(root, 'docs/screenshots/scenario-workflow-chapters');
+    resolve(root, 'docs/screenshots/labs/scenario-workflow-chapters');
 
 const capture = async (page: import('@playwright/test').Page, layout: string, file: string) => {
     await page.goto(`/html/core/scenario.html?domain=workflow&layout=${layout}`);

@@ -121,7 +121,7 @@ instead of starting a session; this is the same feed the tests use.
 ## SDK notes (version 1.5.2)
 
 The packages are scoped: `@earendil-works/pi-coding-agent`, `@earendil-works/pi-agent-core` and
-`@earendil-works/pi-ai` (there are no unscoped `pi-agent-core` / `pi-ai` packages on npm).
+`@earendil-works/pi-ai` (there are no unscoped `pi/pi-agent-core` / `pi-ai` packages on npm).
 `session.subscribe()` emits `compaction_start`/`compaction_end` and `thinking_level_changed`;
 `model_change` is a persisted session entry, not a subscribe event. `stopReason` and `usage` live on
 the message payload, not on the event. A prompt sent while the session is streaming must declare

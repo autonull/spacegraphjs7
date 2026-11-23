@@ -25,7 +25,7 @@ the edge-style color stays the fallback when a host supplies no ribbon color.
 
 ## Consequences
 
-Before: `docs/screenshots/pi-agent-in-action.png` (slice 2 gallery, uniform tube ribbons, gray ribbon
+Before: `docs/screenshots/pi/pi-agent-in-action.png` (slice 2 gallery, uniform tube ribbons, gray ribbon
 color). After: the recaptured `cockpit`, `dynamic-range`, `neon-cockpit`, `light-theme` and `fractal`
 shots in `docs/screenshots/index.html` — tapered wedges in palette causal color, with graph shots using
 the full-width quiet frame. The vision and scale gates must stay green; if the polygon fails legibility

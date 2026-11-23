@@ -27,10 +27,10 @@ default and fabricates no study result.
 
 | Observation                                    | Evidence                                                                                           | Why it matters                                                                                             |
 | ---------------------------------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Presets look nearly identical                  | `pi-agent-ui-full.png`, `ui-compact.png`, `ui-reading.png`, `ui-presets/*/{incumbent,variant}.png` | They bundle existing knobs; no new visual idea has been tried, so the gallery cannot reject or accept one. |
-| The mid-octave canvas is mostly empty          | `pi-agent-fit-wide-mid.png`, `pi-agent-in-action.png`                                              | Nodes occupy a narrow horizontal band; the eye reads grid and glow before cards and labels.                |
-| Detail rung works in isolation, not in context | `pi-agent-node-detail.png`                                                                         | Zoom makes one card legible, but edges still cut across unrelated groups and focus stays a hard rectangle. |
-| Five indexes compete                           | audit PIUX-02; `pi-agent-ui-compact.png` rail                                                      | SCOPES, TURN MAP, TRAIL, PORTAL PATH and MINIMAP sit at equal weight in one narrow column.                 |
+| Presets look nearly identical                  | `pi/pi-agent-ui-full.png`, `ui-compact.png`, `ui-reading.png`, `ui-presets/*/{incumbent,variant}.png` | They bundle existing knobs; no new visual idea has been tried, so the gallery cannot reject or accept one. |
+| The mid-octave canvas is mostly empty          | `pi/pi-agent-fit-wide-mid.png`, `pi/pi-agent-in-action.png`                                              | Nodes occupy a narrow horizontal band; the eye reads grid and glow before cards and labels.                |
+| Detail rung works in isolation, not in context | `pi/pi-agent-node-detail.png`                                                                         | Zoom makes one card legible, but edges still cut across unrelated groups and focus stays a hard rectangle. |
+| Five indexes compete                           | audit PIUX-02; `pi/pi-agent-ui-compact.png` rail                                                      | SCOPES, TURN MAP, TRAIL, PORTAL PATH and MINIMAP sit at equal weight in one narrow column.                 |
 | Reading floor is too low                       | audit PIUX-03, PIUX-08                                                                             | 10–11px chrome and small node labels make text secondary to glow.                                          |
 | Meaning needs a legend and plain labels        | audit PIUX-04, PIUX-05                                                                             | Kind is encoded by unlabelled color dots; chrome speaks engine jargon.                                     |
 | First use is unmeasured                        | audit PIUX-01, PIUX-09                                                                             | Timing starts before a participant learns reveal, trace or focus.                                          |
@@ -326,7 +326,7 @@ the right direction. The new opt-in `chapters` view answers the fuller brief: ea
 card with its work as internal chips, the Run card indexes the turns, the failure chip carries severity,
 and a compact two-column grid replaces scattered cards and long diagonals. `?graphLayout=chapters` or
 `g` reaches it; the freeform default is unchanged pending the logged ADR 0008 decision. Evidence:
-`pi-agent-chapters.png`, `review.json:chapters` and `graph-layout/comparison.json:chapters-subgraphs`.
+`pi/pi-agent-chapters.png`, `review.json:chapters` and `graph-layout/comparison.json:chapters-subgraphs`.
 
 ### General ergonomic heuristics (library, not Pi defaults)
 
@@ -334,7 +334,7 @@ The reviewer redirected the work from Pi-specific defaults to general-purpose er
 optimization. `src/layout/ergonomics.ts` now provides `chooseColumns`, `orderByProximity`,
 `refineBySwaps` and `solveErgonomicLayout`: a deterministic, host-agnostic solver that fits any graph
 to any viewport, measures occupancy/edge length/aspect fit/overlap and exposes a score for comparing
-candidates. `?graphLayout=ergonomic` and `pi-agent-ergonomic.png` are one opt-in consumer, not a
+candidates. `?graphLayout=ergonomic` and `pi/pi-agent-ergonomic.png` are one opt-in consumer, not a
 default. The chapters view remains a separate subgraph-presentation experiment.
 
 ### Verification run
@@ -370,25 +370,25 @@ default. The chapters view remains a separate subgraph-presentation experiment.
 ### ADR 0008 evidence for the navigation and scale defaults
 
 - The boot index did not change (transcript remains primary on `hybrid`), but the drawer default did.
-  The existing labelled pair `docs/screenshots/ui-presets/one-index/{incumbent,variant}.png` and its
-  pending decision in `docs/screenshots/ui-presets/comparison.json` (`ui-preset-one-index`) are the
+  The existing labelled pair `docs/screenshots/labs/ui-presets/one-index/{incumbent,variant}.png` and its
+  pending decision in `docs/screenshots/labs/ui-presets/comparison.json` (`ui-preset-one-index`) are the
   incumbent/variant comparison. That pair shows the `?ui=one-index` experiment (three widgets hidden);
   Phase 1 additionally closes the rail drawer. No new pixels were captured while TODO8 verdicts are
   pending (pitfall 4). A human verdict is still required before treating this as a settled default.
 - Scale-aware packing stays opt-in (`geometry.occupancyTarget = 0`). Its labelled pair is
-  `docs/screenshots/ui-presets/scale-aware/{incumbent,variant}.png`, its offline comparison is
+  `docs/screenshots/labs/ui-presets/scale-aware/{incumbent,variant}.png`, its offline comparison is
   `presence-scale-aware.json`, and its stub with a pending verdict is `ui-preset-scale-aware` in
   `comparison.json`. Promoting it to a default still needs a human ADR 0008 decision.
 - Continuous grammar stays opt-in (`data-ui-grammar` is set only by the preset). Its labelled pair is
-  `docs/screenshots/ui-presets/continuity/{incumbent,variant}.png`, its gallery traceability item is
+  `docs/screenshots/labs/ui-presets/continuity/{incumbent,variant}.png`, its gallery traceability item is
   `ui-continuity` in `review.json` (note only, no verdict), and its stub is `ui-preset-continuity` in
   `comparison.json`. A human must compare the pair before any grammar element becomes a default.
 - Readable chrome stays opt-in (`data-ui-chrome='readable'` is set only by the preset). Its labelled
-  pair is `docs/screenshots/ui-presets/readable/{incumbent,variant}.png`, its traceability item is
+  pair is `docs/screenshots/labs/ui-presets/readable/{incumbent,variant}.png`, its traceability item is
   `ui-readable` in `review.json` (note only, no verdict), and its stub is `ui-preset-readable` in
   `comparison.json`. Promoting the comfortable type scale or plain labels needs a human decision.
 - Solved-target fields stay opt-in (`data-ui-field='targets'` is set only by the preset). Its labelled
-  pair is `docs/screenshots/ui-presets/field-targets/{incumbent,variant}.png`, its traceability item is
+  pair is `docs/screenshots/labs/ui-presets/field-targets/{incumbent,variant}.png`, its traceability item is
   `ui-field-targets` in `review.json` (note only), and its stub is `ui-preset-field-targets` in
   `comparison.json`. It does not change a default or absorb the `continuity` verdict.
 

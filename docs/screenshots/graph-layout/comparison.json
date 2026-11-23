@@ -26,7 +26,7 @@
         "incumbent": { "width": 2521.8, "height": 1171.95, "ratio": 0.465, "meanEdgeLength": 469.13, "overlaps": 0 },
         "variant": { "width": 416, "height": 496, "ratio": 1.192, "meanEdgeLength": 411.08, "overlaps": 0 }
       },
-      "images": "incumbent: docs/screenshots/pi-agent-in-action.png, docs/screenshots/pi-agent-timeline-rows.png; variant: docs/screenshots/pi-agent-chapters.png",
+      "images": "incumbent: docs/screenshots/pi/pi-agent-in-action.png, docs/screenshots/pi/pi-agent-timeline-rows.png; variant: docs/screenshots/pi/pi-agent-chapters.png",
       "effect": "Turn-lane and turn-card duplication removed; five packed cards carry the work of the 18 source nodes as internal chips, the grid is compact and overlap-free, and the failure reads inside its turn. No claim about task success or time.",
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
@@ -37,7 +37,7 @@
       "variant": "octaves (?graphLayout=octaves) — one hierarchy drawn at 1x, 1/2x and 1/4x world scale",
       "data": "src/layout/octaves.ts + app/pi/src/graph-layout.ts — one position authority, per-node size from opaque octave descriptors",
       "effect": "Three self-similar rings are visible in one frame; zooming promotes each smaller ring to a readable card. No renderer branch or default change. No claim about task success or time.",
-      "images": "regenerable pair: docs/screenshots/pi-agent-dynamic-range.png (incumbent), docs/screenshots/pi-agent-octaves.png (variant) via pnpm --filter pi shot octaves,dynamic-range; zoom evidence: docs/screenshots/pi-agent-octaves-near.png",
+      "images": "regenerable pair: docs/screenshots/pi/pi-agent-dynamic-range.png (incumbent), docs/screenshots/pi/pi-agent-octaves.png (variant) via pnpm --filter pi shot octaves,dynamic-range; zoom evidence: docs/screenshots/pi/pi-agent-octaves-near.png",
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {
@@ -47,7 +47,7 @@
       "variant": "chapters-wide (?graphLayout=chapters&graphColumns=4, 2400x1000 viewport)",
       "data": "src/layout/chapters.ts — columns are capped by the opt-in value and the viewport",
       "effect": "A wider canvas fills additional chapter columns without moving the library's default two-column cap. No claim about task success or time.",
-      "images": "regenerable pair: docs/screenshots/pi-agent-chapters.png (incumbent), docs/screenshots/pi-agent-chapters-wide.png (variant) via pnpm --filter pi shots:all",
+      "images": "regenerable pair: docs/screenshots/pi/pi-agent-chapters.png (incumbent), docs/screenshots/pi/pi-agent-chapters-wide.png (variant) via pnpm --filter pi shots:all",
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {

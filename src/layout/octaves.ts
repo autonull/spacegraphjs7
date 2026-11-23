@@ -13,6 +13,8 @@ export interface OctaveLayoutOptions {
     readonly radiusFactor?: number;
     /** Root-ring radius as a multiple of the parent card width. */
     readonly rootRadiusFactor?: number;
+    /** Siblings share one ring, or follow a golden-angle spiral. */
+    readonly shape?: 'ring' | 'spiral';
     readonly phase?: number;
 }
 
@@ -51,6 +53,12 @@ export function octaveLayout(
     const maxDepth = options.maxDepth ?? 2;
     const radiusFactor = options.radiusFactor ?? 0.85;
     const rootRadiusFactor = options.rootRadiusFactor ?? 0.6;
+    const shape = options.shape ?? 'ring';
+    const phaseOffset = options.phase ?? 0;
+    const spread = (index: number, count: number): number =>
+        shape === 'spiral' ? index * 2.399963 : (2 * Math.PI * index) / count;
+    const reach = (base: number, index: number, count: number): number =>
+        shape === 'spiral' ? base * (0.4 + (0.6 * index) / Math.max(1, count - 1)) : base;
 
     const place = (id: string, octave: number, x: number, y: number): void => {
         if (visited.has(id)) return;
@@ -64,20 +72,17 @@ export function octaveLayout(
         const radius = options.card[0] * scale * radiusFactor;
         const phase = (options.phase ?? 0) + octave * 0.37;
         siblings.forEach((child, index) => {
-            const angle = (2 * Math.PI * index) / siblings.length + phase;
-            place(child, octave - 1, x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+            const angle = spread(index, siblings.length) + (shape === 'spiral' ? phaseOffset : phase);
+            const distance = reach(radius, index, siblings.length);
+            place(child, octave - 1, x + Math.cos(angle) * distance, y + Math.sin(angle) * distance);
         });
     };
 
     const rootRadius = options.card[0] * rootRadiusFactor;
     roots.forEach((id, index) => {
-        const angle = (2 * Math.PI * index) / roots.length;
-        place(
-            id,
-            0,
-            Math.cos(angle) * rootRadius,
-            Math.sin(angle) * rootRadius,
-        );
+        const angle = spread(index, roots.length) + (shape === 'spiral' ? phaseOffset : 0);
+        const distance = reach(rootRadius, index, roots.length);
+        place(id, 0, Math.cos(angle) * distance, Math.sin(angle) * distance);
     });
     for (const id of ids) if (!visited.has(id)) place(id, 0, 0, 0);
 

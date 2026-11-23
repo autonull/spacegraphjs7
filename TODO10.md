@@ -139,6 +139,8 @@ Final gates: root `pnpm check`, `pnpm exec tsc --noEmit -p tsconfig.json`, `pnpm
 
 ## 7. Remaining work
 
+Superseded by §10.1 after the section-9 implementation; kept here as the original handoff list.
+
 1. **D1 (external, blocking promotion).** TODO9 human verdicts and the study pilot are still open.
    Record them in `docs/screenshots/review.json`, the relevant `*/comparison.json` files and raw
    study notes. No default may flip until ADR 0008 is satisfied.
@@ -173,8 +175,8 @@ Requested after the plan closed: a layout that shows scale itself, not just one 
   read as scattered cards. The final version uses a tight ring (factor 0.85) and a purpose-built
   1+4+12 tree, which shortens the ribbons and packs the rosette. `octaves-near` frames one ½× branch
   so the ¼× work cards become readable — the zoom half of the claim.
-- **Evidence:** `pi-agent-dynamic-range.png` (incumbent), `pi-agent-octaves.png` (variant),
-  `pi-agent-octaves-near.png` (zoom evidence); pending decision `multi-octave-range` in
+- **Evidence:** `pi/pi-agent-dynamic-range.png` (incumbent), `pi/pi-agent-octaves.png` (variant),
+  `pi/pi-agent-octaves-near.png` (zoom evidence); pending decision `multi-octave-range` in
   `docs/screenshots/graph-layout/comparison.json` and note-only entries in `review.json`.
 - **Gates:** root typecheck/1047 tests, Pi `check:fast` 181, Pi screenshot capture 3/3, full vision
   suite 25/25 before the final radius tuning, then the graph-arrangement vision gate 1/1 after it.
@@ -184,9 +186,9 @@ Requested after the plan closed: a layout that shows scale itself, not just one 
 
 ---
 
-## 9. Next session — host boundary and screenshot organization
+## 9. Host boundary and screenshot organization
 
-**No code changes were made for this section.** It is the handoff for a fresh session.
+Implemented in §10. This section keeps the decisions and rationale; §10 records the landed work.
 
 ### 9.1 Where the multi-octave work should live
 
@@ -209,7 +211,7 @@ lab is where those hypotheses should be cheap.
 
 ### 9.2 Screenshot organization
 
-Current problem: 38 `pi-agent-*.png` files plus `.prev` files sit at the root of
+Current problem: 38 `pi/pi-agent-*.png` files plus `.prev` files sit at the root of
 `docs/screenshots/`, mixed with generated atlases, per-experiment pairs and reports. Curated
 evidence and disposable output are hard to tell apart.
 
@@ -268,3 +270,46 @@ pending verdict is visible instead of buried in prose. Rules:
 
 No default promotion, no renderer branch, no second position authority, no new flagship. Generated
 output stays out of git. Keep the current Pi shots and gates green while the lab is introduced.
+
+### 9.6 Decisions made
+
+- Keep the `pi-agent-` filename prefix. The directory is the curator boundary; renaming 38 files
+  would churn every table and note without adding information.
+- Move curated shots into `pi/` and generated pairs into `labs/`. Leave comparison JSON and baselines
+  in their current folders; the `reports/` grouping is a deferred second step (below).
+- The lab reuses the generic `octaveLayout` and one renderer. Its only library change is a
+  `shape: 'ring' | 'spiral'` option on that helper; ring stays the default with byte-identical output.
+- No candidate is promoted to Pi. ADR 0008 still requires a human verdict, and porting the step
+  palette needs a separate host-side colour seam.
+
+---
+
+## 10. Implementation of section 9 (2026-11-23)
+
+| Item | Landed (file:line) | Verification |
+| ---- | ------------------ | ------------ |
+| Screenshot layout | `docs/screenshots/pi/` (38 tracked shots), `docs/screenshots/labs/` (`ui-presets/`, `scenario-workflow-chapters/`, `scale-lab/`); `.gitignore`, all `Shot.file` values, `review.json`, `*/comparison.json`, `audit.json`, README and historical plan references updated | Root typecheck; Pi `check:fast`; shot manifest test |
+| Experiment index | `docs/screenshots/experiments.json` (8 pending entries); `app/pi/scripts/shot.ts` reads it and renders a pending section in the contact sheet; `--sheet` refreshes without recapture | Contact sheet shows "Pending experiments · 8" |
+| Scale lab | `app/demo/html/core/scale-lab.html` (knobs: radius, depth, shape, phase, palette, variant); `app/demo/tests/scale-lab.spec.ts` (3 candidate pairs); `src/layout/octaves.ts` `shape` option + `test/layout/octaves.test.ts`; demo registry regenerated (3 hosts / 43 HTML / 45 modules) | Demo lab E2E 3/3; octaves unit test; full visual gates |
+| Lab run | Three pairs captured under `labs/scale-lab/`. Ring with `palette=steps` is the cleanest candidate; both spirals overlap at these radii. Finding recorded in `experiments.json#scale-lab-geometry`. No Pi default flip. | Visual inspection of the six captures; no renderer branch |
+
+Final verification: root `pnpm check`, `pnpm exec tsc --noEmit -p tsconfig.json`, `pnpm test`; Pi
+`check:fast`, `screenshots`/`ui-compare` capture specs and the shell/graph-layout E2E; demo lab and
+scenario compare specs; full `test:demo-atlas`. All green. Two small fixes (a spec type error and a
+spiral phase offset) were corrected and only their focused gates re-run; no flaky retry turned a red
+gate green. Generated pairs and the contact sheet stay out of git.
+
+### 10.1 Remaining work after this pass
+
+1. **Human verdicts (blocking).** D1 TODO9 verdicts, the study pilot and the eight entries in
+   `experiments.json`. Record them in `review.json`, the relevant `comparison.json` files and raw
+   study notes. ADR 0008 stays closed until then.
+2. **Scale-lab port (optional).** `scale-lab-geometry` is the only candidate worth a Pi port. It
+   needs a host-side per-octave colour seam and a logged verdict before it becomes one opt-in shot.
+   No default flip.
+3. **`reports/` grouping (deferred).** Move `comparison.json` files and baselines into
+   `docs/screenshots/reports/` with stable names, then update `app/pi/scripts/baseline.ts`,
+   `app/pi/tests/graph-layout.test.ts`, `app/pi/tests/motion.spec.ts`, `app/pi/scripts/ui-compare.ts`,
+   `app/pi/src/ui/evidence.ts` and doc references. Deferred because those writers/readers are green
+   today and the move adds no experiment capability.
+4. **C4 follow-up / E3 follow-up.** Unchanged from §7 items 3 and 4.

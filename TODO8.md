@@ -272,14 +272,14 @@ pilot result has been fabricated.
 - `app/pi`: `pnpm run verify:visual` — 24 passed.
 - `app/pi`: `pnpm run shots:all` — 29 passed; byte-level capture noise in tracked PNGs was reverted.
 - `app/pi`: `pnpm run scale` — all budgets met (20,105 nodes in 7.8 ms; 60-turn layout 929.2 ms).
-- `app/pi`: `pnpm run shots:compare` — 8 passed; pair PNGs under `docs/screenshots/ui-presets/<id>/`.
+- `app/pi`: `pnpm run shots:compare` — 8 passed; pair PNGs under `docs/screenshots/labs/ui-presets/<id>/`.
 - `app/demo`: `host.spec.ts` — 10 passed.
 
 ### Remaining work — clarified
 
 1. **Human gates — the only blocking work.** Add `ui-*` verdicts to `docs/screenshots/review.json`,
    run the five-question pilot with `?studyUI=<preset>` (`docs/pi-study.md:38-42`, `__study.ui`), then
-   close the matching `decision` in `docs/screenshots/ui-presets/comparison.json` and ADR 0008. A
+   close the matching `decision` in `docs/screenshots/labs/ui-presets/comparison.json` and ADR 0008. A
    default flip needs that logged human decision; no verdict or pilot result is generated here.
 2. **Root-level gates — resolved.** `test/interaction.spec.ts` asserted a `.sg-hover-meta-widget`
    class and `button[data-action]` that the widget does not expose; it now reads the overlay through

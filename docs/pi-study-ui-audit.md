@@ -6,7 +6,7 @@ Target: the PI flagship and its participant-facing five-task study (`app/pi`). D
 
 Inputs inspected:
 
-- Gallery PNGs (all current, regenerated 12:15–12:17): `pi-agent-in-action`, `pi-agent-catalog`, `pi-agent-preset`, `pi-agent-node-detail`, `pi-agent-deep-focus`, `pi-agent-fractal`, `pi-agent-light`, `pi-agent-dense-type`, `pi-agent-layout-stacked`, `pi-agent-layout-floating`, plus the fit matrix.
+- Gallery PNGs (all current, regenerated 12:15–12:17): `pi/pi-agent-in-action`, `pi/pi-agent-catalog`, `pi/pi-agent-preset`, `pi/pi-agent-node-detail`, `pi/pi-agent-deep-focus`, `pi/pi-agent-fractal`, `pi/pi-agent-light`, `pi/pi-agent-dense-type`, `pi/pi-agent-layout-stacked`, `pi/pi-agent-layout-floating`, plus the fit matrix.
 - Implementation: `app/pi/index.html`, `app/pi/study.html`, `app/pi/src/host.ts`, `src/catalog.ts`, `src/panel.ts`, `src/shell/{tokens,inspector,frames}.ts`, `src/study-page.ts`, `src/study.ts`, `src/capabilities.ts`, `src/shots.ts`.
 - Purpose and protocol: `README.md:201-235`, `app/pi/README.md`, `docs/pi-study.md`, `docs/screenshots/README.md`.
 
@@ -50,7 +50,7 @@ Recommendation: declare one primary index per surface — transcript for `log`/`
 
 ### PIUX-03 (medium) — Chrome typography is 10–11px monospace with no comfortable mode
 
-`src/shell/tokens.ts:32` sets `micro: '11px'` and `nano: '10px'`; shared tokens set `xs: '11px'`, `sm: '12px'`, `base: '13px'` (`packages/shared/src/tokens.ts:180-183`). `index.html` uses `xs`/`micro`/`nano` 35 times versus 6 uses of `base`/`lg`/`xl`. The font is monospace everywhere (`tokens.ts:38`). At 1440px, transcript rows and node labels sit at the readability floor; `pi-agent-in-action.png` and `pi-agent-preset.png` show rows such as "user message:" that require close reading. The existing audit measured truncation and occlusion, not absolute type size.
+`src/shell/tokens.ts:32` sets `micro: '11px'` and `nano: '10px'`; shared tokens set `xs: '11px'`, `sm: '12px'`, `base: '13px'` (`packages/shared/src/tokens.ts:180-183`). `index.html` uses `xs`/`micro`/`nano` 35 times versus 6 uses of `base`/`lg`/`xl`. The font is monospace everywhere (`tokens.ts:38`). At 1440px, transcript rows and node labels sit at the readability floor; `pi/pi-agent-in-action.png` and `pi/pi-agent-preset.png` show rows such as "user message:" that require close reading. The existing audit measured truncation and occlusion, not absolute type size.
 
 Why it matters: every task depends on reading labels before acting on them. Raising label size in the renderer changes vision gates (AUDIT-03), but chrome typography is host-side and cheap to fix.
 
@@ -74,7 +74,7 @@ Recommendation: relabel chrome controls in plain language ("Evidence", "View", "
 
 ### PIUX-06 (medium) — Proof catalog is a flat list and the questions live in three places
 
-`mountCatalog` (`src/catalog.ts:52-82`) renders 19 `<details>` rows with no grouping, search or favorites; `pi-agent-catalog.png` shows them as an undifferentiated stack after the earlier hit-target fix. The same five questions appear as gallery evidence buttons (`src/capabilities.ts:81-333`), as catalog notes, and behind "Replay the five questions" in the rail Reference group.
+`mountCatalog` (`src/catalog.ts:52-82`) renders 19 `<details>` rows with no grouping, search or favorites; `pi/pi-agent-catalog.png` shows them as an undifferentiated stack after the earlier hit-target fix. The same five questions appear as gallery evidence buttons (`src/capabilities.ts:81-333`), as catalog notes, and behind "Replay the five questions" in the rail Reference group.
 
 Why it matters: the catalog is the answer to "what can this thing prove?", yet it makes a reviewer scan 19 equal-weight items. Three entry points to one question set split attention and make it unclear which is canonical.
 
@@ -82,7 +82,7 @@ Recommendation: group catalog rows into three sections (Presets, View experiment
 
 ### PIUX-07 (medium-low) — 200px rail and 240px catalog are structurally too narrow
 
-`index.html:12-34` gives the rail a fixed 200px column and the catalog 240px while the graph takes the remainder. The rail holds 13 policy families plus Navigate, Inspect, Review and Reference groups, its own scrollbar, a "Filter knobs" input, provenance badges and navigation headings. In `pi-agent-in-action.png` and `pi-agent-layout-floating.png`, the PORTAL PATH and MINIMAP labels stack and crowd the minimap frame; long knob labels and "changed only" controls are compressed.
+`index.html:12-34` gives the rail a fixed 200px column and the catalog 240px while the graph takes the remainder. The rail holds 13 policy families plus Navigate, Inspect, Review and Reference groups, its own scrollbar, a "Filter knobs" input, provenance badges and navigation headings. In `pi/pi-agent-in-action.png` and `pi/pi-agent-layout-floating.png`, the PORTAL PATH and MINIMAP labels stack and crowd the minimap frame; long knob labels and "changed only" controls are compressed.
 
 Why it matters: the user must scroll one narrow column to find navigation aids that should be one click away, and cramped labels slow scanning.
 
@@ -90,7 +90,7 @@ Recommendation: widen the rail to 280–320px when open, make it a single on-dem
 
 ### PIUX-08 (low) — Default framing wastes vertical space and starts below the reading rung
 
-In `pi-agent-in-action.png` and `pi-agent-living-graph.png`, 18 nodes occupy a horizontal band while roughly half the canvas is empty grid. The default fit leaves labels small enough that the eye goes to the glowing edges before the text. `dense-type` and `deep-focus` show that larger type is possible as an opt-in.
+In `pi/pi-agent-in-action.png` and `pi/pi-agent-living-graph.png`, 18 nodes occupy a horizontal band while roughly half the canvas is empty grid. The default fit leaves labels small enough that the eye goes to the glowing edges before the text. `dense-type` and `deep-focus` show that larger type is possible as an opt-in.
 
 Why it matters: the first frame sets the user's mental model. If text is secondary to glow, the flagship reads as a visualization rather than a working tool.
 
@@ -104,7 +104,7 @@ Recommendation: add a progress indicator, a "Copy report" button, and a stacked 
 
 ### PIUX-10 (low) — "Light theme" changes the view, not the whole shell
 
-`shots.ts:227-235` launches the light preset with `surface: 'hybrid'`; `pi-agent-light.png` shows light nodes on a light canvas while the top bar, footer and transcript chrome stay dark. This is consistent with "the HUD stays grayscale while color lives in the view", but the label "Light theme" promises a full theme switch.
+`shots.ts:227-235` launches the light preset with `surface: 'hybrid'`; `pi/pi-agent-light.png` shows light nodes on a light canvas while the top bar, footer and transcript chrome stay dark. This is consistent with "the HUD stays grayscale while color lives in the view", but the label "Light theme" promises a full theme switch.
 
 Recommendation: rename the preset to "Light view" or apply `data-theme='light'` to the shell as well (`src/shell/tokens.ts:106-110` already defines the tokens). Verify with a screenshot showing chrome and view in the same theme.
 

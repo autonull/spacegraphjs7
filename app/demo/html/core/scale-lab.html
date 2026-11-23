@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SpaceGraphJS — scale lab</title>
+        <style>
+            :root {
+                color-scheme: dark;
+                font-family: system-ui, sans-serif;
+                background: #0c0d12;
+                color: #e7e9f0;
+            }
+            * { box-sizing: border-box; }
+            body { margin: 0; height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+            header { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 10px 14px; border-bottom: 1px solid #2a2d3a; }
+            header h1 { font-size: 15px; margin: 0 10px 0 0; }
+            header .group { display: flex; gap: 6px; align-items: center; }
+            header .group > span { font-size: 11px; color: #7f879e; text-transform: uppercase; letter-spacing: .08em; }
+            header a { color: #7fd1d5; text-decoration: none; font-size: 12px; }
+            header a[aria-current='true'] { color: #fff; border-bottom: 2px solid #7fd1d5; }
+            #canvas { position: relative; width: 100%; height: 100%; min-height: 0; }
+            footer { position: absolute; inset-block-end: 8px; inset-inline-start: 14px; font-size: 12px; color: #9ca3b8; }
+        </style>
+    </head>
+    <body>
+        <header id="controls"><h1>scale lab</h1></header>
+        <main><div id="canvas"></div></main>
+        <footer id="status">loading…</footer>
+        <script type="module">
+            import { DEFAULT_THEME } from '@spacegraphjs/renderer';
+            import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
+            import { octaveLayout } from 'spacegraphjs/layout';
+
+            const params = new URLSearchParams(location.search);
+            const knob = (name, allowed, fallback) => {
+                const value = params.get(name);
+                return allowed.includes(value) ? value : fallback;
+            };
+            const numeric = (name, values, fallback) => {
+                const raw = params.get(name);
+                if (raw === null) return fallback;
+                const value = Number(raw);
+                return values.includes(value) ? value : fallback;
+            };
+
+            const radii = [0.5, 0.7, 0.85, 1.2];
+            const depths = [1, 2, 3];
+            const shapes = ['ring', 'spiral'];
+            const palettes = ['flat', 'steps'];
+            const variants = ['incumbent', 'variant'];
+
+            const incumbent = { radius: 0.85, depth: 2, shape: 'ring', phase: 0, palette: 'flat' };
+            const config =
+                knob('variant', variants, 'variant') === 'incumbent'
+                    ? incumbent
+                    : {
+                          radius: numeric('radius', radii, 0.7),
+                          depth: numeric('depth', depths, 3),
+                          shape: knob('shape', shapes, 'spiral'),
+                          phase: numeric('phase', [0, 0.2, 0.5, 1], 0.2),
+                          palette: knob('palette', palettes, 'steps'),
+                      };
+            const variant = params.get('variant') === 'incumbent' ? 'incumbent' : 'variant';
+
+            const ids = ['lab:r'];
+            const parentOf = new Map();
+            for (let child = 0; child < 4; child++) {
+                const childID = `lab:r:c${child}`;
+                ids.push(childID);
+                parentOf.set(childID, 'lab:r');
+                for (let work = 0; work < 3; work++) {
+                    const workID = `${childID}:w${work}`;
+                    ids.push(workID);
+                    parentOf.set(workID, childID);
+                }
+            }
+
+            const result = octaveLayout(ids, parentOf, {
+                card: [360, 200],
+                radiusFactor: config.radius,
+                rootRadiusFactor: 0.6,
+                maxDepth: config.depth,
+                shape: config.shape,
+                phase: config.phase,
+            });
+            const colors = ['#3b527f', '#3f6a86', '#4a7f78', '#7f6a4a'];
+            const nodes = ids.map((id) => {
+                const point = result.positions.get(id);
+                const octave = result.octaves.get(id);
+                const scale = octave?.scale ?? 1;
+                const step = Math.min(-octave?.octave ?? 0, colors.length - 1);
+                const label = id.split(':').at(-1);
+                const color = config.palette === 'steps' ? colors[step] : colors[0];
+                return {
+                    id,
+                    kind: 'task',
+                    label,
+                    status: 'neutral',
+                    html: `<div style="width:100%;height:100%;box-sizing:border-box;border:1px solid #6c7ba3;border-radius:4px;background:${color};color:#e7e9f0;font:12px system-ui;display:flex;align-items:center;padding:6px;overflow:hidden">${label}</div>`,
+                    position: [point.x, point.y, 0],
+                    size: [360 * scale, 200 * scale, 80],
+                    data: { host: 'scale-lab', variant, octave: octave?.octave ?? 0, scale },
+                };
+            });
+            const edges = [...parentOf].map(([child, parent]) => ({
+                id: `${parent}->${child}`,
+                source: parent,
+                target: child,
+                kind: 'contains',
+                directed: true,
+            }));
+
+            const renderer = new SpaceGraphRenderer();
+            await renderer.mount(document.querySelector('#canvas'), {
+                theme: DEFAULT_THEME,
+                projection: '2d',
+                global: true,
+            });
+            renderer.setModel({ nodes, edges });
+            renderer.fit();
+
+            const groups = [
+                ['variant', variants, variant],
+                ['radius', radii.map(String), String(config.radius)],
+                ['depth', depths.map(String), String(config.depth)],
+                ['shape', shapes, config.shape],
+                ['phase', ['0', '0.2', '0.5', '1'], String(config.phase)],
+                ['palette', palettes, config.palette],
+            ];
+            for (const [name, values, current] of groups) {
+                const group = document.createElement('span');
+                group.className = 'group';
+                group.append(Object.assign(document.createElement('span'), { textContent: name }));
+                for (const value of values) {
+                    const next = new URLSearchParams(params);
+                    if (name === 'variant' && value === 'incumbent') {
+                        next.delete('radius'); next.delete('depth'); next.delete('shape');
+                        next.delete('phase'); next.delete('palette');
+                    }
+                    next.set(name, value);
+                    const anchor = document.createElement('a');
+                    anchor.href = `?${next}`;
+                    anchor.textContent = value;
+                    anchor.setAttribute('aria-current', String(value === current));
+                    group.append(anchor);
+                }
+                document.querySelector('#controls').append(group);
+            }
+
+            document.querySelector('#status').textContent =
+                `${variant} · radius ${config.radius} · depth ${config.depth} · ${config.shape} · phase ${config.phase} · ${config.palette} · ${nodes.length} nodes · 1 position source`;
+            globalThis.__scaleLab = {
+                variant,
+                config,
+                nodes: ids,
+                octaves: () => [...result.octaves],
+                positions: () => [...result.positions],
+                cameraCenter: () => renderer.getViewport().center,
+            };
+        </script>
+    </body>
+</html>
