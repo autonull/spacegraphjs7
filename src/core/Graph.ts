@@ -318,10 +318,10 @@ export class Graph extends EventEmitter<GraphEventMap> {
         if (spec.edges) for (const edgeSpec of spec.edges) this.addEdge(edgeSpec);
     }
     snapshot(): Map<string, { position: Vector3; data: NodeData }> {
-        return this.ser.snapshot() as any;
+        return this.ser.snapshot();
     }
     restore(snapshot: Map<string, { position: Vector3; data: NodeData }>): void {
-        this.ser.restore(snapshot as any);
+        this.ser.restore(snapshot);
     }
 
     getStats(): {

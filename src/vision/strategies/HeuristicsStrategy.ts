@@ -2,6 +2,7 @@
 // Vision analysis using WCAG, spatial indexing, and Fitts's law
 
 import { ErgonomicsAnalyzer, HierarchyAnalyzer, LegibilityAnalyzer, OverlapAnalyzer } from '..';
+import { gradeFor, type VisionGrade } from '../grade';
 import { clamp } from '../../utils/math';
 import type {
     ErgonomicsResult,
@@ -17,19 +18,6 @@ export interface HeuristicsConfig {
     wcagThreshold: number;
     overlapPadding: number;
     fittsLawTargetSize: number;
-}
-
-const GRADE_THRESHOLDS = [
-    { grade: 'A', minScore: 90 },
-    { grade: 'B', minScore: 80 },
-    { grade: 'C', minScore: 70 },
-    { grade: 'D', minScore: 60 },
-    { grade: 'F', minScore: 0 },
-] as const;
-
-function getGrade(score: number): 'A' | 'B' | 'C' | 'D' | 'F' {
-    return (GRADE_THRESHOLDS.find((t) => score >= t.minScore)?.grade ?? 'F') as
-        'A' | 'B' | 'C' | 'D' | 'F';
 }
 
 function deduct(
@@ -113,7 +101,7 @@ export class HeuristicsStrategy implements VisionStrategy {
         ergonomics: unknown;
     }): {
         score: number;
-        grade: 'A' | 'B' | 'C' | 'D' | 'F';
+        grade: VisionGrade;
         issues: Array<{
             severity: 'error' | 'warning' | 'info';
             category: 'legibility' | 'overlap' | 'hierarchy' | 'ergonomics';
@@ -160,7 +148,7 @@ export class HeuristicsStrategy implements VisionStrategy {
         }
 
         const clampedScore = clamp(score, 0, 100);
-        const grade = getGrade(clampedScore);
+        const grade = gradeFor(clampedScore);
 
         return { score: clampedScore, grade, issues };
     }

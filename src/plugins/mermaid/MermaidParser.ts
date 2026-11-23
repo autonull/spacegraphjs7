@@ -113,14 +113,6 @@ export function edgeToSpec(edge: DiagramEdge, index: number, theme: DiagramTheme
     };
 }
 
-const DIRECTION_MAP: Record<string, MermaidLayoutType> = {
-    TD: 'TD',
-    TB: 'TB',
-    BT: 'BT',
-    LR: 'LR',
-    RL: 'RL',
-};
-
 /**
  * The foreign shape names the DOT and GraphML parsers read, mapped to the shape they draw as. The
  * GraphML vocabulary is a subset of the DOT one, so both parsers share this table.
@@ -239,9 +231,7 @@ export class MermaidParser {
     private parseDirection(line: string): MermaidLayoutType {
         const match =
             line.match(/^graph\s+(TD|TB|BT|LR|RL)/) || line.match(/^flowchart\s+(TD|TB|BT|LR|RL)/);
-        if (match) {
-            this.defaultDirection = DIRECTION_MAP[match[1]] || 'TD';
-        }
+        if (match) return match[1] as MermaidLayoutType;
         return this.defaultDirection;
     }
 
@@ -334,13 +324,13 @@ export class MermaidParser {
                 ? 'tree'
                 : 'hierarchical';
 
-        return {
-            nodes: Array.from(this.nodes.values()),
-            edges: this.edges,
-            clusters: Array.from(this.clusters.values()),
-            format: 'mermaid',
+        return result(
+            'mermaid',
+            this.nodes.values(),
+            this.edges,
+            this.clusters.values(),
             suggestedLayout,
-        };
+        );
     }
 }
 
@@ -475,7 +465,6 @@ export class GraphMLParser {
         });
 
         const graphEl = doc.querySelector('graph');
-        graphEl?.getAttribute('id');
         const edgedefault = graphEl?.getAttribute('edgedefault') || 'directed';
 
         const nodeEls = doc.querySelectorAll('node');

@@ -5,20 +5,12 @@ import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EventEmitter } from '../core/EventEmitter';
+import { hasMethod } from '../utils/record';
+
+export { hasMethod } from '../utils/record';
 
 export interface SubscriptionHandle {
     dispose(): void;
-}
-
-export function hasMethod<T>(
-    obj: T,
-    method: string,
-): obj is T & Record<string, (...args: unknown[]) => unknown> {
-    return (
-        !!obj &&
-        method in (obj as object) &&
-        typeof (obj as Record<string, unknown>)[method] === 'function'
-    );
 }
 
 export function createLoggerPrefix(name: string): string {

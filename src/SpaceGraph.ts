@@ -1,4 +1,5 @@
 import { CameraControls, ObjectPoolManager, PluginManager, VisionManager } from './core';
+import { listLayouts } from './core/layout-registry';
 import { InputManager } from './input';
 import { FingeringPriority } from './core/constants';
 import { ErgonomicsAPI } from './core/Ergonomics';
@@ -26,7 +27,7 @@ import type {
     SpaceGraphOptions,
     SpecUpdate,
 } from './types';
-import { safeClone, clamp01 } from './utils';
+import { clamp01 } from './utils';
 import type { CardFacing } from '@spacegraphjs/renderer';
 
 // Internal controllers
@@ -38,6 +39,8 @@ import { StaticMethods } from './spacegraph/StaticMethods';
 import { MathPool } from './core/pooling/ObjectPool';
 
 export const VERSION = '8.5.0';
+
+type GraphExportSpec = GraphSpec & { plugins?: Record<string, unknown> };
 
 export class SpaceGraph {
     public static instances = new Set<SpaceGraph>();
@@ -145,33 +148,8 @@ export class SpaceGraph {
         spec.edges?.forEach((u) => u.id && this.graph.updateEdge(u.id, u));
     }
 
-    export(): GraphSpec & {
-        camera?: { position: [number, number, number]; target: [number, number, number] };
-        plugins?: Record<string, unknown>;
-    } {
-        const spec: GraphSpec & {
-            camera?: { position: [number, number, number]; target: [number, number, number] };
-            plugins?: Record<string, unknown>;
-        } = {
-            nodes: [...this.graph.nodes.values()].map((node) => ({
-                id: node.id,
-                type: node.constructor.name,
-                label: node.label,
-                position: [node.position.x, node.position.y, node.position.z] as [
-                    number,
-                    number,
-                    number,
-                ],
-                data: safeClone(node.data),
-            })),
-            edges: [...this.graph.edges.values()].map((edge) => ({
-                id: edge.id,
-                type: edge.constructor.name,
-                source: edge.source.id,
-                target: edge.target.id,
-                data: safeClone(edge.data),
-            })),
-        };
+    export(): GraphExportSpec {
+        const spec: GraphExportSpec = this.graph.ser.toJSON((item) => item.constructor.name);
         if (this.cameraControls?.target) {
             spec.camera = this.cameraToSpec();
         }
@@ -320,9 +298,8 @@ export class SpaceGraph {
     ): Promise<void> {
         const plugin = this.pluginManager.getPlugin(name);
         if (!plugin) {
-            const available = this.pluginManager.getPluginNames().filter((n) =>
-                ['force-layout', 'grid-layout', 'circular-layout', 'hierarchical-layout', 'tree-layout', 'radial-layout', 'spectral-layout', 'cluster-layout', 'geo-layout', 'timeline-layout'].includes(n)
-            );
+            const registered = new Set(listLayouts());
+            const available = this.pluginManager.getPluginNames().filter((n) => registered.has(n));
             throw new Error(
                 `[SpaceGraph] Unknown layout "${name}". Available layouts: ${available.join(', ')}. Use listLayouts() for full registry.`
             );

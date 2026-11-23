@@ -127,18 +127,16 @@ export class ProcessNode extends BaseContentNode {
         this.cpuBar.style.width = `${Math.min(100, cpu)}%`;
         this.cpuText.textContent = `${cpu.toFixed(1)}%`;
 
-        if (cpu > 80) this.cpuBar.style.backgroundColor = '#ef4444';
-        else if (cpu > 50) this.cpuBar.style.backgroundColor = '#f59e0b';
-        else this.cpuBar.style.backgroundColor = '#3b82f6';
+        this.cpuBar.style.backgroundColor = barColor(cpu);
 
         this.memBar.style.width = `${Math.min(100, mem)}%`;
         this.memText.textContent = `${mem.toFixed(1)}%`;
-
-        if (mem > 80) this.memBar.style.backgroundColor = '#ef4444';
-        else if (mem > 50) this.memBar.style.backgroundColor = '#f59e0b';
-        else this.memBar.style.backgroundColor = '#10b981';
+        this.memBar.style.backgroundColor = barColor(mem, '#10b981');
 
         const scale = 1.0 + (mem / 100) * 0.5;
         this.object.scale.set(scale, scale, scale);
     }
 }
+
+const barColor = (value: number, low = '#3b82f6'): string =>
+    value > 80 ? '#ef4444' : value > 50 ? '#f59e0b' : low;

@@ -1,5 +1,6 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import { createLogger } from '../utils/logger';
+import { hasMethod } from '../utils/record';
 import type { VisionReport } from './types';
 
 const logger = createLogger('VisionAutoFixer');
@@ -41,11 +42,7 @@ export class VisionAutoFixer {
 
     private async fixLegibility(report: VisionReport): Promise<void> {
         const autoColorPlugin = this.sg.pluginManager.getPlugin('AutoColorPlugin');
-        if (
-            autoColorPlugin &&
-            'applyVisionCorrection' in autoColorPlugin &&
-            typeof autoColorPlugin.applyVisionCorrection === 'function'
-        ) {
+        if (hasMethod(autoColorPlugin, 'applyVisionCorrection')) {
             autoColorPlugin.applyVisionCorrection(report.legibility.failures);
             logger.info('AutoColorPlugin corrections applied.');
         } else {
@@ -55,30 +52,19 @@ export class VisionAutoFixer {
 
     private async fixOverlap(report: VisionReport): Promise<void> {
         const autoLayoutPlugin = this.sg.pluginManager.getPlugin('AutoLayoutPlugin');
-        if (
-            autoLayoutPlugin &&
-            'fixOverlaps' in autoLayoutPlugin &&
-            typeof autoLayoutPlugin.fixOverlaps === 'function'
-        ) {
+        if (hasMethod(autoLayoutPlugin, 'fixOverlaps')) {
             autoLayoutPlugin.fixOverlaps(report.overlap.overlaps);
             logger.info('AutoLayoutPlugin overlap corrections applied.');
             return;
         }
 
         const forceLayout = this.sg.pluginManager.getPlugin('ForceLayout');
-        if (
-            forceLayout &&
-            'update' in forceLayout &&
-            'settings' in forceLayout &&
-            typeof forceLayout.update === 'function'
-        ) {
-            const layout = forceLayout as { settings: { repulsion?: number }; update(): void };
-            const originalRepulsion = layout.settings.repulsion ?? 10000;
-            layout.settings.repulsion = originalRepulsion * 5;
-            for (let i = 0; i < 50; i++) {
-                layout.update();
-            }
-            layout.settings.repulsion = originalRepulsion;
+        if (forceLayout && 'settings' in forceLayout && hasMethod(forceLayout, 'update')) {
+            const settings = forceLayout.settings as { repulsion?: number };
+            const originalRepulsion = settings.repulsion ?? 10000;
+            settings.repulsion = originalRepulsion * 5;
+            for (let i = 0; i < 50; i++) forceLayout.update();
+            settings.repulsion = originalRepulsion;
         } else {
             logger.warn('No suitable layout plugin found to perform autoFix.');
         }
@@ -87,9 +73,9 @@ export class VisionAutoFixer {
     private async fixHierarchy(_report: VisionReport): Promise<void> {
         const hierLayout = this.sg.pluginManager.getPlugin('HierarchicalLayout');
         if (hierLayout) {
-            if ('fixHierarchy' in hierLayout && typeof hierLayout.fixHierarchy === 'function') {
+            if (hasMethod(hierLayout, 'fixHierarchy')) {
                 hierLayout.fixHierarchy();
-            } else if ('apply' in hierLayout && typeof hierLayout.apply === 'function') {
+            } else if (hasMethod(hierLayout, 'apply')) {
                 hierLayout.apply();
             }
         }
@@ -102,11 +88,7 @@ export class VisionAutoFixer {
 
     private async fixLayout(report: VisionReport): Promise<void> {
         const autoLayoutPlugin = this.sg.pluginManager.getPlugin('AutoLayoutPlugin');
-        if (
-            autoLayoutPlugin &&
-            'applyVisionCorrection' in autoLayoutPlugin &&
-            typeof autoLayoutPlugin.applyVisionCorrection === 'function'
-        ) {
+        if (hasMethod(autoLayoutPlugin, 'applyVisionCorrection')) {
             const formattedIssues = report.overlap.overlaps.map(
                 (o: { nodeA: string; nodeB: string }) => ({
                     type: 'overlap' as const,

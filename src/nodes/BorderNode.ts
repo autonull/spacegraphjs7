@@ -1,9 +1,8 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
-import { borderStrategy, LayoutNode } from './LayoutNode';
+import { borderStrategy, LayoutNode, type BorderRegion } from './LayoutNode';
 
-export type BorderRegion =
-    'NORTH' | 'SOUTH' | 'EAST' | 'WEST' | 'CENTER' | 'NW' | 'NE' | 'SW' | 'SE';
+export type { BorderRegion } from './LayoutNode';
 
 export class BorderNode extends LayoutNode {
     static readonly typeName: string = 'BorderNode';

@@ -154,6 +154,7 @@ export class HUDPlugin extends BaseSystemPlugin {
         if (this.container?.parentElement) {
             this.container.parentElement.removeChild(this.container);
         }
+        super.dispose();
     }
 
     private createContainer(): void {
@@ -167,17 +168,15 @@ export class HUDPlugin extends BaseSystemPlugin {
     }
 
     private subscribeToEvents(): void {
-        this.sg.events.on('node:added', () => this.updateNodeCount());
-        this.sg.events.on('node:removed', () => this.updateNodeCount());
-        this.sg.events.on('edge:added', () => this.updateNodeCount());
-        this.sg.events.on('edge:removed', () => this.updateNodeCount());
-        this.sg.events.on('selection:changed', (e) => this.updateSelection(e));
-        this.sg.events.on('camera:moved', () => this.updateCamera());
+        this.on('node:added', () => this.updateNodeCount());
+        this.on('node:removed', () => this.updateNodeCount());
+        this.on('edge:added', () => this.updateNodeCount());
+        this.on('edge:removed', () => this.updateNodeCount());
+        this.on('selection:changed', (e) => this.updateSelection(e));
+        this.on('camera:moved', () => this.updateCamera());
 
-        this.sg.events.on('fractal:level-change', (e: any) => this.updateFractalLevel(e));
-        this.sg.events.on('fractal:transition-progress', (p: number) =>
-            this.updateFractalProgress(p),
-        );
+        this.on('fractal:level-change', (e: any) => this.updateFractalLevel(e));
+        this.on('fractal:transition-progress', (p: number) => this.updateFractalProgress(p));
     }
 
     private updateNodeCount(): void {

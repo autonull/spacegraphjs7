@@ -76,7 +76,8 @@ export const splitStrategy: LayoutStrategy = (children, parent, params) => {
     }
 };
 
-type BorderRegion = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST' | 'CENTER' | 'NW' | 'NE' | 'SW' | 'SE';
+export type BorderRegion =
+    'NORTH' | 'SOUTH' | 'EAST' | 'WEST' | 'CENTER' | 'NW' | 'NE' | 'SW' | 'SE';
 
 export const borderStrategy: LayoutStrategy = (children, parent, params) => {
     const width = (parent.data.width as number) ?? 600;

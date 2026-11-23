@@ -1,5 +1,7 @@
 // SpaceGraphJS - Vision System Types
 
+import type { VisionGrade } from './grade';
+
 /**
  * Vision report containing analysis results
  */
@@ -16,7 +18,7 @@ export interface VisionReport {
  */
 export interface VisionScore {
     score: number; // 0-100
-    grade: 'A' | 'B' | 'C' | 'D' | 'F';
+    grade: VisionGrade;
     issues: VisionIssue[];
 }
 

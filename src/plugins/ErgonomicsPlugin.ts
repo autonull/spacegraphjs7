@@ -200,18 +200,18 @@ export class ErgonomicsPlugin extends BaseSystemPlugin {
     }
 
     private _listenToInteractions(): void {
-        this.sg.events.on('interaction:dragstart', (payload) => {
+        this.on('interaction:dragstart', (payload) => {
             if (!payload?.node) return;
             this.activeSessions.set(`drag-${payload.node.id}`, new InteractionSession());
         });
 
-        this.sg.events.on('interaction:drag', (payload) => {
+        this.on('interaction:drag', (payload) => {
             if (!payload?.node) return;
             const session = this.activeSessions.get(`drag-${payload.node.id}`);
             session?.addPoint(payload.node.position.x, payload.node.position.y);
         });
 
-        this.sg.events.on('interaction:dragend', (payload) => {
+        this.on('interaction:dragend', (payload) => {
             if (!payload?.node) return;
             const session = this.activeSessions.get(`drag-${payload.node.id}`);
             if (session) {
@@ -221,7 +221,7 @@ export class ErgonomicsPlugin extends BaseSystemPlugin {
             }
         });
 
-        this.sg.events.on('camera:move', (payload) => {
+        this.on('camera:move', (payload) => {
             if (!payload?.position) return;
             const pos = payload.position as [number, number, number];
             this._handleCameraMovement(pos[0], pos[1]);

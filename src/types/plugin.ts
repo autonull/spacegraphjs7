@@ -1,13 +1,18 @@
 // Plugin system types
 
+import type { EventEmitter } from '../core/EventEmitter';
+import type { Graph } from '../core/Graph';
 import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { Graph } from '../core/Graph';
-import type { EventEmitter } from '../core/EventEmitter';
+import type { SpaceGraphEvents } from './events';
 
 export interface PluginLifecycle {
-    init?(sg: SpaceGraph, graph: Graph, events: EventEmitter): void | Promise<void>;
+    init?(
+        sg: SpaceGraph,
+        graph: Graph,
+        events: EventEmitter<SpaceGraphEvents>,
+    ): void | Promise<void>;
 
     onPreRender?(delta: number): void;
 

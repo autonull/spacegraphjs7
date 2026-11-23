@@ -36,14 +36,14 @@ export class HistoryPlugin extends BaseSystemPlugin {
             this.pushSnapshot();
         }
 
-        this.sg.events.on('interaction:dragend', () => this.debouncedSnapshot());
-        this.sg.events.on('interaction:edgecreate', () => this.debouncedSnapshot());
-        this.sg.events.on('node:added', () => this.debouncedSnapshot());
-        this.sg.events.on('node:removed', () => this.debouncedSnapshot());
-        this.sg.events.on('edge:added', () => this.debouncedSnapshot());
-        this.sg.events.on('edge:removed', () => this.debouncedSnapshot());
+        this.on('interaction:dragend', () => this.debouncedSnapshot());
+        this.on('interaction:edgecreate', () => this.debouncedSnapshot());
+        this.on('node:added', () => this.debouncedSnapshot());
+        this.on('node:removed', () => this.debouncedSnapshot());
+        this.on('edge:added', () => this.debouncedSnapshot());
+        this.on('edge:removed', () => this.debouncedSnapshot());
 
-        this.sg.events.on('input:interaction:keydown', (e: unknown) =>
+        this.on('input:interaction:keydown', (e: unknown) =>
             this.handleKeydown(
                 e as {
                     key: string;
@@ -115,6 +115,7 @@ export class HistoryPlugin extends BaseSystemPlugin {
         }
         this.pastStack = [];
         this.futureStack = [];
+        super.dispose();
     }
 
     private handleKeydown(e: any): void {

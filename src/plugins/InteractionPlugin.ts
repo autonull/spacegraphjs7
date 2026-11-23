@@ -102,12 +102,12 @@ export class InteractionPlugin extends BaseSystemPlugin {
     }
 
     private initInputHandlers(): void {
-        this.sg.events.on('input:interaction:pointerdown', (e: any) => this.handlePointerDown(e));
-        this.sg.events.on('input:interaction:pointermove', (e: any) => this.handlePointerMove(e));
-        this.sg.events.on('input:interaction:pointerup', (e: any) => this.handlePointerUp(e));
-        this.sg.events.on('input:interaction:keydown', (e: any) => this.handleKeyDown(e));
-        this.sg.events.on('input:interaction:dblclick', (e: any) => this.handleDblClick(e));
-        this.sg.events.on('input:interaction:contextmenu', (e: any) => this.handleContextMenu(e));
+        this.on('input:interaction:pointerdown', (e: any) => this.handlePointerDown(e));
+        this.on('input:interaction:pointermove', (e: any) => this.handlePointerMove(e));
+        this.on('input:interaction:pointerup', (e: any) => this.handlePointerUp(e));
+        this.on('input:interaction:keydown', (e: any) => this.handleKeyDown(e));
+        this.on('input:interaction:dblclick', (e: any) => this.handleDblClick(e));
+        this.on('input:interaction:contextmenu', (e: any) => this.handleContextMenu(e));
     }
 
     private handlePointerDown(e: any): void {

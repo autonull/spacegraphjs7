@@ -9,7 +9,6 @@ export class Wire<T = unknown> extends Edge {
     static readonly typeName: string = 'Wire';
     readonly sourcePort: PortNode<T>;
     readonly targetPort: PortNode<T>;
-    private lastActivity = 0;
 
     constructor(source: PortNode<T>, target: PortNode<T>) {
         const spec: EdgeSpec = {
@@ -28,7 +27,6 @@ export class Wire<T = unknown> extends Edge {
         const handler = this.targetPort.getReceiveHandler();
         if (handler) {
             handler(this, data);
-            this.lastActivity = performance.now();
             this.pulse(1.0);
             return true;
         }
@@ -36,8 +34,7 @@ export class Wire<T = unknown> extends Edge {
     }
 
     getActivity(now: number, window = 2000): number {
-        const dt = now - this.lastActivity;
-        return 1 / (1 + dt / window);
+        return 1 / (1 + (now - this.lastActivityTime) / window);
     }
 
     dispose(): void {

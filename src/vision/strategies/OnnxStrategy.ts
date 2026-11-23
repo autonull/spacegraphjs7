@@ -1,4 +1,5 @@
 import type { VisionModelLoader } from '..';
+import { gradeFor } from '../grade';
 import * as THREE from 'three';
 import type {
     ErgonomicsResult,
@@ -40,8 +41,7 @@ export class OnnxStrategy implements VisionStrategy {
                 ergonomics.score +
                 colorScore) /
             5;
-        const grade =
-            score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
+        const grade = gradeFor(score);
 
         return {
             legibility,

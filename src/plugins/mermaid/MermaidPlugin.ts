@@ -1,4 +1,5 @@
 import type { Graph } from '../../core/Graph';
+import { accumulateBounds } from '../../layout/bounds';
 import type { SpaceGraph } from '../../SpaceGraph';
 import { parseColor } from '../../utils/color';
 import { BaseSystemPlugin } from '../BaseSystemPlugin';
@@ -39,21 +40,6 @@ function listen<K extends keyof HTMLElementEventMap>(
     handler: (event: HTMLElementEventMap[K]) => void,
 ): void {
     root.querySelector(selector)?.addEventListener(type, handler as EventListener);
-}
-
-/** Axis-aligned bounds of a set of positions. */
-function boundsXY(positions: Iterable<{ x: number; y: number }>) {
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    for (const { x, y } of positions) {
-        minX = Math.min(minX, x);
-        minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x);
-        maxY = Math.max(maxY, y);
-    }
-    return { minX, minY, maxX, maxY };
 }
 
 export interface MermaidPluginOptions {
@@ -570,12 +556,12 @@ export class MermaidPlugin extends BaseSystemPlugin {
 
             if (memberNodes.length === 0) continue;
 
-            const { minX, minY, maxX, maxY } = boundsXY(memberNodes.map((mn) => mn.position));
+            const { min, max } = accumulateBounds(memberNodes.map((mn) => mn.position))!;
 
-            const centerX = (minX + maxX) / 2;
-            const centerY = (minY + maxY) / 2;
-            const width = Math.max(maxX - minX + 100, 200);
-            const height = Math.max(maxY - minY + 100, 150);
+            const centerX = (min.x + max.x) / 2;
+            const centerY = (min.y + max.y) / 2;
+            const width = Math.max(max.x - min.x + 100, 200);
+            const height = Math.max(max.y - min.y + 100, 150);
 
             clusterNode.position.set(centerX, centerY, -10);
             clusterNode.object.position.copy(clusterNode.position);

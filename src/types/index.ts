@@ -10,4 +10,3 @@ export * from './events';
 export * from './plugin';
 export * from './factory';
 export * from './layout';
-export * from './logger';

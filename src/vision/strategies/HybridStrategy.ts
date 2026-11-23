@@ -1,4 +1,5 @@
 import type { HeuristicsStrategy } from '..';
+import { gradeFor } from '../grade';
 import type { VisionReport, VisionStrategy } from '../types';
 import type { OnnxStrategy } from './OnnxStrategy';
 
@@ -46,7 +47,7 @@ export class HybridStrategy implements VisionStrategy {
             },
             overall: {
                 score: (hReport.overall.score + oReport.overall.score) / 2,
-                grade: this.calculateGrade((hReport.overall.score + oReport.overall.score) / 2),
+                grade: gradeFor((hReport.overall.score + oReport.overall.score) / 2),
                 issues: [...hReport.overall.issues, ...oReport.overall.issues],
             },
         };
@@ -61,13 +62,5 @@ export class HybridStrategy implements VisionStrategy {
         const getKey = (ov: any) => [ov.nodeA, ov.nodeB].sort().join(':');
         const seen = new Set(h.map(getKey));
         return [...h, ...o.filter((ov) => !seen.has(getKey(ov)))];
-    }
-
-    private calculateGrade(score: number): 'A' | 'B' | 'C' | 'D' | 'F' {
-        if (score >= 90) return 'A';
-        if (score >= 80) return 'B';
-        if (score >= 70) return 'C';
-        if (score >= 60) return 'D';
-        return 'F';
     }
 }

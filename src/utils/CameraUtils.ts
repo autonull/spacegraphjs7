@@ -170,19 +170,6 @@ function usableRegion(surface?: FitSurface, insets?: FitInsets): InsetRegion | u
     return insetRegion(surface, insets);
 }
 
-/**
- * Calculate a view that fits the given nodes. For perspective cameras, optionally provide the
- * camera's polar angle (phi from +Y) to account for tilt foreshortening.
- *
- * `minZoom` is a floor on the orthographic frustum zoom. When the content needs a smaller zoom to
- * fit, the floor applies instead: the frame then shows the content's start corner and the reader
- * pans the rest, rather than reading text too small to make out.
- *
- * `surface` and `insets` frame the content inside the region the insets leave free: the content
- * stays clear of the chrome a host draws over the canvas (an inspector, a header, a bottom sheet).
- * The orthographic path honours them exactly; the perspective path honours them approximately,
- * because a tilted camera has no single screen-to-world scale.
- */
 interface FitContext {
     readonly box: Box3;
     readonly center: Vector3;
