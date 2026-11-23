@@ -25,7 +25,7 @@ export class TimelineLayout extends BaseLayout<TimelineLayoutOptions> {
             .sort((a, b) => a.time - b.time);
         const minTime = timeline[0]?.time ?? 0;
 
-        const padding = config.nodePadding ?? 20;
+        const padding = this.nodePadding(config);
 
         // Precompute bounds for all nodes
         const nodeBounds = new Map<string, { width: number; height: number }>();

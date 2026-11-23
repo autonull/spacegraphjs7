@@ -34,7 +34,7 @@ export class TreeLayout extends BaseLayout<TreeLayoutOptions> {
         const roots = nodes.filter((node) => inDegree.get(node.id) === 0);
         if (!roots.length) roots.push(nodes[0]);
 
-        const padding = config.nodePadding ?? 20;
+        const padding = this.nodePadding(config);
 
         // First pass: compute max height per level for auto levelHeight
         const maxHeightByLevel = new Map<number, number>();

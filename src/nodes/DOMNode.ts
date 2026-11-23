@@ -251,25 +251,24 @@ export class DOMNode extends Node {
         const canvas = sg.renderer.renderer.domElement as HTMLCanvasElement;
         const el = this.domElement;
 
-        const relayPointer = (type: string, src: PointerEvent) => {
-            canvas.dispatchEvent(
-                new PointerEvent(type, {
-                    bubbles: false,
-                    cancelable: true,
-                    clientX: src.clientX,
-                    clientY: src.clientY,
-                    pointerId: src.pointerId,
-                    pointerType: src.pointerType,
-                    isPrimary: src.isPrimary,
-                    button: src.button,
-                    buttons: src.buttons,
-                    ctrlKey: src.ctrlKey,
-                    shiftKey: src.shiftKey,
-                    altKey: src.altKey,
-                    metaKey: src.metaKey,
-                }),
-            );
-        };
+        const dispatchPointer = (type: string, init: PointerEventInit) =>
+            canvas.dispatchEvent(new PointerEvent(type, { bubbles: false, ...init }));
+
+        const relayPointer = (type: string, src: PointerEvent) =>
+            dispatchPointer(type, {
+                cancelable: true,
+                clientX: src.clientX,
+                clientY: src.clientY,
+                pointerId: src.pointerId,
+                pointerType: src.pointerType,
+                isPrimary: src.isPrimary,
+                button: src.button,
+                buttons: src.buttons,
+                ctrlKey: src.ctrlKey,
+                shiftKey: src.shiftKey,
+                altKey: src.altKey,
+                metaKey: src.metaKey,
+            });
 
         const relayMouse = (type: string, src: MouseEvent) => {
             canvas.dispatchEvent(
@@ -282,28 +281,19 @@ export class DOMNode extends Node {
             );
         };
 
-        el.addEventListener('mouseenter', (e) => {
-            canvas.dispatchEvent(
-                new PointerEvent('pointermove', {
-                    bubbles: false,
-                    clientX: e.clientX,
-                    clientY: e.clientY,
-                    ctrlKey: e.ctrlKey,
-                    shiftKey: e.shiftKey,
-                    altKey: e.altKey,
-                }),
-            );
-        });
+        el.addEventListener('mouseenter', (e) =>
+            dispatchPointer('pointermove', {
+                clientX: e.clientX,
+                clientY: e.clientY,
+                ctrlKey: e.ctrlKey,
+                shiftKey: e.shiftKey,
+                altKey: e.altKey,
+            }),
+        );
 
-        el.addEventListener('mouseleave', () => {
-            canvas.dispatchEvent(
-                new PointerEvent('pointermove', {
-                    bubbles: false,
-                    clientX: -99999,
-                    clientY: -99999,
-                }),
-            );
-        });
+        el.addEventListener('mouseleave', () =>
+            dispatchPointer('pointermove', { clientX: -99999, clientY: -99999 }),
+        );
 
         el.addEventListener('pointerdown', (e) => {
             el.setPointerCapture(e.pointerId);
@@ -330,15 +320,8 @@ export class DOMNode extends Node {
             );
         });
 
-        el.addEventListener('pointermove', (e) => {
-            relayPointer('pointermove', e);
-        });
-        el.addEventListener('pointerup', (e) => {
-            relayPointer('pointerup', e);
-        });
-        el.addEventListener('pointercancel', (e) => {
-            relayPointer('pointercancel', e);
-        });
+        for (const type of ['pointermove', 'pointerup', 'pointercancel'] as const)
+            el.addEventListener(type, (e) => relayPointer(type, e as PointerEvent));
 
         el.addEventListener('dblclick', (e) => {
             relayMouse('dblclick', e);

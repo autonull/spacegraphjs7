@@ -32,6 +32,31 @@ import {
     nodeToSpec,
 } from './MermaidParser';
 
+/** Adds a listener only when the optional HUD markup contains the selector. */
+function listen<K extends keyof HTMLElementEventMap>(
+    root: ParentNode,
+    selector: string,
+    type: K,
+    handler: (event: HTMLElementEventMap[K]) => void,
+): void {
+    root.querySelector(selector)?.addEventListener(type, handler as EventListener);
+}
+
+/** Axis-aligned bounds of a set of positions. */
+function boundsXY(positions: Iterable<{ x: number; y: number }>) {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const { x, y } of positions) {
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+    }
+    return { minX, minY, maxX, maxY };
+}
+
 export interface MermaidPluginOptions {
     defaultLayout?: LayoutName;
     defaultTheme?: MermaidThemeName;
@@ -356,8 +381,6 @@ export class MermaidPlugin extends BaseSystemPlugin {
     }
 
     private createFormatSelector(): void {
-        if (!this.hudContainer) return;
-
         const formats: DiagramFormat[] = ['mermaid', 'dot', 'graphml', 'json'];
         const container = this.createSection(
             'Format',
@@ -368,15 +391,12 @@ export class MermaidPlugin extends BaseSystemPlugin {
       `,
         );
 
-        const select = container.querySelector('#mermaid-format-select') as HTMLSelectElement;
-        select?.addEventListener('change', (e) => {
+        listen(container, '#mermaid-format-select', 'change', (e) => {
             this.currentFormat = (e.target as HTMLSelectElement).value as DiagramFormat;
         });
     }
 
     private createLayoutControls(): void {
-        if (!this.hudContainer) return;
-
         const container = this.createSection(
             'Layout',
             `
@@ -394,21 +414,13 @@ export class MermaidPlugin extends BaseSystemPlugin {
       `,
         );
 
-        const select = container.querySelector('#mermaid-layout-select') as HTMLSelectElement;
-        const button = container.querySelector('#mermaid-apply-layout') as HTMLButtonElement;
-
-        select?.addEventListener('change', (e) => {
+        listen(container, '#mermaid-layout-select', 'change', (e) => {
             this.currentLayout = (e.target as HTMLSelectElement).value as LayoutName;
         });
-
-        button?.addEventListener('click', () => {
-            this.applyCurrentLayout();
-        });
+        listen(container, '#mermaid-apply-layout', 'click', () => this.applyCurrentLayout());
     }
 
     private createThemeControls(): void {
-        if (!this.hudContainer) return;
-
         const themes = Object.keys(MERMAID_THEMES) as MermaidThemeName[];
         const container = this.createSection(
             'Theme',
@@ -423,33 +435,24 @@ export class MermaidPlugin extends BaseSystemPlugin {
       `,
         );
 
-        const select = container.querySelector('#mermaid-theme-select') as HTMLSelectElement;
-        const prevBtn = container.querySelector('#mermaid-prev-theme') as HTMLButtonElement;
-        const nextBtn = container.querySelector('#mermaid-next-theme') as HTMLButtonElement;
+        const select = container.querySelector('#mermaid-theme-select') as HTMLSelectElement | null;
 
-        select?.addEventListener('change', (e) => {
+        listen(container, '#mermaid-theme-select', 'change', (e) => {
             this.currentTheme = (e.target as HTMLSelectElement).value as MermaidThemeName;
             this.applyTheme();
         });
 
-        prevBtn?.addEventListener('click', () => {
+        const stepTheme = (delta: number) => {
             const idx = themes.indexOf(this.currentTheme);
-            this.currentTheme = themes[(idx - 1 + themes.length) % themes.length];
+            this.currentTheme = themes[(idx + delta + themes.length) % themes.length];
             if (select) select.value = this.currentTheme;
             this.applyTheme();
-        });
-
-        nextBtn?.addEventListener('click', () => {
-            const idx = themes.indexOf(this.currentTheme);
-            this.currentTheme = themes[(idx + 1) % themes.length];
-            if (select) select.value = this.currentTheme;
-            this.applyTheme();
-        });
+        };
+        listen(container, '#mermaid-prev-theme', 'click', () => stepTheme(-1));
+        listen(container, '#mermaid-next-theme', 'click', () => stepTheme(1));
     }
 
     private createVisualizationControls(): void {
-        if (!this.hudContainer) return;
-
         const container = this.createSection(
             'View',
             `
@@ -474,39 +477,24 @@ export class MermaidPlugin extends BaseSystemPlugin {
       `,
         );
 
-        container
-            .querySelector('#mermaid-zoom-in')
-            ?.addEventListener('click', () => this.sg.cameraControls.zoom(1.25));
-        container
-            .querySelector('#mermaid-zoom-out')
-            ?.addEventListener('click', () => this.sg.cameraControls.zoom(0.8));
-        container
-            .querySelector('#mermaid-fit')
-            ?.addEventListener('click', () => this.sg.fitView(150, 1.5));
-        container.querySelector('#mermaid-3d')?.addEventListener('click', () => this.toggle3D());
-
-        container.querySelector('#mermaid-auto-animate')?.addEventListener('change', (e) => {
+        listen(container, '#mermaid-zoom-in', 'click', () => this.sg.cameraControls.zoom(1.25));
+        listen(container, '#mermaid-zoom-out', 'click', () => this.sg.cameraControls.zoom(0.8));
+        listen(container, '#mermaid-fit', 'click', () => this.sg.fitView(150, 1.5));
+        listen(container, '#mermaid-3d', 'click', () => this.toggle3D());
+        listen(container, '#mermaid-auto-animate', 'change', (e) => {
             this.autoAnimate = (e.target as HTMLInputElement).checked;
         });
-
-        container.querySelector('#mermaid-subgraphs')?.addEventListener('change', (e) => {
+        listen(container, '#mermaid-subgraphs', 'change', (e) => {
             this.enableSubgraphs = (e.target as HTMLInputElement).checked;
         });
     }
 
     private toggle3D(): void {
         const camera = this.sg.renderer.camera as PerspectiveCamera;
-        if (camera.isPerspectiveCamera) {
-            const ortho = new OrthographicCamera(-100, 100, 100, -100, 0.1, 10000);
-            if (ortho) {
-                (this.sg.cameraControls as any).switchCamera?.(ortho, { duration: 0.5 });
-            }
-        } else {
-            const perspective = new PerspectiveCamera(75, 1, 0.1, 10000);
-            if (perspective) {
-                (this.sg.cameraControls as any).switchCamera?.(perspective, { duration: 0.5 });
-            }
-        }
+        const next = camera.isPerspectiveCamera
+            ? new OrthographicCamera(-100, 100, 100, -100, 0.1, 10000)
+            : new PerspectiveCamera(75, 1, 0.1, 10000);
+        (this.sg.cameraControls as any).switchCamera?.(next, { duration: 0.5 });
         this.sg.renderer.scheduleRender();
     }
 
@@ -587,16 +575,7 @@ export class MermaidPlugin extends BaseSystemPlugin {
 
             if (memberNodes.length === 0) continue;
 
-            let minX = Number.POSITIVE_INFINITY,
-                minY = Number.POSITIVE_INFINITY,
-                maxX = Number.NEGATIVE_INFINITY,
-                maxY = Number.NEGATIVE_INFINITY;
-            for (const mn of memberNodes) {
-                minX = Math.min(minX, mn.position.x);
-                minY = Math.min(minY, mn.position.y);
-                maxX = Math.max(maxX, mn.position.x);
-                maxY = Math.max(maxY, mn.position.y);
-            }
+            const { minX, minY, maxX, maxY } = boundsXY(memberNodes.map((mn) => mn.position));
 
             const centerX = (minX + maxX) / 2;
             const centerY = (minY + maxY) / 2;

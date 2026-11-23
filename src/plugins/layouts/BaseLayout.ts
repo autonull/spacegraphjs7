@@ -4,6 +4,7 @@
 import { Vector3 } from 'three';
 import { BaseSystemPlugin } from '../BaseSystemPlugin';
 import type { Node } from '../../nodes/Node';
+import { DEFAULT_NODE_PADDING, diagonalRadius } from '../../layout/node-bounds';
 
 /**
  * Layout options for apply()
@@ -12,6 +13,7 @@ export interface LayoutOptions {
     animate?: boolean;
     duration?: number;
     skipPinned?: boolean;
+    nodePadding?: number;
 
     [key: string]: unknown;
 }
@@ -43,6 +45,14 @@ export abstract class BaseLayout<
 
     get settings(): Options {
         return this.config;
+    }
+
+    protected nodePadding(config: Options): number {
+        return config.nodePadding ?? DEFAULT_NODE_PADDING;
+    }
+
+    protected collisionRadius(node: Node, padding = 0): number {
+        return diagonalRadius(node.getLayoutBounds(), padding);
     }
 
     /**

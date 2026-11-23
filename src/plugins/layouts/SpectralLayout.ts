@@ -41,13 +41,10 @@ export class SpectralLayout extends BaseLayout<SpectralLayoutOptions> {
 
         // Size-aware collision settle post-pass (like ForceLayout's separation pass)
         if (config.separateOverlaps !== false) {
-            const padding = config.nodePadding ?? 20;
+            const padding = this.nodePadding(config);
             separateOverlappingNodes(
                 nodes,
-                (node) => {
-                    const bounds = node.getLayoutBounds();
-                    return Math.hypot(bounds.width, bounds.height) / 2 + padding;
-                },
+                (node) => this.collisionRadius(node, padding),
                 () => false,
                 30,
             );

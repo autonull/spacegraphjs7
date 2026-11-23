@@ -66,7 +66,7 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
             iterations: config.iterations ?? 50,
             seed: config.seed ?? 42,
             depthStep: 64,
-            nodePadding: config.nodePadding ?? 20,
+            nodePadding: this.nodePadding(config),
             attraction: config.attraction ?? 0.01,
             repulsion: config.repulsion ?? 10000,
             damping: config.damping ?? 0.9,
@@ -130,7 +130,7 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
         this.#core.run(
             nodes,
             (node) => this.#getEdgeLinks(node),
-            (node) => this.#getNodeRadius(node, config.nodePadding ?? 20),
+            (node) => this.collisionRadius(node, this.nodePadding(config)),
             (node) => this.isPinned(node),
             (node, z) => { node.position.z = z; },
         );
@@ -140,16 +140,6 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
             if (this.isPinned(node)) continue;
             this.syncPosition(node);
         }
-    }
-
-    /**
-     * Get the effective collision radius for a node: diagonal of its bounds + padding.
-     * This is half the distance two nodes need to sit side by side without overlapping.
-     */
-    #getNodeRadius(node: Node, padding: number): number {
-        const bounds = node.getLayoutBounds();
-        const diagonal = Math.hypot(bounds.width, bounds.height);
-        return diagonal / 2 + padding;
     }
 
     /** Get edge links for a node (source or target). */

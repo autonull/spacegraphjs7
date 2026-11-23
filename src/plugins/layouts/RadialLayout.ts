@@ -28,7 +28,7 @@ export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
         const root = nodes.get(resolvedRootId) as Node;
         this.applyPosition(root, new Vector3(0, 0, config.z));
 
-        const padding = config.nodePadding ?? 20;
+        const padding = this.nodePadding(config);
 
         // First pass: compute max height per depth for auto radiusStep
         const maxHeightByDepth = new Map<number, number>();

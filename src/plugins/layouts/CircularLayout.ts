@@ -18,7 +18,7 @@ export class CircularLayout extends BaseLayout<CircularLayoutOptions> {
     readonly name = 'Circular Layout';
 
     protected place(nodes: Node[], config: CircularLayoutOptions): void {
-        const padding = config.nodePadding ?? 20;
+        const padding = this.nodePadding(config);
 
         // Compute node diagonal radii and angular shares
         const radii: number[] = [];
@@ -26,8 +26,7 @@ export class CircularLayout extends BaseLayout<CircularLayoutOptions> {
         let totalShare = 0;
         for (const node of nodes) {
             const bounds = node.getLayoutBounds();
-            const diagonalRadius = Math.hypot(bounds.width, bounds.height) / 2;
-            radii.push(diagonalRadius);
+            radii.push(this.collisionRadius(node));
             const share = bounds.width + padding;
             shares.push(share);
             totalShare += share;

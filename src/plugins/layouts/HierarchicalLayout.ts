@@ -59,7 +59,7 @@ export class HierarchicalLayout extends BaseLayout<HierarchicalLayoutOptions> {
             appendTo(byLevel, lv, id);
         }
 
-        const padding = config.nodePadding ?? 20;
+        const padding = this.nodePadding(config);
 
         // Compute max height per level for auto levelHeight
         const maxHeightByLevel = new Map<number, number>();

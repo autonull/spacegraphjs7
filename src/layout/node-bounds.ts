@@ -1,5 +1,14 @@
 export type NodeBounds = { width: number; height: number; depth: number };
 
+/** Extra padding between nodes used by layout defaults. */
+export const DEFAULT_NODE_PADDING = 20;
+
+/** Half a node's bounding-box diagonal, plus optional padding. */
+export const diagonalRadius = (
+    { width, height }: Pick<NodeBounds, 'width' | 'height'>,
+    padding = 0,
+): number => Math.hypot(width, height) / 2 + padding;
+
 export const DEFAULT_NODE_BOUNDS: NodeBounds = { width: 200, height: 100, depth: 1 };
 
 /** Bounds declared by a node's data or class, before any render-dependent fallback. */

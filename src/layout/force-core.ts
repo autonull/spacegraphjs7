@@ -1,4 +1,5 @@
 import { buildOctree, computeBarnesHutForce, type BarnesHutConfig } from './octree';
+import { DEFAULT_NODE_PADDING, diagonalRadius } from './node-bounds';
 
 /** The force placement's vocabulary: what pulls a box towards another one. */
 export interface ForceMeta {
@@ -53,7 +54,6 @@ export interface ForceCoreConfig {
 const DEFAULT_SPACING = 240;
 const DEFAULT_ITERATIONS = 300;
 const DEFAULT_DEPTH_STEP = 64;
-const DEFAULT_NODE_PADDING = 20;
 const DEFAULT_ATTRACTION = 0.01;
 const DEFAULT_REPULSION = 10000;
 const DEFAULT_GRAVITY = 0.1;
@@ -110,20 +110,11 @@ export class ForceCore {
      */
     getNodeRadius(item: { width: number; height?: number; meta?: ForceMeta } | { getLayoutBounds(): { width: number; height: number } }, padding?: number): number {
         const effectivePadding = padding ?? this.#nodePadding;
-        let width: number, height: number;
-
-        if ('getLayoutBounds' in item) {
-            const bounds = item.getLayoutBounds();
-            width = bounds.width;
-            height = bounds.height;
-        } else {
-            width = item.width;
-            height = item.height ?? item.width; // default to width if height not provided
-        }
-
-        // Diagonal radius: half the diagonal of the bounding box
-        const diagonal = Math.hypot(width, height);
-        return diagonal / 2 + effectivePadding;
+        if ('getLayoutBounds' in item) return diagonalRadius(item.getLayoutBounds(), effectivePadding);
+        return diagonalRadius(
+            { width: item.width, height: item.height ?? item.width },
+            effectivePadding,
+        );
     }
 
     /**

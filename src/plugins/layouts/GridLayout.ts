@@ -20,7 +20,7 @@ export class GridLayout extends BaseLayout<GridLayoutOptions> {
 
     protected place(nodes: Node[], config: GridLayoutOptions): void {
         const cols = config.columns > 0 ? config.columns : Math.ceil(Math.sqrt(nodes.length));
-        const padding = config.nodePadding ?? 20;
+        const padding = this.nodePadding(config);
 
         // Auto-compute spacing from node diagonal radii when not explicitly provided
         // Using diagonal radius (hypot(width, height)/2 + padding) ensures non-overlap in both axes
@@ -30,9 +30,8 @@ export class GridLayout extends BaseLayout<GridLayoutOptions> {
         if (spacingX === undefined || spacingY === undefined) {
             let maxDiagonalRadius = 0;
             for (const node of nodes) {
-                const bounds = node.getLayoutBounds();
-                const diagonalRadius = Math.hypot(bounds.width, bounds.height) / 2 + padding;
-                if (diagonalRadius > maxDiagonalRadius) maxDiagonalRadius = diagonalRadius;
+                const radius = this.collisionRadius(node, padding);
+                if (radius > maxDiagonalRadius) maxDiagonalRadius = radius;
             }
             // Spacing = 2 * maxDiagonalRadius = max diagonal + 2*padding
             const computedSpacing = 2 * maxDiagonalRadius;

@@ -27,7 +27,7 @@ export class ClusterLayout extends BaseLayout<ClusterLayoutOptions> {
             appendTo(clusters, key, node);
         }
 
-        const padding = config.nodePadding ?? 20;
+        const padding = this.nodePadding(config);
 
         // Compute auto nodeRadius (micro-ring) per cluster: max member radius + padding
         const clusterNodeRadius = new Map<string, number>();
