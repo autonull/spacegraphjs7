@@ -10,7 +10,7 @@ Inputs inspected:
 - Implementation: `app/pi/index.html`, `app/pi/study.html`, `app/pi/src/host.ts`, `src/catalog.ts`, `src/panel.ts`, `src/shell/{tokens,inspector,frames}.ts`, `src/study-page.ts`, `src/study.ts`, `src/capabilities.ts`, `src/shots.ts`.
 - Purpose and protocol: `README.md:201-235`, `app/pi/README.md`, `docs/pi-study.md`, `docs/screenshots/README.md`.
 
-Relation to the existing audit: `docs/screenshots/audit.json` (same date) covers pixel-level legibility, overlap, keyboard, transcript arrangements and reduced motion; every finding there is closed. This audit does **not** re-report AUDIT-01…07. It covers task-level usability, information architecture, ergonomics, learnability, semantics and aesthetics — the dimensions the existing gates do not measure.
+Relation to the existing audit: `docs/screenshots/reports/audit.json` (same date) covers pixel-level legibility, overlap, keyboard, transcript arrangements and reduced motion; every finding there is closed. This audit does **not** re-report AUDIT-01…07. It covers task-level usability, information architecture, ergonomics, learnability, semantics and aesthetics — the dimensions the existing gates do not measure.
 
 ## User and task model
 

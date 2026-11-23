@@ -130,7 +130,7 @@ octaves raise card size, label floor and spacing until the graph carries the can
 
 1. Add `occupancy` and `labelCoverage` to the measurement path (`app/pi/src/policy/measurement.ts`,
    `scripts/baseline.ts`) and report them for the six fit shots plus the cockpit shot.
-2. Write the baseline to `docs/screenshots/presence-baseline.json` and add a regression test that checks
+2. Write the baseline to `docs/screenshots/reports/presence-baseline.json` and add a regression test that checks
    the metric shape, not a target value.
 3. Expose the metric in the baseline report output (`pnpm exec tsx scripts/baseline.ts --presence`)
    without gating on it yet.
@@ -267,7 +267,7 @@ experiment with a labelled pair (handoff note 6).**
 3. **Pi opt-in and evidence.** `ui/presets.ts` adds `scale-aware` (`?ui=`/`lab.scale-aware`), host
    re-solves scope spacing and scales cards through the existing size seam, and the named shot
    captures a labelled incumbent/variant pair. `presenceVariant()` writes
-   `docs/screenshots/presence-scale-aware.json`: wide-mid occupancy 0.0652 → 0.1024 with label
+   `docs/screenshots/reports/presence-scale-aware.json`: wide-mid occupancy 0.0652 → 0.1024 with label
    coverage 0.5556 → 0.8889; wide-near 0.0881 → 0.1184; both far samples unchanged. No default
    changed, so no shipped gallery incumbent was overwritten.
 
@@ -326,7 +326,7 @@ the right direction. The new opt-in `chapters` view answers the fuller brief: ea
 card with its work as internal chips, the Run card indexes the turns, the failure chip carries severity,
 and a compact two-column grid replaces scattered cards and long diagonals. `?graphLayout=chapters` or
 `g` reaches it; the freeform default is unchanged pending the logged ADR 0008 decision. Evidence:
-`pi/pi-agent-chapters.png`, `review.json:chapters` and `graph-layout/comparison.json:chapters-subgraphs`.
+`pi/pi-agent-chapters.png`, `review.json:chapters` and `reports/graph-layout-comparison.json:chapters-subgraphs`.
 
 ### General ergonomic heuristics (library, not Pi defaults)
 

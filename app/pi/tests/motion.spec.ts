@@ -36,7 +36,9 @@ test.describe('Pi activity pulse', () => {
 
     test('with/without comparison records both variants', async ({ page }) => {
         const out = resolve('../../docs/screenshots/motion');
+        const reports = resolve('../../docs/screenshots/reports');
         mkdirSync(out, { recursive: true });
+        mkdirSync(reports, { recursive: true });
         const frames: Buffer[] = [];
         const pulses: string[] = [];
         const states: { settled: boolean; center: unknown; zoom: number }[] = [];
@@ -64,7 +66,7 @@ test.describe('Pi activity pulse', () => {
         writeFileSync(resolve(out, 'with.png'), frames[0]!);
         writeFileSync(resolve(out, 'without.png'), frames[1]!);
         writeFileSync(
-            resolve(out, 'comparison.json'),
+            resolve(reports, 'motion-comparison.json'),
             `${JSON.stringify(
                 {
                     demand: 'TODO4.md demand record 2026-11-22',

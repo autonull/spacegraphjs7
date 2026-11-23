@@ -1,7 +1,7 @@
 {
   "demand": "TODO4.md demand record 2026-11-22",
   "variants": {
-    "motion": "pi-pulse-b 120ms",
+    "motion": "pi-pulse-a 120ms",
     "reducedMotion": "none auto"
   },
   "states": [

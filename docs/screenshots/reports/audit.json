@@ -446,8 +446,8 @@
           "evidence": [
             "docs/screenshots/edges/without.png",
             "docs/screenshots/edges/with.png",
-            "docs/screenshots/edges/comparison.json",
-            "docs/screenshots/edges/decision.json"
+            "docs/screenshots/reports/edges-comparison.json",
+            "docs/screenshots/reports/edges-decision.json"
           ],
           "gates": [
             "app/pi/tests/attention.test.ts",

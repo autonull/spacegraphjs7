@@ -7,7 +7,7 @@
       "status": "experiment; default not flipped",
       "incumbent": "freeform (ScopeSimulation root force + grid-packed child scopes)",
       "variant": "timeline (?graphLayout=timeline, reachable by hook and permalink)",
-      "data": "docs/screenshots/graph-baseline.json",
+      "data": "docs/screenshots/reports/graph-baseline.json",
       "metrics": {
         "incumbent": { "width": 2521.8, "height": 1171.95, "ratio": 0.465, "meanEdgeLength": 469.13, "overlaps": 0 },
         "variant": { "width": 992, "height": 416, "ratio": 0.419, "meanEdgeLength": 259.11, "overlaps": 0 }
@@ -21,7 +21,7 @@
       "status": "experiment; default not flipped",
       "incumbent": "freeform (18 scattered cards, turn card plus turn lane, long cross-turn diagonals)",
       "variant": "chapters (?graphLayout=chapters or g): one card per turn, children as internal chips, compact 2-column grid",
-      "data": "docs/screenshots/graph-baseline.json — chapters measured from the packed card layout (CHAPTER_CARD 360x200, 1600x900 viewport); all other modes remain solver-position metrics",
+      "data": "docs/screenshots/reports/graph-baseline.json — chapters measured from the packed card layout (CHAPTER_CARD 360x200, 1600x900 viewport); all other modes remain solver-position metrics",
       "metrics": {
         "incumbent": { "width": 2521.8, "height": 1171.95, "ratio": 0.465, "meanEdgeLength": 469.13, "overlaps": 0 },
         "variant": { "width": 416, "height": 496, "ratio": 1.192, "meanEdgeLength": 411.08, "overlaps": 0 }
@@ -65,7 +65,7 @@
       "status": "experiment; opt-in via ?ribbonCorridor=1",
       "incumbent": "direct cross-scope causal ribbon through the card field",
       "variant": "FluxEdge corridor waypoints carried in opaque data.ribbon.path",
-      "data": "docs/screenshots/graph-baseline.json (crossScopeDiagonals: freeform 0, tree 3, force 2)",
+      "data": "docs/screenshots/reports/graph-baseline.json (crossScopeDiagonals: freeform 0, tree 3, force 2)",
       "effect": "Cross-scope causal ribbons leave the node field; source tint and arrowhead are preserved. No new contract field or renderer branch.",
       "images": "pending — recapture cockpit and node-detail with the flag on and off",
       "decision": "pending human review"

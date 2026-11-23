@@ -9,7 +9,7 @@ contact sheet are disposable. Pending visual work is indexed in `experiments.jso
 | ---- | -------- | --- |
 | `pi/` | Curated flagship shots named by `app/pi/src/shots.ts` | tracked |
 | `labs/` | Generated incumbent/variant pairs (`ui-presets/`, `scenario-workflow-chapters/`, `scale-lab/`) | ignored |
-| `graph-layout/`, `scenario/`, `motion/`, `edges/` | Comparison decisions and baselines | tracked |
+| `reports/` | Comparison decisions and baselines with stable names (`graph-baseline.json`, `graph-layout-comparison.json`, `scenario-comparison.json`, `motion-comparison.json`, `edges-comparison.json`, `edges-decision.json`, `audit.json`) | tracked |
 | `atlas/`, `demo-atlas/`, `inner-layout/`, `retro-style/`, `capture/` | Visual-gate output | ignored |
 | `review.json`, `experiments.json` | Human verdicts and the pending-work index | tracked |
 | `index.html` | Local contact sheet | ignored |

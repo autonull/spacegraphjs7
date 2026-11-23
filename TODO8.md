@@ -36,7 +36,7 @@ integration, comparison artifacts, gallery evidence, and the test-agility work i
 
 **Out of scope:** a new policy vector version, new contract fields or renderer branches, a second
 position authority, arbitrary CSS injection, changes to the 36-cell study matrix, and reopening closed
-findings in `docs/screenshots/audit.json`.
+findings in `docs/screenshots/reports/audit.json`.
 
 ---
 
@@ -290,7 +290,7 @@ pilot result has been fabricated.
    correctly and raises `__overlapsForced` after pinning; both gates pass at `retries: 0` style waits
    with no fixed sleeps.
 3. **Graph baseline snapshot (§6 row 3) stays a gate.** `tests/graph-layout.test.ts` deep-equals
-   `docs/screenshots/graph-baseline.json` and ran green inside `check:fast`. No layout changed in these
+   `docs/screenshots/reports/graph-baseline.json` and ran green inside `check:fast`. No layout changed in these
    slices, so the snapshot was not regenerated. If a layout change lands, capture `measure()` from that
    test into the JSON, review the diff, and keep the invariant assertions at lines 38–83 as the
    behavioral gate.

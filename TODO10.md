@@ -127,10 +127,10 @@ XR/sound/haptics; a second flagship; default promotion while TODO9 verdicts are 
 
 | Phase | Landed (file:line) | Commands | Gate | Non-goal honored |
 | ----- | ------------------ | -------- | ---- | ---------------- |
-| 0 | E1 `test/e2e/demo-atlas.spec.ts:100` (one page per standalone HTML demo); B1 `app/pi/src/fixture.ts:108`, `app/pi/src/host.ts:351`; B2 `app/pi/scripts/baseline.ts:34`, `app/pi/src/graph-layout.ts:202`, `docs/screenshots/graph-baseline.json`; A1 `app/pi/src/chrome.ts:6`, `app/pi/tests/shell.spec.ts:52` | `pnpm --filter pi check:fast`; `pnpm --filter pi exec playwright test --config playwright.config.ts tests/shell.spec.ts tests/graph-layout.spec.ts --workers=1`; `SG_DEMO_ATLAS_FILTER=layout pnpm run test:demo-atlas`; `pnpm run test:demo-atlas` | Pi unit 179/179; targeted chrome 2/2; short repro 4/4 (one-world passes with 8 preceding frames); full demo-atlas 4/4 (one-world passes in the 42-frame HTML loop) | No renderer change: gate isolates WebGL contexts per page. No default flip. `#proof-line`, `#settings-menu > div`, `#attention` hooks unchanged. |
+| 0 | E1 `test/e2e/demo-atlas.spec.ts:100` (one page per standalone HTML demo); B1 `app/pi/src/fixture.ts:108`, `app/pi/src/host.ts:351`; B2 `app/pi/scripts/baseline.ts:34`, `app/pi/src/graph-layout.ts:202`, `docs/screenshots/reports/graph-baseline.json`; A1 `app/pi/src/chrome.ts:6`, `app/pi/tests/shell.spec.ts:52` | `pnpm --filter pi check:fast`; `pnpm --filter pi exec playwright test --config playwright.config.ts tests/shell.spec.ts tests/graph-layout.spec.ts --workers=1`; `SG_DEMO_ATLAS_FILTER=layout pnpm run test:demo-atlas`; `pnpm run test:demo-atlas` | Pi unit 179/179; targeted chrome 2/2; short repro 4/4 (one-world passes with 8 preceding frames); full demo-atlas 4/4 (one-world passes in the 42-frame HTML loop) | No renderer change: gate isolates WebGL contexts per page. No default flip. `#proof-line`, `#settings-menu > div`, `#attention` hooks unchanged. |
 | 1 | A2 `app/pi/src/ui/presets.ts:129`, `app/pi/src/host.ts:3086`; B3 `app/pi/src/graph-layout.ts:99`, `app/pi/src/shots.ts:~290`; B4 `app/pi/src/host.ts:2246`, `app/pi/tests/graph-layout.spec.ts:34`; A3 `app/pi/src/ui/presets.ts:156`, `app/pi/index.html:~55` | `pnpm --filter pi check:fast`; `pnpm --filter pi exec playwright test --config playwright.config.ts tests/shell.spec.ts tests/graph-layout.spec.ts tests/ui-presets.spec.ts --workers=1`; `pnpm --filter pi shot chapters,chapters-wide,ui-menus,ui-statusline`; `pnpm --filter pi shots:compare && pnpm --filter pi compare:ui` | Pi unit 180/180; E2E 33/33; 4 new named shots captured; 14 compare pairs captured | Three opt-ins only (`statusline`, `chapters-wide`, `menus`). Pending stubs in `review.json` and the two `comparison.json` files; no default flipped. |
 | 2 | C1 `src/experiments/shot.ts:6`, `src/experiments/catalog.ts:15`, `app/pi/src/catalog.ts:1`, `app/demo/second-host.ts:36`, `app/demo/tests/second-host.test.ts:27` | `pnpm run build:lib`; `pnpm check`; `pnpm --filter demo test` | Root typecheck green; demo unit 39/39 | Host vocabulary stays in Pi/demo; library seam reads only `id`, `label`, `href`. No second position authority or renderer branch. |
-| 3 | C2 `app/demo/html/core/scenario.html`, `app/demo/src/registry.ts:30`, `app/demo/tests/scenario.spec.ts`; C3 `packages/create-spacegraph/templates/spine.ts:~75`, `packages/create-spacegraph/domain.js:393`; C4 `app/demo/tests/scenario-compare.spec.ts:20`, `docs/screenshots/scenario/comparison.json` | `pnpm run generate:registry`; `pnpm --filter demo exec playwright test --config playwright.config.ts tests/scenario.spec.ts tests/scenario-compare.spec.ts --workers=1`; spine template in a temp generated-host layout (3/3) | Demo E2E 3/3 + pair recapture 1/1; registry now 3 hosts / 42 HTML / 45 modules | Scenario lab uses fixture positions or `chapterPacking` through one model seam. Generated app declares scenes as data. Pair is regenerable and gitignored; no default flip. |
+| 3 | C2 `app/demo/html/core/scenario.html`, `app/demo/src/registry.ts:30`, `app/demo/tests/scenario.spec.ts`; C3 `packages/create-spacegraph/templates/spine.ts:~75`, `packages/create-spacegraph/domain.js:393`; C4 `app/demo/tests/scenario-compare.spec.ts:20`, `docs/screenshots/reports/scenario-comparison.json` | `pnpm run generate:registry`; `pnpm --filter demo exec playwright test --config playwright.config.ts tests/scenario.spec.ts tests/scenario-compare.spec.ts --workers=1`; spine template in a temp generated-host layout (3/3) | Demo E2E 3/3 + pair recapture 1/1; registry now 3 hosts / 42 HTML / 45 modules | Scenario lab uses fixture positions or `chapterPacking` through one model seam. Generated app declares scenes as data. Pair is regenerable and gitignored; no default flip. |
 | 4 | E2 `test/hardening.test.ts:76`; E3 `docs/api-compatibility-review.md` | `pnpm exec tsc --noEmit -p tsconfig.json`; `pnpm test` | Root tsc green; root vitest 1042/1042 | E2 asserts the documented cache contract without changing `Node`. E3 removes no export; aliases stay until the next minor. |
 
 Final gates: root `pnpm check`, `pnpm exec tsc --noEmit -p tsconfig.json`, `pnpm test` (1042); Pi `check:fast` (180), E2E `shell`/`graph-layout`/`ui-presets` (33) and `browser`/`readable` (19); full `test:demo-atlas` (4); Pi 4 named shots + 14 compare pairs; demo scenario E2E (3) and proof pair (1). All green in one final pass. No flaky retry was used to turn a red gate green.
@@ -177,7 +177,7 @@ Requested after the plan closed: a layout that shows scale itself, not just one 
   so the ¼× work cards become readable — the zoom half of the claim.
 - **Evidence:** `pi/pi-agent-dynamic-range.png` (incumbent), `pi/pi-agent-octaves.png` (variant),
   `pi/pi-agent-octaves-near.png` (zoom evidence); pending decision `multi-octave-range` in
-  `docs/screenshots/graph-layout/comparison.json` and note-only entries in `review.json`.
+  `docs/screenshots/reports/graph-layout-comparison.json` and note-only entries in `review.json`.
 - **Gates:** root typecheck/1047 tests, Pi `check:fast` 181, Pi screenshot capture 3/3, full vision
   suite 25/25 before the final radius tuning, then the graph-arrangement vision gate 1/1 after it.
   Default layout remains `freeform`; renderer code is untouched.
@@ -275,8 +275,8 @@ output stays out of git. Keep the current Pi shots and gates green while the lab
 
 - Keep the `pi-agent-` filename prefix. The directory is the curator boundary; renaming 38 files
   would churn every table and note without adding information.
-- Move curated shots into `pi/` and generated pairs into `labs/`. Leave comparison JSON and baselines
-  in their current folders; the `reports/` grouping is a deferred second step (below).
+- Move curated shots into `pi/`, generated pairs into `labs/`, and tracked decisions/baselines into
+  `reports/`. Generated pairs keep their comparison JSON beside the images. Landed in §10 and §12.
 - The lab reuses the generic `octaveLayout` and one renderer. Its only library change is a
   `shape: 'ring' | 'spiral'` option on that helper; ring stays the default with byte-identical output.
 - No candidate is promoted to Pi. ADR 0008 still requires a human verdict, and porting the step
@@ -306,11 +306,8 @@ gate green. Generated pairs and the contact sheet stay out of git.
    study notes. ADR 0008 stays closed until then.
 2. **Scale-lab port (optional).** Landed as the opt-in `octaves-palette` shot in §11. The verdict is
    still pending; no default flip.
-3. **`reports/` grouping (deferred).** Move `comparison.json` files and baselines into
-   `docs/screenshots/reports/` with stable names, then update `app/pi/scripts/baseline.ts`,
-   `app/pi/tests/graph-layout.test.ts`, `app/pi/tests/motion.spec.ts`, `app/pi/scripts/ui-compare.ts`,
-   `app/pi/src/ui/evidence.ts` and doc references. Deferred because those writers/readers are green
-   today and the move adds no experiment capability.
+3. **`reports/` grouping.** Landed in §12. Generated `labs/ui-presets/comparison.json` stays beside
+   its pairs; every tracked decision and baseline moved to `docs/screenshots/reports/`.
 4. **C4 follow-up / E3 follow-up.** C4 publish check landed in §11; E3 remains a next-minor task.
 
 ---
@@ -321,7 +318,7 @@ gate green. Generated pairs and the contact sheet stay out of git.
 | ---- | ------------------ | ------------ |
 | Opt-in palette seam | `app/pi/src/host.ts` (`OCTAVE_PALETTE`, `#octavePalette`, URL `octavePalette=1`, existing `data.style.backgroundColor` seam); `app/pi/src/shots.ts` `octavePalette` flag and `octaves-palette` shot | Root `tsc`; Pi `check:fast`; existing hook tests unchanged |
 | Fixture by shot data | `app/pi/src/fixture.ts` `fixtureFor(fixture, scenario)`; `Shot.fixture`; `octaves`, `octaves-near`, `octaves-palette` and `chapters` declare their fixture | Pair uses the same 1+4+12 tree; no id-based inference |
-| Pair and decision | `docs/screenshots/pi/pi-agent-octaves-palette.png`; pending `octave-palette` entry in `graph-layout/comparison.json`, note in `review.json`, entry in `experiments.json`, row in README | `pnpm --filter pi shot octaves,octaves-palette`; visual comparison of both frames; default layout remains `freeform` |
+| Pair and decision | `docs/screenshots/pi/pi-agent-octaves-palette.png`; pending `octave-palette` entry in `reports/graph-layout-comparison.json`, note in `review.json`, entry in `experiments.json`, row in README | `pnpm --filter pi shot octaves,octaves-palette`; visual comparison of both frames; default layout remains `freeform` |
 | Behaviour test | `app/pi/tests/graph-layout.spec.ts` — palette off by default, on for the shot, identical positions | Pi graph-layout E2E |
 | C4 publish check | `script/publish-check.ts` packs shared, kernel and the three domain packages; `script/publish-check/consumer/check.ts` asserts each published vocabulary loads | `pnpm run test:publish` green |
 
@@ -334,7 +331,37 @@ was re-run after that fix; no flaky retry turned a red gate green.
 ### 11.1 Remaining work after this pass
 
 1. **Human verdicts (blocking).** Unchanged from §10.1 item 1, now including `octave-palette`.
-2. **`reports/` grouping (deferred).** Unchanged from §10.1 item 3.
+2. **`reports/` grouping.** Landed in §12; no longer deferred.
 3. **E3 follow-up (next minor).** Add `@deprecated` pointers to the aliases in
    `docs/api-compatibility-review.md`; do not remove them earlier.
 4. **Study pilot.** A screenshot proves structure, not task benefit. No study result is claimed.
+
+---
+
+## 12. Reports grouping (2026-11-23)
+
+Closed the last deferred item from §9.2. All tracked decisions and baselines now live in
+`docs/screenshots/reports/` with stable names; the generated `labs/ui-presets/comparison.json` stays
+beside its image pairs because it is regenerated with them.
+
+| Moved | New name |
+| ----- | -------- |
+| `audit.json`, `graph-baseline.json`, `presence-baseline.json`, `presence-scale-aware.json` | same names under `reports/` |
+| `edges/comparison.json`, `edges/decision.json` | `reports/edges-comparison.json`, `reports/edges-decision.json` |
+| `graph-layout/comparison.json`, `motion/comparison.json`, `scenario/comparison.json` | `reports/graph-layout-comparison.json`, `reports/motion-comparison.json`, `reports/scenario-comparison.json` |
+
+Writers and readers updated: `app/pi/scripts/baseline.ts` (3 baselines), `app/pi/tests/motion.spec.ts`
+(comparison output), `app/pi/tests/graph-layout.test.ts` (baseline lookup), plus every path in
+`review.json`, `experiments.json`, the moved reports, README and the historical plans. The contact
+sheet is regenerated from source data, so its stale paths disappear on the next `--sheet` run.
+
+Verification: root `check`, `tsc`, `test`; Pi `check:fast`; `motion.spec.ts` and `graph-layout.spec.ts`
+E2E (13 tests) with the baseline read and comparison write exercised; contact sheet regenerated.
+All green.
+
+### 12.1 Remaining work after this pass
+
+1. **Human verdicts (blocking).** D1 TODO9 verdicts, the study pilot and the nine pending entries in
+   `experiments.json`. No default flip until ADR 0008 is satisfied.
+2. **E3 follow-up (next minor).** Add `@deprecated` pointers to the aliases in
+   `docs/api-compatibility-review.md`; do not remove them earlier.

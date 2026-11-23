@@ -39,7 +39,7 @@ describe('graph layouts', () => {
 
     it('matches the recorded baseline for every view', () => {
         const path = ['docs', '../docs', '../../docs']
-            .map((up) => resolve(process.cwd(), up, 'screenshots/graph-baseline.json'))
+            .map((up) => resolve(process.cwd(), up, 'screenshots/reports/graph-baseline.json'))
             .find(existsSync)!;
         const recorded = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
         expect(measure()).toEqual(recorded);

@@ -172,14 +172,14 @@ export function presenceVariant(target = 0.12): PresenceComparison {
 
 if (process.argv[1]?.endsWith('baseline.ts')) {
     if (process.argv.includes('--graph')) {
-        const file = resolve(import.meta.dirname, '../../../docs/screenshots/graph-baseline.json');
+        const file = resolve(import.meta.dirname, '../../../docs/screenshots/reports/graph-baseline.json');
         writeFileSync(file, `${JSON.stringify(measure(), null, 2)}\n`);
         console.log(`wrote ${file}`);
     } else if (process.argv.includes('--presence-variant')) {
         const report = presenceVariant();
         const file = resolve(
             import.meta.dirname,
-            '../../../docs/screenshots/presence-scale-aware.json',
+            '../../../docs/screenshots/reports/presence-scale-aware.json',
         );
         writeFileSync(file, `${JSON.stringify(report, null, 2)}\n`);
         console.log(JSON.stringify(report.samples, null, 2));
@@ -187,7 +187,7 @@ if (process.argv[1]?.endsWith('baseline.ts')) {
         const report = presenceBaseline();
         const file = resolve(
             import.meta.dirname,
-            '../../../docs/screenshots/presence-baseline.json',
+            '../../../docs/screenshots/reports/presence-baseline.json',
         );
         writeFileSync(file, `${JSON.stringify(report, null, 2)}\n`);
         console.log(JSON.stringify(report, null, 2));

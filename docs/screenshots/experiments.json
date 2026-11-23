@@ -13,7 +13,7 @@
         "variant": "docs/screenshots/pi/pi-agent-chapters-wide.png"
       },
       "command": "pnpm --filter pi shot chapters,chapters-wide",
-      "decision": "docs/screenshots/graph-layout/comparison.json#chapters-wide"
+      "decision": "docs/screenshots/reports/graph-layout-comparison.json#chapters-wide"
     },
     {
       "id": "ui-menus",
@@ -83,7 +83,7 @@
         "variant": "docs/screenshots/labs/scenario-workflow-chapters/variant.png"
       },
       "command": "cd app/demo && pnpm exec playwright test --config playwright.config.ts tests/scenario-compare.spec.ts --workers=1",
-      "decision": "docs/screenshots/scenario/comparison.json"
+      "decision": "docs/screenshots/reports/scenario-comparison.json"
     },
     {
       "id": "multi-octave-range",
@@ -97,7 +97,7 @@
         "variant": "docs/screenshots/pi/pi-agent-octaves.png"
       },
       "command": "pnpm --filter pi shot octaves,dynamic-range,octaves-near",
-      "decision": "docs/screenshots/graph-layout/comparison.json#multi-octave-range"
+      "decision": "docs/screenshots/reports/graph-layout-comparison.json#multi-octave-range"
     },
     {
       "id": "octave-palette",
@@ -111,7 +111,7 @@
         "variant": "docs/screenshots/pi/pi-agent-octaves-palette.png"
       },
       "command": "pnpm --filter pi shot octaves,octaves-palette",
-      "decision": "docs/screenshots/graph-layout/comparison.json#octave-palette"
+      "decision": "docs/screenshots/reports/graph-layout-comparison.json#octave-palette"
     },
     {
       "id": "scale-lab-geometry",

@@ -31,7 +31,7 @@ graph itself. The two documents do not overlap.
 | Area | State | Evidence |
 | ---- | ----- | -------- |
 | Prior plan | complete | `TODO6.md:232-247`; commits `28a2c8a`, `aaf9543`, `e197a7c`, `9c83535`, `8df5221` |
-| Audit | closed | `docs/screenshots/audit.json`: 13 findings, 21 shot verdicts, all triaged and closed |
+| Audit | closed | `docs/screenshots/reports/audit.json`: 13 findings, 21 shot verdicts, all triaged and closed |
 | Gallery | reviewed | all 21 verdicts in `docs/screenshots/review.json` |
 | Position authority | one | `ScopeSimulation` springs chase solved targets; no in-memory tool loop |
 | Root scope | freeform force | `app/pi/src/scopes.ts:183-203`; `ScopeSimulation` seeded zero-gravity, `seed 7` |
@@ -275,11 +275,11 @@ default has been flipped; every new view stays opt-in.
 
 | Phase | Status | Evidence |
 | ----- | ------ | -------- |
-| 0 — baseline and vocabulary | complete | `docs/screenshots/graph-baseline.json`; `app/pi/scripts/baseline.ts`; `app/pi/tests/graph-layout.test.ts` |
+| 0 — baseline and vocabulary | complete | `docs/screenshots/reports/graph-baseline.json`; `app/pi/scripts/baseline.ts`; `app/pi/tests/graph-layout.test.ts` |
 | 1 — graph arrangements | complete except the study gate | six views by URL/hook/permalink, including the transposed `timeline-rows`; automated flexibility gate green below; default flip still needs the study result and an ADR 0008 decision |
 | 2 — visible structure | complete for this increment | square hulls and number + state-glyph tabs; reserved child lane clears the last parent/child overlap; baseline regenerated |
 | 3 — cross-scope ribbons | complete for this increment | `FluxEdge` corridor via opaque `data`; `bundleCorridor()`; unit tests in `test/FluxEdge.test.ts`; gallery recaptured, human decision pending |
-| 4 — default polish | blocked on human decision | `docs/screenshots/graph-layout/comparison.json`; no default changed, so no ADR 0008 decision is claimed |
+| 4 — default polish | blocked on human decision | `docs/screenshots/reports/graph-layout-comparison.json`; no default changed, so no ADR 0008 decision is claimed |
 | 5 — verification and handoff | gates green, verdicts pending | root `check`, `app/pi` `check:fast`, `test:e2e`, `verify:visual`, `shots:all` and `scale` all green; gallery recaptured but verdicts in `review.json` need a human |
 
 ### Gates run in this increment
@@ -345,13 +345,13 @@ positions; aligned transcript; square scope hulls and turn tabs; opt-in corridor
 2. **Gallery verdicts and ADR evidence (Phases 2–4 — human).** Shots are recaptured and current.
    Inspect the contact sheet at `docs/screenshots/index.html` (including the new `timeline-rows`
    shot), assign verdicts in `docs/screenshots/review.json`, and log human decisions in
-   `docs/screenshots/graph-layout/comparison.json`. The `images` and `decision` fields there are still
+   `docs/screenshots/reports/graph-layout-comparison.json`. The `images` and `decision` fields there are still
    `pending`; do not auto-assign verdicts from green gates.
 3. **Phase 4 defaults (human).** Lower ambient glow with selective halos, rank-driven ribbon width,
    flat dark backdrop and `ladder.minLabelPx` → 16. Each needs its own incumbent/variant pair and an
    ADR 0008 decision. None were changed here, so no decision is implied.
 4. **Final docs pass (after items 1–3).** Update `docs/pi-study-ui-audit.md` only if a finding is
-   actually closed; do not edit closed findings in `docs/screenshots/audit.json`.
+   actually closed; do not edit closed findings in `docs/screenshots/reports/audit.json`.
 
 ### User decisions recorded
 
@@ -365,7 +365,7 @@ positions; aligned transcript; square scope hulls and turn tabs; opt-in corridor
 
 ### Handoff notes
 
-1. Do not edit closed findings in `docs/screenshots/audit.json`; reopen work with a new entry.
+1. Do not edit closed findings in `docs/screenshots/reports/audit.json`; reopen work with a new entry.
 2. A new arrangement is an opt-in experiment first. Promotion to default follows ADR 0008 and the
    study stop rule, never visual preference alone.
 3. If a phase needs a new contract field, stop and record the blocker instead of adding a branch.

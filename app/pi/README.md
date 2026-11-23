@@ -109,7 +109,7 @@ focus, camera and transcript scroll. `chapters` is the compact subgraph view: on
 Run, each holding its own work as internal chips, so turn cards, turn lanes and long cross-turn
 diagonals do not duplicate each other. The default stays
 `freeform` until the study decision and the ADR 0008 record in
-`docs/screenshots/graph-layout/comparison.json` close.
+`docs/screenshots/reports/graph-layout-comparison.json` close.
 
 ## Provider
 
