@@ -61,6 +61,16 @@ describe('second reference host', () => {
         expect(host.playSession.energy).toBe(0);
     });
 
+    it('recognizes gestures through the promoted touch recognizer', () => {
+        const host = new SecondHost();
+        host.setFlight([10, 20, 30]);
+        host.dispatchTouch({ x: 0, y: 0, at: 0 }, 'down');
+        host.dispatchTouch({ x: 0, y: -100, at: 20 }, 'move');
+        expect(host.dispatchTouch({ x: 0, y: -100, at: 30 }, 'up')).toBe('swipeUp');
+        expect(host.touchActions).toEqual(['swipeUp']);
+        expect(host.moves.some((move) => move.startsWith('flyTo:'))).toBe(true);
+    });
+
     it('runs the library vision loop without owning layout state', async () => {
         const offline = new SecondHost();
         expect(offline.visionLoop.reportUnsupported()).toHaveLength(1);

@@ -1,4 +1,4 @@
-import { addEdge, addNode, type JsonValue, type KernelOp } from '@spacegraphjs/kernel';
+import { addEdge, addNode, DomainEventMapper, type KernelOp } from '@spacegraphjs/kernel';
 
 export type DataEvent =
     | {
@@ -90,15 +90,13 @@ export type DataEvent =
       };
 
 /** Converts host events into KernelOps. Hosts may use it or write their own. No host vocabulary inside. */
-export class DataEventMapper {
-    #ordinal = 0;
-
-    constructor(private readonly prefix = 'data') {}
+export class DataEventMapper extends DomainEventMapper {
+    constructor(prefix = 'data') {
+        super(prefix);
+    }
 
     map(event: DataEvent): readonly KernelOp[] {
-        const id = (...parts: (string | undefined)[]): string =>
-            [this.prefix, ...parts.filter((part): part is string => Boolean(part))].join(':');
-        const next = (): string => String(++this.#ordinal);
+        const { id, next } = this;
         const root = id(event.pipelineId, 'pipeline');
         const owner = (stepID: string | undefined, runID: string | undefined): string =>
             runID ? id(event.pipelineId, runID) : stepID ? id(event.pipelineId, stepID) : root;

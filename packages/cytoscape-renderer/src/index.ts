@@ -1,6 +1,5 @@
 import {
     ModelRenderer,
-    type DepthMode,
     type FitOptions,
     type GraphRenderer,
     type Projection,
@@ -41,7 +40,6 @@ export class CytoscapeRenderer extends ModelRenderer implements GraphRenderer {
     #cy: Core | null = null;
     #canvas: HTMLDivElement | null = null;
     #overlay: HTMLDivElement | null = null;
-    #theme: RenderTheme | null = null;
     #cards = new Map<string, HTMLDivElement>();
 
     async mount(
@@ -51,7 +49,7 @@ export class CytoscapeRenderer extends ModelRenderer implements GraphRenderer {
         if (this.#cy) return;
         try {
             const { default: cytoscape } = await import('cytoscape');
-            this.#theme = normalizeTheme(options.theme);
+            this.setThemeInternal(options.theme);
             const doc = container.ownerDocument;
             const view = doc.defaultView;
             if (view?.getComputedStyle(container).position === 'static')
@@ -70,7 +68,7 @@ export class CytoscapeRenderer extends ModelRenderer implements GraphRenderer {
             const cy = cytoscape({
                 container: canvas,
                 elements: [],
-                style: cytoscapeStyle(this.#theme),
+                style: cytoscapeStyle(this.getTheme()!),
                 layout: { name: 'preset', fit: false },
                 wheelSensitivity: 0.2,
             });
@@ -84,12 +82,12 @@ export class CytoscapeRenderer extends ModelRenderer implements GraphRenderer {
         }
     }
 
-    protected getTheme(): RenderTheme | null {
-        return this.#theme;
+    protected override setThemeInternal(theme: RenderTheme): void {
+        super.setThemeInternal(normalizeTheme(theme));
     }
 
-    protected setThemeInternal(theme: RenderTheme): void {
-        this.#theme = normalizeTheme(theme);
+    protected onThemeChanged(theme: RenderTheme): void {
+        this.#cy?.style(cytoscapeStyle(theme));
     }
 
     // Override template methods to use Cytoscape
@@ -303,22 +301,6 @@ export class CytoscapeRenderer extends ModelRenderer implements GraphRenderer {
         this.#cards.clear();
     }
 
-    setTheme(theme: RenderTheme): void {
-        this.#theme = normalizeTheme(theme);
-        const cy = this.#cy;
-        if (!cy) return;
-        cy.style(cytoscapeStyle(this.#theme));
-        if (this.model) this.setModel(this.model);
-    }
-
-    setProjection(_projection: Projection): void {}
-    setDepth(_depth: DepthMode): void {}
-
-    dispose(): void {
-        this.cleanup();
-        super.dispose();
-    }
-
     #bind(): void {
         const cy = this.#cy!;
         cy.on('tap', 'node', (event) => this.emit('nodeClick', { id: event.target.id() }));
@@ -353,7 +335,7 @@ export class CytoscapeRenderer extends ModelRenderer implements GraphRenderer {
             .filter((node) => node.html && node.visible !== false)
             .slice(0, this.capabilities.maxDomNodes);
         const wanted = new Set(cards.map((node) => node.id));
-        const direction = this.#theme?.direction ?? '';
+        const direction = this.getTheme()?.direction ?? '';
 
         for (const node of cards) {
             const existing = this.#cards.get(node.id);

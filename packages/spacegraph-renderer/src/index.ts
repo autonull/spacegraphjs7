@@ -47,7 +47,6 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
     readonly capabilities = CAPABILITIES;
 
     #sg: SpaceGraph | null = null;
-    #theme: RenderTheme | null = null;
     #nodeTypes = new Map<string, string>();
     #band: string | undefined;
 
@@ -63,7 +62,7 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
         if (this.#sg) return;
         try {
             const { SpaceGraph } = await import('spacegraphjs/activity');
-            this.#theme = options.theme;
+            this.setThemeInternal(options.theme);
             const ortho = options.projection === '2d';
             const sg = await SpaceGraph.create(
                 container,
@@ -94,12 +93,7 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
         }
     }
 
-    protected getTheme(): RenderTheme | null {
-        return this.#theme;
-    }
-
-    protected setThemeInternal(theme: RenderTheme): void {
-        this.#theme = theme;
+    protected onThemeChanged(theme: RenderTheme): void {
         if (this.#sg) this.#sg.options.theme = spaceGraphTheme(theme);
     }
 

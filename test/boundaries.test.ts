@@ -62,6 +62,23 @@ describe('promoted helper reuse', () => {
     }
 });
 
+describe('touch recognizer promotion', () => {
+    it('has one library definition and two host consumers', () => {
+        expect(readFileSync(resolve(root, 'src/input/TouchRecognizer.ts'), 'utf8')).toContain(
+            'export class TouchRecognizer',
+        );
+        expect(readFileSync(resolve(root, 'app/pi/src/touch.ts'), 'utf8')).toContain(
+            'TouchRecognizer',
+        );
+        expect(readFileSync(resolve(root, 'app/demo/second-host.ts'), 'utf8')).toContain(
+            'TouchRecognizer',
+        );
+        expect(readFileSync(resolve(root, 'app/pi/src/touch.ts'), 'utf8')).not.toContain(
+            'export class TouchRecognizer',
+        );
+    });
+});
+
 describe('instrument kit promotion', () => {
     it('has one library definition and two host consumers', () => {
         expect(readFileSync(resolve(root, 'src/widgets/instrument-kit.ts'), 'utf8')).toContain(

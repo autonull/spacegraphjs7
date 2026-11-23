@@ -164,7 +164,7 @@ export const {{kind}}Domain = defineDomain<{{Name}}View>({
     vocabulary: {{kind}}Vocabulary,
 });
 `,
-    'domain/src/mapping.ts': `import type { JsonValue, KernelOp } from '@spacegraphjs/kernel';
+    'domain/src/mapping.ts': `import { DomainEventMapper, type JsonValue, type KernelOp } from '@spacegraphjs/kernel';
 
 export type {{Name}}Event =
     | { readonly type: 'run-start'; readonly runId: string }
@@ -178,10 +178,12 @@ const edge = (kind: string, source: string, target: string): KernelOp =>
     ({ op: 'add-edge', edge: { id: kind + ':' + source + ':' + target, kind, source, target } });
 
 /** Replace this skeleton with your event stream. Emit ordinary edges; never an inferred cause. */
-export class {{Name}}EventMapper {
-    constructor(private readonly prefix = '{{name}}') {}
+export class {{Name}}EventMapper extends DomainEventMapper {
+    constructor(prefix = '{{name}}') {
+        super(prefix);
+    }
     map(event: {{Name}}Event): readonly KernelOp[] {
-        const id = (...parts: string[]) => [this.prefix, ...parts].join(':');
+        const { id } = this;
         switch (event.type) {
             case 'run-start':
                 return [addNode(id(event.runId, 'run'), '{{kind}}', '{{Name}}', { status: 'active' })];

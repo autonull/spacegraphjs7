@@ -16,6 +16,20 @@ export const addEdge = (kind: string, source: string, target: string): KernelOp 
     edge: { id: `${kind}:${source}:${target}`, kind, source, target },
 });
 
+/** Shared id and ordinal conventions for event-to-op mappers across domains. */
+export abstract class DomainEventMapper {
+    #ordinal = 0;
+
+    protected constructor(protected readonly prefix: string) {}
+
+    /** Qualified id, ignoring empty parts. Bound once so call sites can destructure it. */
+    protected readonly id = (...parts: (string | undefined)[]): string =>
+        [this.prefix, ...parts.filter((part): part is string => Boolean(part))].join(':');
+
+    /** Monotonic id suffix, shared across every map of this mapper. */
+    protected readonly next = (): string => String(++this.#ordinal);
+}
+
 /** Minimal shape a domain contributes to the capability manifest. Structurally matches ManifestEntry. */
 export interface DomainManifestEntry {
     readonly id: string;

@@ -1,4 +1,4 @@
-import { addEdge, addNode, type JsonValue, type KernelOp } from '@spacegraphjs/kernel';
+import { addEdge, addNode, DomainEventMapper, type KernelOp } from '@spacegraphjs/kernel';
 
 export type FilesystemEvent =
     | {
@@ -57,15 +57,13 @@ export type FilesystemEvent =
       };
 
 /** Converts host events into KernelOps. Hosts may use it or write their own. No host vocabulary inside. */
-export class FilesystemEventMapper {
-    #ordinal = 0;
-
-    constructor(private readonly prefix = 'filesystem') {}
+export class FilesystemEventMapper extends DomainEventMapper {
+    constructor(prefix = 'filesystem') {
+        super(prefix);
+    }
 
     map(event: FilesystemEvent): readonly KernelOp[] {
-        const id = (...parts: (string | undefined)[]): string =>
-            [this.prefix, ...parts.filter((part): part is string => Boolean(part))].join(':');
-        const next = (): string => String(++this.#ordinal);
+        const { id, next } = this;
         const root = id(event.commitId, 'commit');
         const owner = (fileID: string | undefined): string =>
             fileID ? id(event.commitId, fileID) : root;

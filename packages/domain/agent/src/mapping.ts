@@ -1,4 +1,4 @@
-import { addEdge, addNode, type JsonValue, type KernelOp } from '@spacegraphjs/kernel';
+import { addEdge, addNode, DomainEventMapper, type JsonValue, type KernelOp } from '@spacegraphjs/kernel';
 
 export type UsageReading = {
     readonly input?: number;
@@ -67,16 +67,15 @@ export type AgentEvent =
       };
 
 /** Converts host events into KernelOps. Hosts may use it or write their own. No host vocabulary inside. */
-export class AgentEventMapper {
-    #ordinal = 0;
+export class AgentEventMapper extends DomainEventMapper {
     #unit = '';
 
-    constructor(private readonly prefix = 'agent') {}
+    constructor(prefix = 'agent') {
+        super(prefix);
+    }
 
     map(event: AgentEvent): readonly KernelOp[] {
-        const id = (...parts: (string | undefined)[]): string =>
-            [this.prefix, ...parts.filter((part): part is string => Boolean(part))].join(':');
-        const next = (): string => String(++this.#ordinal);
+        const { id, next } = this;
         const unitID = ('unitId' in event ? event.unitId : undefined) ?? this.#unit;
 
         switch (event.type) {

@@ -17,3 +17,5 @@ export type {
 export { InputManager } from './InputManager';
 export type { SurfaceTransform } from './SurfaceTransform';
 export { createParentTransform } from './SurfaceTransform';
+export type { TouchGesture, TouchOptions, TouchPoint } from './TouchRecognizer';
+export { TouchRecognizer } from './TouchRecognizer';

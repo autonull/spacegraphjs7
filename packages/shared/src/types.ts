@@ -513,10 +513,7 @@ export interface ScopedOverlayOptions {
 }
 
 /** Graph diff source type. */
-export interface GraphDiffSource {
-    load: (from: string) => void;
-    get: (from: string) => readonly CodeDiff[] | undefined;
-}
+export type GraphDiffSource = CodeDiffSource;
 
 /** Annotation types for notes and traces. */
 export interface UseGraphAnnotationsReturn {

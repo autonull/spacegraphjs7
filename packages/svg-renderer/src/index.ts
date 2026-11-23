@@ -218,22 +218,17 @@ export class SvgRenderer extends ModelRenderer implements GraphRenderer {
     readonly capabilities = SVG_CAPABILITIES;
 
     #container: HTMLElement | null = null;
-    #theme: RenderTheme = DEFAULT_SVG_THEME;
+
+    constructor() {
+        super(DEFAULT_SVG_THEME);
+    }
 
     async mount(
         container: HTMLElement,
         options: { theme: RenderTheme; projection: Projection },
     ): Promise<void> {
         this.#container = container;
-        this.#theme = options.theme;
-    }
-
-    protected getTheme(): RenderTheme {
-        return this.#theme;
-    }
-
-    protected setThemeInternal(theme: RenderTheme): void {
-        this.#theme = theme;
+        this.setThemeInternal(options.theme);
     }
 
     protected applyModel(model: RenderModel, theme: RenderTheme): void {

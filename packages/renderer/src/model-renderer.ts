@@ -23,6 +23,12 @@ export abstract class ModelRenderer extends BaseGraphRenderer {
     #model: RenderModel | null = null;
     #nodes = new Set<string>();
     #edges = new Set<string>();
+    #theme: RenderTheme | null = null;
+
+    constructor(initialTheme: RenderTheme | null = null) {
+        super();
+        this.#theme = initialTheme;
+    }
 
     protected get model(): RenderModel | null {
         return this.#model;
@@ -112,11 +118,19 @@ export abstract class ModelRenderer extends BaseGraphRenderer {
         // Default: no-op.
     }
 
-    /** Get the current theme. Override to store theme internally. */
-    protected abstract getTheme(): RenderTheme | null;
+    /** The current theme. */
+    protected getTheme(): RenderTheme | null {
+        return this.#theme;
+    }
 
-    /** Store the theme internally. Override to store theme. */
-    protected abstract setThemeInternal(theme: RenderTheme): void;
+    /** Store the theme and run backend-specific work. */
+    protected setThemeInternal(theme: RenderTheme): void {
+        this.#theme = theme;
+        this.onThemeChanged(theme);
+    }
+
+    /** Backend-specific work after a theme change. */
+    protected onThemeChanged(_theme: RenderTheme): void {}
 
     // ============= Internal Model Update Logic =============
 

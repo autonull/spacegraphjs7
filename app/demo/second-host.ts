@@ -2,6 +2,7 @@
 // one workspace — camera verbs, one-authority play/reconcile, a legibility-gated rung and an opt-in
 // vision loop. The page owns rendering; this host owns state and behavior.
 
+import { TouchRecognizer, type TouchGesture, type TouchPoint } from 'spacegraphjs/input';
 import { createVisionLoop, type VisionLoop, type VisionLoopAnalyzers } from 'spacegraphjs/vision';
 import {
     MotionDirector,
@@ -20,6 +21,8 @@ import {
 
 export class SecondHost {
     readonly director = new MotionDirector();
+    readonly touch = new TouchRecognizer();
+    readonly touchActions: TouchGesture[] = [];
     readonly cameraMotion: CameraMotionHandlers;
     readonly playSession: PhysicsPlaySession;
     readonly visionLoop: VisionLoop;
@@ -121,5 +124,24 @@ export class SecondHost {
 
     addEnergy(value: number): void {
         this.#energy += value;
+    }
+
+    /** Feeds pointer samples through the promoted recognizer and applies this host's own gesture map. */
+    dispatchTouch(point: TouchPoint, phase: 'down' | 'move' | 'up'): TouchGesture | undefined {
+        if (phase === 'down') {
+            this.touch.down(point);
+            return undefined;
+        }
+        if (phase === 'move') {
+            this.touch.move(point);
+            return undefined;
+        }
+        const gesture = this.touch.up(point);
+        if (gesture) {
+            this.touchActions.push(gesture);
+            if (gesture === 'swipeUp') this.fly(1);
+            if (gesture === 'swipeDown') this.follow(1);
+        }
+        return gesture;
     }
 }
