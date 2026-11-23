@@ -1,5 +1,10 @@
-import { createTraceSelectors, walk, type Trace } from '@spacegraphjs/shared/domain';
-import { AGENT_RELATIONS, dataString, relationOf, roleOf, type AgentView } from './vocabulary';
+import {
+    createTraceSelectors,
+    groupEdgesByTarget,
+    walk,
+    type Trace,
+} from '@spacegraphjs/shared/domain';
+import { AGENT_RELATIONS, dataString, roleOf, type AgentView } from './vocabulary';
 
 export type AgentTrace = Trace;
 
@@ -78,36 +83,12 @@ export type AgentChangedFile = {
 };
 
 /** Changed artifacts carry first-write order, their writers and their readers. */
-export const changedFiles = (view: AgentView): readonly AgentChangedFile[] => {
-    const nodes = new Map(view.nodes.map((node) => [node.id, node]));
-    const isArtifact = (id: string) => {
-        const node = nodes.get(id);
-        return node !== undefined && roleOf(node) === 'artifact';
-    };
-    const writes = new Set<string>(AGENT_RELATIONS.write);
-    const reads = new Set<string>(AGENT_RELATIONS.read);
-    const files = new Map<string, { id: string; path: string; writers: string[]; readers: string[] }>();
-    const order: string[] = [];
-
-    for (const edge of view.edges) {
-        if (!isArtifact(edge.target) || !writes.has(relationOf(edge))) continue;
-        let file = files.get(edge.target);
-        if (!file) {
-            const node = nodes.get(edge.target)!;
-            file = { id: edge.target, path: dataString(node, 'path') ?? node.label, writers: [], readers: [] };
-            files.set(edge.target, file);
-            order.push(edge.target);
-        }
-        file.writers.push(edge.source);
-    }
-
-    for (const edge of view.edges) {
-        if (!isArtifact(edge.target) || !reads.has(relationOf(edge))) continue;
-        files.get(edge.target)?.readers.push(edge.source);
-    }
-
-    return order.map((id) => files.get(id)!);
-};
+export const changedFiles = (view: AgentView): readonly AgentChangedFile[] =>
+    groupEdgesByTarget(view.nodes, view.edges, {
+        isTarget: (node) => roleOf(node) === 'artifact',
+        writes: AGENT_RELATIONS.write,
+        reads: AGENT_RELATIONS.read,
+    });
 
 export const changedArtifacts = (view: AgentView, source?: string): readonly string[] =>
     changedFiles(view)

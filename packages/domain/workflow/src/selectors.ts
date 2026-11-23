@@ -1,11 +1,10 @@
-import { createTraceSelectors, walk, type Trace } from '@spacegraphjs/shared/domain';
 import {
-    WORKFLOW_RELATIONS,
-    dataString,
-    relationOf,
-    roleOf,
-    type WorkflowView,
-} from './vocabulary';
+    createTraceSelectors,
+    groupEdgesByTarget,
+    walk,
+    type Trace,
+} from '@spacegraphjs/shared/domain';
+import { WORKFLOW_RELATIONS, dataString, roleOf, type WorkflowView } from './vocabulary';
 
 export type WorkflowTrace = Trace;
 
@@ -62,41 +61,12 @@ export type WorkflowArtifactFlow = {
     readonly readers: readonly string[];
 };
 
-export const artifactProducers = (view: WorkflowView): readonly WorkflowArtifactFlow[] => {
-    const nodes = new Map(view.nodes.map((node) => [node.id, node]));
-    const isArtifact = (id: string) => {
-        const node = nodes.get(id);
-        return node !== undefined && roleOf(node) === 'artifact';
-    };
-    const writes = new Set<string>(WORKFLOW_RELATIONS.write);
-    const reads = new Set<string>(WORKFLOW_RELATIONS.read);
-    const flows = new Map<
-        string,
-        { id: string; path: string; writers: string[]; readers: string[] }
-    >();
-    const order: string[] = [];
-
-    for (const edge of view.edges) {
-        if (!isArtifact(edge.target) || !writes.has(relationOf(edge))) continue;
-        if (!flows.has(edge.target)) {
-            const node = nodes.get(edge.target)!;
-            flows.set(edge.target, {
-                id: edge.target,
-                path: dataString(node, 'path') ?? node.label,
-                writers: [],
-                readers: [],
-            });
-            order.push(edge.target);
-        }
-        flows.get(edge.target)!.writers.push(edge.source);
-    }
-    for (const edge of view.edges) {
-        if (!isArtifact(edge.target) || !reads.has(relationOf(edge))) continue;
-        flows.get(edge.target)?.readers.push(edge.source);
-    }
-
-    return order.map((id) => flows.get(id)!);
-};
+export const artifactProducers = (view: WorkflowView): readonly WorkflowArtifactFlow[] =>
+    groupEdgesByTarget(view.nodes, view.edges, {
+        isTarget: (node) => roleOf(node) === 'artifact',
+        writes: WORKFLOW_RELATIONS.write,
+        reads: WORKFLOW_RELATIONS.read,
+    });
 
 /** Steps in a subworkflow that produced artifacts, directly or through their runs. */
 export const subworkflowContributions = (

@@ -22,6 +22,66 @@ export const relationOf = (edge: {
     readonly data?: Readonly<Record<string, unknown>>;
 }): string => dataString(edge, 'relation') ?? edge.kind;
 
+type GroupableNode = {
+    readonly id: string;
+    readonly kind: string;
+    readonly label?: string;
+    readonly data?: Readonly<Record<string, unknown>>;
+};
+
+type GroupableEdge = {
+    readonly source: string;
+    readonly target: string;
+    readonly kind: string;
+    readonly data?: Readonly<Record<string, unknown>>;
+};
+
+export type EdgeTargetGroup = {
+    id: string;
+    path: string;
+    writers: string[];
+    readers: string[];
+};
+
+/** Edges grouped by target in first-write order, with the sources that write and read each target. */
+export const groupEdgesByTarget = (
+    nodes: readonly GroupableNode[],
+    edges: readonly GroupableEdge[],
+    options: {
+        isTarget: (node: GroupableNode) => boolean;
+        writes: Iterable<string>;
+        reads?: Iterable<string>;
+    },
+): EdgeTargetGroup[] => {
+    const byID = new Map(nodes.map((node) => [node.id, node]));
+    const writes = new Set(options.writes);
+    const reads = new Set(options.reads ?? []);
+    const groups = new Map<string, EdgeTargetGroup>();
+    const order: string[] = [];
+
+    for (const edge of edges) {
+        const node = byID.get(edge.target);
+        if (!node || !options.isTarget(node) || !writes.has(relationOf(edge))) continue;
+        let group = groups.get(edge.target);
+        if (!group) {
+            group = {
+                id: edge.target,
+                path: dataString(node, 'path') ?? (node.label as string),
+                writers: [],
+                readers: [],
+            };
+            groups.set(edge.target, group);
+            order.push(edge.target);
+        }
+        group.writers.push(edge.source);
+    }
+    for (const edge of edges) {
+        if (!groups.has(edge.target) || !reads.has(relationOf(edge))) continue;
+        groups.get(edge.target)!.readers.push(edge.source);
+    }
+    return order.map((id) => groups.get(id)!);
+};
+
 /** Facet role tag reads `data.role`, then `data.kind` (not `node.kind`). */
 export const facetRoleOf = (
     node: { readonly data?: Readonly<Record<string, unknown>> },

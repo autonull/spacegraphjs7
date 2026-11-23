@@ -1,11 +1,10 @@
-import { createTraceSelectors, walk, type Trace } from '@spacegraphjs/shared/domain';
 import {
-    FILESYSTEM_RELATIONS,
-    dataString,
-    relationOf,
-    roleOf,
-    type FileSystemView,
-} from './vocabulary';
+    createTraceSelectors,
+    groupEdgesByTarget,
+    walk,
+    type Trace,
+} from '@spacegraphjs/shared/domain';
+import { FILESYSTEM_RELATIONS, roleOf, type FileSystemView } from './vocabulary';
 
 export type FilesystemTrace = Trace;
 
@@ -42,26 +41,8 @@ export type ChangeOrigin = {
 };
 
 /** Changes with their writers, in first-write order. */
-export const changeOrigins = (view: FileSystemView): readonly ChangeOrigin[] => {
-    const nodes = new Map(view.nodes.map((node) => [node.id, node]));
-    const writes = new Set<string>(FILESYSTEM_RELATIONS.write);
-    const origins = new Map<string, { id: string; path: string; producers: string[] }>();
-    const order: string[] = [];
-
-    for (const edge of view.edges) {
-        if (!writes.has(relationOf(edge))) continue;
-        const node = nodes.get(edge.target);
-        if (!node || roleOf(node) !== 'change') continue;
-        if (!origins.has(node.id)) {
-            origins.set(node.id, {
-                id: node.id,
-                path: dataString(node, 'path') ?? node.label,
-                producers: [],
-            });
-            order.push(node.id);
-        }
-        origins.get(node.id)!.producers.push(edge.source);
-    }
-
-    return order.map((id) => origins.get(id)!);
-};
+export const changeOrigins = (view: FileSystemView): readonly ChangeOrigin[] =>
+    groupEdgesByTarget(view.nodes, view.edges, {
+        isTarget: (node) => roleOf(node) === 'change',
+        writes: FILESYSTEM_RELATIONS.write,
+    }).map(({ id, path, writers }) => ({ id, path, producers: writers }));
