@@ -1123,6 +1123,12 @@ export class PiHost {
               )
             : undefined;
 
+        const portalByScope = new Map<string, string>();
+        for (const [nodeID, scope] of this.#portalByNode) {
+            if (!portalByScope.has(scope)) portalByScope.set(scope, nodeID);
+        }
+        const nodeByID = new Map(this.#view.nodes.map((node) => [node.id, node]));
+
         for (const spec of this.#specs) {
             if (spec.id === 'run') continue;
             const rect = solved?.get(this.scopePath(spec));
@@ -1144,8 +1150,8 @@ export class PiHost {
                 element.className = 'field-hull';
                 return element;
             });
-            const portalID = [...this.#portalByNode].find(([, scope]) => scope === spec.id)?.[0];
-            const portal = portalID ? this.#view.nodes.find((node) => node.id === portalID) : undefined;
+            const portalID = portalByScope.get(spec.id);
+            const portal = portalID ? nodeByID.get(portalID) : undefined;
             const status = String(portal?.data?.status ?? portal?.status ?? '');
             const turn = portalID ? (this.#view.turns ?? []).indexOf(portalID) + 1 : 0;
             const label = spec.id.startsWith('delegate-')

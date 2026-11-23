@@ -127,14 +127,20 @@ function extractSubgraph(
     const visited = new Set<string>([rootId]);
     const queue = [rootId];
     const nodes: BuildNode[] = [root];
+    const nodeByID = new Map(model.nodes.map((node) => [node.id, node]));
+    const childrenByID = new Map<string, BuildModel['edges'][number][]>();
+    for (const edge of model.edges) {
+        if (edge.kind !== options.childEdgeKind) continue;
+        const list = childrenByID.get(edge.source) ?? [];
+        list.push(edge);
+        childrenByID.set(edge.source, list);
+    }
 
     while (queue.length > 0) {
         const current = queue.shift()!;
-        for (const edge of model.edges) {
-            if (edge.source !== current) continue;
-            if (edge.kind !== options.childEdgeKind) continue;
+        for (const edge of childrenByID.get(current) ?? []) {
             if (visited.has(edge.target)) continue;
-            const node = model.nodes.find((n) => n.id === edge.target);
+            const node = nodeByID.get(edge.target);
             if (!node) continue;
             visited.add(edge.target);
             nodes.push(node);
