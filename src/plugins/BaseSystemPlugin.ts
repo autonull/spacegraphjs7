@@ -62,12 +62,6 @@ export abstract class BaseSystemPlugin implements Plugin {
         return node.isPinned?.() ?? node.data?.pinned === true;
     }
 
-    protected isStatic(node: Node): boolean {
-        return (
-            (node.isPinned?.() ?? node.data?.pinned === true) || node.data?.physicsStatic === true
-        );
-    }
-
     protected on(eventName: string, callback: (...args: any[]) => void): void {
         const sub = this.events.on(eventName as any, callback);
         this.subscriptions.push(sub);

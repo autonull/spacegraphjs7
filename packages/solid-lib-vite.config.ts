@@ -16,3 +16,16 @@ export const solidLibConfig = (entry: Record<string, string>, external: (string 
             rollupOptions: { external },
         },
     });
+
+/** The shared Vite build for a single-entry Solid package with a library name. */
+export const solidSingleLibConfig = (name: string) =>
+    defineConfig({
+        plugins: [solid(), dts({ insertTypesEntry: true, tsconfigPath: './tsconfig.json' })],
+        build: {
+            lib: { entry: './src/index.ts', name, fileName: 'index', formats: ['es'] },
+            rollupOptions: {
+                external: ['solid-js'],
+                output: { globals: { 'solid-js': 'Solid' } },
+            },
+        },
+    });
