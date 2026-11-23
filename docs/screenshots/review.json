@@ -94,6 +94,12 @@
   "chapters": {
     "note": "Opt-in chapters experiment: one card per turn (plus Run), with each turn's work rendered as internal chips and the failure chip tinted by severity. No separate turn lane/card duplication, short inter-chapter edges and a compact two-column grid. Freeform, timeline and every other view stay reachable; no default flipped. Incumbent: pi-agent-in-action.png / pi-agent-timeline-rows.png; variant: docs/screenshots/pi-agent-chapters.png. Human verdict pending in docs/screenshots/graph-layout/comparison.json (chapters-subgraphs)."
   },
+  "octaves": {
+    "note": "Opt-in multi-octave dynamic range (?graphLayout=octaves): root, children and grandchildren are drawn at 1x, 1/2x and 1/4x world scale in one frame, so self-similar structure is visible at fit zoom. Generic helper src/layout/octaves.ts; one position authority; no renderer branch or default flip. Pair: pi-agent-dynamic-range.png / pi-agent-octaves.png. Human verdict pending in docs/screenshots/graph-layout/comparison.json (multi-octave-range)."
+  },
+  "octaves-near": {
+    "note": "Zoom evidence for the multi-octave experiment: framing one second-octave branch promotes its quarter-scale work cards to legible size without changing the layout or renderer. Regenerable with pnpm --filter pi shot octaves-near."
+  },
   "scenario-workflow-chapters": {
     "note": "Two-domain proof pair: the second host applies the generic chapter grid to the workflow domain through one position source, with no renderer branch or host vocabulary in the library. Incumbent/variant pair: docs/screenshots/scenario-workflow-chapters/{incumbent,variant}.png. Human verdict pending in docs/screenshots/scenario/comparison.json."
   },

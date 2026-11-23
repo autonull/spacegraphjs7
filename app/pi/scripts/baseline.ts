@@ -81,6 +81,8 @@ export function measure(
     const results: Record<string, ReturnType<typeof graphShape>> = {};
 
     for (const mode of GRAPH_LAYOUTS) {
+        // A scale experiment, not a footprint comparison: its cards deliberately overlap across octaves.
+        if (mode === 'octaves') continue;
         if (mode === 'chapters') {
             const view = chapterCards(baseline.view);
             const packed = computeGraphLayout(view, mode, undefined, BASELINE_VIEWPORT)!;

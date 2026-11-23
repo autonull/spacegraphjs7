@@ -3,7 +3,7 @@
 // vision loop. The page owns rendering; this host owns state and behavior.
 
 import { catalogEntries, findShotByID } from 'spacegraphjs/experiments';
-import { chapterPacking, type Position } from 'spacegraphjs/layout';
+import { chapterPacking, octaveLayout, type Position } from 'spacegraphjs/layout';
 import { innerTree, type InnerSourceEdge, type InnerSourceNode } from 'spacegraphjs/inspect';
 import { TouchRecognizer, type TouchGesture, type TouchPoint } from 'spacegraphjs/input';
 import {
@@ -227,6 +227,11 @@ export class SecondHost {
             (id) => `scenario.html?shot=${encodeURIComponent(id)}`,
             (_id, item) => `Open the ${item.label} scenario`,
         );
+    }
+
+    /** Multi-octave grid for any host-owned parent map; no Pi containment words are involved. */
+    octaveGrid(ids: readonly string[], parentOf: ReadonlyMap<string, string>) {
+        return octaveLayout(ids, parentOf, { card: [360, 200] });
     }
 
     /** Bounded local topology with this host's own containment vocabulary. */

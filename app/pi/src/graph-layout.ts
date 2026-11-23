@@ -1,6 +1,7 @@
 import type { AgentView } from '@spacegraphjs/agent';
 import {
     chapterPacking,
+    octaveLayout,
     solveErgonomicLayout,
     Strategies,
     type ErgonomicsViewport,
@@ -21,6 +22,7 @@ export const GRAPH_LAYOUTS = [
     'lanes',
     'tree',
     'force',
+    'octaves',
 ] as const;
 export type GraphLayoutMode = (typeof GRAPH_LAYOUTS)[number];
 
@@ -40,6 +42,7 @@ function boundsOf(positions: ReadonlyMap<string, Position>, card: readonly [numb
 const CARD: readonly [number, number] = [200, 72];
 export const CHAPTER_CARD: readonly [number, number] = [360, 200];
 export const ERGONOMIC_CARD: readonly [number, number] = [240, 88];
+export const OCTAVE_CARD: readonly [number, number] = [480, 200];
 const LANES = ['run', 'unit', 'message', 'action'] as const;
 
 type Node = LayoutModel['nodes'][number];
@@ -143,6 +146,35 @@ const ergonomicGraphLayout = (view: AgentView, viewport: ErgonomicsViewport): Gr
     };
 };
 
+/** Pi owns the containment vocabulary; the helper only sees a child-to-parent map. */
+const octaveGraphLayout = (
+    view: AgentView,
+    cardScale: number,
+): GraphLayout => {
+    const ids = view.nodes.map((node) => node.id);
+    const parentOf = new Map<string, string>();
+    for (const edge of view.edges) {
+        if (edge.kind === 'contains' || edge.kind === 'delegates') parentOf.set(edge.target, edge.source);
+    }
+    const roots = ids.filter((id) => !parentOf.has(id));
+    for (const edge of view.edges) {
+        if (parentOf.has(edge.target) || edge.target === edge.source) continue;
+        if (roots.includes(edge.source) || parentOf.has(edge.source)) parentOf.set(edge.target, edge.source);
+    }
+    const card: readonly [number, number] = [
+        OCTAVE_CARD[0] * cardScale,
+        OCTAVE_CARD[1] * cardScale,
+    ];
+    const solved = octaveLayout(ids, parentOf, { card });
+    return {
+        positions: solved.positions,
+        octaves: solved.octaves,
+        clusters: new Map(),
+        bounds: solved.bounds,
+        strategy: 'octaves',
+    };
+};
+
 /**
  * Solve the requested graph view over the whole agent view. `previous` warms the append-only views
  * so a streamed turn does not reorder the cards the reader is looking at.
@@ -158,6 +190,7 @@ export function computeGraphLayout(
     if (mode === 'freeform') return undefined;
     if (mode === 'chapters') return chapterLayout(view, previous, viewport, cardScale, columns);
     if (mode === 'ergonomic') return ergonomicGraphLayout(view, viewport);
+    if (mode === 'octaves') return octaveGraphLayout(view, cardScale);
     const rows = mode === 'timeline-rows';
     return Strategies.layoutGraph(layoutModel(view), layoutConfig(view), {
         strategy: rows ? 'timeline' : (mode as LaneLayoutStrategy),

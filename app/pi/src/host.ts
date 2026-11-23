@@ -280,6 +280,7 @@ export class PiHost {
     #cardScale = 1;
     #uiPresetID?: string;
     #graphLayoutPositions?: ReadonlyMap<string, Position>;
+    #octaveScales?: ReadonlyMap<string, { readonly octave: number; readonly scale: number }>;
     #surface: Surface = 'hybrid';
     #depthAxis: DepthAxis = 'turn';
     #depth: DepthMode = 'orbit';
@@ -849,6 +850,7 @@ export class PiHost {
             height: canvas.clientHeight || 900,
         }, this.#cardScale, this.#graphColumns);
         this.#graphLayoutPositions = layout?.positions;
+        this.#octaveScales = layout?.octaves;
         this.simulation.setLayoutTargets(layoutTargets(layout, this.#qualifiedByNode));
         this.simulation.setSpecs(scopes.specs, {
             band: this.band(),
@@ -1038,7 +1040,9 @@ export class PiHost {
         this.#model = {
             ...this.#model,
             nodes: this.#model.nodes.map((node) => {
-                const size = this.cardSize(node.kind, Boolean(node.html), dense);
+                const baseSize = this.cardSize(node.kind, Boolean(node.html), dense);
+                const octaveScale = this.#octaveScales?.get(node.id)?.scale ?? 1;
+                const size = [baseSize[0] * octaveScale, baseSize[1] * octaveScale] as const;
                 const focusScale = scaleForRole(roles.get(node.id) ?? 'none', scales);
                 const activity = this.#activity.get(node.id) ?? 0;
                 const salience = salienceScore(activity, node.emphasis);
@@ -1122,7 +1126,7 @@ export class PiHost {
         const layer = this.#structure;
         if (!layer) return;
         const live = new Set<string>();
-        if (this.#graphLayout === 'chapters') {
+        if (this.#graphLayout === 'chapters' || this.#graphLayout === 'octaves') {
             for (const [, hull] of this.#hulls) hull.remove();
             this.#hulls.clear();
             return;
@@ -1565,6 +1569,7 @@ export class PiHost {
         const scroll = el('transcript-list').scrollTop;
         this.#graphLayout = mode;
         this.#graphLayoutPositions = undefined;
+        this.#octaveScales = undefined;
         this.refresh();
         if (this.#graphMorph && !this.#reducedMotion) {
             this.renderPositions();

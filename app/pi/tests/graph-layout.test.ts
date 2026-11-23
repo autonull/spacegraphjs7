@@ -29,6 +29,7 @@ describe('graph layouts', () => {
             'lanes',
             'tree',
             'force',
+            'octaves',
         ]);
         expect(isGraphLayoutMode('timeline')).toBe(true);
         expect(isGraphLayoutMode('timeline-rows')).toBe(true);
@@ -111,6 +112,16 @@ describe('graph layouts', () => {
         };
         expect(columnsOf(600)).toBe(1);
         expect(columnsOf(2400)).toBe(4);
+    });
+
+    it('places one hierarchy at three simultaneous world scales', () => {
+        const view = richView();
+        const layout = computeGraphLayout(view, 'octaves')!;
+        const scales = [...layout.octaves!.values()].map((entry) => entry.scale);
+        expect(scales).toContain(1);
+        expect(scales).toContain(0.5);
+        expect(scales).toContain(0.25);
+        expect(layout.positions.size).toBe(view.nodes.length);
     });
 
     it('maps solved positions onto qualified simulation ids', () => {

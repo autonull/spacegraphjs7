@@ -14,9 +14,10 @@ test.describe('graph arrangements', () => {
             'lanes',
             'tree',
             'force',
+            'octaves',
         ]);
 
-        for (const mode of ['timeline', 'timeline-rows', 'chapters', 'ergonomic', 'lanes', 'tree', 'force', 'freeform']) {
+        for (const mode of ['timeline', 'timeline-rows', 'chapters', 'ergonomic', 'lanes', 'tree', 'force', 'octaves', 'freeform']) {
             await page.evaluate((value) => (window as any).__pi.setGraphLayout(value), mode);
             expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe(mode);
             expect(await page.evaluate(() => (window as any).__pi.graphShape().nodes)).toBeGreaterThan(0);

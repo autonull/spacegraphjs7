@@ -125,7 +125,9 @@ interface GraphLayout {
     positions: ReadonlyMap<string, Position>;
     clusters: Map<string, LayoutBounds>;
     bounds: LayoutBounds;
-    strategy: LaneLayoutStrategy | 'chapters' | 'ergonomic';
+    strategy: LaneLayoutStrategy | 'chapters' | 'ergonomic' | 'octaves';
+    /** Opaque per-node scale descriptors for multi-octave experiments; hosts decide how to apply them. */
+    readonly octaves?: ReadonlyMap<string, { readonly octave: number; readonly scale: number }>;
 }
 
 /** The column the session's own nodes share, before the first turn's column. */

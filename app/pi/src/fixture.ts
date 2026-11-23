@@ -119,12 +119,77 @@ export const chaptersFixtureOps = (): KernelOp[] => [
 export const chaptersFixtureKernel = (): Kernel =>
     foldKernelOps([...localOps(), ...chaptersFixtureOps()]);
 
+/** A symmetric three-level tree: one root, four branches, three leaves each. Pure scale evidence. */
+export const octavesFixtureOps = (): KernelOp[] => {
+    const root = fixtureID('local', 'oroot');
+    const ops: KernelOp[] = [
+        {
+            op: 'add-node',
+            node: {
+                id: root,
+                kind: 'run',
+                label: 'Root',
+                data: { unitId: 'oroot', role: 'run', status: 'complete' },
+            },
+        },
+    ];
+    for (let branch = 1; branch <= 4; branch++) {
+        const parent = fixtureID('local', `obranch${branch}`);
+        ops.push(
+            {
+                op: 'add-node',
+                node: {
+                    id: parent,
+                    kind: 'unit',
+                    label: `Level ${branch}`,
+                    data: { unitId: `obranch${branch}`, role: 'unit', status: 'complete' },
+                },
+            },
+            {
+                op: 'add-edge',
+                edge: { id: `ocontains-root-${branch}`, kind: 'contains', source: root, target: parent },
+            },
+            {
+                op: 'add-edge',
+                edge: { id: `oorders-root-${branch}`, kind: 'orders', source: root, target: parent },
+            },
+        );
+        for (let leaf = 1; leaf <= 3; leaf++) {
+            const child = fixtureID('local', `oleaf${branch}-${leaf}`);
+            ops.push(
+                {
+                    op: 'add-node',
+                    node: {
+                        id: child,
+                        kind: 'action',
+                        label: `work ${leaf}`,
+                        data: { unitId: `obranch${branch}`, role: 'action', status: 'complete' },
+                    },
+                },
+                {
+                    op: 'add-edge',
+                    edge: { id: `ocontains-${branch}-${leaf}`, kind: 'contains', source: parent, target: child },
+                },
+                {
+                    op: 'add-edge',
+                    edge: { id: `oorders-${branch}-${leaf}`, kind: 'orders', source: parent, target: child },
+                },
+            );
+        }
+    }
+    return ops;
+};
+
+export const octavesFixtureKernel = (): Kernel => foldKernelOps(octavesFixtureOps());
+
 export const fixtureFor = (
     shotID: string | null,
     scenario: string | null,
 ): Kernel | undefined =>
-    shotID === 'chapters'
-        ? chaptersFixtureKernel()
-        : scenario === 'rich'
-          ? richFixtureKernel()
-          : undefined;
+    shotID === 'octaves' || shotID === 'octaves-near'
+        ? octavesFixtureKernel()
+        : shotID === 'chapters'
+          ? chaptersFixtureKernel()
+          : scenario === 'rich'
+            ? richFixtureKernel()
+            : undefined;

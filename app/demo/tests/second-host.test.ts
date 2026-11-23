@@ -41,6 +41,27 @@ describe('second reference host', () => {
         expect(library).not.toContain('turn');
     });
 
+    it('uses the multi-octave helper with this host\'s own parent vocabulary', () => {
+        const host = new SecondHost();
+        const layout = host.octaveGrid(
+            ['root', 'step', 'file'],
+            new Map([
+                ['step', 'root'],
+                ['file', 'step'],
+            ]),
+        );
+        expect(layout.octaves.get('root')).toEqual({ octave: 0, scale: 1 });
+        expect(layout.octaves.get('step')).toEqual({ octave: -1, scale: 0.5 });
+        expect(layout.octaves.get('file')).toEqual({ octave: -2, scale: 0.25 });
+        const sourcePath = [
+            resolve(process.cwd(), 'src/layout/octaves.ts'),
+            resolve(process.cwd(), '../../src/layout/octaves.ts'),
+        ].find(existsSync)!;
+        const source = readFileSync(sourcePath, 'utf8');
+        expect(source).not.toContain('contains');
+        expect(source).not.toContain('pi:local:');
+    });
+
     it('drives camera verbs through the promoted handler and reports the rest unsupported', () => {
         const host = new SecondHost();
         host.setFlight([10, 20, 30]);

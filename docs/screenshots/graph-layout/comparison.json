@@ -31,6 +31,16 @@
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {
+      "id": "multi-octave-range",
+      "status": "experiment; default not flipped",
+      "incumbent": "dynamic-range (?ui preset; one scale at a time, zoom reveals a different LOD)",
+      "variant": "octaves (?graphLayout=octaves) — one hierarchy drawn at 1x, 1/2x and 1/4x world scale",
+      "data": "src/layout/octaves.ts + app/pi/src/graph-layout.ts — one position authority, per-node size from opaque octave descriptors",
+      "effect": "Three self-similar rings are visible in one frame; zooming promotes each smaller ring to a readable card. No renderer branch or default change. No claim about task success or time.",
+      "images": "regenerable pair: docs/screenshots/pi-agent-dynamic-range.png (incumbent), docs/screenshots/pi-agent-octaves.png (variant) via pnpm --filter pi shot octaves,dynamic-range; zoom evidence: docs/screenshots/pi-agent-octaves-near.png",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
       "id": "chapters-wide",
       "status": "experiment; default not flipped",
       "incumbent": "chapters (?graphLayout=chapters) — two packed columns, 1600x900 viewport",

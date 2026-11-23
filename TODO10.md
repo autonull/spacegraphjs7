@@ -152,3 +152,32 @@ Final gates: root `pnpm check`, `pnpm exec tsc --noEmit -p tsconfig.json`, `pnpm
 5. No identified code defect remains from this plan. The one-world crash is a gate-resource limit,
    fixed in the harness by per-demo page isolation; if it reappears with one page per demo, open a
    renderer-focused plan rather than retrying this gate.
+
+---
+
+## 8. Follow-up experiment — multi-octave dynamic range (2026-11-23)
+
+Requested after the plan closed: a layout that shows scale itself, not just one LOD at a time.
+
+- **Hypothesis:** drawing one hierarchy at 1× / ½× / ¼× world scale in a single frame makes the
+  self-similar structure visible at fit zoom, and zooming into one branch promotes its smallest
+  cards to legible detail. This is the first experiment that changes node *size* rather than chrome.
+- **Landed:** generic `octaveLayout(ids, parentOf, options)` at `src/layout/octaves.ts:29`, with a
+  caller-owned parent map and no vocabulary; opaque per-node scale descriptors on `GraphLayout`
+  (`src/layout/strategies.ts:130`); Pi adapter and opt-in mode `octaves`
+  (`app/pi/src/graph-layout.ts:150,193`); host applies scale through the existing `size` seam and
+  hides scope hulls in that mode (`app/pi/src/host.ts:283,1044,1129`); symmetric shot fixture
+  (`app/pi/src/fixture.ts:123`); two named shots (`app/pi/src/shots.ts:217,231`); second-consumer
+  proof (`app/demo/second-host.ts:233`).
+- **Design tuning:** the first capture used a loose ring (factor 2) and the production fixture; it
+  read as scattered cards. The final version uses a tight ring (factor 0.85) and a purpose-built
+  1+4+12 tree, which shortens the ribbons and packs the rosette. `octaves-near` frames one ½× branch
+  so the ¼× work cards become readable — the zoom half of the claim.
+- **Evidence:** `pi-agent-dynamic-range.png` (incumbent), `pi-agent-octaves.png` (variant),
+  `pi-agent-octaves-near.png` (zoom evidence); pending decision `multi-octave-range` in
+  `docs/screenshots/graph-layout/comparison.json` and note-only entries in `review.json`.
+- **Gates:** root typecheck/1047 tests, Pi `check:fast` 181, Pi screenshot capture 3/3, full vision
+  suite 25/25 before the final radius tuning, then the graph-arrangement vision gate 1/1 after it.
+  Default layout remains `freeform`; renderer code is untouched.
+- **Open:** human verdict on `multi-octave-range`. If kept, the next step is a real task study —
+  the screenshot proves the structure, not that the range helps anyone find anything.
