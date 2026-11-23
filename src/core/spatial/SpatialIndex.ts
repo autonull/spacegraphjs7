@@ -1,5 +1,4 @@
 import { Box3, Object3D, Vector3 } from 'three';
-import type { Node } from '../../nodes/Node';
 
 interface SpatialCell {
     nodes: Set<NodeLike>;
@@ -203,87 +202,5 @@ export class SpatialIndex {
             this.nodeCells.set(node, new Set([key]));
             this.getOrCreateCell(x, y, z).nodes.add(node);
         }
-    }
-}
-
-interface BVHNode {
-    bounds: Box3;
-    nodes: Node[];
-    left: BVHNode | null;
-    right: BVHNode | null;
-}
-
-export class BVH {
-    private root: BVHNode | null = null;
-
-    build(nodes: Node[]): void {
-        if (nodes.length === 0) {
-            this.root = null;
-            return;
-        }
-        const bounds = new Box3();
-        for (const node of nodes) {
-            if (node.object) {
-                bounds.expandByObject(node.object);
-            } else {
-                bounds.expandByPoint(node.position);
-            }
-        }
-        this.root = this.buildTree(nodes, bounds, 0);
-    }
-
-    query(box: Box3): Node[] {
-        const result: Node[] = [];
-        if (!this.root) return result;
-        this.queryRecursive(this.root, box, result);
-        return result;
-    }
-
-    private buildTree(nodes: Node[], bounds: Box3, depth: number): BVHNode {
-        const node: BVHNode = { bounds: bounds.clone(), nodes: [], left: null, right: null };
-        if (nodes.length <= 4 || depth > 10) {
-            node.nodes = nodes;
-            return node;
-        }
-        const extent = new Vector3().subVectors(bounds.max, bounds.min);
-        const axis = extent.x > extent.y ? 'x' : 'y';
-        const sorted = [...nodes].sort((a, b) => a.position[axis] - b.position[axis]);
-        const mid = Math.floor(sorted.length / 2);
-        const leftNodes = sorted.slice(0, mid);
-        const rightNodes = sorted.slice(mid);
-        const leftBounds = new Box3();
-        for (const n of leftNodes) {
-            if (n.object) {
-                leftBounds.expandByObject(n.object);
-            } else {
-                leftBounds.expandByPoint(n.position);
-            }
-        }
-        const rightBounds = new Box3();
-        for (const n of rightNodes) {
-            if (n.object) {
-                rightBounds.expandByObject(n.object);
-            } else {
-                rightBounds.expandByPoint(n.position);
-            }
-        }
-        node.left = this.buildTree(leftNodes, leftBounds, depth + 1);
-        node.right = this.buildTree(rightNodes, rightBounds, depth + 1);
-        return node;
-    }
-
-    private queryRecursive(node: BVHNode, box: Box3, result: Node[]): void {
-        if (!node.bounds.intersectsBox(box)) return;
-        for (const n of node.nodes) {
-            if (
-                n.object
-                    ? new Box3().setFromObject(n.object).intersectsBox(box)
-                    : box.containsPoint(n.position)
-            ) {
-                result.push(n);
-            }
-        }
-        if (node.left) this.queryRecursive(node.left, box, result);
-        if (node.right) this.queryRecursive(node.right, box, result);
     }
 }

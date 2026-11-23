@@ -19,12 +19,7 @@ import { depthTreatment, type DepthMode } from 'spacegraphjs/depth';
 import { type GraphLayout } from 'spacegraphjs/layout';
 import { Levels } from 'spacegraphjs/levels';
 import { Navigation } from 'spacegraphjs/navigation';
-import {
-    computeFocusOverlay,
-    getFocusOpacity,
-    isDimmed,
-    FOCUS_OPACITY_STOPS,
-} from '@spacegraphjs/overlays';
+import { computeFocusOverlay, FOCUS_OPACITY_STOPS } from '@spacegraphjs/overlays';
 import {
     collapseGroups,
     graphContentHash,
@@ -52,7 +47,6 @@ import {
     LAYOUT_CONFIG,
     LEVELS,
     OUTCOME_COLUMNS,
-    OUTCOME_INDEX,
     searchableFields,
     summaryConfig,
     type BuildAdapter,
@@ -63,11 +57,9 @@ import {
 } from './model';
 import {
     type TraceConfig,
-    type TraceKind,
     type TraceModel,
     type TraceNode,
     type TraceEdge,
-    classifyTrace,
     traceWhy,
     traceLedHere,
     traceRelated,
@@ -75,8 +67,6 @@ import {
     litNodeIds,
     isLit,
     isAnswer,
-    isEdgeVisible,
-    isAnswerEdge,
     stepLitNode,
 } from '@spacegraphjs/trace';
 import {
@@ -88,14 +78,9 @@ import {
     facetCounts,
     type FacetAccessors,
     SavedQuery,
-    MAX_SAVED_QUERIES,
     saveQuery,
-    removeQuery,
     isSavedQuery,
     normalizeSavedQueries,
-    PaletteAction,
-    PaletteLens,
-    PaletteSurface,
     PaletteSources,
     paletteEntries,
     paletteGroup,
@@ -103,9 +88,7 @@ import {
 import {
     SessionKernel,
     foldKernelOps,
-    GraphHistory,
     createGraphHistory,
-    type GraphSnapshot,
     type KernelOp,
 } from '@spacegraphjs/kernel';
 import {
@@ -747,7 +730,7 @@ export const CAPABILITIES: readonly Capability[] = [
         title: 'Time-travel history',
         modules: ['@spacegraphjs/kernel'],
         summary: 'Capture, checkout, fork, and bounded snapshots over a SessionKernel.',
-        run: (context) => {
+        run: () => {
             // Build a session kernel with some history
             let session = new SessionKernel();
             for (let i = 0; i < 5; i++) {
@@ -759,11 +742,9 @@ export const CAPABILITIES: readonly Capability[] = [
 
             const history = createGraphHistory(session, 3, (v) => `v${v}`);
 
-            // Capture at versions 1, 3, 5
-            session = session.checkpoint().state.version === 5 ? session : session; // already at 5
-            const snap1 = history.captureAt(1);
-            const snap3 = history.captureAt(3);
-            const snap5 = history.captureAt(5);
+            history.captureAt(1);
+            history.captureAt(3);
+            history.captureAt(5);
 
             // Checkout version 2
             const checkedOut = history.checkout(2);

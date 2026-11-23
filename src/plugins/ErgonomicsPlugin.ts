@@ -1,4 +1,5 @@
 import { Vector3 } from 'three';
+import type { SpaceGraphEvents } from '../types';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 
 const ERGONOMICS_CONFIG = {

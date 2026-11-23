@@ -65,7 +65,7 @@ export {
 export { RenderContext } from './RenderContext';
 export { WebGLRenderer } from './WebGLRenderer';
 export { Surface } from './Surface';
-export { BVH, SpatialIndex } from './spatial/SpatialIndex';
+export { SpatialIndex } from './spatial/SpatialIndex';
 export type { EdgeConstructor, NodeConstructor } from './TypeRegistry';
 export { TypeRegistry } from './TypeRegistry';
 export { VisionManager } from './VisionManager';
