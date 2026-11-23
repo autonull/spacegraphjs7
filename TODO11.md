@@ -1,5 +1,9 @@
 # TODO11 — A library developers can build on
 
+> **Status: COMPLETE (2026-11-23).** All six foundations (D1–D6) and the cross-cutting gates are
+> landed and verified; see §6 for evidence. Every item in §7 is external, blocked by publication,
+> deferred to a separate feature, or reserved for the next minor — none is outstanding local work.
+
 Purpose: SpaceGraphJS already has unusually broad mechanisms — three renderers, two framework
 bindings, four domain vocabularies, a layout catalogue, a plugin system and a vision loop. What it
 does not yet have is a dependable path from "I have data" to "I have an application I can ship and
@@ -175,32 +179,18 @@ a red gate green. No human verdict or study result is recorded as developer work
 
 ## 7. Remaining work
 
-The developer-side foundations are now gates. The remaining items are external, next-minor or a new
-feature beyond the plan.
+The developer-side foundations are now gates and the plan is complete. No local implementation is
+outstanding. Each item below is external, blocked by publication, deferred to a separate feature, or
+reserved for the next minor. The "Reopen when" column is the condition that would turn it into work;
+none is met at this commit.
 
-1. **Registry-mode onboarding and published-version upgrade (blocked by publication).** `npm view`
-   returns 404 for both `spacegraphjs` and `create-spacegraph`: neither is on the registry. Literal
-   `pnpm dlx create-spacegraph` and "download the previous release" cannot run offline or in CI today.
-   `test:quickstart` and `check:upgrade` use packed tarballs instead. Add registry-mode jobs only
-   after publication; do not simulate them with mocks.
-2. **D2 previous-release baseline.** `test/fixtures/public-surface.json` was recorded from this
-   checkout, not from an npm release. `check:upgrade` now verifies that baseline against packed
-   declarations, which is the strongest local proof available; a strict npm upgrade remains item 1.
-3. **D3 per-pixel parity (not a goal).** `test:publish` already mounts SpaceGraph and Cytoscape from
-   packed bytes with the shared model, and `test/conformance` covers identity, capabilities and the
-   static SVG draw. The capability matrix records intentional differences. No per-pixel comparison is
-   claimed or needed under the non-goals.
-4. **D4 optional vision helpers (new feature).** The quality floor now checks labels, overlap, DOM
-   budget, edge endpoints, DOM mirror items/roles/tabindex, RTL direction, reduced motion and the
-   preference boundary. `spacegraphVision` and `visionAssert` were never implemented; the quickstart
-   claims were corrected rather than built. Implement them only as a separate feature plan.
-5. **D5 generated-domain benchmark (optional).** `test:extension` runs the generated domain's
-   conformance suite and one-way dependency guard. The benchmark demo still uses the shared registry,
-   not a scaffold-generated host. Add a generated host to the registry if that benchmark is wanted.
-6. **E3 (next minor).** Apply the `@deprecated` pointers listed in `docs/api-compatibility.json` at
-   the minor boundary; keep the aliases until then. `check:compat` makes the manifest ready but does
-   not flip it.
-7. **Local trace and replay (deferred).** The loop's observation side; the measurement side (D4) is
-   now trustworthy, but traces stay local and opt-in and are a separate feature.
-8. **Human verdicts and recruitment (external).** The nine entries in the evidence record and the
-   n ≥ 5 study remain pending. No default may flip from a screenshot alone.
+| # | Item | Category | Blocker / why not now | Reopen when |
+| - | ---- | -------- | --------------------- | ----------- |
+| 1 | Registry-mode onboarding and published-version upgrade | External | `npm view` returns 404 for `spacegraphjs` and `create-spacegraph`; literal `pnpm dlx create-spacegraph` and "download the previous release" cannot run offline or in CI. `test:quickstart` and `check:upgrade` use packed tarballs instead | Both packages are published; add registry-mode jobs then, without mocks |
+| 2 | D2 previous-release baseline | External | `test/fixtures/public-surface.json` was recorded from this checkout, not an npm release; `check:upgrade` against packed declarations is the strongest local proof available | A published release exists; replace the baseline with it (strict npm upgrade also depends on item 1) |
+| 3 | D3 per-pixel parity | Non-goal | `test:publish` mounts SpaceGraph and Cytoscape from packed bytes with the shared model; `test/conformance` covers identity, capabilities and the static SVG draw; the capability matrix records intentional differences | Never under the §5 non-goals |
+| 4 | D4 optional vision helpers (`spacegraphVision`, `visionAssert`) | New feature | The quality floor checks labels, overlap, DOM budget, edge endpoints, DOM mirror items/roles/tabindex, RTL direction, reduced motion and the preference boundary; the quickstart claims were corrected rather than building these helpers | A separate feature plan approves them |
+| 5 | D5 generated-domain benchmark | Optional | `test:extension` runs the generated domain's conformance suite and one-way dependency guard; the benchmark demo uses the shared registry, not a scaffold-generated host | A scaffold-generated host benchmark is requested |
+| 6 | E3 deprecation pointers | Next minor | `docs/api-compatibility.json` is machine-ready; aliases are kept until the minor boundary and `check:compat` does not flip them | The next minor release; apply the `@deprecated` pointers, keep the aliases |
+| 7 | Local trace and replay | Deferred | Observation side of the loop; the measurement side (D4) is trustworthy, but traces stay local and opt-in | A separate feature plan for observation |
+| 8 | Human verdicts and recruitment | External | The nine evidence entries and the n ≥ 5 study remain pending; no default may flip from a screenshot alone | Study results and human verdicts are recorded |
