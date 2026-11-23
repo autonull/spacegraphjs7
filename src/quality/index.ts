@@ -23,7 +23,18 @@ export interface QualityModel {
     readonly edges?: readonly QualityEdge[];
 }
 
-export type QualityCode = 'overlap' | 'missing-label' | 'dom-budget' | 'edge-endpoint' | 'preference';
+export type QualityCode =
+    | 'overlap'
+    | 'missing-label'
+    | 'dom-budget'
+    | 'edge-endpoint'
+    | 'preference'
+    | 'a11y-mirror'
+    | 'a11y-missing-item'
+    | 'a11y-role'
+    | 'a11y-tabindex'
+    | 'direction-mismatch'
+    | 'motion-mismatch';
 
 export interface QualityIssue {
     readonly code: QualityCode;
@@ -43,6 +54,10 @@ export interface QualityOptions {
     readonly maxDomNodes?: number;
     readonly overlapDistance?: number;
     readonly preferences?: readonly string[];
+    /** The host's hidden DOM mirror. When supplied, accessibility assertions run against it. */
+    readonly dom?: ParentNode;
+    readonly direction?: 'ltr' | 'rtl';
+    readonly reducedMotion?: boolean;
 }
 
 export interface CorrectionOutcome {
@@ -58,6 +73,12 @@ const WEIGHTS: Record<QualityCode, number> = {
     'dom-budget': 25,
     'edge-endpoint': 15,
     preference: 0,
+    'a11y-mirror': 15,
+    'a11y-missing-item': 10,
+    'a11y-role': 5,
+    'a11y-tabindex': 5,
+    'direction-mismatch': 10,
+    'motion-mismatch': 10,
 };
 
 const point = (position: QualityNode['position']): [number, number, number] => {
@@ -136,6 +157,67 @@ export function checkQuality(model: QualityModel, options: QualityOptions = {}):
             message: `${preference} is a preference; log a human decision under ADR 0008`,
             autofix: false,
         });
+    }
+
+    if (options.dom) {
+        const mirror = [...options.dom.querySelectorAll('[data-id]')];
+        if (mirror.length === 0) {
+            issues.push({
+                code: 'a11y-mirror',
+                nodeIds: [],
+                message: 'no hidden DOM mirror items were supplied',
+                autofix: false,
+            });
+        }
+        for (const node of nodes) {
+            const item = mirror.find((element) => element.getAttribute('data-id') === node.id);
+            if (!item) {
+                issues.push({
+                    code: 'a11y-missing-item',
+                    nodeIds: [node.id],
+                    message: `${node.id} is absent from the DOM mirror`,
+                    autofix: false,
+                });
+                continue;
+            }
+            if (!item.getAttribute('role') && item.tagName !== 'LI') {
+                issues.push({
+                    code: 'a11y-role',
+                    nodeIds: [node.id],
+                    message: `${node.id} has no role in the DOM mirror`,
+                    autofix: false,
+                });
+            }
+            if (item.getAttribute('tabindex') === null) {
+                issues.push({
+                    code: 'a11y-tabindex',
+                    nodeIds: [node.id],
+                    message: `${node.id} is not keyboard reachable`,
+                    autofix: false,
+                });
+            }
+        }
+        const root = options.dom as Element;
+        const direction = root.getAttribute?.('dir') ?? options.dom.querySelector('[dir]')?.getAttribute('dir');
+        if (options.direction && direction && direction !== options.direction) {
+            issues.push({
+                code: 'direction-mismatch',
+                nodeIds: [],
+                message: `DOM direction is ${direction}, expected ${options.direction}`,
+                autofix: false,
+            });
+        }
+        const reduced =
+            root.getAttribute?.('data-reduced-motion') ??
+            options.dom.querySelector('[data-reduced-motion]')?.getAttribute('data-reduced-motion');
+        if (options.reducedMotion === true && reduced !== 'true') {
+            issues.push({
+                code: 'motion-mismatch',
+                nodeIds: [],
+                message: 'reduced motion is requested but the host does not declare it',
+                autofix: false,
+            });
+        }
     }
 
     const score = Math.max(0, 100 - issues.reduce((total, issue) => total + WEIGHTS[issue.code], 0));

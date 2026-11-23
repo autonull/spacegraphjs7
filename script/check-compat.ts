@@ -3,8 +3,8 @@
 // `check:compat --update` records additions and intentional removals after review.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import ts from 'typescript';
 import { LIBRARY_ENTRIES } from './library-entries.js';
+import { compilerOptions, exportedNames } from './surface.js';
 
 type Alias = {
     symbols: string[];
@@ -34,24 +34,10 @@ if (!manifest.policy?.rule || !manifest.policy.reference || !manifest.policy.dep
     throw new Error('compatibility manifest is missing policy metadata');
 }
 
-const config = ts.readConfigFile(resolve(root, 'tsconfig.json'), ts.sys.readFile);
-if (config.error) throw new Error(ts.flattenDiagnosticMessageText(config.error.messageText, '\n'));
-const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
-const program = ts.createProgram(
-    LIBRARY_ENTRIES.map((entry) => resolve(root, entry.source)),
-    { ...parsed.options, noEmit: true },
-);
-const checker = program.getTypeChecker();
-
+const files = LIBRARY_ENTRIES.map((entry) => resolve(root, entry.source));
+const names = exportedNames(files, compilerOptions(root));
 const surface = Object.fromEntries(
-    LIBRARY_ENTRIES.map((entry) => {
-        const file = program.getSourceFile(resolve(root, entry.source));
-        const symbol = file && checker.getSymbolAtLocation(file);
-        const names = symbol
-            ? checker.getExportsOfModule(symbol).map((exported) => exported.getName())
-            : [];
-        return [entry.subpath, [...new Set(names)].filter((name) => name !== 'default').sort()];
-    }),
+    LIBRARY_ENTRIES.map((entry) => [entry.subpath, names.get(resolve(root, entry.source)) ?? []]),
 );
 
 if (update) {

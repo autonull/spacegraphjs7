@@ -24,4 +24,6 @@ Intentional differences, not defects:
 
 Verification: `pnpm run test:conformance` runs `test/conformance.test.ts` together with the React and
 Solid binding conformance specs. A backend that drops a declared capability or mutates node/edge
-identity fails the gate.
+identity fails the gate. `pnpm run test:publish` adds browser mount parity: it mounts the SpaceGraph
+and Cytoscape adapters from packed tarballs with the same shared model and asserts both draw. Static
+SVG output is asserted in `test/conformance.test.ts`. No per-pixel comparison is claimed.

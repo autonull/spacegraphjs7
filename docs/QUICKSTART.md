@@ -151,6 +151,12 @@ const report = checkQuality(spec);
 console.log(report.score, report.issues);
 ```
 
+Pass the hidden DOM mirror to assert keyboard reachability, RTL direction and reduced motion:
+
+```typescript
+checkQuality(spec, { dom: mirror, direction: 'rtl', reducedMotion: true });
+```
+
 Measured defects can be corrected within a bounded number of edits. Each edit is re-checked; an edit
 that does not improve the score is discarded. Preferences are never changed automatically — they are
 logged for a human decision under ADR 0008.

@@ -156,7 +156,7 @@ export function build{{Name}}View(kernel: Kernel): {{Name}}View {
     const edges = kernel.edges.map((edge) => ({
         id: edge.id, source: edge.source, target: edge.target, kind: edge.kind, data: { ...edge.data },
     }));
-    const root = nodes.find((node) => roleOf(node) === '{{kind}}')?.id ?? nodes[0]?.id ?? '';
+    const root = nodes.find((node) => node.kind === 'state')?.id ?? nodes[0]?.id ?? '';
     return { root, nodes, edges, activeUnit: nodes.at(-1)?.id };
 }
 
@@ -189,7 +189,7 @@ export class {{Name}}EventMapper extends DomainEventMapper {
         const { id } = this;
         switch (event.type) {
             case 'run-start':
-                return [addNode(id(event.runId, 'run'), '{{kind}}', '{{Name}}', { status: 'active' })];
+                return [addNode(id(event.runId, 'run'), 'state', '{{Name}}', { status: 'active' })];
             case '{{kind}}-start':
                 return [
                     addNode(id(event.runId, event.id), '{{kind}}', event.id, { status: 'active' }),
@@ -316,7 +316,7 @@ export class {{Name}}Adapter extends ModelAdapter<GraphNode, GraphEdge, {{Name}}
     nodeStatus(node: GraphNode): NodeStatus {
         return node.status === 'failed' ? 'error' : node.status === 'active' ? 'running' : 'success';
     }
-    isStructuralKind(): boolean { return false; }
+    isStructuralKind(kind: GraphNode['kind']): boolean { return kind === 'state'; }
     nodeData(node: GraphNode, level: {{Name}}Level, dimmed: boolean) {
         return { level, dimmed, kind: node.kind };
     }
