@@ -30,37 +30,42 @@ export type PopoverProps = {
 /** Popover component type. */
 export type PopoverComponent = (props: PopoverProps) => JSX.Element;
 
-/** Default popover implementation using native <details>/<summary>. */
-export const DefaultPopover: PopoverComponent = (props: PopoverProps) => {
-    const slot = props.slot;
-    const label = props.label;
-    const icon = props.icon;
-    const value = props.value;
-    const valueSlot = props.valueSlot;
-    const align = props.align ?? 'start';
-    const children = props.children;
+/** Popover shell with a host-supplied icon renderer. */
+export function createIconPopover(renderIcon: (name: string) => JSX.Element): PopoverComponent {
+    return (props) => {
+        const align = props.align ?? 'start';
+        return (
+            <details class="relative" data-slot={props.slot}>
+                <summary
+                    class="flex h-6 cursor-pointer list-none items-center gap-1 rounded-sm px-1 text-12-regular text-text-base hover:bg-surface-base-hover [&::-webkit-details-marker]:hidden"
+                    aria-label={props.label}
+                    title={props.label}
+                >
+                    {renderIcon(props.icon)}
+                    {props.value ? (
+                        <span data-slot={props.valueSlot ?? `${props.slot}-value`}>{props.value}</span>
+                    ) : null}
+                    {props.value ? renderIcon('outline-chevron-down') : null}
+                </summary>
+                <div
+                    class="absolute z-30 mt-1 flex min-w-[180px] flex-col items-start gap-2 rounded-sm border border-border-weaker-base bg-surface-base p-2 shadow-md"
+                    classList={{ 'start-0': align === 'start', 'end-0': align !== 'start' }}
+                >
+                    {props.children}
+                </div>
+            </details>
+        );
+    };
+}
 
-    return (
-        <details class="relative" data-slot={slot}>
-            <summary
-                class="flex h-6 cursor-pointer list-none items-center gap-1 rounded-sm px-1 text-12-regular text-text-base hover:bg-surface-base-hover [&::-webkit-details-marker]:hidden"
-                aria-label={label}
-                title={label}
-            >
-                {/* Icon would be rendered by host's Icon component */}
-                <span data-testid="popover-icon">{icon}</span>
-                {value ? <span data-slot={valueSlot ?? `${slot}-value`}>{value}</span> : null}
-                {value ? <span data-testid="popover-chevron">▾</span> : null}
-            </summary>
-            <div
-                class="absolute z-30 mt-1 flex min-w-[180px] flex-col items-start gap-2 rounded-sm border border-border-weaker-base bg-surface-base p-2 shadow-md"
-                classList={{ 'start-0': align === 'start', 'end-0': align !== 'start' }}
-            >
-                {children}
-            </div>
-        </details>
-    );
-};
+/** Default popover implementation using native <details>/<summary>. */
+export const DefaultPopover: PopoverComponent = createIconPopover((name) =>
+    name === 'outline-chevron-down' ? (
+        <span data-testid="popover-chevron">▾</span>
+    ) : (
+        <span data-testid="popover-icon">{name}</span>
+    ),
+);
 
 /**
  * Creates a popover renderer that uses the host's Popover component or falls back to the default.

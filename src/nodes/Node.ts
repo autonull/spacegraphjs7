@@ -182,8 +182,7 @@ export abstract class Node extends Surface {
     isVisible(context: VisibilityContext): boolean {
         if (!this.visible) return false;
 
-        const box = new THREE.Box3().setFromObject(this.object);
-        if (!context.cameraFrustum.intersectsBox(box)) return false;
+        if (!context.cameraFrustum.intersectsBox(this.#lodBounds())) return false;
 
         const pixelSize = this.getScreenPixelSize(context.viewportBounds);
         if (pixelSize < context.minPixelSize) return false;

@@ -17,7 +17,7 @@ export { defaultIconSVGs, createIconRenderer, GraphIconButton } from './icons';
 
 // Popover
 export type { PopoverProps, PopoverComponent } from './popover';
-export { DefaultPopover, createPopoverRenderer } from './popover';
+export { DefaultPopover, createIconPopover, createPopoverRenderer } from './popover';
 
 // Types
 export type {
