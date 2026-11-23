@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { EventEmitter } from '../src/core/EventEmitter';
 import { MinimapPlugin } from '../src/plugins/MinimapPlugin';
 import { ZoomUIPlugin } from '../src/plugins/ZoomUIPlugin';
-import { WebGLRenderer } from '../src/index';
 
 interface FakeRenderer {
     domElement: HTMLCanvasElement;

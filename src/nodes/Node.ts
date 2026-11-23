@@ -349,6 +349,10 @@ export abstract class Node extends Surface {
         return this.setVisibleFlag(!this.visible);
     }
 
+    setVisible(visible: boolean): this {
+        return visible ? this.enable() : this.disable();
+    }
+
     // Ergonomic style shortcuts
     setOpacity(opacity: number): this {
         this.data.opacity = opacity;
@@ -361,8 +365,7 @@ export abstract class Node extends Surface {
     }
 
     setHighlight(highlight = true): this {
-        (this as any).controlState = highlight ? 'highlight' : 'normal';
-        return this;
+        return this.setControlState(highlight ? 'selected' : 'normal');
     }
 
     updatePosition(x: number, y: number, z: number): this {

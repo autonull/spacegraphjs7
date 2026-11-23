@@ -2,7 +2,6 @@
 // asserts that both interactive adapters mounted and drew.
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
-import { resolve } from 'node:path';
 
 const consumer = process.env.CONSUMER_ROOT;
 if (!consumer) throw new Error('CONSUMER_ROOT is not set');

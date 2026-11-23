@@ -1,6 +1,7 @@
 import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
 import { focusNodeCamera } from '../utils/CameraUtils';
+import { isEditableTarget } from '../utils/DOMUtils';
 import type { SpaceGraphApp } from './SpaceGraphApp';
 
 /**
@@ -135,8 +136,7 @@ export function setupHotkeys(app: SpaceGraphApp) {
     if (typeof document === 'undefined') return;
 
     document.addEventListener('keydown', (e) => {
-        const tag = (e.target as HTMLElement)?.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        if (isEditableTarget(e.target)) return;
 
         if (e.key === 'Escape') {
             app.hideModal();

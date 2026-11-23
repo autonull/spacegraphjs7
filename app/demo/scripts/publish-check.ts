@@ -6,9 +6,9 @@ import { execFileSync } from 'node:child_process';
 import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { createPackedConsumer, RUNTIME_DEPENDENCIES } from './publish-check/pack.js';
+import { createPackedConsumer, RUNTIME_DEPENDENCIES } from '../../../script/publish-check/pack.js';
 
-const root = resolve(import.meta.dirname, '..');
+const root = resolve(import.meta.dirname, '../../..');
 const packages = [
     { name: 'spacegraphjs', dir: root },
     { name: '@spacegraphjs/adapter', dir: join(root, 'packages/adapter') },
@@ -39,7 +39,7 @@ try {
     console.log('\ndemo check: the demo mounts and runs on published packages');
     execFileSync(
         'bun',
-        ['run', resolve(import.meta.dirname, '../../script/publish-check/demo-browser-check.ts')],
+        ['run', resolve(import.meta.dirname, '../../../script/publish-check/demo-browser-check.ts')],
         {
             cwd: consumer,
             stdio: 'inherit',

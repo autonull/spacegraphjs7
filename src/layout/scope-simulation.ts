@@ -315,8 +315,6 @@ export class ScopeSimulation {
             if (goal) this.#bodies.pin(id, goal);
             const frame = this.#target?.frames.get(id);
             if (frame) this.#frames.pin(id, frame.origin);
-            this.#bodies.sleeping.add(id);
-            this.#frames.sleeping.add(id);
         }
     }
 

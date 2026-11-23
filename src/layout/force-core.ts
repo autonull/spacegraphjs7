@@ -125,7 +125,6 @@ export class ForceCore {
         nodes: P[],
         getLinks: (node: P) => readonly string[],
         getRadius: (node: P) => number,
-        _isPinned: (node: P) => boolean,
     ): Map<string, { x: number; y: number; z: number }> {
         if (!nodes.length) return new Map();
 
@@ -248,7 +247,6 @@ export class ForceCore {
      */
     initializePositions<P extends ForceNode>(
         nodes: P[],
-        _isPinned: (node: P) => boolean,
         previous?: Map<string, { x: number; y: number; z: number }>,
     ): void {
         for (const [i, node] of nodes.entries()) {
@@ -299,7 +297,7 @@ export class ForceCore {
         setDepth: (node: P, z: number) => void,
         previous?: Map<string, { x: number; y: number; z: number }>,
     ): void {
-        this.initializePositions(nodes, isPinned, previous);
+        this.initializePositions(nodes, previous);
 
         // The simulation adapts iterations based on node count for performance
         const k = this.#spacing;
@@ -316,7 +314,7 @@ export class ForceCore {
 
         for (let step = 0; step < iterations; step++) {
             const heat = (k / 2) * (1 - step / iterations);
-            const forces = this.step(nodes, getLinks, getRadius, isPinned);
+            const forces = this.step(nodes, getLinks, getRadius);
 
             for (const node of nodes) {
                 if (isPinned(node)) continue;

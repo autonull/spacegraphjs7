@@ -5,8 +5,6 @@ import { resolve } from 'path';
 // T6.12 — the demo host: a plain-TypeScript app that mounts the library's contract and its three
 // renderers, and runs every generic module against a model of its own. Served by app/demo's own
 // vite (`root: app/demo`), so the page is `/`.
-// Use PLAYWRIGHT_BASE_URL from playwright.config.ts which defaults to http://localhost:5173
-const BASE_URL =
     process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${process.env.SG_DEMO_PORT ?? 5173}`;
 const SHOT_DIR = process.env.DEMO_SHOTS ?? resolve(process.cwd(), '../docs/spacegraph/screenshots');
 

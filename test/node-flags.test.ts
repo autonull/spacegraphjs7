@@ -19,6 +19,20 @@ describe('node visibility wrappers', () => {
         expect(n.visible).toBe(true);
     });
 
+    it('setVisible mirrors the Object3D and setHighlight drives the control state', () => {
+        const n = node();
+        n.setVisible(false);
+        expect(n.visible).toBe(false);
+        expect(n.object.visible).toBe(false);
+        n.setVisible(true);
+        expect(n.visible).toBe(true);
+        expect(n.object.visible).toBe(true);
+        n.setHighlight();
+        expect(n.controlState).toBe('selected');
+        n.setHighlight(false);
+        expect(n.controlState).toBe('normal');
+    });
+
     it('enable and disable also mirror the flag onto the Object3D', () => {
         const n = node();
         n.disable();

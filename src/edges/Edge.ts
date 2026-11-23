@@ -411,11 +411,6 @@ export class Edge extends Surface {
         this.dispose();
     }
 
-    onPreRender(dt: number): void {
-        super.onPreRender(dt);
-        this.update();
-    }
-
     activityDecay(now: number, window = 2000): number {
         const dt = now - this.lastActivityTime;
         return dt > 0 ? 1 / (1 + dt / window) : 0;

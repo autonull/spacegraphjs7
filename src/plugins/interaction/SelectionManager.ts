@@ -76,7 +76,11 @@ export class SelectionManager {
     }
 
     getSelectedEdges(): Set<Edge> {
-        return new Set();
+        return new Set(
+            this.sg.selection.list
+                .map((id) => this.sg.graph.edges.get(id))
+                .filter((edge): edge is Edge => edge !== undefined),
+        );
     }
 
     isBoxSelectingActive(): boolean {

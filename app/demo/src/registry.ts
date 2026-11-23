@@ -57,6 +57,7 @@ const pages: readonly Omit<DemoEntry, 'kind'>[] = [
     { id: 'inter-graph-edges', category: 'layout', path: 'html/layout/inter-graph-edges.html' },
     { id: 'layers', category: 'layout', path: 'html/layout/layers.html' },
     { id: 'layouts', category: 'layout', path: 'html/layout/layouts.html' },
+    { id: 'one-world', category: 'layout', path: 'html/layout/one-world.html' },
     { id: 'mermaid', category: 'plugins', path: 'html/plugins/mermaid.html' },
     { id: 'plugins', category: 'plugins', path: 'html/plugins/plugins.html' },
     { id: 'quickstart', category: 'plugins', path: 'html/plugins/quickstart.html' },

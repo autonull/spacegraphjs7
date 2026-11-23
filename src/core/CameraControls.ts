@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import { Camera, OrthographicCamera, PerspectiveCamera, Spherical, Vector3 } from 'three';
 import type { KeyboardScope } from '../types';
 import { fitOrthoFrustum, visibleWorldExtent } from '../utils/CameraUtils';
+import { isEditableTarget } from '../utils/DOMUtils';
 import { clamp, lerp } from '../utils/math';
 import type { Surface } from './Surface';
 
@@ -53,10 +54,6 @@ export interface CameraControlsConfig {
     maxDistance: number;
     keyboard: KeyboardScope;
 }
-
-// Keys typed into these never drive the camera.
-const EDITABLE_SELECTOR =
-    'input, textarea, select, [contenteditable=""], [contenteditable="true"], .monaco-editor';
 
 const KEY_CONFIG = {
     pan: [
@@ -371,6 +368,8 @@ export class CameraControls {
     zoomOut(): void {
         if (this.zoomStack.length === 0) return;
         const entry = this.zoomStack.pop()!;
+        this.spherical.phi = entry.phi;
+        this.spherical.theta = entry.theta;
         this.flyTo(entry.target, entry.distance);
     }
 
@@ -529,18 +528,12 @@ export class CameraControls {
     }
 
     private onKeyDown(e: KeyboardEvent): void {
-        if (this.#isEditable(e) || e.ctrlKey || e.metaKey || e.altKey) return;
+        if (isEditableTarget(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
         this.keyState.set(e.key.toLowerCase(), true);
         this.requestFrame();
     }
 
     private onKeyUp(e: KeyboardEvent): void {
         this.keyState.set(e.key.toLowerCase(), false);
-    }
-
-    #isEditable(e: KeyboardEvent): boolean {
-        const target = e.target as HTMLElement | null;
-        if (!target?.closest) return false;
-        return !!target.closest(EDITABLE_SELECTOR);
     }
 }

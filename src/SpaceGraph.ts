@@ -192,25 +192,25 @@ export class SpaceGraph {
         ids?: readonly string[],
         options?: { minScale?: number; insets?: FitInsets },
     ): this {
-        return this.cameraController.fitView(padding, duration, ids, options) as this;
+        return this.cameraController.fitView(padding, duration, ids, options);
     }
     focusNode(id: string, _padding = 100, duration = 1): this {
-        return this.cameraController.focusNode(id, _padding, duration) as this;
+        return this.cameraController.focusNode(id, _padding, duration);
     }
     center(x: number, y: number, z = 0): this {
-        return this.cameraController.center(x, y, z) as this;
+        return this.cameraController.center(x, y, z);
     }
     resetCamera(): this {
-        return this.cameraController.resetCamera() as this;
+        return this.cameraController.resetCamera();
     }
     setCamera(position: [number, number, number], target?: [number, number, number]): this {
-        return this.cameraController.setCamera(position, target) as this;
+        return this.cameraController.setCamera(position, target);
     }
     setOrbitEnabled(enabled: boolean): this {
-        return this.cameraController.setOrbitEnabled(enabled) as this;
+        return this.cameraController.setOrbitEnabled(enabled);
     }
     setPolar(phi: number, theta: number, duration = 0): this {
-        return this.cameraController.setPolar(phi, theta, duration) as this;
+        return this.cameraController.setPolar(phi, theta, duration);
     }
 
     // --- Animation Loop (delegated) ---
@@ -221,13 +221,13 @@ export class SpaceGraph {
         this.animationController.requestFrame();
     }
     render(): this {
-        return this.animationController.render() as this;
+        return this.animationController.render();
     }
     pause(): void {
         this.animationController.pause();
     }
     resume(): this {
-        return this.animationController.resume() as this;
+        return this.animationController.resume();
     }
 
     // --- Lifecycle (delegated) ---
@@ -273,7 +273,7 @@ export class SpaceGraph {
     // --- Visibility ---
     show(id: string, visible = true): this {
         const node = this.graph.nodes.get(id);
-        if (node) node.updateSpec({ data: { ...node.data, visible } });
+        if (node) node.setVisible(visible);
         return this;
     }
     hide(id: string): this {
@@ -334,7 +334,7 @@ export class SpaceGraph {
         return this.renderer.projection;
     }
     setProjection(projection: Projection): this {
-        return this.depthController.setProjection(projection) as this;
+        return this.depthController.setProjection(projection);
     }
 
     // --- Depth Spectrum ---
@@ -342,16 +342,16 @@ export class SpaceGraph {
         return this.depthController.depth;
     }
     setDepth(depth: DepthMode): this {
-        return this.depthController.setDepth(depth) as this;
+        return this.depthController.setDepth(depth);
     }
     get cardFacing(): CardFacing {
         return this.depthController.cardFacing;
     }
     setCardFacing(facing: CardFacing): this {
-        return this.depthController.setCardFacing(facing) as this;
+        return this.depthController.setCardFacing(facing);
     }
     applySceneFade(): this {
-        return this.depthController.applySceneFade() as this;
+        return this.depthController.applySceneFade();
     }
 
     // --- Zoom ---

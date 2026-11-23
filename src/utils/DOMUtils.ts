@@ -5,6 +5,14 @@ export function requireElement<T extends HTMLElement = HTMLElement>(id: string, 
     return found as T;
 }
 
+const EDITABLE_SELECTOR =
+    'input, textarea, select, .monaco-editor, [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]';
+
+/** Whether a keyboard event belongs to a control that handles its own keys. */
+export function isEditableTarget(target: EventTarget | null): boolean {
+    return !!(target as HTMLElement | null)?.closest?.(EDITABLE_SELECTOR);
+}
+
 export interface DOMElementOptions {
     id?: string;
     className?: string;

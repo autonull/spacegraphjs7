@@ -332,7 +332,7 @@ export class ErgonomicsAPI {
 
     // ============= Visibility =============
     show(id: string, visible = true): Node | null {
-        return this.withNode(id, (node) => node.updateSpec({ data: { visible } }));
+        return this.withNode(id, (node) => node.setVisible(visible));
     }
 
     hide(id: string): Node | null {
@@ -342,8 +342,8 @@ export class ErgonomicsAPI {
     toggleVisibility(nodeId: string): boolean {
         const node = this.sg.graph.getNode(nodeId);
         if (!node) return false;
-        const visible = !(node.data as Record<string, unknown>).visible;
-        node.updateSpec({ data: { visible } });
+        const visible = !node.visible;
+        node.setVisible(visible);
         return visible;
     }
 
@@ -378,9 +378,12 @@ export class ErgonomicsAPI {
         return n.data[key];
     }
 
-    /** A data flag written onto a node; the ergonomics API reports the value it wrote. */
+    /** Writes a data flag and returns the node so the ergonomic API stays fluent. */
     #writeFlag(id: string, key: string, value: unknown): Node | null {
-        return this.data(id, key, value) as unknown as Node | null;
+        const node = this.sg.graph.getNode(id);
+        if (!node) return null;
+        node.updateSpec({ data: { ...node.data, [key]: value } });
+        return node;
     }
 
     attr(id: string, key: string, value?: unknown): unknown {

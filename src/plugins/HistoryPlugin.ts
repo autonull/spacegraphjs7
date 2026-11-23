@@ -1,4 +1,5 @@
 import type { GraphSpec } from '../types';
+import { isEditableTarget } from '../utils/DOMUtils';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 
 export interface HistoryPluginOptions {
@@ -115,8 +116,7 @@ export class HistoryPlugin extends BaseSystemPlugin {
     private handleKeydown(e: any): void {
         if (!this.isEnabled) return;
 
-        const tag = (e.originalEvent?.target as HTMLElement)?.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        if (isEditableTarget(e.originalEvent?.target)) return;
 
         if (e.ctrlKey || e.metaKey) {
             if (e.key === 'z') {

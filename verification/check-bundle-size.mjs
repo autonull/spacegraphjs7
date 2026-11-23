@@ -7,13 +7,13 @@ const __dirname = path.dirname(__filename);
 
 const MAX_BUNDLE_SIZE_KB = 200;
 
-async function checkBundleSize() {
+function checkBundleSize() {
     console.log('[Bundle Audit] Checking SpaceGraphJS build size...');
 
     const bundlePath = path.resolve(__dirname, '../dist/index.js');
 
     if (!fs.existsSync(bundlePath)) {
-        console.error(`[Error] Bundle not found at ${bundlePath}. Did you run "npm run build"?`);
+        console.error(`[Error] Bundle not found at ${bundlePath}. Did you run "pnpm run build:lib"?`);
         process.exit(1);
     }
 

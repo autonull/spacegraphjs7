@@ -4,8 +4,6 @@ import { resolve } from 'path';
 
 // L1.29 — the non-OpenCode reference demo. Served by the repo vite (`root: demo`), so the page is
 // `/html/core/contract.html`; run `pnpm run dev:demo` first (or set SG_DEMO_URL to a running server).
-// Use PLAYWRIGHT_BASE_URL from playwright.config.ts which defaults to http://localhost:5173
-const BASE_URL =
     process.env.PLAYWRIGHT_BASE_URL || process.env.SG_DEMO_URL || 'http://localhost:5173';
 const SHOT_DIR =
     process.env.CONTRACT_DEMO_SHOTS ?? resolve(process.cwd(), '../docs/spacegraph/screenshots');

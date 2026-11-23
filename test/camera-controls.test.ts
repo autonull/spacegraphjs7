@@ -16,6 +16,24 @@ const makeControls = () => {
 describe('U3.15 orbit gating and camera pose', () => {
     afterEach(() => vi.restoreAllMocks());
 
+    it('restores the saved orientation on zoom out', () => {
+        const { controls } = makeControls();
+        controls.setPolar(Math.PI / 4, Math.PI / 3, 0);
+        controls.update();
+        const phi = controls.spherical.phi;
+        const theta = controls.spherical.theta;
+
+        controls.zoomTo(new THREE.Vector3(0, 0, 0), 100, 0);
+        controls.update();
+        controls.setPolar(Math.PI / 2, 0, 0);
+        controls.update();
+        controls.zoomOut();
+        controls.update();
+
+        expect(controls.spherical.phi).toBeCloseTo(phi, 6);
+        expect(controls.spherical.theta).toBeCloseTo(theta, 6);
+    });
+
     it('ignores rotate input once orbit is disabled', () => {
         const { controls } = makeControls();
         controls.setOrbitEnabled(false);

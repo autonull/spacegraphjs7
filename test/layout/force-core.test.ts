@@ -12,7 +12,7 @@ describe('ForceCore.initializePositions', () => {
         const core = new ForceCore({ randomize: true, seed: 7, iterations: 0 });
         const nodes = plainNodes(8);
 
-        core.initializePositions(nodes, () => false);
+        core.initializePositions(nodes);
 
         for (const node of nodes) {
             expect(Number.isFinite(node.position.x)).toBe(true);
@@ -28,11 +28,9 @@ describe('ForceCore.initializePositions', () => {
         const second = plainNodes(8);
         new ForceCore({ randomize: true, seed, iterations: 0 }).initializePositions(
             first,
-            () => false,
         );
         new ForceCore({ randomize: true, seed, iterations: 0 }).initializePositions(
             second,
-            () => false,
         );
         expect(first).toEqual(second);
 
@@ -40,7 +38,6 @@ describe('ForceCore.initializePositions', () => {
         const restored = plainNodes(2);
         new ForceCore({ randomize: true, seed, iterations: 0 }).initializePositions(
             restored,
-            () => false,
             previous,
         );
         expect(restored[0]!.position).toEqual({ x: 11, y: 22, z: 33 });

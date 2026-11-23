@@ -6,6 +6,7 @@ import type { PickResult } from '../input/interfaces/Tangible';
 import type { Node } from '../nodes/Node';
 import type { InteractionInputConfig } from '../types';
 import { focusNodeCamera, focusRadiusOf } from '../utils/CameraUtils';
+import { isEditableTarget } from '../utils/DOMUtils';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 import { ConnectionHandler } from './interaction/ConnectionHandler';
 import { CursorManager, type CursorMode } from './interaction/CursorManager';
@@ -305,14 +306,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
     }
 
     private handleKeyDown(e: any): void {
-        const activeEl = document.activeElement;
-        const isEditingText =
-            activeEl &&
-            (activeEl.tagName === 'INPUT' ||
-                activeEl.tagName === 'TEXTAREA' ||
-                (activeEl as HTMLElement).isContentEditable);
-
-        if (isEditingText && e.key !== 'Escape') return;
+        if (isEditableTarget(document.activeElement) && e.key !== 'Escape') return;
 
         const selectedNodes = Array.from(this.selectionManager.getSelectedNodes());
         const selectedEdges = Array.from(this.selectionManager.getSelectedEdges());
