@@ -90,7 +90,6 @@ export const GraphSearch = (props: GraphSearchProps) => {
         const button = input.nextSibling as HTMLButtonElement;
         const buttonSpan = button.firstChild as HTMLElement;
 
-        // Render icon using createComponent + insert
         const searchIcon = createComponent(props.Icon, {
             name: 'magnifying-glass',
             size: 'small',
@@ -98,19 +97,16 @@ export const GraphSearch = (props: GraphSearchProps) => {
         });
         insert(iconSpan, searchIcon);
 
-        // Set input attributes
         setAttribute(input, 'placeholder', props.t('ui.search.placeholder'));
         setAttribute(input, 'aria-label', props.t('ui.search.placeholder'));
         setAttribute(button, 'aria-label', props.t('ui.search.close'));
 
-        // Set button icon
         const closeIcon = createComponent(props.Icon, {
             name: 'close-small',
             size: 'small',
         });
         insert(buttonSpan, closeIcon);
 
-        // Event handlers
         input.oninput = (e: Event) => {
             const target = e.target as HTMLInputElement;
             setQueryRaw(target.value);
@@ -183,7 +179,6 @@ export const GraphSearch = (props: GraphSearchProps) => {
         return container;
     };
 
-    // Handle keyboard navigation
     createEffect(() => {
         const res = results();
         if (res.length > 0) {

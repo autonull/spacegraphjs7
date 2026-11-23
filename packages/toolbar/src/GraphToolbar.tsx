@@ -345,6 +345,22 @@ interface GraphToolbarCommandControlsProps {
     Icon?: IconComponent;
 }
 
+const iconButton = (
+    renderIcon: IconComponent,
+    icon: string,
+    label: string,
+    onClick: () => void,
+) => (
+    <button
+        type="button"
+        class="flex h-6 w-6 items-center justify-center rounded-sm text-text-base hover:bg-surface-base-hover"
+        onClick={onClick}
+        aria-label={label}
+    >
+        {renderIcon({ name: icon, size: 'small' })}
+    </button>
+);
+
 const RENDERER_LABELS: Record<string, string> = {
     spacegraph: 'SpaceGraph',
     cytoscape: 'Cytoscape',
@@ -357,14 +373,7 @@ function GraphToolbarCommandControls(props: GraphToolbarCommandControlsProps): J
     return (
         <>
             <GraphZoomControl {...rest} i18n={i18n} Icon={renderIcon} />
-            <button
-                type="button"
-                class="flex h-6 w-6 items-center justify-center rounded-sm text-text-base hover:bg-surface-base-hover"
-                onClick={rest.onFit}
-                aria-label={i18n.t('ui.toolbar.fit')}
-            >
-                {renderIcon({ name: 'expand', size: 'small' })}
-            </button>
+            {iconButton(renderIcon, 'expand', i18n.t('ui.toolbar.fit'), rest.onFit)}
 
             {rest.onSplitView && (
                 <GraphRendererStatus
@@ -411,26 +420,10 @@ function GraphRendererStatus(props: GraphRendererStatusProps): JSX.Element {
                     {i18n.t('ui.toolbar.renderer', { renderer: RENDERER_LABELS[renderer] })}
                 </span>
             )}
-            {onSplitView && (
-                <button
-                    type="button"
-                    class="flex h-6 w-6 items-center justify-center rounded-sm text-text-base hover:bg-surface-base-hover"
-                    onClick={onSplitView}
-                    aria-label={i18n.t('ui.toolbar.split')}
-                >
-                    {renderIcon({ name: 'split', size: 'small' })}
-                </button>
-            )}
-            {onBack && (
-                <button
-                    type="button"
-                    class="flex h-6 w-6 items-center justify-center rounded-sm text-text-base hover:bg-surface-base-hover"
-                    onClick={onBack}
-                    aria-label={i18n.t('ui.toolbar.back')}
-                >
-                    {renderIcon({ name: 'outline-arrow-left', size: 'small' })}
-                </button>
-            )}
+            {onSplitView &&
+                iconButton(renderIcon, 'split', i18n.t('ui.toolbar.split'), onSplitView)}
+            {onBack &&
+                iconButton(renderIcon, 'outline-arrow-left', i18n.t('ui.toolbar.back'), onBack)}
         </div>
     );
 }

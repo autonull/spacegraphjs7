@@ -1,7 +1,6 @@
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
-import type { ControlState } from './ControlStateBorder';
 
 export class HoverManager {
     private hoveredNode: Node | null = null;
@@ -23,7 +22,7 @@ export class HoverManager {
             if (this.hoveredNode.scalesOnHover) {
                 this.hoveredNode.object.scale.divideScalar(this.HOVER_SCALE);
             }
-            this.updateNodeState(this.hoveredNode, 'normal');
+            this.hoveredNode.setControlState('normal');
             this.hoveredNode.callbacks?.onPointerLeave?.(this.hoveredNode);
         }
 
@@ -34,7 +33,7 @@ export class HoverManager {
             if (this.hoveredNode.scalesOnHover) {
                 this.hoveredNode.object.scale.multiplyScalar(this.HOVER_SCALE);
             }
-            this.updateNodeState(this.hoveredNode, 'hovered');
+            this.hoveredNode.setControlState('hovered');
             this.hoveredNode.callbacks?.onPointerEnter?.(this.hoveredNode);
         }
     }
@@ -49,10 +48,6 @@ export class HoverManager {
 
     clear(): void {
         this.updateHover(null, null);
-    }
-
-    private updateNodeState(node: Node, state: ControlState): void {
-        node.setControlState(state);
     }
 
     updateEdgeHover(edge: Edge | null): void {

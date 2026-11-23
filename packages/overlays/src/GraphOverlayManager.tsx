@@ -229,14 +229,11 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
 
     // Render host component or a slotted placeholder div
     const renderHostOrDefault = <T extends Record<string, unknown>>(
-        hasHostRenderer: boolean,
-        hostRenderer: (p: T) => JSX.Element,
+        render: ((props: T) => JSX.Element) | undefined,
         hostProps: T,
         placeholderSlot: string,
     ) => {
-        if (hasHostRenderer) {
-            return hostRenderer(hostProps);
-        }
+        if (render) return render(hostProps);
         const el = createDivPlaceholder();
         el.setAttribute('data-slot', placeholderSlot);
         return el;
@@ -313,24 +310,16 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
     return (
         <>
             {/* A11y */}
-            {renderHostOrDefault(
-                !!props.renderA11y,
-                (p) => p.renderA11y!(p.props),
-                {
-                    renderA11y: props.renderA11y,
-                    props: {
-                        model: props.ordered,
-                        selection: props.selection(),
-                        instructionsId: props.a11yInstructionsId,
-                        announcement: props.viewAnnouncement,
-                        onSelect: props.select,
-                        onEscape: () => props.select(undefined),
-                        i18n,
-                        Icon,
-                    },
-                },
-                'graph-a11y-placeholder',
-            )}
+            {renderHostOrDefault(props.renderA11y, {
+                model: props.ordered,
+                selection: props.selection(),
+                instructionsId: props.a11yInstructionsId,
+                announcement: props.viewAnnouncement,
+                onSelect: props.select,
+                onEscape: () => props.select(undefined),
+                i18n,
+                Icon,
+            }, 'graph-a11y-placeholder')}
 
             {/* Peek node */}
             {renderPeekNodeAnchor()}
@@ -339,151 +328,95 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
             {renderPeekEdgeAnchor()}
 
             {/* Note composer */}
-            {props.annotations.noteTarget() && renderHostOrDefault(
-                !!props.renderNoteComposer,
-                (p) => p.renderNoteComposer!(p.props),
-                {
-                    renderNoteComposer: props.renderNoteComposer,
-                    props: {
-                        targetLabel:
-                            props.noteTargetNode()?.label ?? props.annotations.noteTarget() ?? '',
-                        initialValue: props.annotations.editingNote()
-                            ? (
-                                  props.annotations.notes as unknown as Record<
-                                      string,
-                                      { body: string }
-                                  >
-                              )[props.annotations.editingNote()!]?.body
-                            : undefined,
-                        anchor: props.noteAnchor,
-                        onSave: props.annotations.saveNote,
-                        onClose: props.annotations.closeNoteComposer,
-                        i18n,
-                        Icon,
-                    },
-                },
-                'graph-note-composer-placeholder',
-            )}
+            {props.annotations.noteTarget() && renderHostOrDefault(props.renderNoteComposer, {
+                targetLabel:
+                    props.noteTargetNode()?.label ?? props.annotations.noteTarget() ?? '',
+                initialValue: props.annotations.editingNote()
+                    ? (
+                          props.annotations.notes as unknown as Record<
+                              string,
+                              { body: string }
+                          >
+                      )[props.annotations.editingNote()!]?.body
+                    : undefined,
+                anchor: props.noteAnchor,
+                onSave: props.annotations.saveNote,
+                onClose: props.annotations.closeNoteComposer,
+                i18n,
+                Icon,
+            }, 'graph-note-composer-placeholder')}
 
             {/* Popover */}
             {renderPopoverAnchor()}
 
             {/* Error state */}
-            {renderHostOrDefault(
-                !!props.renderError,
-                (p) => p.renderError!(p.props),
-                {
-                    renderError: props.renderError,
-                    props: {
-                        error: props.error,
-                        onBack: props.onBack,
-                        i18n,
-                        Icon,
-                    },
-                },
-                'graph-error-placeholder',
-            )}
+            {renderHostOrDefault(props.renderError, {
+                error: props.error,
+                onBack: props.onBack,
+                i18n,
+                Icon,
+            }, 'graph-error-placeholder')}
 
             {/* Empty state */}
-            {renderHostOrDefault(
-                !!props.renderEmpty,
-                (p) => p.renderEmpty!(p.props),
-                {
-                    renderEmpty: props.renderEmpty,
-                    props: {
-                        model: props.model,
-                        error: props.error,
-                        i18n,
-                        Icon,
-                    },
-                },
-                'graph-empty-placeholder',
-            )}
+            {renderHostOrDefault(props.renderEmpty, {
+                model: props.model,
+                error: props.error,
+                i18n,
+                Icon,
+            }, 'graph-empty-placeholder')}
 
             {/* Search */}
-            {props.searchOpen() && renderHostOrDefault(
-                !!props.renderSearch,
-                (p) => p.renderSearch!(p.props),
-                {
-                    renderSearch: props.renderSearch,
-                    props: {
-                        model: props.model(),
-                        initialQuery: props.searchInitial,
-                        onSelect: (node: GraphNode) => {
-                            props.jumpTo(node);
-                            props.setSearchOpen(false);
-                        },
-                        onClose: () => props.setSearchOpen(false),
-                        i18n,
-                        Icon,
-                    },
+            {props.searchOpen() && renderHostOrDefault(props.renderSearch, {
+                model: props.model(),
+                initialQuery: props.searchInitial,
+                onSelect: (node: GraphNode) => {
+                    props.jumpTo(node);
+                    props.setSearchOpen(false);
                 },
-                'graph-search-placeholder',
-            )}
+                onClose: () => props.setSearchOpen(false),
+                i18n,
+                Icon,
+            }, 'graph-search-placeholder')}
 
             {/* Legend */}
-            {props.legendOpen() && renderHostOrDefault(
-                !!props.renderLegend,
-                (p) => p.renderLegend!(p.props),
-                {
-                    renderLegend: props.renderLegend,
-                    props: {
-                        theme: props.theme,
-                        layout: props.layout,
-                        rules: props.rules,
-                        edgeKinds: props.edgeKinds.edgeKinds(),
-                        onToggleEdgeKind: props.edgeKinds.toggleEdgeKind,
-                        onClose: () => props.setLegendOpen(false),
-                        i18n,
-                        Icon,
-                    },
-                },
-                'graph-legend-placeholder',
-            )}
+            {props.legendOpen() && renderHostOrDefault(props.renderLegend, {
+                theme: props.theme,
+                layout: props.layout,
+                rules: props.rules,
+                edgeKinds: props.edgeKinds.edgeKinds(),
+                onToggleEdgeKind: props.edgeKinds.toggleEdgeKind,
+                onClose: () => props.setLegendOpen(false),
+                i18n,
+                Icon,
+            }, 'graph-legend-placeholder')}
 
             {/* Gallery */}
-            {props.galleryOpen() && renderHostOrDefault(
-                !!props.renderGallery,
-                (p) => p.renderGallery!(p.props),
-                {
-                    renderGallery: props.renderGallery,
-                    props: {
-                        model: props.model(),
-                        theme: props.theme,
-                        current: props.layout,
-                        onOpen: props.changeLayout,
-                        onClose: () => props.setGalleryOpen(false),
-                        i18n,
-                        Icon,
-                    },
-                },
-                'graph-gallery-placeholder',
-            )}
+            {props.galleryOpen() && renderHostOrDefault(props.renderGallery, {
+                model: props.model(),
+                theme: props.theme,
+                current: props.layout,
+                onOpen: props.changeLayout,
+                onClose: () => props.setGalleryOpen(false),
+                i18n,
+                Icon,
+            }, 'graph-gallery-placeholder')}
 
             {/* Group menu */}
             {props.groupMenu() && (() => {
                 const menuData = props.groupMenu()!;
-                return renderHostOrDefault(
-                    !!props.renderGroupMenu,
-                    (p) => p.renderGroupMenu!(p.props),
-                    {
-                        renderGroupMenu: props.renderGroupMenu,
-                        props: {
-                            id: menuData.id,
-                            x: menuData.x,
-                            y: menuData.y,
-                            model: props.modelForGroupMenu,
-                            collapsedGroups: props.groupCollapse.collapsedGroups(),
-                            onToggleGroup: props.toggleGroupByID,
-                            onCollapseOthers: props.groupCollapse.collapseOtherGroups,
-                            onFrame: (id: string) => props.camera.frame([id]),
-                            onClose: () => props.setGroupMenu(undefined),
-                            i18n,
-                            Icon,
-                        },
-                    },
-                    'graph-group-menu-placeholder',
-                );
+                return renderHostOrDefault(props.renderGroupMenu, {
+                    id: menuData.id,
+                    x: menuData.x,
+                    y: menuData.y,
+                    model: props.modelForGroupMenu,
+                    collapsedGroups: props.groupCollapse.collapsedGroups(),
+                    onToggleGroup: props.toggleGroupByID,
+                    onCollapseOthers: props.groupCollapse.collapseOtherGroups,
+                    onFrame: (id: string) => props.camera.frame([id]),
+                    onClose: () => props.setGroupMenu(undefined),
+                    i18n,
+                    Icon,
+                }, 'graph-group-menu-placeholder');
             })()}
         </>
     );
