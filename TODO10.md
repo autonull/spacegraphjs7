@@ -181,3 +181,90 @@ Requested after the plan closed: a layout that shows scale itself, not just one 
   Default layout remains `freeform`; renderer code is untouched.
 - **Open:** human verdict on `multi-octave-range`. If kept, the next step is a real task study —
   the screenshot proves the structure, not that the range helps anyone find anything.
+
+---
+
+## 9. Next session — host boundary and screenshot organization
+
+**No code changes were made for this section.** It is the handoff for a fresh session.
+
+### 9.1 Where the multi-octave work should live
+
+Recommendation: **split roles, do not move the existing work out of Pi**.
+
+- Keep the generic `octaveLayout` helper, the opaque scale descriptor and the renderer-size seam in
+  the library. They are already host-neutral and proven by a second consumer.
+- Keep `?graphLayout=octaves` and its two named shots in Pi as the *real-data proof*. They already
+  pass the vision, shell and screenshot gates. Removing them now would discard working evidence.
+- Add a small **scale lab** page under `app/demo` (same pattern as `scenario.html`) as the *iteration
+  environment*: URL knobs for radius factor, depth, ring vs spiral, phase, per-octave palette and
+  incumbent/variant selection. It is a thin host over the same helper and renderer — not a second
+  flagship, not a second position authority, no new renderer branch.
+- Only a variant that wins in the lab should be promoted back into Pi as one more opt-in shot. This
+  keeps experiment churn out of `GRAPH_LAYOUTS`, the Pi fixture selector and the flagship gallery.
+
+Rationale: the current Pi shot needed a synthetic `1+4+12` fixture, a hull-suppression branch and a
+graph-layout enum entry. That cost is acceptable once, not for every radius or palette tweak. The
+lab is where those hypotheses should be cheap.
+
+### 9.2 Screenshot organization
+
+Current problem: 38 `pi-agent-*.png` files plus `.prev` files sit at the root of
+`docs/screenshots/`, mixed with generated atlases, per-experiment pairs and reports. Curated
+evidence and disposable output are hard to tell apart.
+
+Target layout (minimal-churn first step; deeper grouping is optional later):
+
+```
+docs/screenshots/
+  pi/                     curated flagship shots, tracked
+    *.png                 keep existing filenames in the first migration
+    layout/               optional second step: chapters, octaves, timeline, dynamic-range
+    chrome/               optional second step: ui-*, statusline, menus
+  labs/                   generated experiment pairs, gitignored
+    ui-presets/<id>/{incumbent,variant}.png
+    scenario-workflow-chapters/{incumbent,variant}.png
+    scale-lab/<variant>/{incumbent,variant}.png
+  reports/                comparison.json files and baselines with stable names
+  atlas/                  generated atlas frames (existing)
+  demo-atlas/             generated demo atlas (existing, gitignored)
+  README.md               tracked/generated conventions and regeneration commands
+  index.html              top-level contact sheet linking per-section galleries
+  experiments.json        experiment registry (see 9.3)
+```
+
+Migration must update every path reference, not just move files: `Shot.file` values,
+`app/pi/scripts/shot.ts` output root, `app/pi/tests/ui-compare.spec.ts`, `app/pi/src/ui/evidence.ts`,
+`app/demo/tests/scenario-compare.spec.ts`, `review.json` notes, all `comparison.json` image fields,
+`docs/screenshots/README.md` and the contact-sheet generator. Preserve the `*.png.prev` ignore rule.
+
+### 9.3 Preparing for experiments
+
+Add `docs/screenshots/experiments.json` as the single index of pending work. One entry per
+hypothesis: `id`, `host`, `status` (`pending|kept|rejected`), `hypothesis`, `incumbent`, `variant`,
+`pair` paths, `command` to regenerate, and `decision` path. The contact sheet reads this file so a
+pending verdict is visible instead of buried in prose. Rules:
+
+1. Every new visual idea gets an id, one hypothesis sentence, one opt-in URL state, a deterministic
+   fixture, a named shot or lab state, and an incumbent/variant pair — before it gets polish.
+2. Generated pairs are gitignored; only curated winner shots are tracked. `.prev` files stay ignored.
+3. A pair is regenerable by one documented command; no local-only image may support a verdict.
+4. No default flip without a logged human decision (ADR 0008). `experiments.json` records the
+   decision when it lands; it never writes one.
+5. The lab exposes all knobs through URL state so a pair is exact and reproducible.
+
+### 9.4 Fresh-session work order
+
+1. Decide final directory names and whether to drop the `pi-agent-` prefix, then do one `git mv`
+   pass plus the path-reference updates in 9.2.
+2. Regenerate the Pi shots, UI pairs and scenario pair; verify the contact sheet and README.
+3. Build the scale lab page with URL knobs and an incumbent/variant capture spec; add its first
+   experiment entry to `experiments.json` and its pair directory under `labs/scale-lab/`.
+4. Run the lab against several radius/depth values and choose one candidate, if any, to port back
+   to Pi as a single opt-in shot.
+5. Run the full verification set once, update §6/§8/§9 progress, and commit.
+
+### 9.5 Constraints for that session
+
+No default promotion, no renderer branch, no second position authority, no new flagship. Generated
+output stays out of git. Keep the current Pi shots and gates green while the lab is introduced.
