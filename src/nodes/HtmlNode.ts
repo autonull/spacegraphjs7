@@ -37,7 +37,7 @@ export class HtmlNode extends BaseContentNode {
     public labelLod: LabelLodLevel[] = [];
     public override focusable = true;
     private resizeHandle: HTMLElement | null = null;
-    private contentWrapper: HTMLElement | null = null;
+    protected contentWrapper: HTMLElement | null = null;
     private controlsWrapper: HTMLElement | null = null;
 
     constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
@@ -218,6 +218,10 @@ export class HtmlNode extends BaseContentNode {
     }
 
     setSelectedStyle(selected: boolean): void {
+        this.applySelectedStyle(selected);
+    }
+
+    private applySelectedStyle(selected: boolean): void {
         this.domElement?.classList.toggle('selected', selected);
         if (selected) this.domElement?.setAttribute('data-selected', 'true');
         else this.domElement?.removeAttribute('data-selected');
@@ -236,9 +240,7 @@ export class HtmlNode extends BaseContentNode {
     /** Single writer for `controlState` so DOM visuals stay in sync with interaction state. */
     override setControlState(state: ControlState): this {
         super.setControlState(state);
-        this.domElement?.classList.toggle('selected', state === 'selected');
-        if (state === 'selected') this.domElement?.setAttribute('data-selected', 'true');
-        else this.domElement?.removeAttribute('data-selected');
+        this.applySelectedStyle(state === 'selected');
         return this;
     }
 

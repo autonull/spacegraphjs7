@@ -139,12 +139,12 @@ export class TabContainerNode extends HtmlNode {
     }
 
     private _showActiveTab(): void {
-        if ((this as any).contentWrapper) {
-            (this as any).contentWrapper.innerHTML = '';
+        if (this.contentWrapper) {
+            this.contentWrapper.innerHTML = '';
 
             const contentEl = this.tabContentMap.get(this.activeTabId);
             if (contentEl) {
-                (this as any).contentWrapper.appendChild(contentEl);
+                this.contentWrapper.appendChild(contentEl);
             }
         }
 

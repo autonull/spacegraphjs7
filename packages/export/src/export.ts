@@ -1,4 +1,8 @@
-import type { RenderModel, RenderTheme } from '@spacegraphjs/renderer';
+import {
+    escapeHtml as escapeMarkup,
+    type RenderModel,
+    type RenderTheme,
+} from '@spacegraphjs/renderer';
 import { renderToSVG, serializeRenderModel, type SvgOptions } from '@spacegraphjs/svg-renderer';
 
 export type ExportFormat = 'svg' | 'json' | 'html';
@@ -10,14 +14,7 @@ export type ExportOptions = {
     timestamp?: string;
 };
 
-function escapeHtml(text: string): string {
-    return text
-        .replace(/&/g, '\u0026amp;')
-        .replace(/</g, '\u0026lt;')
-        .replace(/>/g, '\u0026gt;')
-        .replace(/"/g, '\u0026quot;')
-        .replace(/'/g, '\u0026#039;');
-}
+const escapeHtml = (text: string): string => escapeMarkup(text, '&#039;');
 
 function download(blob: Blob, filename: string): void {
     const url = URL.createObjectURL(blob);

@@ -33,6 +33,25 @@ export type DepthMode = 'flat' | 'layered' | 'depth-stack' | 'orbit';
 /** Canonical depth order, shallowest first; hosts render choosers in this order. */
 export const DEPTH_MODES: readonly DepthMode[] = ['flat', 'layered', 'depth-stack', 'orbit'];
 
+const MARKUP_ESCAPES: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+};
+
+/**
+ * Escapes the five markup-special characters. `apostrophe` selects the entity a context expects:
+ * HTML accepts `&#39;` and `&#039;`, while XML uses `&apos;`.
+ */
+export function escapeHtml(value: string, apostrophe = '&#39;'): string {
+    return value.replace(/[&<>"']/g, (char) => (char === "'" ? apostrophe : MARKUP_ESCAPES[char]!));
+}
+
+/** Escapes markup text for XML/SVG, where the apostrophe entity is `&apos;`. */
+export const escapeXml = (value: string): string => escapeHtml(value, '&apos;');
+
 /**
  * How the DOM cards face the camera. `plane` lays every card in the content plane, so a tilted
  * camera shears them — that shear is the perspective working, not a defect. `camera` turns them to

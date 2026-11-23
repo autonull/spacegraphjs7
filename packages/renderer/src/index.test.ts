@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import {
     DEFAULT_THEME,
     ModelRenderer,
+    escapeHtml,
+    escapeXml,
     supports,
     supportsMotionVerb,
     supportsSceneFeature,
@@ -20,6 +22,18 @@ const capabilities = (overrides: Partial<RendererCapabilities> = {}): RendererCa
     minimap: false,
     maxRecommendedNodes: 300,
     ...overrides,
+});
+
+describe('markup escaping', () => {
+    test('escapes the five special characters', () => {
+        expect(escapeHtml(`&<>"'`)).toBe('&amp;&lt;&gt;&quot;&#39;');
+    });
+
+    test('uses the entity a context expects for apostrophes', () => {
+        expect(escapeHtml("'", '&#039;')).toBe('&#039;');
+        expect(escapeXml("'")).toBe('&apos;');
+        expect(escapeXml(`&<>"'`)).toBe('&amp;&lt;&gt;&quot;&apos;');
+    });
 });
 
 describe('@spacegraphjs/renderer contract', () => {

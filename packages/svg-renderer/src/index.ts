@@ -2,6 +2,7 @@ import {
     DEFAULT_THEME,
     ModelRenderer,
     edgeStyleFor,
+    escapeXml,
     isCardShape,
     statusColor,
     type GraphRenderer,
@@ -336,21 +337,4 @@ function edgeSVG(
 
 function truncate(value: string, max: number): string {
     return value.length > max ? `${value.slice(0, max - 1)}…` : value;
-}
-
-function escapeXml(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => {
-        switch (character) {
-            case '&':
-                return '&amp;';
-            case '<':
-                return '&lt;';
-            case '>':
-                return '&gt;';
-            case '"':
-                return '&quot;';
-            default:
-                return '&apos;';
-        }
-    });
 }
