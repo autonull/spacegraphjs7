@@ -5,7 +5,6 @@ export type { FitInsets };
 
 /** One octave is a 2× zoom change. The target reuses policy knobs; it adds no permalink field. */
 export const FIT_OCTAVES = [-1, 0, 1] as const;
-export const FIT_LABEL_BASE_PX = 20;
 
 /** Phase 0 measured coverage for the fit-wide shots (`presence-baseline.json`). The far octave is
  * absent on purpose: topology stays sparse and is never packed toward a mid/near target. */

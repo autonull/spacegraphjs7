@@ -33,30 +33,6 @@ export const gridStrategy: LayoutStrategy = (children, parent, params) => {
     }
 };
 
-export const sphereStrategy: LayoutStrategy = (children, parent, params) => {
-    const radius = (params.radius as number) ?? 200;
-    const n = children.length;
-    const phi = Math.PI * (3 - Math.sqrt(5));
-
-    for (const [i, child] of children.entries()) {
-        const y = 1 - (i / (n - 1)) * 2;
-        const radiusAtY = Math.sqrt(1 - y * y);
-        const theta = phi * i;
-
-        child.position.set(
-            parent.position.x + Math.cos(theta) * radiusAtY * radius,
-            parent.position.y + y * radius,
-            parent.position.z + Math.sin(theta) * radiusAtY * radius,
-        );
-
-        child.rotation.set(
-            0,
-            Math.atan2(child.position.z - parent.position.z, child.position.x - parent.position.x),
-            0,
-        );
-    }
-};
-
 export const stackingStrategy: LayoutStrategy = (children, parent) => {
     for (const child of children) {
         child.position.copy(parent.position);

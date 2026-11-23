@@ -2,7 +2,7 @@
  * Toolbar hooks - Headless state management for toolbar.
  */
 
-import { createSignal, createMemo } from 'solid-js';
+import { createSignal } from 'solid-js';
 import type { Accessor, Setter } from 'solid-js';
 import type {
     ZoomLevel,
@@ -13,9 +13,7 @@ import type {
     DetailMode,
     DetailFraming,
     GraphFacets,
-    GraphViewData,
 } from '@spacegraphjs/shared/types';
-import type { RendererCapabilities } from '@spacegraphjs/renderer';
 
 export interface ToolbarState {
     level: Accessor<ZoomLevel>;
@@ -140,81 +138,4 @@ export function useToolbarState(initial?: ToolbarStateInitial): ToolbarState {
         gallery,
         setGallery,
     };
-}
-
-/**
- * Hook for deriving toolbar props from state.
- * Useful for connecting toolbar state to the GraphToolbar component.
- */
-export function useToolbarProps(
-    state: ToolbarState,
-    overrides: {
-        capabilities?: RendererCapabilities;
-        renderer?: string;
-        turnCount?: number;
-        model?: GraphViewData;
-        facetCounts?: { kinds: any[]; statuses: any[]; domains: any[] };
-        onFit: () => void;
-        onSearch: () => void;
-        onExport?: (format: 'svg' | 'json' | 'html', model: any) => void;
-        renderModel?: any;
-        i18n: any;
-    },
-) {
-    return createMemo(() => ({
-        capabilities: overrides.capabilities,
-        renderer: overrides.renderer,
-        level: state.level(),
-        onLevel: state.setLevel,
-        facets: state.facets(),
-        facetCounts: overrides.facetCounts,
-        onFacetsChange: state.setFacets,
-        depth: state.depth(),
-        onDepth: state.setDepth,
-        checkpoint: state.checkpoint(),
-        turnCount: overrides.turnCount,
-        onCheckpoint: state.setCheckpoint,
-        onFit: overrides.onFit,
-        zoomPercent: state.zoomPercent(),
-        onZoomOut: () => state.setZoomPercent((p) => Math.max(25, p - 25)),
-        onZoomIn: () => state.setZoomPercent((p) => Math.min(400, p + 25)),
-        onSearch: overrides.onSearch,
-        onCopyView: undefined,
-        dispatchCommand: undefined,
-        layout: state.layout(),
-        onLayoutChange: state.setLayout,
-        files: state.files(),
-        onToggleFiles: () => state.setFiles((f) => !f),
-        arrangement: state.arrangement(),
-        onArrangementChange: state.setArrangement,
-        arrangementSide: state.arrangementSide(),
-        onArrangementSideChange: state.setArrangementSide,
-        onOpenEqualizer: undefined,
-        detailMode: state.detailMode(),
-        onDetailModeChange: state.setDetailMode,
-        detailFraming: state.detailFraming(),
-        onDetailFramingChange: state.setDetailFraming,
-        peek: state.peek(),
-        onTogglePeek: () => state.setPeek((p) => !p),
-        followLog: state.followLog(),
-        onFollowLogChange: state.setFollowLog,
-        onOpenWindow: undefined,
-        model: overrides.model,
-        legend: state.legend(),
-        onToggleLegend: () => state.setLegend((l) => !l),
-        gallery: state.gallery(),
-        onToggleGallery: () => state.setGallery((g) => !g),
-        onTurnMap: undefined,
-        onExpandGraph: undefined,
-        onExport: overrides.onExport,
-        renderModel: overrides.renderModel,
-        onBack: undefined,
-        onSplitView: undefined,
-        searching: false,
-        compact: false,
-        billboard: state.billboard(),
-        onToggleBillboard: () => state.setBillboard((b) => !b),
-        endInset: undefined,
-        i18n: overrides.i18n,
-    }));
 }

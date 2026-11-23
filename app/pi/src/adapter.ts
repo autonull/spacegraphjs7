@@ -70,8 +70,6 @@ const cardTemplates = new Map<string, CardTemplate>();
 export const registerCardTemplate = (kind: string, template: CardTemplate): void => {
     cardTemplates.set(kind, template);
 };
-export const cardTemplateFor = (kind: string): CardTemplate => cardTemplates.get(kind) ?? cardMarkup;
-
 const STATUS: Readonly<Record<string, NodeStatus>> = {
     active: 'running',
     streaming: 'running',

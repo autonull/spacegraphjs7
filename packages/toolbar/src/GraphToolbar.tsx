@@ -10,8 +10,8 @@ import { ToolbarMenu } from './ToolbarMenu';
 import { GraphLayersControl } from './GraphLayersControl';
 import { GraphLayoutControl } from './GraphLayoutControl';
 import { GraphTimeControl } from './GraphTimeControl';
-import { GraphDrawControl } from './GraphDrawControl';
-import { GraphShowControl } from './GraphShowControl';
+import { GraphDrawControl, type GraphDrawControlProps } from './GraphDrawControl';
+import { GraphShowControl, type GraphShowControlProps } from './GraphShowControl';
 import { GraphZoomControl } from './GraphZoomControl';
 import { GraphExportControl } from '@spacegraphjs/export';
 import { GraphQuestionsControl } from './GraphQuestionsControl';
@@ -180,177 +180,20 @@ export interface GraphToolbarProps {
  * holds what it says, and the commands sit at the end.
  */
 export function GraphToolbar(props: GraphToolbarProps): JSX.Element {
-    const {
-        capabilities,
-        renderer,
-        level,
-        onLevel,
-        facets,
-        facetCounts,
-        onFacetsChange,
-        depth,
-        onDepth,
-        depthModes,
-        checkpoint,
-        turnCount,
-        onCheckpoint,
-        onFit,
-        zoomPercent,
-        onZoomOut,
-        onZoomIn,
-        zoomOutDisabled,
-        zoomInDisabled,
-        onSearch,
-        onCopyView,
-        dispatchCommand,
-        layout,
-        onLayoutChange,
-        files,
-        onToggleFiles,
-        arrangement,
-        onArrangementChange,
-        arrangementSide,
-        onArrangementSideChange,
-        onOpenEqualizer,
-        detailMode,
-        onDetailModeChange,
-        detailFraming,
-        onDetailFramingChange,
-        peek,
-        onTogglePeek,
-        onTurnMap,
-        onExpandGraph,
-        onExport,
-        renderModel,
-        onBack,
-        onSplitView,
-        searching,
-        compact,
-        legend,
-        onToggleLegend,
-        gallery,
-        onToggleGallery,
-        billboard,
-        onToggleBillboard,
-        onOpenWindow,
-        followLog,
-        onFollowLogChange,
-        /** P1.3: Neighborhood focus mode */
-        focus,
-        onToggleFocus,
-        manualHistoryLength,
-        manualFutureLength,
-        onUndoManual,
-        onRedoManual,
-        endInset,
-        model,
-        i18n,
-        Icon,
-        Popover,
-    } = props;
-
-    const renderIcon = Icon ?? createIconRenderer();
+    const renderIcon = props.Icon ?? createIconRenderer();
 
     return (
         <div
             data-component="spacegraph-toolbar"
             data-slot="graph-toolbar"
             class="flex flex-wrap items-center gap-2 border-b border-border-weaker-base px-2 py-1.5"
-            style={endInset ? { 'padding-inline-end': endInset } : undefined}
+            style={props.endInset ? { 'padding-inline-end': props.endInset } : undefined}
         >
-            <GraphLayersControl
-                capabilities={capabilities}
-                renderer={renderer}
-                level={level}
-                onLevel={onLevel}
-                facets={facets}
-                facetCounts={facetCounts}
-                onFacetsChange={onFacetsChange}
-                depth={depth}
-                onDepth={onDepth}
-                depthModes={depthModes}
-                model={model}
-                i18n={i18n}
-                Icon={renderIcon}
-                Popover={Popover}
-            />
-            <GraphLayoutControl
-                layout={layout}
-                onLayoutChange={onLayoutChange}
-                i18n={i18n}
-                Icon={renderIcon}
-                Popover={Popover}
-            />
-            <GraphTimeControl
-                checkpoint={checkpoint}
-                turnCount={turnCount}
-                onCheckpoint={onCheckpoint}
-                model={model}
-                i18n={i18n}
-                Icon={renderIcon}
-                Popover={Popover}
-            />
-
-            <GraphToolbarViewControls
-                capabilities={capabilities}
-                billboard={billboard}
-                onToggleBillboard={onToggleBillboard}
-                detailFraming={detailFraming}
-                onDetailFramingChange={onDetailFramingChange}
-                files={files}
-                onToggleFiles={onToggleFiles}
-                onOpenEqualizer={onOpenEqualizer}
-                arrangement={arrangement}
-                onArrangementChange={onArrangementChange}
-                arrangementSide={arrangementSide}
-                onArrangementSideChange={onArrangementSideChange}
-                manualHistoryLength={manualHistoryLength}
-                manualFutureLength={manualFutureLength}
-                onUndoManual={onUndoManual}
-                onRedoManual={onRedoManual}
-                detailMode={detailMode}
-                onDetailModeChange={onDetailModeChange}
-                peek={peek}
-                onTogglePeek={onTogglePeek}
-                followLog={followLog}
-                onFollowLogChange={onFollowLogChange}
-                /** P1.3: Neighborhood focus mode */
-                focus={focus}
-                onToggleFocus={onToggleFocus}
-                onOpenWindow={onOpenWindow}
-                model={model}
-                legend={legend}
-                onToggleLegend={onToggleLegend}
-                gallery={gallery}
-                onToggleGallery={onToggleGallery}
-                onTurnMap={onTurnMap}
-                onExpandGraph={onExpandGraph}
-                compact={compact}
-                onSearch={onSearch}
-                searching={searching}
-                onExport={onExport}
-                renderModel={renderModel}
-                onCopyView={onCopyView}
-                dispatchCommand={dispatchCommand}
-                i18n={i18n}
-                Icon={renderIcon}
-                Popover={Popover}
-            />
-            <GraphToolbarCommandControls
-                zoomPercent={zoomPercent}
-                onZoomOut={onZoomOut}
-                onZoomIn={onZoomIn}
-                zoomOutDisabled={zoomOutDisabled}
-                zoomInDisabled={zoomInDisabled}
-                onFit={onFit}
-                onSplitView={onSplitView}
-                onBack={onBack}
-                renderer={renderer}
-                compact={compact}
-                endInset={endInset}
-                i18n={i18n}
-                Icon={renderIcon}
-            />
+            <GraphLayersControl {...props} Icon={renderIcon} />
+            <GraphLayoutControl {...props} Icon={renderIcon} />
+            <GraphTimeControl {...props} Icon={renderIcon} />
+            <GraphToolbarViewControls {...props} Icon={renderIcon} />
+            <GraphToolbarCommandControls {...props} Icon={renderIcon} />
         </div>
     );
 }
@@ -359,60 +202,16 @@ export function GraphToolbar(props: GraphToolbarProps): JSX.Element {
  * View controls group (Draw, Show, Export, Questions).
  * Separated for compact mode handling.
  */
-interface GraphToolbarViewControlsProps {
-    capabilities?: RendererCapabilities;
-    billboard?: boolean;
-    onToggleBillboard?: () => void;
-    detailFraming?: DetailFraming;
-    onDetailFramingChange?: (framing: DetailFraming) => void;
-    files?: boolean;
-    onToggleFiles?: () => void;
-    onOpenEqualizer?: () => void;
-    arrangement?: GraphArrangement;
-    onArrangementChange?: (arrangement: GraphArrangement) => void;
-    arrangementSide?: GraphSide;
-    onArrangementSideChange?: (side: GraphSide) => void;
-    manualHistoryLength?: number;
-    manualFutureLength?: number;
-    onUndoManual?: () => void;
-    onRedoManual?: () => void;
-    detailMode?: DetailMode;
-    onDetailModeChange?: (mode: DetailMode) => void;
-    peek?: boolean;
-    onTogglePeek?: () => void;
-    followLog?: boolean;
-    onFollowLogChange?: (follow: boolean) => void;
-    /** P1.3: Neighborhood focus mode */
-    focus?: boolean;
-    onToggleFocus?: () => void;
-    onOpenWindow?: (kind: string, nodeID?: string) => void;
-    model?: GraphViewData;
-    legend?: boolean;
-    onToggleLegend?: () => void;
-    gallery?: boolean;
-    onToggleGallery?: () => void;
-    onTurnMap?: () => void;
-    onExpandGraph?: () => void;
-    compact?: boolean;
-    onSearch?: () => void;
-    searching?: boolean;
-    onExport?: (format: 'svg' | 'json' | 'html', model: RenderModel) => void;
-    renderModel?: RenderModel;
-    onCopyView?: () => void;
-    dispatchCommand?: (command: string) => void;
-    i18n: I18n;
-    Icon?: IconComponent;
-    Popover?: (props: {
-        slot: string;
-        label: string;
-        icon: string;
-        value?: string;
-        valueSlot?: string;
-        align?: 'start' | 'end';
-        children: JSX.Element;
-        Icon?: IconComponent;
-    }) => JSX.Element;
-}
+type GraphToolbarViewControlsProps = GraphDrawControlProps &
+    GraphShowControlProps & {
+        compact?: boolean;
+        onSearch?: () => void;
+        searching?: boolean;
+        onExport?: (format: 'svg' | 'json' | 'html', model: RenderModel) => void;
+        renderModel?: RenderModel;
+        onCopyView?: () => void;
+        dispatchCommand?: (command: string) => void;
+    };
 
 function GraphToolbarViewControls(props: GraphToolbarViewControlsProps): JSX.Element {
     const { compact, i18n, Icon, Popover, ...rest } = props;

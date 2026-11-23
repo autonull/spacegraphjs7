@@ -4,7 +4,7 @@ import { rankedSearch } from './search';
 import type { IconComponent } from '@spacegraphjs/shared';
 import type { I18n } from '@spacegraphjs/shared';
 import { useDebounce } from '@spacegraphjs/shared';
-import { createSignal, createMemo, createEffect, onCleanup } from 'solid-js';
+import { createSignal, createMemo, createEffect } from 'solid-js';
 import { createComponent, effect, getNextElement, insert, setAttribute, template, memo } from 'solid-js/web';
 
 export type GraphSearchProps = {
@@ -191,21 +191,6 @@ export const GraphSearch = (props: GraphSearchProps) => {
         } else {
             setActive(0);
         }
-    });
-
-    // Focus input on mount (client-only) - use a simple effect that runs on client
-    let mounted = false;
-    createEffect(() => {
-        // This effect runs on client, we can access DOM here
-        if (!mounted) {
-            mounted = true;
-            // Focus will be handled by host if needed
-        }
-    });
-
-    // Cleanup on unmount
-    onCleanup(() => {
-        mounted = false;
     });
 
     // Return memoized render functions (not JSX!) to avoid SSR template hoisting

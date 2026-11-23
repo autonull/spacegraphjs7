@@ -1,4 +1,4 @@
-import { createSignal, createMemo, createEffect, onCleanup } from 'solid-js';
+import { createSignal, createMemo, createEffect } from 'solid-js';
 import type { GraphViewData, GraphNode, GraphFacets } from '@spacegraphjs/shared';
 import { rankedSearch, sessionOutline, facetCounts } from './search';
 import type { IconComponent } from '@spacegraphjs/shared';
@@ -419,18 +419,6 @@ export const GraphFind = (props: GraphFindProps) => {
                 setActiveIndex(0);
             }
         }
-    });
-
-    // Focus search input on mount (client-only)
-    let mounted = false;
-    createEffect(() => {
-        if (!mounted) {
-            mounted = true;
-        }
-    });
-
-    onCleanup(() => {
-        mounted = false;
     });
 
     // Return memoized render functions (not JSX!) to avoid SSR template hoisting

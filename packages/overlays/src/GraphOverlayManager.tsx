@@ -204,16 +204,7 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
         }
     });
 
-    // Lazy placeholder creators - using functions to defer template creation until first render
-    // This prevents SolidJS compiler from hoisting template calls to module level
-    const createA11yPlaceholder = () => document.createElement('div');
-    const createNoteComposerPlaceholder = () => document.createElement('div');
-    const createSearchPlaceholder = () => document.createElement('div');
-    const createLegendPlaceholder = () => document.createElement('div');
-    const createGalleryPlaceholder = () => document.createElement('div');
-    const createGroupMenuPlaceholder = () => document.createElement('div');
-    const createErrorPlaceholder = () => document.createElement('div');
-    const createEmptyPlaceholder = () => document.createElement('div');
+    const createDivPlaceholder = () => document.createElement('div');
 
     const createPeekAnchor = () => {
         const el = document.createElement('div');
@@ -237,24 +228,18 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
         return el;
     };
 
-    // Helper to set data-slot attribute on placeholder elements
-    const setPlaceholderSlot = (el: HTMLElement, slot: string) => {
-        el.setAttribute('data-slot', slot);
-    };
-
-    // Render host component or default placeholder
+    // Render host component or a slotted placeholder div
     const renderHostOrDefault = <T extends Record<string, unknown>>(
         hasHostRenderer: boolean,
         hostRenderer: (p: T) => JSX.Element,
         hostProps: T,
-        createPlaceholder: () => HTMLElement,
         placeholderSlot: string,
     ) => {
         if (hasHostRenderer) {
             return hostRenderer(hostProps);
         }
-        const el = createPlaceholder();
-        setPlaceholderSlot(el, placeholderSlot);
+        const el = createDivPlaceholder();
+        el.setAttribute('data-slot', placeholderSlot);
         return el;
     };
 
@@ -345,7 +330,6 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
                         Icon,
                     },
                 },
-                createA11yPlaceholder,
                 'graph-a11y-placeholder',
             )}
 
@@ -379,7 +363,6 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
                         Icon,
                     },
                 },
-                createNoteComposerPlaceholder,
                 'graph-note-composer-placeholder',
             )}
 
@@ -399,7 +382,6 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
                         Icon,
                     },
                 },
-                createErrorPlaceholder,
                 'graph-error-placeholder',
             )}
 
@@ -416,7 +398,6 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
                         Icon,
                     },
                 },
-                createEmptyPlaceholder,
                 'graph-empty-placeholder',
             )}
 
@@ -438,7 +419,6 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
                         Icon,
                     },
                 },
-                createSearchPlaceholder,
                 'graph-search-placeholder',
             )}
 
@@ -459,7 +439,6 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
                         Icon,
                     },
                 },
-                createLegendPlaceholder,
                 'graph-legend-placeholder',
             )}
 
@@ -479,7 +458,6 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
                         Icon,
                     },
                 },
-                createGalleryPlaceholder,
                 'graph-gallery-placeholder',
             )}
 
@@ -505,7 +483,6 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
                             Icon,
                         },
                     },
-                    createGroupMenuPlaceholder,
                     'graph-group-menu-placeholder',
                 );
             })()}

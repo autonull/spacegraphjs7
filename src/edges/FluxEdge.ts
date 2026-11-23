@@ -180,7 +180,6 @@ export class FluxEdge extends Edge {
         const path = this.syncPath(sourcePos, targetPos, curveStrength);
 
         const core = this.mesh.material as THREE.MeshBasicMaterial;
-        const glow = this.halo.material as THREE.MeshBasicMaterial;
         for (let index = 0; index <= SEGMENTS; index++) {
             const t = inset + (1 - 2 * inset) * (index / SEGMENTS);
             path.getPoint(t, this.#point);
