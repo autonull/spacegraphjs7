@@ -1,9 +1,9 @@
 import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { GraphNode } from '@spacegraphjs/shared/types';
-import { createComponent, effect, getNextElement, insert, setAttribute, Show } from 'solid-js/web';
+import { insert } from 'solid-js/web';
 import type { JSX } from 'solid-js';
-import type { GraphDetailProps, GraphDetailSurfaceProps } from './GraphDetail';
+import type { GraphDetailProps } from './GraphDetail';
 
 export const POPOVER_WIDTH = 340;
 export const POPOVER_MAX_HEIGHT = 420;

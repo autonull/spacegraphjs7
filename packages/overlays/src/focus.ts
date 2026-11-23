@@ -1,4 +1,4 @@
-import type { GraphViewData, GraphNode, GraphEdge } from '@spacegraphjs/shared';
+import type { GraphViewData } from '@spacegraphjs/shared';
 
 /** Options for computing the focus overlay. */
 export interface FocusOverlayOptions {

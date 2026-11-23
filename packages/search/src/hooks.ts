@@ -6,7 +6,6 @@ import {
     facetCounts,
     type SearchFn,
     type SearchTextFn,
-    defaultRank,
     defaultSearchText,
 } from './search';
 import { navigationHelp } from './navigation';

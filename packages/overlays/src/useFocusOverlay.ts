@@ -1,6 +1,6 @@
 import { createMemo, Accessor } from 'solid-js';
 import type { GraphViewData } from '@spacegraphjs/shared';
-import { computeFocusOverlay, type FocusOverlay, type FocusOverlayOptions } from './focus';
+import { computeFocusOverlay, type FocusOverlay } from './focus';
 
 /** Options for the useFocusOverlay hook. */
 export interface UseFocusOverlayOptions {

@@ -5,7 +5,7 @@ import type { IconComponent } from '@spacegraphjs/shared';
 import type { I18n } from '@spacegraphjs/shared';
 import { useDebounce } from '@spacegraphjs/shared';
 import { createSignal, createMemo, createEffect } from 'solid-js';
-import { createComponent, effect, getNextElement, insert, setAttribute, template, memo } from 'solid-js/web';
+import { createComponent, getNextElement, insert, setAttribute, template, memo } from 'solid-js/web';
 
 export type GraphSearchProps = {
     model: GraphViewData;

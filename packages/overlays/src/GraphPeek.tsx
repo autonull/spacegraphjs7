@@ -1,5 +1,5 @@
 import type { GraphEdge, GraphNode, VocabularyKeys } from '@spacegraphjs/shared';
-import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
+import type { IconComponent } from '@spacegraphjs/shared/icons';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import { createComponent, effect, getNextElement, insert, setAttribute, template, Show } from 'solid-js/web';
 
@@ -25,9 +25,8 @@ export type GraphPeekProps = {
  * template hoisting which causes "Client-only API called on the server side" errors during SSR builds.
  */
 export const GraphPeek = (props: GraphPeekProps) => {
-    const { i18n, Icon, vocabularyKeys, node, edge } = props;
+    const { i18n, vocabularyKeys, node, edge } = props;
     const vocab = vocabularyKeys ?? ({} as VocabularyKeys);
-    const renderIcon = createIconRenderer(Icon);
 
     // Create templates lazily on first render to avoid module-level template calls
     // that fail during SSR builds

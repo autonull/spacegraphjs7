@@ -2,7 +2,6 @@ import type {
     RenderTheme,
     Projection,
     RenderModel,
-    RendererCapabilities,
     DetailMode,
     EqualizerRuleSet,
     GraphViewData,
@@ -16,12 +15,12 @@ import type {
     UseEdgeKindsReturn,
     GraphDiffSource,
 } from '@spacegraphjs/shared';
-import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
+import type { IconComponent } from '@spacegraphjs/shared/icons';
 import type { I18n } from '@spacegraphjs/shared/i18n';
-import { Show, type JSX } from 'solid-js';
+import type { JSX } from 'solid-js';
 import { createEffect } from 'solid-js';
 import { useSpring, springPresets } from '@spacegraphjs/shared';
-import { createComponent, effect, getNextElement, insert, setAttribute } from 'solid-js/web';
+import { createComponent } from 'solid-js/web';
 import { GraphPeek } from './GraphPeek';
 import { GraphPopover } from './GraphPopover';
 
