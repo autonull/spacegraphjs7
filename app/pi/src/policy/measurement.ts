@@ -13,6 +13,7 @@ import { adaptiveInsets } from './adaptive-fit';
 import { denseType } from './density';
 import type { ExperimentCell, PolicyExperiment, SampledExperiment } from './experiments';
 import { labelFontPx } from './host';
+import { insetRegion } from 'spacegraphjs/utils';
 import type { PolicyVector } from './schema';
 
 /** Visual presence is an offline projection of solved positions, not a pixel snapshot. */
@@ -56,10 +57,10 @@ export const measurePresence = (input: PresenceInput): PresenceSample => {
     const padding = input.padding ?? 40;
     const minPx = Number(input.values['ladder.minLabelPx']);
     const insets = adaptiveInsets(input.viewport.width, input.viewport.height, padding);
-    const usableWidth = input.viewport.width - insets.left - insets.right;
-    const usableHeight = input.viewport.height - insets.top - insets.bottom;
+    const region = insetRegion(input.viewport, insets);
     const empty = { id: input.id, octave, occupancy: 0, labelCoverage: 0, nodes: 0 };
-    if (usableWidth <= 0 || usableHeight <= 0) return empty;
+    if (!region) return empty;
+    const { width: usableWidth, height: usableHeight } = region;
 
     const dense = denseType(input.values);
     const placed = input.nodes.flatMap((node) => {

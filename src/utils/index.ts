@@ -2,7 +2,7 @@
 // All utilities re-exported from single source for better tree-shaking
 
 // Camera utilities
-export type { FitInsets, FitSurface, FitViewResult } from './CameraUtils';
+export type { FitInsets, FitSurface, FitViewResult, InsetRegion } from './CameraUtils';
 export {
     AUTO_FOCUS_DURATION,
     calculateFitView,
@@ -10,6 +10,8 @@ export {
     focusNodeCamera,
     focusRadiusOf,
     halfFovTangent,
+    insetRegion,
+    normalizeInsets,
     setOrthoFrustum,
     visibleHeightAtDistance,
     visibleWorldExtent,

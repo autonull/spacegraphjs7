@@ -137,22 +137,37 @@ export interface FitInsets {
     left: number;
 }
 
-/** The part of the surface the content may use once the insets are taken out, in CSS pixels. */
-interface UsableRegion {
-    width: number;
-    height: number;
+/** The usable region plus the top-left offset, so overlays can anchor to the same box. */
+export interface InsetRegion extends FitSurface {
+    readonly left: number;
+    readonly top: number;
 }
 
-/**
- * The region of the surface the content may use. Without a surface, or without insets, the content
- * may use the whole surface and the region is undefined.
- */
-function usableRegion(surface?: FitSurface, insets?: FitInsets): UsableRegion | undefined {
-    if (!surface || !insets) return undefined;
-    const width = surface.width - insets.left - insets.right;
-    const height = surface.height - insets.top - insets.bottom;
+/** Missing sides default to zero; callers can pass a partial inset map. */
+export function normalizeInsets(insets: Partial<FitInsets> = {}): FitInsets {
+    return {
+        top: insets.top ?? 0,
+        right: insets.right ?? 0,
+        bottom: insets.bottom ?? 0,
+        left: insets.left ?? 0,
+    };
+}
+
+/** Usable box after insets; undefined when the insets leave no positive area. */
+export function insetRegion(
+    surface: FitSurface,
+    insets: Partial<FitInsets> = {},
+): InsetRegion | undefined {
+    const box = normalizeInsets(insets);
+    const width = surface.width - box.left - box.right;
+    const height = surface.height - box.top - box.bottom;
     if (width <= 0 || height <= 0) return undefined;
-    return { width, height };
+    return { width, height, left: box.left, top: box.top };
+}
+
+function usableRegion(surface?: FitSurface, insets?: FitInsets): InsetRegion | undefined {
+    if (!surface || !insets) return undefined;
+    return insetRegion(surface, insets);
 }
 
 /**

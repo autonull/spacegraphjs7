@@ -1,4 +1,7 @@
+import type { FitInsets } from 'spacegraphjs/utils';
 import type { PolicyVector } from './schema';
+
+export type { FitInsets };
 
 /** One octave is a 2× zoom change. The target reuses policy knobs; it adds no permalink field. */
 export const FIT_OCTAVES = [-1, 0, 1] as const;
@@ -10,13 +13,6 @@ export const PRESENCE_OCCUPANCY: Readonly<Record<number, number>> = {
     0: 0.0652,
     1: 0.0881,
 };
-
-export interface FitInsets {
-    readonly top: number;
-    readonly right: number;
-    readonly bottom: number;
-    readonly left: number;
-}
 
 export interface FitMetrics {
     readonly aspect: number;
