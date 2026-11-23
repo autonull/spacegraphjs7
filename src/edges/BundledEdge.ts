@@ -1,4 +1,4 @@
-import { MathPool } from '../core';
+import { MathPool, withPooledVectors } from '../core';
 import { ThreeDisposer } from '../utils';
 import * as THREE from 'three';
 import type { Node } from '../nodes/Node';
@@ -80,47 +80,30 @@ export class BundledEdge extends Edge {
 
     update() {
         const pool = MathPool.getInstance();
-        const dir = directionBetween(
-            this.source.position,
-            this.target.position,
-            pool.acquireVector3(),
-        );
+        withPooledVectors(pool, 6, (dir, ortho1, ortho2, offsetVec, p1, p2) => {
+            directionBetween(this.source.position, this.target.position, dir);
+            if (dir.lengthSq() < 0.001) return;
 
-        if (dir.lengthSq() < 0.001) {
-            pool.releaseVector3(dir);
-            return;
-        }
+            perpendicularTo(dir, ortho1).normalize();
+            ortho2.crossVectors(dir, ortho1).normalize();
 
-        const ortho1 = perpendicularTo(dir, pool.acquireVector3()).normalize();
-        const ortho2 = pool.acquireVector3().crossVectors(dir, ortho1).normalize();
+            const { source, target, spread, strandCount } = this;
+            for (let i = 0; i < strandCount; i++) {
+                const angle = (i / strandCount) * Math.PI * 2;
+                offsetVec
+                    .copy(ortho1)
+                    .multiplyScalar(Math.cos(angle) * spread)
+                    .addScaledVector(ortho2, Math.sin(angle) * spread);
+                p1.copy(source.position).add(offsetVec);
+                p2.copy(target.position).add(offsetVec);
 
-        const offsetVec = pool.acquireVector3();
-        const p1 = pool.acquireVector3();
-        const p2 = pool.acquireVector3();
-
-        const { source, target, spread, strandCount } = this;
-
-        for (let i = 0; i < strandCount; i++) {
-            const angle = (i / strandCount) * Math.PI * 2;
-            const offsetX = Math.cos(angle) * spread;
-            const offsetY = Math.sin(angle) * spread;
-
-            offsetVec.copy(ortho1).multiplyScalar(offsetX).addScaledVector(ortho2, offsetY);
-            p1.copy(source.position).add(offsetVec);
-            p2.copy(target.position).add(offsetVec);
-
-            const posAttr = this.strands[i].geometry.attributes.position as THREE.BufferAttribute;
-            posAttr.setXYZ(0, p1.x, p1.y, p1.z);
-            posAttr.setXYZ(1, p2.x, p2.y, p2.z);
-            posAttr.needsUpdate = true;
-        }
-
-        pool.releaseVector3(dir);
-        pool.releaseVector3(ortho1);
-        pool.releaseVector3(ortho2);
-        pool.releaseVector3(offsetVec);
-        pool.releaseVector3(p1);
-        pool.releaseVector3(p2);
+                const posAttr = this.strands[i].geometry.attributes
+                    .position as THREE.BufferAttribute;
+                posAttr.setXYZ(0, p1.x, p1.y, p1.z);
+                posAttr.setXYZ(1, p2.x, p2.y, p2.z);
+                posAttr.needsUpdate = true;
+            }
+        });
     }
 
     dispose(): void {

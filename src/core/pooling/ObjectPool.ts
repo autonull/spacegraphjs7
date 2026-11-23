@@ -180,3 +180,18 @@ export const withPooledBox3 = <T>(pool: MathPool, fn: (b: Box3) => T): T =>
         (b) => pool.releaseBox3(b),
         fn,
     );
+
+/** Acquires `count` vectors for one scope and releases every one of them, even on early exit. */
+export const withPooledVectors = <T>(
+    pool: MathPool,
+    count: number,
+    fn: (...vectors: Vector3[]) => T,
+): T => {
+    const vectors: Vector3[] = [];
+    try {
+        for (let index = 0; index < count; index++) vectors.push(pool.acquireVector3());
+        return fn(...vectors);
+    } finally {
+        for (const vector of vectors) pool.releaseVector3(vector);
+    }
+};

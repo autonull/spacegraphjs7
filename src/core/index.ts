@@ -60,6 +60,7 @@ export {
     withPooledMatrix4,
     withPooledVector2,
     withPooledVector3,
+    withPooledVectors,
 } from './pooling/ObjectPool';
 export { RenderContext } from './RenderContext';
 export { WebGLRenderer } from './WebGLRenderer';

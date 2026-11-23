@@ -4,6 +4,8 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
 import { dataColor } from '../utils/color';
 import { clamp } from '../utils/math';
+import { ribbonWidth } from '../utils/ribbon';
+import { ThreeDisposer } from '../utils';
 import { Edge } from './Edge';
 
 const SEGMENTS = 12;
@@ -169,9 +171,7 @@ export class FluxEdge extends Edge {
         const { sourcePos, targetPos } = this.endpointPositions();
         if (!Number.isFinite(sourcePos.x) || !Number.isFinite(targetPos.x)) return;
 
-        const { weight = 0.5, minRadius = 1, maxRadius = 8 } = this.data;
-        const width =
-            (minRadius as number) + clamp(weight as number, 0, 1) * ((maxRadius as number) - (minRadius as number));
+        const width = ribbonWidth(this.data);
         const inset = clamp((this.data.inset as number | undefined) ?? 0.08, 0, 0.45);
         const curveStrength = clamp((this.data.curve as number | undefined) ?? 0.1, 0, 0.6);
         const halo = clamp((this.data.halo as number | undefined) ?? 0.45, 0, 1);
@@ -248,11 +248,7 @@ export class FluxEdge extends Edge {
     }
 
     dispose(): void {
-        for (const mesh of [this.mesh, this.halo, this.arrow]) {
-            mesh.parent?.remove(mesh);
-            mesh.geometry.dispose();
-            (mesh.material as THREE.Material).dispose();
-        }
+        for (const mesh of [this.mesh, this.halo, this.arrow]) ThreeDisposer.disposeAndDetach(mesh);
         super.dispose();
     }
 }

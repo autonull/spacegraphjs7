@@ -64,6 +64,7 @@ export { MAX_NODE_SIZE, MIN_NODE_SIZE, nodeScreenSize, NodeResizer } from './nod
 export { parentIdOf } from './nodeParent';
 // Math utilities (from math.ts) - excluding constants which come from core
 export { clamp, clamp01, lerp, safeClone, seededRandom } from './math';
+export { ribbonWidth, RIBBON_WIDTH_DEFAULTS, type RibbonCurve } from './ribbon';
 // Performance utilities
 export { batch, measure } from './performance';
 // Projection helpers

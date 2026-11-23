@@ -45,4 +45,10 @@ export function disposeObject3D(object: THREE.Object3D, removeChildren = true): 
     }
 }
 
-export const ThreeDisposer = { dispose: disposeObject3D };
+/** Disposes an object and detaches it from its parent, including geometry, material and textures. */
+export function disposeAndDetach(object: THREE.Object3D, removeChildren = true): void {
+    object.parent?.remove(object);
+    disposeObject3D(object, removeChildren);
+}
+
+export const ThreeDisposer = { dispose: disposeObject3D, disposeAndDetach };

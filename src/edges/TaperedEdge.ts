@@ -1,10 +1,11 @@
 import * as THREE from 'three';
-import { MathPool } from '../core/pooling/ObjectPool';
+import { MathPool, withPooledVectors } from '../core/pooling/ObjectPool';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
 import { dataColor } from '../utils/color';
-import { clamp } from '../utils/math';
+import { ribbonWidth } from '../utils/ribbon';
+import { ThreeDisposer } from '../utils';
 import { directionBetween, midpoint } from '../utils/vector';
 import { Edge } from './Edge';
 
@@ -82,22 +83,16 @@ export class TaperedEdge extends Edge {
         super.update();
         const pool = MathPool.getInstance();
         const { source, target, data } = this;
-        const { weight = 0.5, minRadius = 1, maxRadius = 8 } = data;
-        const clampedWeight = clamp(weight as number, 0, 1);
-        const width =
-            (minRadius as number) + clampedWeight * ((maxRadius as number) - (minRadius as number));
+        const width = ribbonWidth(data);
 
-        const dir = directionBetween(source.position, target.position, pool.acquireVector3());
-        const length = dir.length();
-        const midPoint = midpoint(source.position, target.position, pool.acquireVector3());
-
-        this.mesh.position.copy(midPoint);
-        // Align local +Y with the source→target direction so the broad end stays at the source.
-        this.mesh.rotation.z = -Math.atan2(dir.x, dir.y);
-        this.mesh.scale.set(width, length, 1);
-
-        pool.releaseVector3(dir);
-        pool.releaseVector3(midPoint);
+        withPooledVectors(pool, 2, (dir, midPoint) => {
+            const length = directionBetween(source.position, target.position, dir).length();
+            midpoint(source.position, target.position, midPoint);
+            this.mesh.position.copy(midPoint);
+            // Align local +Y with the source→target direction so the broad end stays at the source.
+            this.mesh.rotation.z = -Math.atan2(dir.x, dir.y);
+            this.mesh.scale.set(width, length, 1);
+        });
     }
 
     updateSpec(updates: Partial<EdgeSpec>): this {
@@ -108,9 +103,7 @@ export class TaperedEdge extends Edge {
     }
 
     dispose(): void {
-        this.mesh.parent?.remove(this.mesh);
-        this.mesh.geometry?.dispose();
-        (this.mesh.material as THREE.Material)?.dispose();
+        ThreeDisposer.disposeAndDetach(this.mesh);
         super.dispose();
     }
 }

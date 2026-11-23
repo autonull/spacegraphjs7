@@ -1,10 +1,11 @@
-import { MathPool } from '../core';
+import { MathPool, withPooledVectors } from '../core';
 import * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
 import { dataColor } from '../utils/color';
-import { clamp } from '../utils/math';
+import { ribbonWidth } from '../utils/ribbon';
+import { ThreeDisposer } from '../utils';
 import { directionBetween, midpoint } from '../utils/vector';
 import { Edge } from './Edge';
 
@@ -49,22 +50,15 @@ export class DynamicThicknessEdge extends Edge {
         super.update();
         const pool = MathPool.getInstance();
         const { source, target, data } = this;
-        const { weight = 0.5, minRadius = 1, maxRadius = 8 } = data;
-        const clampedWeight = clamp(weight as number, 0, 1);
-        const radius =
-            (minRadius as number) + clampedWeight * ((maxRadius as number) - (minRadius as number));
+        const radius = ribbonWidth(data);
 
-        const dir = directionBetween(source.position, target.position, pool.acquireVector3());
-        const length = dir.length();
-
-        const midPoint = midpoint(source.position, target.position, pool.acquireVector3());
-
-        this.cylinder.position.copy(midPoint);
-        this.cylinder.lookAt(target.position);
-        this.cylinder.scale.set(radius, radius, length);
-
-        pool.releaseVector3(dir);
-        pool.releaseVector3(midPoint);
+        withPooledVectors(pool, 2, (dir, midPoint) => {
+            const length = directionBetween(source.position, target.position, dir).length();
+            midpoint(source.position, target.position, midPoint);
+            this.cylinder.position.copy(midPoint);
+            this.cylinder.lookAt(target.position);
+            this.cylinder.scale.set(radius, radius, length);
+        });
     }
 
     updateSpec(updates: Partial<EdgeSpec>): this {
@@ -75,9 +69,7 @@ export class DynamicThicknessEdge extends Edge {
     }
 
     dispose(): void {
-        this.cylinder.parent?.remove(this.cylinder);
-        this.cylinder.geometry?.dispose();
-        (this.cylinder.material as THREE.Material)?.dispose();
+        ThreeDisposer.disposeAndDetach(this.cylinder);
         super.dispose();
     }
 }
