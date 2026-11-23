@@ -15,7 +15,7 @@ import {
     nodeIdOf,
     idsOf,
 } from '@spacegraphjs/renderer';
-import type { GraphSpec, SpaceGraph } from 'spacegraphjs/activity';
+import type { GraphSpec, NodeSpec, SpaceGraph } from 'spacegraphjs/activity';
 import { Vector3 } from 'three';
 import { worldToScreen } from 'spacegraphjs/utils';
 import { WIDGET_SLOTS } from 'spacegraphjs/widgets';
@@ -107,11 +107,7 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
         // Semantic zoom changes a node's representation (a phase is a panel at execution and a counted chip
         // at overview). The core upserts by id and never remodels, so drop any node whose spec type changed
         // first; loadSpec then recreates it with the new type.
-        for (const node of nodes) {
-            const previous = this.#nodeTypes.get(node.id);
-            if (previous && previous !== node.type) sg.removeNode(node.id);
-            this.#nodeTypes.set(node.id, node.type);
-        }
+        for (const node of nodes) this.upsertNodeType(node.id, node.type);
 
         const spec: GraphSpec = {
             nodes,
@@ -125,25 +121,29 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
         this.#sg?.setPositions(positions);
     }
 
-    protected addNode(node: RenderNode, theme: RenderTheme): void {
+    /** Drop a node whose spec type changed, then remember the type the core now holds. */
+    private upsertNodeType(id: string, type: string): void {
         const sg = this.#sg;
         if (!sg) return;
-        const spec = nodeSpec(node, theme);
-        const previous = this.#nodeTypes.get(node.id);
-        if (previous && previous !== spec.type) sg.removeNode(node.id);
-        this.#nodeTypes.set(node.id, spec.type);
-        sg.loadSpec({ nodes: [spec], edges: [] });
+        const previous = this.#nodeTypes.get(id);
+        if (previous && previous !== type) sg.removeNode(id);
+        this.#nodeTypes.set(id, type);
+    }
+
+    private loadNodeSpec(spec: NodeSpec): void {
+        if (!this.#sg) return;
+        this.upsertNodeType(spec.id, spec.type);
+        this.#sg.loadSpec({ nodes: [spec], edges: [] });
+    }
+
+    protected addNode(node: RenderNode, theme: RenderTheme): void {
+        this.loadNodeSpec(nodeSpec(node, theme));
     }
 
     protected updateNode(node: RenderNode, theme: RenderTheme): void {
-        const sg = this.#sg;
-        if (!sg) return;
         const spec = nodeSpec(node, theme);
-        const previous = this.#nodeTypes.get(node.id);
-        if (previous && previous !== spec.type) sg.removeNode(node.id);
-        this.#nodeTypes.set(node.id, spec.type);
-        sg.loadSpec({ nodes: [spec], edges: [] });
-        sg.setPositions({ [node.id]: node.position });
+        this.loadNodeSpec(spec);
+        this.#sg?.setPositions({ [node.id]: node.position });
     }
 
     protected removeNode(id: string): void {
