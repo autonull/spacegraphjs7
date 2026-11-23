@@ -318,8 +318,6 @@ function lanesLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
         else appendTo(byTurn, column, node);
     }
 
-    // Every turn is a column, including an empty one: the column is the turn's place in the
-    // session, and a session does not close the gap of a turn that drew nothing.
     const columns: [string, Node[]][] = [];
 
     if (sessionColumn.length > 0) columns.push([SESSION_COLUMN, sessionColumn]);

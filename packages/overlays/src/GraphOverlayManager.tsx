@@ -191,7 +191,7 @@ export type GraphOverlayManagerProps = {
  * preventing the SolidJS compiler from hoisting template calls to module level.
  */
 export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Element => {
-    const { i18n, Icon, ...rest } = props;
+    const { i18n, Icon } = props;
 
     // Spring animations for smooth peek positioning
     const [peekLeft, setPeekLeft] = useSpring(0, springPresets.smooth);

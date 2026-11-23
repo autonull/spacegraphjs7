@@ -122,8 +122,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
             return;
         }
 
-        const nodeResult = this.raycaster.raycastNode();
-        const edgeResult = this.raycaster.raycastEdge();
+        const { node: nodeResult, edge: edgeResult } = this.raycastBoth();
         this.pointerDownNode = nodeResult?.node ?? null;
         this.pointerDownEdge = edgeResult?.edge ?? null;
 
@@ -219,8 +218,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
             return;
         }
 
-        const nodeResult = this.raycaster.raycastNode();
-        const edgeResult = this.raycaster.raycastEdge();
+        const { node: nodeResult, edge: edgeResult } = this.raycastBoth();
         if (this.input.enableHover !== false) {
             this.hoverManager.updateHover(nodeResult?.node ?? null, edgeResult?.edge ?? null);
         }
@@ -398,49 +396,48 @@ export class InteractionPlugin extends BaseSystemPlugin {
         }
     }
 
-    private handleDblClick(e: any): void {
+    private raycastBoth() {
+        return { node: this.raycaster.raycastNode(), edge: this.raycaster.raycastEdge() };
+    }
+
+    private emitTarget(
+        e: any,
+        onEdge: (edge: Edge) => void,
+        onNode: (node: Node) => void,
+        onBackground?: () => void,
+    ): void {
         this.raycaster.updateMousePosition(e.x, e.y);
+        const { node, edge } = this.raycastBoth();
+        if (edge) return onEdge(edge.edge);
+        if (node) return onNode(node.node);
+        onBackground?.();
+    }
 
-        const edgeResult = this.raycaster.raycastEdge();
-        if (edgeResult?.edge) {
-            (this.sg.events as any).emit('edge:dblclick', { edge: edgeResult.edge } as any);
-            this.handleZoomNavigation(edgeResult.edge.target, `edge:${edgeResult.edge.id}`);
-            return;
-        }
-
-        const nodeResult = this.raycaster.raycastNode();
-        if (nodeResult?.node) {
-            (this.sg.events as any).emit('node:dblclick', { node: nodeResult.node } as any);
-            this.handleZoomNavigation(nodeResult.node, nodeResult.node.id);
-        }
+    private handleDblClick(e: any): void {
+        this.emitTarget(
+            e,
+            (edge) => {
+                (this.sg.events as any).emit('edge:dblclick', { edge } as any);
+                this.handleZoomNavigation(edge.target, `edge:${edge.id}`);
+            },
+            (node) => {
+                (this.sg.events as any).emit('node:dblclick', { node } as any);
+                this.handleZoomNavigation(node, node.id);
+            },
+        );
     }
 
     private handleContextMenu(e: any): void {
         e.originalEvent?.preventDefault();
+        if (this.pointerDownPosition.distanceTo(this.#pointerPosition.set(e.x, e.y)) > 5) return;
 
-        const distance = this.pointerDownPosition.distanceTo(this.#pointerPosition.set(e.x, e.y));
-        if (distance > 5) return;
-
-        this.raycaster.updateMousePosition(e.x, e.y);
-
-        const edgeResult = this.raycaster.raycastEdge();
-        if (edgeResult?.edge) {
-            (this.sg.events as any).emit('edge:contextmenu', {
-                edge: edgeResult.edge,
-                event: e.originalEvent,
-            });
-            return;
-        }
-
-        const nodeResult = this.raycaster.raycastNode();
-        if (nodeResult?.node) {
-            (this.sg.events as any).emit('node:contextmenu', {
-                node: nodeResult.node,
-                event: e.originalEvent,
-            });
-        } else {
-            (this.sg.events as any).emit('graph:contextmenu', { event: e.originalEvent });
-        }
+        const payload = { event: e.originalEvent };
+        this.emitTarget(
+            e,
+            (edge) => (this.sg.events as any).emit('edge:contextmenu', { edge, ...payload }),
+            (node) => (this.sg.events as any).emit('node:contextmenu', { node, ...payload }),
+            () => (this.sg.events as any).emit('graph:contextmenu', payload),
+        );
     }
 
     private handleZoomNavigation(target: Node | Edge, zoomId: string): void {

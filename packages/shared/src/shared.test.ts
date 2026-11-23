@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import type { GraphFacets } from './types';
+import { facetCount, mergeFacets, toggleFacet } from './facets';
 import { noopI18n, passthroughI18n } from './i18n';
 import { createIconRenderer } from '@spacegraphjs/shared/icons';
 import { createPopoverRenderer } from '@spacegraphjs/shared/popover';
@@ -105,5 +107,32 @@ describe('shared hooks', () => {
         expect(result).toBeDefined();
         expect(typeof result[0]).toBe('function'); // Accessor
         expect(typeof result[1]).toBe('function'); // Setter
+    });
+});
+
+describe('facet editing helpers', () => {
+    const facets: GraphFacets = {
+        query: '',
+        kinds: new Set(['tool']),
+        statuses: new Set(),
+        domains: new Set(['session']),
+        failedTools: true,
+        composeMode: 'and',
+    };
+
+    it('preserves untouched filters when merging', () => {
+        expect(mergeFacets(facets, { query: 'auth' })).toEqual({ ...facets, query: 'auth' });
+    });
+
+    it('toggles values while keeping locked ones', () => {
+        expect([...toggleFacet(new Set(['session', 'code']), 'code')]).toEqual(['session']);
+        expect([...toggleFacet(new Set(['session']), 'session', 'session')]).toEqual(['session']);
+        expect([...toggleFacet(new Set(['session']), 'code')]).toEqual(['session', 'code']);
+    });
+
+    it('finds display counts by value', () => {
+        const counts = [{ value: 'tool', kept: 2, total: 5 }];
+        expect(facetCount('tool', counts)).toEqual({ value: 'tool', kept: 2, total: 5 });
+        expect(facetCount('note', counts)).toBeUndefined();
     });
 });

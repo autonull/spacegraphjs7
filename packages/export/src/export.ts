@@ -5,14 +5,9 @@ import {
 } from '@spacegraphjs/renderer';
 import { renderToSVG, serializeRenderModel, type SvgOptions } from '@spacegraphjs/svg-renderer';
 
-export type ExportFormat = 'svg' | 'json' | 'html';
+import type { ExportFormat, ExportOptions } from '@spacegraphjs/shared';
 
-export type ExportOptions = {
-    theme: RenderTheme;
-    sessionTitle?: string;
-    testedCommit?: string;
-    timestamp?: string;
-};
+export type { ExportFormat, ExportOptions } from '@spacegraphjs/shared';
 
 const escapeHtml = (text: string): string => escapeMarkup(text, '&#039;');
 

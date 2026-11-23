@@ -18,23 +18,20 @@ export class HybridStrategy implements VisionStrategy {
             this.onnx.analyze(graph, camera),
         ]);
 
-        // Merge reports, preferring ONNX for scores but combining issues
+        const overallScore = (hReport.overall.score + oReport.overall.score) / 2;
+
         return {
             legibility: {
                 wcagAA: hReport.legibility.wcagAA && oReport.legibility.wcagAA,
                 averageContrast:
                     (hReport.legibility.averageContrast + oReport.legibility.averageContrast) / 2,
-                failures: this.deduplicateFailures(
-                    hReport.legibility.failures,
-                    oReport.legibility.failures,
-                ),
+                failures: this.mergeUnique(hReport.legibility.failures, oReport.legibility.failures, (f) => f.nodeId),
             },
             overlap: {
                 hasOverlaps: hReport.overlap.hasOverlaps || oReport.overlap.hasOverlaps,
                 overlapCount: Math.max(hReport.overlap.overlapCount, oReport.overlap.overlapCount),
-                overlaps: this.deduplicateOverlaps(
-                    hReport.overlap.overlaps,
-                    oReport.overlap.overlaps,
+                overlaps: this.mergeUnique(hReport.overlap.overlaps, oReport.overlap.overlaps, (ov) =>
+                    [ov.nodeA, ov.nodeB].sort().join(':'),
                 ),
             },
             hierarchy: {
@@ -46,21 +43,15 @@ export class HybridStrategy implements VisionStrategy {
                 score: (hReport.ergonomics.score + oReport.ergonomics.score) / 2,
             },
             overall: {
-                score: (hReport.overall.score + oReport.overall.score) / 2,
-                grade: gradeFor((hReport.overall.score + oReport.overall.score) / 2),
+                score: overallScore,
+                grade: gradeFor(overallScore),
                 issues: [...hReport.overall.issues, ...oReport.overall.issues],
             },
         };
     }
 
-    private deduplicateFailures(h: any[], o: any[]): any[] {
-        const seen = new Set(h.map((f) => f.nodeId));
-        return [...h, ...o.filter((f) => !seen.has(f.nodeId))];
-    }
-
-    private deduplicateOverlaps(h: any[], o: any[]): any[] {
-        const getKey = (ov: any) => [ov.nodeA, ov.nodeB].sort().join(':');
-        const seen = new Set(h.map(getKey));
-        return [...h, ...o.filter((ov) => !seen.has(getKey(ov)))];
+    private mergeUnique<T>(h: readonly T[], o: readonly T[], key: (item: T) => string): T[] {
+        const seen = new Set(h.map(key));
+        return [...h, ...o.filter((item) => !seen.has(key(item)))];
     }
 }

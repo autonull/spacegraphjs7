@@ -25,6 +25,12 @@ export type EdgeStyle = {
 /** Confidence levels for edges. */
 export type EdgeConfidence = 'explicit' | 'structural' | 'inferred';
 
+const CONFIDENCE_STYLE = {
+    explicit: { width: 3, opacity: 1 },
+    structural: { width: 2, opacity: 0.55 },
+    inferred: { width: 1, opacity: 0.7 },
+} as const;
+
 /**
  * The style an edge gets from the contract's rules. A renderer that draws dashes its own way —
  * Cytoscape through a class, SVG through `stroke-dasharray` — still reads the same colour, width
@@ -38,35 +44,8 @@ export function edgeStyleFor(edge: RenderEdge, theme: RenderTheme): EdgeStyle {
     const inferred = confidence === 'inferred';
     const isEvidenceOrDelegate = edge.kind === 'evidence' || edge.kind === 'delegates';
 
-    // Confidence-based styling: explicit > structural > inferred
-    let width: number;
-    let opacity: number;
-    let color: string;
-
-    switch (confidence) {
-        case 'explicit':
-            width = 3;
-            opacity = 1.0;
-            color = theme.edge;
-            break;
-        case 'structural':
-            width = 2;
-            opacity = 0.55;
-            color = theme.edge;
-            break;
-        case 'inferred':
-            width = 1;
-            opacity = 0.7; // PHASE47
-            color = theme.edgeMuted;
-            break;
-        default:
-            width = 2;
-            opacity = 0.55;
-            color = theme.edge;
-    }
-
-    // Arrowheads only on evidence/delegates (edges a reader follows backward)
-    const arrowhead = isEvidenceOrDelegate;
+    const { width, opacity } = CONFIDENCE_STYLE[confidence] ?? CONFIDENCE_STYLE.structural;
+    const color = inferred ? theme.edgeMuted : theme.edge;
 
     return {
         color,
@@ -74,7 +53,7 @@ export function edgeStyleFor(edge: RenderEdge, theme: RenderTheme): EdgeStyle {
         opacity,
         dashed: inferred || edge.style === 'dashed' || edge.style === 'dotted',
         inferred,
-        arrowhead,
+        arrowhead: isEvidenceOrDelegate,
     };
 }
 

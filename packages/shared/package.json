@@ -21,6 +21,11 @@
             "import": "./dist/domain.js",
             "default": "./dist/domain.js"
         },
+        "./facets": {
+            "types": "./dist/facets.d.ts",
+            "import": "./dist/facets.js",
+            "default": "./dist/facets.js"
+        },
         "./icons": {
             "types": "./dist/icons.d.ts",
             "import": "./dist/icons.js",

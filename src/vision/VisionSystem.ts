@@ -77,32 +77,20 @@ export class VisionSystem {
             results[name] = { duration, report };
         }
 
-        // Compute accuracy (simplified - would need ground truth for real accuracy)
-        const benchmark: VisionBenchmark = {
-            heuristics: {
-                duration: results['heuristics']?.duration ?? 0,
-                report: results['heuristics']?.report ?? ({} as VisionReport),
-                accuracy: this.computeAccuracy(results['heuristics']?.report),
-            },
+        return {
+            heuristics: this.benchmarkEntry('heuristics', results),
+            ...(results['onnx'] && { onnx: this.benchmarkEntry('onnx', results) }),
+            ...(results['hybrid'] && { hybrid: this.benchmarkEntry('hybrid', results) }),
         };
+    }
 
-        if (results['onnx']) {
-            benchmark.onnx = {
-                duration: results['onnx'].duration,
-                report: results['onnx'].report,
-                accuracy: this.computeAccuracy(results['onnx'].report),
-            };
-        }
-
-        if (results['hybrid']) {
-            benchmark.hybrid = {
-                duration: results['hybrid'].duration,
-                report: results['hybrid'].report,
-                accuracy: this.computeAccuracy(results['hybrid'].report),
-            };
-        }
-
-        return benchmark;
+    private benchmarkEntry(name: string, results: Record<string, { duration: number; report: VisionReport }>) {
+        const result = results[name];
+        return {
+            duration: result?.duration ?? 0,
+            report: result?.report ?? ({} as VisionReport),
+            accuracy: this.computeAccuracy(result?.report),
+        };
     }
 
     /**

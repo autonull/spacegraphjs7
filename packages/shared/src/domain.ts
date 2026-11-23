@@ -240,15 +240,15 @@ export const walk = (
     const contextIds = new Set<string>();
     const answerEdgeIds = new Set<string>();
     const seen = new Set<string>([start]);
-    let frontier = [start];
+    let frontier = new Set<string>([start]);
 
-    while (frontier.length) {
-        const next: string[] = [];
+    while (frontier.size) {
+        const next = new Set<string>();
         for (const edge of view.edges) {
             if (!allowed.has(edge.kind)) continue;
             const from = direction === 'out' ? edge.source : edge.target;
             const to = direction === 'out' ? edge.target : edge.source;
-            if (!frontier.includes(from) || seen.has(to)) continue;
+            if (!frontier.has(from) || seen.has(to)) continue;
             answerIds.add(to);
             answerEdgeIds.add(edge.id);
             for (const parent of view.edges) {
@@ -256,7 +256,7 @@ export const walk = (
                     contextIds.add(parent.source);
             }
             seen.add(to);
-            next.push(to);
+            next.add(to);
         }
         frontier = next;
     }

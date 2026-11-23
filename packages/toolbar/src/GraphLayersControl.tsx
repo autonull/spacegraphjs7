@@ -4,6 +4,7 @@
 
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
+import { facetCount, mergeFacets, toggleFacet, type FacetDisplayCounts } from '@spacegraphjs/shared';
 import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
 import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { I18n } from '@spacegraphjs/shared/i18n';
@@ -68,45 +69,16 @@ export function GraphLayersControl(props: GraphLayersControlProps): JSX.Element 
         })?.id;
     const changeFacets = (next: Partial<GraphFacets>) => {
         const current = facets();
-        if (!current) return;
-        rest.onFacetsChange?.({
-            query: next.query ?? current.query,
-            kinds: next.kinds ?? current.kinds,
-            statuses: next.statuses ?? current.statuses,
-            domains: next.domains ?? current.domains,
-        });
+        if (current) rest.onFacetsChange?.(mergeFacets(current, next));
     };
-    const toggleDomain = (domain: string) => {
-        const current = new Set(facets()?.domains ?? []);
-        if (current.has(domain)) {
-            if (domain === 'session') return;
-            current.delete(domain);
-        } else {
-            current.add(domain);
-        }
-        changeFacets({ domains: current });
-    };
-    const toggleKind = (kind: string) => {
-        const current = new Set(facets()?.kinds ?? []);
-        if (current.has(kind)) current.delete(kind);
-        else current.add(kind);
-        changeFacets({ kinds: current });
-    };
-    const toggleStatus = (status: string) => {
-        const current = new Set(facets()?.statuses ?? []);
-        if (current.has(status)) current.delete(status);
-        else current.add(status);
-        changeFacets({ statuses: current });
-    };
-    const countOf = (
-        value: string,
-        counts: readonly { value: string; kept: number; total: number }[],
-    ) => counts.find((entry) => entry.value === value);
-    const countLabel = (
-        value: string,
-        counts: readonly { value: string; kept: number; total: number }[],
-    ) => {
-        const count = countOf(value, counts);
+    const toggleDomain = (domain: string) =>
+        changeFacets({ domains: toggleFacet(facets()?.domains ?? [], domain, 'session') });
+    const toggleKind = (kind: string) =>
+        changeFacets({ kinds: toggleFacet(facets()?.kinds ?? [], kind) });
+    const toggleStatus = (status: string) =>
+        changeFacets({ statuses: toggleFacet(facets()?.statuses ?? [], status) });
+    const countLabel = (value: string, counts: FacetDisplayCounts) => {
+        const count = facetCount(value, counts);
         return count
             ? i18n.t('ui.toolbar.facets.count', {
                   kept: String(count.kept),
@@ -198,7 +170,7 @@ export function GraphLayersControl(props: GraphLayersControlProps): JSX.Element 
                             class="flex flex-col px-2 py-1 text-11-regular text-text-weaker"
                         >
                             {DOMAINS.map((domain) => {
-                                const count = countOf(domain, counts().domains);
+                                const count = facetCount(domain, counts().domains);
                                 return (
                                     <span data-domain={domain}>
                                         {i18n.t(VOCABULARY_KEYS.domain[domain])} ·{' '}

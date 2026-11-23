@@ -1,8 +1,14 @@
 import { createSignal, createMemo, createEffect } from 'solid-js';
-import type { GraphViewData, GraphNode, GraphFacets } from '@spacegraphjs/shared';
+import type {
+    GraphViewData,
+    GraphNode,
+    GraphFacets,
+    FacetDisplayCounts,
+    IconComponent,
+    I18n,
+} from '@spacegraphjs/shared';
+import { facetCount, mergeFacets, toggleFacet } from '@spacegraphjs/shared';
 import { rankedSearch, sessionOutline, facetCounts } from './search';
-import type { IconComponent } from '@spacegraphjs/shared';
-import type { I18n } from '@spacegraphjs/shared';
 import { createComponent, getNextElement, insert, setAttribute, template, memo } from 'solid-js/web';
 
 export type GraphFindProps = {
@@ -55,50 +61,21 @@ export const GraphFind = (props: GraphFindProps) => {
         }
     };
 
-    const changeFacets = (next: Partial<GraphFacets>) => {
-        const current = props.facets;
-        props.onFacetsChange({
-            query: next.query ?? current.query,
-            kinds: next.kinds ?? current.kinds,
-            statuses: next.statuses ?? current.statuses,
-            domains: next.domains ?? current.domains,
-        });
-    };
+    const changeFacets = (next: Partial<GraphFacets>) =>
+        props.onFacetsChange(mergeFacets(props.facets, next));
 
-    const toggleKind = (kind: string) => {
-        const current = new Set(props.facets.kinds);
-        if (current.has(kind)) current.delete(kind);
-        else current.add(kind);
-        changeFacets({ kinds: current });
-    };
-
-    const toggleStatus = (status: string) => {
-        const current = new Set(props.facets.statuses);
-        if (current.has(status)) current.delete(status);
-        else current.add(status);
-        changeFacets({ statuses: current });
-    };
-
-    const toggleDomain = (domain: string) => {
-        const current = new Set(props.facets.domains);
-        if (current.has(domain)) {
-            if (domain === 'session') return;
-            current.delete(domain);
-        } else {
-            current.add(domain);
-        }
-        changeFacets({ domains: current });
-    };
+    const toggleKind = (kind: string) => changeFacets({ kinds: toggleFacet(props.facets.kinds, kind) });
+    const toggleStatus = (status: string) =>
+        changeFacets({ statuses: toggleFacet(props.facets.statuses, status) });
+    const toggleDomain = (domain: string) =>
+        changeFacets({ domains: toggleFacet(props.facets.domains, domain, 'session') });
 
     const clearFacets = () => {
         changeFacets({ query: '', kinds: new Set(), statuses: new Set() });
     };
 
-    const countLabel = (
-        value: string,
-        counts: readonly { value: string; kept: number; total: number }[],
-    ) => {
-        const count = counts.find((entry) => entry.value === value);
+    const countLabel = (value: string, counts: FacetDisplayCounts) => {
+        const count = facetCount(value, counts);
         return count ? `${count.kept}/${count.total}` : '0/0';
     };
 

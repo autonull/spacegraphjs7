@@ -3,6 +3,36 @@ import { defaultSearchText } from './search';
 
 export type { GraphFacets, FacetCounts };
 
+const SEMANTIC_FACETS = [
+    'failedTools',
+    'fileWrites',
+    'subagentCalls',
+    'errors',
+    'retries',
+    'costlyNodes',
+] as const;
+type SemanticFacet = (typeof SEMANTIC_FACETS)[number];
+
+const SEMANTIC_ACCESSORS = {
+    failedTools: 'isFailedTool',
+    fileWrites: 'isFileWrite',
+    subagentCalls: 'isSubagentCall',
+    errors: 'isError',
+    retries: 'isRetry',
+    costlyNodes: 'isCostlyNode',
+} as const satisfies Record<SemanticFacet, keyof FacetAccessors>;
+
+const semanticTokens = new Set<string>(SEMANTIC_FACETS);
+
+const filterByKept = (model: GraphViewData, kept: ReadonlySet<string>): GraphViewData => ({
+    ...model,
+    nodes: model.nodes.filter((node) => kept.has(node.id)),
+    edges: model.edges.filter((edge) => kept.has(edge.source) && kept.has(edge.target)),
+    turns: model.turns?.filter((turn) => kept.has(turn)) ?? [],
+    activeTurn:
+        model.activeTurn !== undefined && kept.has(model.activeTurn) ? model.activeTurn : undefined,
+});
+
 /** Accessors the host provides to extract facet values from nodes. */
 export interface FacetAccessors {
     /** Extract the kind from a node. */
@@ -84,16 +114,10 @@ function matchQuery(node: GraphNode, query: string, searchText?: (node: GraphNod
 export function applyFacets({ model, facets, accessors }: ApplyFacetsOptions): GraphViewData {
     const { query, kinds, statuses, domains, composeMode } = facets;
 
-    const semanticChecks = [
-        [facets.failedTools, accessors.isFailedTool],
-        [facets.fileWrites, accessors.isFileWrite],
-        [facets.subagentCalls, accessors.isSubagentCall],
-        [facets.errors, accessors.isError],
-        [facets.retries, accessors.isRetry],
-        [facets.costlyNodes, accessors.isCostlyNode],
-    ] as const;
-    const activeChecks = semanticChecks.filter(([active]) => active).map(([, check]) => check);
-    const requireAll = composeMode === "and";
+    const activeChecks = SEMANTIC_FACETS.filter((name) => facets[name]).map(
+        (name) => accessors[SEMANTIC_ACCESSORS[name]],
+    );
+    const requireAll = composeMode === 'and';
 
     // Domain scoping first
     let scopedNodes = model.nodes;
@@ -125,14 +149,7 @@ export function applyFacets({ model, facets, accessors }: ApplyFacetsOptions): G
     // Always keep the root
     kept.add(accessors.rootId(model));
 
-    return {
-        ...model,
-        nodes: model.nodes.filter((node) => kept.has(node.id)),
-        edges: model.edges.filter((edge) => kept.has(edge.source) && kept.has(edge.target)),
-        turns: model.turns?.filter((turn) => kept.has(turn)) ?? [],
-        activeTurn:
-            model.activeTurn !== undefined && kept.has(model.activeTurn) ? model.activeTurn : undefined,
-    };
+    return filterByKept(model, kept);
 }
 
 /**
@@ -143,14 +160,7 @@ export function keepOnly({ model, ids, accessors }: KeepOnlyOptions): GraphViewD
     const kept = new Set(ids);
     kept.add(accessors.rootId(model));
 
-    return {
-        ...model,
-        nodes: model.nodes.filter((node) => kept.has(node.id)),
-        edges: model.edges.filter((edge) => kept.has(edge.source) && kept.has(edge.target)),
-        turns: model.turns?.filter((turn) => kept.has(turn)) ?? [],
-        activeTurn:
-            model.activeTurn !== undefined && kept.has(model.activeTurn) ? model.activeTurn : undefined,
-    };
+    return filterByKept(model, kept);
 }
 
 /**
@@ -236,12 +246,12 @@ export function facetCounts(
             facets,
             withoutDomain,
         ),
-        failedTools: countSemantic(model.nodes, accessors.isFailedTool, facets.failedTools ?? false),
-        fileWrites: countSemantic(model.nodes, accessors.isFileWrite, facets.fileWrites ?? false),
-        subagentCalls: countSemantic(model.nodes, accessors.isSubagentCall, facets.subagentCalls ?? false),
-        errors: countSemantic(model.nodes, accessors.isError, facets.errors ?? false),
-        retries: countSemantic(model.nodes, accessors.isRetry, facets.retries ?? false),
-        costlyNodes: countSemantic(model.nodes, accessors.isCostlyNode, facets.costlyNodes ?? false),
+        ...Object.fromEntries(
+            SEMANTIC_FACETS.map((name) => [
+                name,
+                countSemantic(model.nodes, accessors[SEMANTIC_ACCESSORS[name]], facets[name] ?? false),
+            ]),
+        ),
     };
 }
 
@@ -274,20 +284,14 @@ export function facetsToQuery(
         return list.length > 0 ? `${name}:${list.join(',')}` : undefined;
     };
 
-    // P2.1: Encode semantic facets as boolean flags
-    const encodeFlag = (name: string, value?: boolean) => value ? name : undefined;
+    const encodeFlag = (name: string, value?: boolean) => (value ? name : undefined);
 
     const values = [
         facets.query.trim(),
         encode('kind', ordered(facets.kinds, knownKinds)),
         encode('status', ordered(facets.statuses, knownStatuses)),
         encode('domain', ordered(facets.domains, knownDomains)),
-        encodeFlag('failedTools', facets.failedTools),
-        encodeFlag('fileWrites', facets.fileWrites),
-        encodeFlag('subagentCalls', facets.subagentCalls),
-        encodeFlag('errors', facets.errors),
-        encodeFlag('retries', facets.retries),
-        encodeFlag('costlyNodes', facets.costlyNodes),
+        ...SEMANTIC_FACETS.map((name) => encodeFlag(name, facets[name])),
         facets.composeMode === 'and' ? 'compose:and' : undefined,
     ].filter((value): value is string => !!value);
 
@@ -311,21 +315,15 @@ export function facetsFromQuery(
     const statuses = new Set<string>();
     const domains = new Set<string>(['session']); // Default domain
 
-    // P2.1: Semantic facets
-    let failedTools = false;
-    let fileWrites = false;
-    let subagentCalls = false;
-    let errors = false;
-    let retries = false;
-    let costlyNodes = false;
-    let composeMode: "or" | "and" = "or";
+    const semantic = Object.fromEntries(SEMANTIC_FACETS.map((name) => [name, false])) as Record<
+        SemanticFacet,
+        boolean
+    >;
+    let composeMode: 'or' | 'and' = 'or';
 
     const kindSet = new Set(knownKinds);
     const statusSet = new Set(knownStatuses);
     const domainSet = new Set(knownDomains);
-
-    // P2.1: Known semantic facet tokens
-    const semanticTokens = new Set(['failedTools', 'fileWrites', 'subagentCalls', 'errors', 'retries', 'costlyNodes']);
 
     const trimmed = query.trim();
     if (!trimmed) {
@@ -336,18 +334,8 @@ export function facetsFromQuery(
         if (!token) continue;
         const separator = token.indexOf(':');
         if (separator <= 0) {
-            if (semanticTokens.has(token)) {
-                switch (token) {
-                    case 'failedTools': failedTools = true; break;
-                    case 'fileWrites': fileWrites = true; break;
-                    case 'subagentCalls': subagentCalls = true; break;
-                    case 'errors': errors = true; break;
-                    case 'retries': retries = true; break;
-                    case 'costlyNodes': costlyNodes = true; break;
-                }
-            } else {
-                text.push(token);
-            }
+            if (semanticTokens.has(token)) semantic[token as SemanticFacet] = true;
+            else text.push(token);
             continue;
         }
         const name = token.slice(0, separator);
@@ -368,16 +356,8 @@ export function facetsFromQuery(
             composeMode = 'and';
             continue;
         }
-        // P2.1: Semantic facet flags (boolean, no values)
         if (semanticTokens.has(name)) {
-            switch (name) {
-                case 'failedTools': failedTools = true; break;
-                case 'fileWrites': fileWrites = true; break;
-                case 'subagentCalls': subagentCalls = true; break;
-                case 'errors': errors = true; break;
-                case 'retries': retries = true; break;
-                case 'costlyNodes': costlyNodes = true; break;
-            }
+            semantic[name as SemanticFacet] = true;
             continue;
         }
         text.push(token);
@@ -388,12 +368,7 @@ export function facetsFromQuery(
         kinds,
         statuses,
         domains,
-        failedTools,
-        fileWrites,
-        subagentCalls,
-        errors,
-        retries,
-        costlyNodes,
+        ...semantic,
         composeMode,
     };
 }
@@ -404,11 +379,6 @@ export function hasFacets(facets: GraphFacets): boolean {
         facets.query.trim().length > 0 ||
         facets.kinds.size > 0 ||
         facets.statuses.size > 0 ||
-        facets.failedTools === true ||
-        facets.fileWrites === true ||
-        facets.subagentCalls === true ||
-        facets.errors === true ||
-        facets.retries === true ||
-        facets.costlyNodes === true
+        SEMANTIC_FACETS.some((name) => facets[name] === true)
     );
 }

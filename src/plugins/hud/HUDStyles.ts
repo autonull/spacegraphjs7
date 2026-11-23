@@ -34,9 +34,6 @@ export const HUD_COLORS = {
     },
 } as const;
 
-// Type-safe style builder for HUD elements
-export type HUDPositionKey = keyof typeof HUD_POSITIONS;
-
 export const HUD_STYLES = {
     base: {
         position: 'absolute' as const,
@@ -63,33 +60,12 @@ export const HUD_STYLES = {
         borderRadius: '6px',
     },
 
-    modal: {
-        background: HUD_COLORS.surface,
-        border: `1px solid ${HUD_COLORS.border}`,
-        borderRadius: '12px',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-    },
-
     alert: {
         background: HUD_COLORS.surface,
         border: `1px solid ${HUD_COLORS.border}`,
         borderRadius: '8px',
         padding: '12px 16px',
         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
-    },
-
-    tooltip: {
-        background: HUD_COLORS.surface,
-        border: `1px solid ${HUD_COLORS.border}`,
-        borderRadius: '6px',
-        padding: '6px 10px',
-        fontSize: '12px',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
-    },
-
-    loading: {
-        background: 'rgba(15, 23, 42, 0.9)',
-        backdropFilter: 'blur(4px)',
     },
 
     statusBar: {
@@ -110,16 +86,6 @@ export const HUD_POSITIONS = {
     'right-center': { top: '50%', right: '16px', transform: 'translateY(-50%)' },
     center: { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' },
 } as const;
-
-// Helper to get position styles with optional offset
-export const getHUDPosition = (position: HUDPositionKey, offsetX = 0, offsetY = 0) => {
-    const base: any = HUD_POSITIONS[position];
-    return {
-        ...base,
-        left: offsetX ? `calc(${base.left} + ${offsetX}px)` : base.left,
-        top: offsetY ? `calc(${base.top} + ${offsetY}px)` : base.top,
-    };
-};
 
 export const HUD_ANIMATIONS = {
     fadeIn: {

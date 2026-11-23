@@ -1,4 +1,5 @@
 import type { VisionModelLoader } from '..';
+import type { InferenceSession } from 'onnxruntime-web';
 import { gradeFor } from '../grade';
 import { nodesOf } from '../nodesOf';
 import * as THREE from 'three';
@@ -21,6 +22,26 @@ export class OnnxStrategy implements VisionStrategy {
     private async tensor(data: Float32Array, dims: number[]) {
         const { Tensor } = await import('onnxruntime-web');
         return new Tensor('float32', data, dims);
+    }
+
+    private session(key: string) {
+        return this.modelLoader.getSession(key) || this.modelLoader.getSession(`${key}_model`);
+    }
+
+    private async infer(
+        session: InferenceSession,
+        inputs: Record<string, Awaited<ReturnType<typeof this.tensor>>>,
+        output: string,
+        scale = 1,
+        label?: string,
+    ): Promise<number | undefined> {
+        try {
+            const result = await session.run(inputs);
+            return (result[output].data as Float32Array)[0] * scale;
+        } catch (e) {
+            if (label) console.error(`${label} inference failed`, e);
+            return undefined;
+        }
     }
 
     async analyze(graph: unknown, camera: unknown): Promise<VisionReport> {
@@ -69,8 +90,7 @@ export class OnnxStrategy implements VisionStrategy {
     }
 
     private async analyzeLegibility(context: VisionContext): Promise<LegibilityResult> {
-        const session =
-            this.modelLoader.getSession('tla') || this.modelLoader.getSession('tla_model');
+        const session = this.session('tla');
         if (!session) return { wcagAA: true, averageContrast: 100, failures: [] };
 
         const failures: any[] = [];
@@ -85,19 +105,15 @@ export class OnnxStrategy implements VisionStrategy {
             const input = new Float32Array([bg.r, bg.g, bg.b, fg.r, fg.g, fg.b, size, weight]);
             const tensor = await this.tensor(input, [1, 8]);
 
-            try {
-                const output = await session.run({ text_features: tensor });
-                const score = (output.legibility_score.data as Float32Array)[0] * 100;
-                totalScore += score;
-                if (score < 70) {
-                    failures.push({
-                        nodeId: node.id,
-                        contrast: score,
-                        severity: score < 40 ? 'error' : 'warning',
-                    });
-                }
-            } catch (e) {
-                console.error('TLA inference failed', e);
+            const score = await this.infer(session, { text_features: tensor }, 'legibility_score', 100, 'TLA');
+            if (score === undefined) continue;
+            totalScore += score;
+            if (score < 70) {
+                failures.push({
+                    nodeId: node.id,
+                    contrast: score,
+                    severity: score < 40 ? 'error' : 'warning',
+                });
             }
         }
 
@@ -109,8 +125,7 @@ export class OnnxStrategy implements VisionStrategy {
     }
 
     private async analyzeOverlap(context: VisionContext): Promise<OverlapResult> {
-        const session =
-            this.modelLoader.getSession('odn') || this.modelLoader.getSession('odn_model');
+        const session = this.session('odn');
         if (!session) {
             console.warn(
                 '[OnnxStrategy] ODN session not found. Available:',
@@ -142,14 +157,9 @@ export class OnnxStrategy implements VisionStrategy {
                 ]);
                 const tensor = await this.tensor(input, [1, 8]);
 
-                try {
-                    const output = await session.run({ boxes: tensor });
-                    const prob = (output.overlap_prob.data as Float32Array)[0];
-                    if (prob > 0.5) {
-                        overlaps.push({ nodeA: n1.id, nodeB: n2.id, penetration: prob });
-                    }
-                } catch (e) {
-                    console.error('ODN inference failed', e);
+                const prob = await this.infer(session, { boxes: tensor }, 'overlap_prob', 1, 'ODN');
+                if (prob !== undefined && prob > 0.5) {
+                    overlaps.push({ nodeA: n1.id, nodeB: n2.id, penetration: prob });
                 }
             }
         }
@@ -172,8 +182,7 @@ export class OnnxStrategy implements VisionStrategy {
     }
 
     private async analyzeHierarchy(context: VisionContext): Promise<HierarchyResult> {
-        const session =
-            this.modelLoader.getSession('vhs') || this.modelLoader.getSession('vhs_model');
+        const session = this.session('vhs');
         if (!session) return { hasRoot: false, rootIds: [], depth: 0, levels: [], score: 100 };
 
         const nodes = context.nodes as any[];
@@ -182,18 +191,14 @@ export class OnnxStrategy implements VisionStrategy {
         const input = new Float32Array([0.5, 0.5, nodes.length / 1000, edges / 2000]);
         const tensor = await this.tensor(input, [1, 4]);
 
-        try {
-            const output = await session.run({ hierarchy_features: tensor });
-            const score = (output.hierarchy_score.data as Float32Array)[0] * 100;
-            return { hasRoot: true, rootIds: [], depth: 3, levels: [], score };
-        } catch {
-            return { hasRoot: false, rootIds: [], depth: 0, levels: [], score: 50 };
-        }
+        const score = await this.infer(session, { hierarchy_features: tensor }, 'hierarchy_score', 100);
+        return score === undefined
+            ? { hasRoot: false, rootIds: [], depth: 0, levels: [], score: 50 }
+            : { hasRoot: true, rootIds: [], depth: 3, levels: [], score };
     }
 
     private async analyzeErgonomics(context: VisionContext): Promise<ErgonomicsResult> {
-        const session =
-            this.modelLoader.getSession('eqa') || this.modelLoader.getSession('eqa_model');
+        const session = this.session('eqa');
         if (!session)
             return { fittsLawCompliant: true, averageTargetSize: 44, smallTargets: [], score: 100 };
 
@@ -204,27 +209,23 @@ export class OnnxStrategy implements VisionStrategy {
         const input = new Float32Array([pctSmall, nodes.length / 1000, 1.0, 1.0]);
         const tensor = await this.tensor(input, [1, 4]);
 
-        try {
-            const output = await session.run({ ergonomic_features: tensor });
-            const score = (output.fittslaw_score.data as Float32Array)[0] * 100;
-            return {
-                fittsLawCompliant: score > 70,
-                averageTargetSize: 44,
-                smallTargets: smallTargets.map((n) => ({
-                    nodeId: n.id,
-                    size: n.data?.size ?? 0,
-                    recommended: 44,
-                })),
-                score,
-            };
-        } catch {
+        const score = await this.infer(session, { ergonomic_features: tensor }, 'fittslaw_score', 100);
+        if (score === undefined)
             return { fittsLawCompliant: true, averageTargetSize: 44, smallTargets: [], score: 50 };
-        }
+        return {
+            fittsLawCompliant: score > 70,
+            averageTargetSize: 44,
+            smallTargets: smallTargets.map((n) => ({
+                nodeId: n.id,
+                size: n.data?.size ?? 0,
+                recommended: 44,
+            })),
+            score,
+        };
     }
 
     private async analyzeColor(context: VisionContext): Promise<number> {
-        const session =
-            this.modelLoader.getSession('che') || this.modelLoader.getSession('che_model');
+        const session = this.session('che');
         if (!session) return 100;
 
         const nodes = context.nodes as any[];
@@ -241,13 +242,10 @@ export class OnnxStrategy implements VisionStrategy {
             const input = new Float32Array([c1.r, c1.g, c1.b, c2.r, c2.g, c2.b, c3.r, c3.g, c3.b]);
             const tensor = await this.tensor(input, [1, 9]);
 
-            try {
-                const output = await session.run({ color_neighborhood: tensor });
-                totalScore += (output.harmony_score.data as Float32Array)[0] * 100;
-                count++;
-            } catch (e) {
-                console.error('CHE inference failed', e);
-            }
+            const score = await this.infer(session, { color_neighborhood: tensor }, 'harmony_score', 100, 'CHE');
+            if (score === undefined) continue;
+            totalScore += score;
+            count++;
         }
 
         return count > 0 ? totalScore / count : 100;

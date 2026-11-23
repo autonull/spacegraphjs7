@@ -4,6 +4,7 @@ export default solidLibConfig(
     {
         index: 'src/index.ts',
         i18n: 'src/i18n.ts',
+        facets: 'src/facets.ts',
         icons: 'src/icons.tsx',
         popover: 'src/popover.tsx',
         types: 'src/types.ts',

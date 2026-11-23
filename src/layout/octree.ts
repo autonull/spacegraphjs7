@@ -194,9 +194,26 @@ function getChildIndex(cell: OctreeNode, x: number, y: number, z: number): numbe
     return index;
 }
 
+const addRepulsion = (
+    force: { x: number; y: number; z: number },
+    dx: number,
+    dy: number,
+    dz: number,
+    distSq: number,
+    dist: number,
+    strength: number,
+    minDistance: number,
+    maxForce: number,
+): void => {
+    const capped = Math.min(strength / Math.max(distSq, minDistance * minDistance), maxForce);
+    force.x += (dx / dist) * capped;
+    force.y += (dy / dist) * capped;
+    force.z += (dz / dist) * capped;
+};
+
 /**
  * Compute repulsion force on a node using Barnes-Hut approximation.
- * 
+ *
  * @param node The node to compute force for
  * @param octree The root of the octree
  * @param theta Opening angle threshold (cell size / distance)
@@ -213,7 +230,7 @@ export function computeBarnesHutForce(
     minDistance: number,
     maxForce: number,
 ): { x: number; y: number; z: number } {
-    let fx = 0, fy = 0, fz = 0;
+    const force = { x: 0, y: 0, z: 0 };
 
     const stack: OctreeNode[] = [octree];
 
@@ -232,14 +249,10 @@ export function computeBarnesHutForce(
             const dy = node.position.y - leaf.y;
             const dz = node.position.z - leaf.z;
             const distSq = dx * dx + dy * dy + dz * dz;
-            const dist = Math.sqrt(distSq) || 0.001;
-
-            const effectiveDistSq = Math.max(distSq, minDistance * minDistance);
-            const force = Math.min(repulsion / effectiveDistSq, maxForce);
-
-            fx += (dx / dist) * force;
-            fy += (dy / dist) * force;
-            fz += (dz / dist) * force;
+            addRepulsion(
+                force, dx, dy, dz, distSq,
+                Math.sqrt(distSq) || 0.001, repulsion, minDistance, maxForce,
+            );
             continue;
         }
 
@@ -253,13 +266,10 @@ export function computeBarnesHutForce(
         // Cell size / distance ratio
         const cellSize = cell.halfSize * 2;
         if (cellSize / dist < theta) {
-            // Approximate as single body
-            const effectiveDistSq = Math.max(distSq, minDistance * minDistance);
-            const force = Math.min(repulsion * cell.mass / effectiveDistSq, maxForce);
-
-            fx += (dx / dist) * force;
-            fy += (dy / dist) * force;
-            fz += (dz / dist) * force;
+            addRepulsion(
+                force, dx, dy, dz, distSq, dist,
+                repulsion * cell.mass, minDistance, maxForce,
+            );
         } else {
             // Recurse into children
             if (cell.children) {
@@ -270,33 +280,5 @@ export function computeBarnesHutForce(
         }
     }
 
-    return { x: fx, y: fy, z: fz };
-}
-
-/**
- * Compute the force between a node and a single other node (for close pairs).
- */
-export function computeDirectForce(
-    a: { position: { x: number; y: number; z: number } },
-    b: { position: { x: number; y: number; z: number } },
-    massA: number,
-    massB: number,
-    repulsion: number,
-    minDistance: number,
-    maxForce: number,
-): { x: number; y: number; z: number } {
-    const dx = a.position.x - b.position.x;
-    const dy = a.position.y - b.position.y;
-    const dz = a.position.z - b.position.z;
-    const distSq = dx * dx + dy * dy + dz * dz;
-    const dist = Math.sqrt(distSq) || 0.001;
-
-    const effectiveDistSq = Math.max(distSq, minDistance * minDistance);
-    const force = Math.min(repulsion * massA * massB / effectiveDistSq, maxForce);
-
-    return {
-        x: (dx / dist) * force,
-        y: (dy / dist) * force,
-        z: (dz / dist) * force,
-    };
+    return force;
 }

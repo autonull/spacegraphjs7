@@ -333,7 +333,6 @@ export class Edge extends Surface {
         if (this.line.material.dashed) this.line.computeLineDistances();
         this.geometry.computeBoundingSphere();
         if (this.sg?.renderer?.scene && this.source && this.target) {
-            const { sourcePos, targetPos } = this.endpointPositions();
             updateArrowheads(this.arrowheads, this.sg.renderer.scene, sourcePos, targetPos);
         }
     }

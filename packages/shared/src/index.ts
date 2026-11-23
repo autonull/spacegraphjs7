@@ -7,6 +7,10 @@
 export type { I18n } from './i18n';
 export { noopI18n, passthroughI18n } from './i18n';
 
+// Facet editing
+export type { FacetDisplayCounts } from './facets';
+export { mergeFacets, toggleFacet, facetCount } from './facets';
+
 // Icons
 export type { IconProps, IconComponent, GraphIconButtonProps } from './icons';
 export { defaultIconSVGs, createIconRenderer, GraphIconButton } from './icons';

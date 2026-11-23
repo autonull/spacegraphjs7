@@ -17,15 +17,7 @@ export { type HUDElementOptions, HUDPlugin } from './HUDPlugin';
 export type { AlertOptions } from './hud/HUDAlerts';
 export { HUDDOMFactory } from './hud/HUDDOMFactory';
 // HUD System - Styles, colors, positions, and factory utilities
-export {
-    getHUDPosition,
-    HUD_ANIMATIONS,
-    HUD_COLORS,
-    HUD_POSITIONS,
-    HUD_STYLES,
-    HUD_ZINDEX,
-    type HUDPositionKey,
-} from './hud/HUDStyles';
+export { HUD_ANIMATIONS, HUD_COLORS, HUD_POSITIONS, HUD_STYLES, HUD_ZINDEX } from './hud/HUDStyles';
 export { InteractionPlugin } from './InteractionPlugin';
 export {
     type HoverAction,
