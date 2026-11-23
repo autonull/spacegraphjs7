@@ -23,7 +23,7 @@
         "test": "bun test",
         "build": "vite build"
     },
-    "dependencies": {
+    "devDependencies": {
         "@spacegraphjs/renderer": "workspace:*"
     },
     "license": "MIT"

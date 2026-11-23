@@ -541,12 +541,6 @@ importers:
 
   packages/domain/agent:
     dependencies:
-      '@spacegraphjs/adapter':
-        specifier: workspace:*
-        version: link:../../adapter
-      '@spacegraphjs/config':
-        specifier: workspace:*
-        version: link:../../config
       '@spacegraphjs/kernel':
         specifier: workspace:*
         version: link:../../kernel
@@ -578,15 +572,9 @@ importers:
       '@spacegraphjs/adapter':
         specifier: workspace:*
         version: link:../../adapter
-      '@spacegraphjs/config':
-        specifier: workspace:*
-        version: link:../../config
       '@spacegraphjs/kernel':
         specifier: workspace:*
         version: link:../../kernel
-      '@spacegraphjs/renderer':
-        specifier: workspace:*
-        version: link:../../renderer
       '@spacegraphjs/search':
         specifier: workspace:*
         version: link:../../search
@@ -612,15 +600,9 @@ importers:
       '@spacegraphjs/adapter':
         specifier: workspace:*
         version: link:../../adapter
-      '@spacegraphjs/config':
-        specifier: workspace:*
-        version: link:../../config
       '@spacegraphjs/kernel':
         specifier: workspace:*
         version: link:../../kernel
-      '@spacegraphjs/renderer':
-        specifier: workspace:*
-        version: link:../../renderer
       '@spacegraphjs/search':
         specifier: workspace:*
         version: link:../../search
@@ -646,15 +628,9 @@ importers:
       '@spacegraphjs/adapter':
         specifier: workspace:*
         version: link:../../adapter
-      '@spacegraphjs/config':
-        specifier: workspace:*
-        version: link:../../config
       '@spacegraphjs/kernel':
         specifier: workspace:*
         version: link:../../kernel
-      '@spacegraphjs/renderer':
-        specifier: workspace:*
-        version: link:../../renderer
       '@spacegraphjs/search':
         specifier: workspace:*
         version: link:../../search
@@ -728,7 +704,7 @@ importers:
         version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@7.3.7(@types/node@26.4.1)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/kernel:
-    dependencies:
+    devDependencies:
       '@spacegraphjs/renderer':
         specifier: workspace:*
         version: link:../renderer

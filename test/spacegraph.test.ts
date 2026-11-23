@@ -505,16 +505,17 @@ function mkEdge(sg: any, id: string, src: any, tgt: any) {
     return new Edge(sg, { id, source: src.id, target: tgt.id, type: 'Edge' }, src, tgt);
 }
 
+let sg: any;
+
+beforeEach(() => {
+    sg = makeSpaceGraph();
+});
+
 // ============================================================
 // Node tests
 // ============================================================
 
 describe('Node base class', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('creates a node with correct id and position', () => {
         const n = new (Node as any)(sg, { id: 'n1', type: 'Node', position: [1, 2, 3] });
         expect(n.id).toBe('n1');
@@ -537,11 +538,6 @@ describe('Node base class', () => {
 });
 
 describe('ShapeNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('has child mesh in object', () => {
         const n = new ShapeNode(sg, {
             id: 's',
@@ -564,11 +560,6 @@ describe('ShapeNode', () => {
 });
 
 describe('NoteNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('renders title and body text', () => {
         const n = new NoteNode(sg, {
             id: 'nn',
@@ -595,11 +586,6 @@ describe('NoteNode', () => {
 });
 
 describe('CanvasNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('creates canvas with specified dimensions', () => {
         const n = new CanvasNode(sg, {
             id: 'cn',
@@ -628,11 +614,6 @@ describe('CanvasNode', () => {
 });
 
 describe('TextMeshNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('creates a sprite child', () => {
         const n = new TextMeshNode(sg, { id: 'tm', type: 'TextMeshNode', label: 'Hello' });
         expect(n.object.children.length).toBeGreaterThan(0);
@@ -645,11 +626,6 @@ describe('TextMeshNode', () => {
 });
 
 describe('DataNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('renders correct number of keys for an object payload', () => {
         const n = new DataNode(sg, {
             id: 'dn',
@@ -668,11 +644,6 @@ describe('DataNode', () => {
 });
 
 describe('VideoNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('sets video src correctly', () => {
         const n = new VideoNode(sg, {
             id: 'vn',
@@ -705,11 +676,6 @@ describe('VideoNode', () => {
 });
 
 describe('IFrameNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('creates iframe with target src', () => {
         const n = new IFrameNode(sg, {
             id: 'iframe',
@@ -732,11 +698,6 @@ describe('IFrameNode', () => {
 });
 
 describe('MarkdownNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('creates CSS3D element and attempts to load markdown', async () => {
         const n = new MarkdownNode(sg, {
             id: 'mn',
@@ -757,11 +718,6 @@ describe('MarkdownNode', () => {
 });
 
 describe('GlobeNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('creates sphere geometry mesh', () => {
         const n = new GlobeNode(sg, { id: 'gn', type: 'GlobeNode' });
         const mesh = n.object.children.find((c) => (c as any).isMesh);
@@ -771,11 +727,6 @@ describe('GlobeNode', () => {
 });
 
 describe('SceneNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('instantiates without error even if url is empty', () => {
         const n = new SceneNode(sg, { id: 'sn', type: 'SceneNode' });
         expect(n.object.children.length).toBeGreaterThanOrEqual(0);
@@ -783,11 +734,6 @@ describe('SceneNode', () => {
 });
 
 describe('AudioNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('creates audio element and updates properly', () => {
         const n = new AudioNode(sg, {
             id: 'an',
@@ -805,11 +751,6 @@ describe('AudioNode', () => {
 });
 
 describe('MathNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('instantiates and contains loading text before katex loads', () => {
         const n = new MathNode(sg, {
             id: 'mn',
@@ -822,11 +763,6 @@ describe('MathNode', () => {
 });
 
 describe('ChartNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('instantiates and fallback renders without throwing', () => {
         const n = new ChartNode(sg, {
             id: 'cn',
@@ -840,11 +776,6 @@ describe('ChartNode', () => {
 });
 
 describe('GroupNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('creates box geometry and handles LOD opacity', () => {
         const n = new GroupNode(sg, {
             id: 'gn',
@@ -912,11 +843,6 @@ describe('GroupNode', () => {
 });
 
 describe('HtmlNode', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('creates html content correctly', () => {
         const n = new HtmlNode(sg, {
             id: 'hn',
@@ -932,9 +858,8 @@ describe('HtmlNode', () => {
 // ============================================================
 
 describe('Edge', () => {
-    let sg: any, nodeA: any, nodeB: any;
+    let nodeA: any, nodeB: any;
     beforeEach(() => {
-        sg = makeSpaceGraph();
         nodeA = mkNode(sg, 'a', POS_A);
         nodeB = mkNode(sg, 'b', POS_B);
     });
@@ -964,9 +889,8 @@ describe('Edge', () => {
 });
 
 describe('DottedEdge', () => {
-    let sg: any, nodeA: any, nodeB: any;
+    let nodeA: any, nodeB: any;
     beforeEach(() => {
-        sg = makeSpaceGraph();
         nodeA = mkNode(sg, 'a', POS_A);
         nodeB = mkNode(sg, 'b', POS_B);
     });
@@ -1003,9 +927,8 @@ describe('DottedEdge', () => {
 });
 
 describe('DynamicThicknessEdge', () => {
-    let sg: any, nodeA: any, nodeB: any;
+    let nodeA: any, nodeB: any;
     beforeEach(() => {
-        sg = makeSpaceGraph();
         nodeA = mkNode(sg, 'a', POS_A);
         nodeB = mkNode(sg, 'b', POS_B);
     });
@@ -1049,9 +972,7 @@ describe('DynamicThicknessEdge', () => {
 // ============================================================
 
 describe('GridLayout', () => {
-    let sg: any;
     beforeEach(() => {
-        sg = makeSpaceGraph();
         sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
         for (let i = 0; i < 6; i++) {
             sg.graph.addNode({ id: `n${i}`, type: 'ShapeNode', position: [0, 0, 0] });
@@ -1084,9 +1005,7 @@ describe('GridLayout', () => {
 });
 
 describe('CircularLayout', () => {
-    let sg: any;
     beforeEach(() => {
-        sg = makeSpaceGraph();
         sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
         for (let i = 0; i < 4; i++) {
             sg.graph.addNode({ id: `n${i}`, type: 'ShapeNode', position: [0, 0, 0] });
@@ -1107,9 +1026,7 @@ describe('CircularLayout', () => {
 });
 
 describe('HierarchicalLayout', () => {
-    let sg: any;
     beforeEach(() => {
-        sg = makeSpaceGraph();
         sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
         sg.pluginManager.registerEdgeType('Edge', Edge);
         ['A', 'B', 'C'].forEach((id) =>
@@ -1141,9 +1058,7 @@ describe('HierarchicalLayout', () => {
 });
 
 describe('RadialLayout', () => {
-    let sg: any;
     beforeEach(() => {
-        sg = makeSpaceGraph();
         sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
         sg.pluginManager.registerEdgeType('Edge', Edge);
         ['root', 'c1', 'c2'].forEach((id) =>
@@ -1179,9 +1094,7 @@ describe('RadialLayout', () => {
 // ============================================================
 
 describe('PhysicsPlugin', () => {
-    let sg: any;
     beforeEach(() => {
-        sg = makeSpaceGraph();
         sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
         sg.graph.addNode({ id: 'p1', type: 'ShapeNode', position: [0, 100, 0] });
     });
@@ -1217,11 +1130,6 @@ describe('PhysicsPlugin', () => {
 });
 
 describe('ErgonomicsPlugin', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('initialises without throwing', () => {
         expect(() => new ErgonomicsPlugin().init(sg, sg.graph, sg.events)).not.toThrow();
     });
@@ -1278,9 +1186,7 @@ describe('ErgonomicsPlugin', () => {
 // ============================================================
 
 describe('Graph Serialization', () => {
-    let sg: any;
     beforeEach(() => {
-        sg = makeSpaceGraph();
         sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
         sg.pluginManager.registerEdgeType('Edge', Edge);
 
@@ -1413,9 +1319,7 @@ describe('Graph Serialization', () => {
 // ============================================================
 
 describe('Graph CRUD', () => {
-    let sg: any;
     beforeEach(() => {
-        sg = makeSpaceGraph();
         sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
         sg.pluginManager.registerEdgeType('Edge', Edge);
     });
@@ -1478,11 +1382,6 @@ describe('Graph CRUD', () => {
 // ============================================================
 
 describe('PluginManager', () => {
-    let sg: any;
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('registers and retrieves plugins by key', () => {
         const pm = new PluginManager(sg);
         const plugin = new ForceLayout();
@@ -1530,9 +1429,7 @@ describe('PluginManager', () => {
 // ============================================================
 
 describe('EventManager (Batching)', () => {
-    let sg: any;
     beforeEach(() => {
-        sg = makeSpaceGraph();
         vi.useFakeTimers();
         vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
             return setTimeout(() => cb(Date.now()), 16) as any;
@@ -1580,11 +1477,9 @@ describe('EventManager (Batching)', () => {
 // ============================================================
 
 describe('InteractionPlugin', () => {
-    let sg: any;
     let interaction: InteractionPlugin;
 
     beforeEach(() => {
-        sg = makeSpaceGraph();
         // Make camera look like a PerspectiveCamera for Raycaster
         sg.renderer.camera.isPerspectiveCamera = true;
         sg.renderer.camera.matrixWorld = new THREE.Matrix4();
@@ -1611,11 +1506,9 @@ describe('InteractionPlugin', () => {
 // ============================================================
 
 describe('PhysicsPlugin', () => {
-    let sg: any;
     let physics: PhysicsPlugin;
 
     beforeEach(() => {
-        sg = makeSpaceGraph();
         physics = new PhysicsPlugin();
         physics.init(sg, sg.graph, sg.events);
         physics.settings.enabled = true;
@@ -1663,11 +1556,9 @@ describe('PhysicsPlugin', () => {
 });
 
 describe('ErgonomicsPlugin', () => {
-    let sg: any;
     let ergo: ErgonomicsPlugin;
 
     beforeEach(() => {
-        sg = makeSpaceGraph();
         ergo = new ErgonomicsPlugin();
         ergo.init(sg, sg.graph, sg.events);
         sg.pluginManager.register('ErgonomicsPlugin', ergo);
@@ -1783,11 +1674,9 @@ describe('ErgonomicsPlugin', () => {
 });
 
 describe('VisionManager Auto-Correction Loop', () => {
-    let sg: any;
     let autoLayout: any;
 
     beforeEach(() => {
-        sg = makeSpaceGraph();
 
         // Setup AutoLayoutPlugin mock
         autoLayout = {
@@ -1852,12 +1741,6 @@ describe('VisionManager Auto-Correction Loop', () => {
 });
 
 describe('Layout Engines', () => {
-    let sg: any;
-
-    beforeEach(() => {
-        sg = makeSpaceGraph();
-    });
-
     it('GridLayout correctly places nodes in a mathematical grid', async () => {
         const layout = new GridLayout();
         layout.init(sg, sg.graph, sg.events);

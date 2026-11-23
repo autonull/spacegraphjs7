@@ -3,24 +3,19 @@ import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
 import { focusNodeCamera } from '../../utils/CameraUtils';
 
-export interface SelectionState {
-    nodes: Set<Node>;
-    edges: Set<Edge>;
-}
-
 /**
  * Keyboard shortcuts handler for InteractionPlugin
  * Centralizes all keyboard shortcut logic
  */
 export class KeyboardShortcuts {
     readonly sg: SpaceGraph;
-    private onSelectionChange?: (selection: SelectionState) => void;
+    private onSelectionChange?: () => void;
 
     constructor(sg: SpaceGraph) {
         this.sg = sg;
     }
 
-    setSelectionChangeHandler(handler: (selection: SelectionState) => void): void {
+    setSelectionChangeHandler(handler: () => void): void {
         this.onSelectionChange = handler;
     }
 
@@ -39,7 +34,7 @@ export class KeyboardShortcuts {
                     selectedNodes.forEach((node) => {
                         this.sg.events.emit('node:delete', { node });
                     });
-                    this.onSelectionChange?.({ nodes: new Set(), edges: new Set() });
+                    this.onSelectionChange?.();
                 },
             });
         } else if (selectedEdges.length > 0) {
@@ -54,7 +49,7 @@ export class KeyboardShortcuts {
                     selectedEdges.forEach((edge) => {
                         this.sg.graph.removeEdge(edge.id);
                     });
-                    this.onSelectionChange?.({ nodes: new Set(), edges: new Set() });
+                    this.onSelectionChange?.();
                 },
             });
         }

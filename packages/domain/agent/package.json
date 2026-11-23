@@ -24,8 +24,6 @@
         "build": "vite build"
     },
     "dependencies": {
-        "@spacegraphjs/adapter": "workspace:*",
-        "@spacegraphjs/config": "workspace:*",
         "@spacegraphjs/kernel": "workspace:*",
         "@spacegraphjs/search": "workspace:*",
         "@spacegraphjs/shared": "workspace:*",

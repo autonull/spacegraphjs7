@@ -3,6 +3,7 @@
 
 import gsap from 'gsap';
 import { Camera, OrthographicCamera, PerspectiveCamera, Spherical, Vector3 } from 'three';
+import type { SpaceGraph } from '../SpaceGraph';
 import type { KeyboardScope } from '../types';
 import { fitOrthoFrustum, visibleWorldExtent } from '../utils/CameraUtils';
 import { isEditableTarget } from '../utils/DOMUtils';
@@ -94,7 +95,7 @@ const _tempSide = new Vector3();
 export class CameraControls {
     camera!: Camera;
     readonly domElement: HTMLElement;
-    public sg?: any; // To emit events
+    sg?: SpaceGraph;
     target: Vector3;
     spherical: Spherical;
 

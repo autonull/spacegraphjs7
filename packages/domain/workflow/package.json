@@ -25,9 +25,7 @@
     },
     "dependencies": {
         "@spacegraphjs/adapter": "workspace:*",
-        "@spacegraphjs/config": "workspace:*",
         "@spacegraphjs/kernel": "workspace:*",
-        "@spacegraphjs/renderer": "workspace:*",
         "@spacegraphjs/search": "workspace:*",
         "@spacegraphjs/shared": "workspace:*",
         "@spacegraphjs/trace": "workspace:*"

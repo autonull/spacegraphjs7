@@ -70,7 +70,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
         this.focusManager = new FocusManager(this.sg);
 
         this.cursorManager.setContainer(this.sg.renderer.renderer.domElement);
-        this.keyboardShortcuts.setSelectionChangeHandler((_selection) => {
+        this.keyboardShortcuts.setSelectionChangeHandler(() => {
             this.selectionManager.clear();
         });
 
