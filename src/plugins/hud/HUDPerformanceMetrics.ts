@@ -5,15 +5,11 @@ import { HUD_COLORS, HUD_STYLES, HUD_ZINDEX } from './HUDStyles';
 
 export class HUDPerformanceMetrics {
     private metricsEl: HTMLElement | null = null;
-    readonly sg: SpaceGraph;
     private frames = 0;
     private lastTime = performance.now();
     private fps = 0;
-    private monitoring = false;
 
-    constructor(sg: SpaceGraph) {
-        this.sg = sg;
-    }
+    constructor(private readonly sg: SpaceGraph) {}
 
     create(): void {
         this.metricsEl = DOMUtils.createElement('div', {
@@ -44,69 +40,46 @@ export class HUDPerformanceMetrics {
         `;
 
         HUDDOMFactory.appendToRenderer(this.sg, this.metricsEl);
-        this.startMonitoring();
     }
 
-    updateDrawCalls(count: number): void {
-        const el = HUDDOMFactory.getElementById('sg-draw-calls');
-        if (el) {
-            el.textContent = count.toString();
+    /** Called once per rendered frame; refresh the readout about once a second. */
+    tick(now = performance.now()): void {
+        this.frames++;
+        const delta = now - this.lastTime;
+        if (delta < 1000) return;
+
+        this.fps = Math.round((this.frames * 1000) / delta);
+        const frameTime = delta / this.frames;
+        const fpsEl = HUDDOMFactory.getElementById('sg-fps');
+        const frameTimeEl = HUDDOMFactory.getElementById('sg-frame-time');
+
+        if (fpsEl) {
+            fpsEl.textContent = this.fps.toString();
+            fpsEl.style.color =
+                this.fps < 30
+                    ? HUD_COLORS.error
+                    : this.fps < 55
+                      ? HUD_COLORS.warning
+                      : HUD_COLORS.success;
         }
+        if (frameTimeEl) frameTimeEl.textContent = frameTime.toFixed(1);
+
+        const mem = (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory;
+        if (mem) {
+            const memEl = HUDDOMFactory.getElementById('sg-memory');
+            const memContainer = HUDDOMFactory.getElementById('sg-memory-container');
+            if (memEl && memContainer) {
+                memContainer.style.display = 'block';
+                memEl.textContent = Math.round(mem.usedJSHeapSize / 1048576).toString();
+            }
+        }
+
+        this.frames = 0;
+        this.lastTime = now;
     }
 
     dispose(): void {
-        this.monitoring = false;
-        if (this.metricsEl?.parentElement) {
-            this.metricsEl.parentElement.removeChild(this.metricsEl);
-        }
+        if (this.metricsEl?.parentElement) this.metricsEl.parentElement.removeChild(this.metricsEl);
         this.metricsEl = null;
-    }
-
-    private startMonitoring(): void {
-        this.monitoring = true;
-        this.measure();
-    }
-
-    private measure(): void {
-        if (!this.monitoring) return;
-
-        this.frames++;
-        const now = performance.now();
-        const delta = now - this.lastTime;
-
-        if (delta >= 1000) {
-            this.fps = Math.round((this.frames * 1000) / delta);
-            const frameTime = delta / this.frames;
-
-            const fpsEl = HUDDOMFactory.getElementById('sg-fps');
-            const frameTimeEl = HUDDOMFactory.getElementById('sg-frame-time');
-
-            if (fpsEl) {
-                fpsEl.textContent = this.fps.toString();
-                fpsEl.style.color =
-                    this.fps < 30
-                        ? HUD_COLORS.error
-                        : this.fps < 55
-                          ? HUD_COLORS.warning
-                          : HUD_COLORS.success;
-            }
-            if (frameTimeEl) frameTimeEl.textContent = frameTime.toFixed(1);
-
-            // Update memory if available
-            const mem = (performance as any).memory;
-            if (mem) {
-                const memEl = HUDDOMFactory.getElementById('sg-memory');
-                const memContainer = HUDDOMFactory.getElementById('sg-memory-container');
-                if (memEl && memContainer) {
-                    memContainer.style.display = 'block';
-                    memEl.textContent = Math.round(mem.usedJSHeapSize / 1048576).toString();
-                }
-            }
-
-            this.frames = 0;
-            this.lastTime = now;
-        }
-
-        requestAnimationFrame(() => this.measure());
     }
 }

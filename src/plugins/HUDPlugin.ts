@@ -135,6 +135,10 @@ export class HUDPlugin extends BaseSystemPlugin {
         // Simplified context menu
     }
 
+    onPostRender(): void {
+        this.performanceMetrics?.tick();
+    }
+
     dispose(): void {
         this.statusBar?.dispose();
         this.performanceMetrics?.dispose();

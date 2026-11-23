@@ -30,16 +30,24 @@ export interface InstrumentKit {
     refresh(nodes: readonly RenderNode[]): void;
 }
 
-const dataLines = (data: InstrumentData): readonly string[] => data.lines ?? [];
-
-const render = (
+type ActionHandler = (action: string, node: RenderNode) => void;
+type InstrumentRenderer = (
     element: HTMLElement,
-    id: InstrumentID,
     data: InstrumentData,
     node: RenderNode,
-    onAction?: (action: string, node: RenderNode) => void,
-): void => {
-    if (id === 'sparkline') {
+    onAction?: ActionHandler,
+) => void;
+
+const rows = (lines: readonly string[], decorate?: (row: HTMLElement, line: string) => void) =>
+    lines.map((line) => {
+        const row = document.createElement('span');
+        row.textContent = line;
+        decorate?.(row, line);
+        return row;
+    });
+
+const RENDERERS: Record<InstrumentID, InstrumentRenderer> = {
+    sparkline(element, data) {
         const points = (data.series ?? [])
             .slice(-32)
             .map(
@@ -57,9 +65,8 @@ const render = (
         line.setAttribute('stroke-width', '1');
         svg.append(line);
         element.replaceChildren(svg);
-        return;
-    }
-    if (id === 'meter') {
+    },
+    meter(element, data) {
         const percent = Math.round(Math.min(1, Math.max(0, data.value ?? 0)) * 100);
         const meter = document.createElement('span');
         meter.className = 'instrument-meter';
@@ -71,40 +78,25 @@ const render = (
         const label = document.createElement('span');
         label.textContent = `${percent}%`;
         element.replaceChildren(meter, label);
-        return;
-    }
-    if (id === 'status') {
+    },
+    status(element, data) {
         element.textContent = data.status ?? 'idle';
-        return;
-    }
-    if (id === 'logtail') {
+    },
+    logtail(element, data) {
+        element.replaceChildren(...rows((data.lines ?? []).slice(-3)));
+    },
+    diff(element, data) {
         element.replaceChildren(
-            ...dataLines(data)
-                .slice(-3)
-                .map((line) => {
-                    const row = document.createElement('span');
-                    row.textContent = line;
-                    return row;
-                }),
-        );
-        return;
-    }
-    if (id === 'diff') {
-        element.replaceChildren(
-            ...dataLines(data).map((line) => {
-                const row = document.createElement('span');
-                row.textContent = line;
+            ...rows(data.lines ?? [], (row, line) => {
                 row.dataset.sign = line.startsWith('+')
                     ? 'add'
                     : line.startsWith('-')
                       ? 'remove'
                       : 'same';
-                return row;
             }),
         );
-        return;
-    }
-    if (id === 'tabs') {
+    },
+    tabs(element, data) {
         element.replaceChildren(
             ...(data.tabs ?? []).map((label) => {
                 const tab = document.createElement('button');
@@ -113,26 +105,27 @@ const render = (
                 return tab;
             }),
         );
-        return;
-    }
-    element.replaceChildren(
-        ...(data.actions ?? []).map((action) => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.textContent = action;
-            button.dataset.instrumentAction = action;
-            button.dataset.instrumentTarget = node.id;
-            button.addEventListener('click', () => onAction?.(action, node));
-            return button;
-        }),
-    );
+    },
+    controls(element, data, node, onAction) {
+        element.replaceChildren(
+            ...(data.actions ?? []).map((action) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = action;
+                button.dataset.instrumentAction = action;
+                button.dataset.instrumentTarget = node.id;
+                button.addEventListener('click', () => onAction?.(action, node));
+                return button;
+            }),
+        );
+    },
 };
 
 /** Host-owned instrument kit. Only sanitized data reaches the DOM; the renderer never interprets it. */
 export const createInstrumentKit = (
     container: HTMLElement,
     dataFor: (node: RenderNode) => InstrumentData,
-    onAction?: (action: string, node: RenderNode) => void,
+    onAction?: ActionHandler,
 ): InstrumentKit => {
     const registry = new WidgetRegistry();
     for (const id of INSTRUMENT_IDS) {
@@ -146,7 +139,7 @@ export const createInstrumentKit = (
                 element.className = `instrument instrument-${id}`;
                 element.dataset.instrumentFor = node.id;
                 const update = (current: RenderNode): void =>
-                    render(element, id, dataFor(current), current, onAction);
+                    RENDERERS[id](element, dataFor(current), current, onAction);
                 update(node);
                 container.append(element);
                 return {

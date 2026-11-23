@@ -88,6 +88,78 @@ function withTargets(layout: ScopeLayout, targets: ReadonlyMap<string, Position>
     return { ...layout, positions, bounds };
 }
 
+/** One set of spring bodies: node positions or scope-frame origins. */
+class BodySet<T> {
+    readonly current = new Map<string, Position>();
+    readonly velocity = new Map<string, Position>();
+    readonly sleeping = new Set<string>();
+
+    get energy(): number {
+        let total = 0;
+        for (const velocity of this.velocity.values()) {
+            total += velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2;
+        }
+        return total;
+    }
+
+    settled(targets: ReadonlyMap<string, T>): boolean {
+        for (const id of targets.keys()) if (!this.sleeping.has(id)) return false;
+        return true;
+    }
+
+    snapshot(): Map<string, Position> {
+        return new Map(this.current);
+    }
+
+    clear(): void {
+        this.current.clear();
+        this.velocity.clear();
+        this.sleeping.clear();
+    }
+
+    /** Seed missing bodies, wake those whose target moved, and drop bodies with no target. */
+    sync(
+        targets: ReadonlyMap<string, T>,
+        previous: ReadonlyMap<string, T> | undefined,
+        goalOf: (value: T) => Position,
+        spawn: (id: string, value: T) => Position,
+    ): void {
+        for (const [id, value] of targets) {
+            const goal = goalOf(value);
+            if (!this.current.has(id)) {
+                this.current.set(id, copy(spawn(id, value)));
+                this.velocity.set(id, zero());
+                this.sleeping.add(id);
+            }
+            const before = previous?.get(id);
+            if (!before || moved(goalOf(before), goal)) this.sleeping.delete(id);
+        }
+        for (const id of [...this.current.keys()]) {
+            if (!targets.has(id)) this.drop(id);
+        }
+    }
+
+    pin(id: string, goal: Position): void {
+        this.current.set(id, copy(goal));
+        this.velocity.set(id, zero());
+        this.sleeping.add(id);
+    }
+
+    unpin(id: string): void {
+        this.sleeping.delete(id);
+    }
+
+    settle(targets: ReadonlyMap<string, T>, goalOf: (value: T) => Position): void {
+        for (const [id, value] of targets) this.pin(id, goalOf(value));
+    }
+
+    private drop(id: string): void {
+        this.current.delete(id);
+        this.velocity.delete(id);
+        this.sleeping.delete(id);
+    }
+}
+
 export class ScopeSimulation {
     #options: ScopeSimulationOptions;
     #host: ScopeHost;
@@ -96,12 +168,8 @@ export class ScopeSimulation {
     #target?: ScopeLayout;
     #tree?: ScopeTree;
 
-    #current = new Map<string, Position>();
-    #velocity = new Map<string, Position>();
-    #sleeping = new Set<string>();
-    #frameCurrent = new Map<string, Position>();
-    #frameVelocity = new Map<string, Position>();
-    #frameSleeping = new Set<string>();
+    #bodies = new BodySet<Position>();
+    #frames = new BodySet<ScopeFrame>();
     #pinned = new Set<string>();
     #policyPinned = new Set<string>();
     #layoutOverride: ScopeLayoutOptions = {};
@@ -123,28 +191,18 @@ export class ScopeSimulation {
 
     get settled(): boolean {
         if (!this.#target) return true;
-        for (const id of this.#target.positions.keys()) {
-            if (!this.#sleeping.has(id)) return false;
-        }
-        for (const id of this.#target.frames.keys()) {
-            if (!this.#frameSleeping.has(id)) return false;
-        }
-        return true;
+        return (
+            this.#bodies.settled(this.#target.positions) &&
+            this.#frames.settled(this.#target.frames)
+        );
     }
 
     get energy(): number {
-        let total = 0;
-        for (const velocity of this.#velocity.values()) {
-            total += velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2;
-        }
-        for (const velocity of this.#frameVelocity.values()) {
-            total += velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2;
-        }
-        return total;
+        return this.#bodies.energy + this.#frames.energy;
     }
 
     get positions(): ReadonlyMap<string, Position> {
-        return this.#current;
+        return this.#bodies.current;
     }
 
     /** The solved layout the springs chase, including scope frames, for read-only overlay use. */
@@ -174,49 +232,33 @@ export class ScopeSimulation {
         this.#tree = hosted.tree;
 
         const spawnAtOrigin = this.#options.spawn !== 'target';
-        for (const [id, target] of hosted.positions) {
-            if (!this.#current.has(id)) {
+        this.#bodies.sync(
+            hosted.positions,
+            previous?.positions,
+            (position) => position,
+            (id, position) => {
                 const path = this.#tree ? scopeOf(this.#tree, id) : undefined;
                 const origin = path ? hosted.frames.get(path)?.origin : undefined;
-                this.#current.set(id, copy(spawnAtOrigin && origin ? origin : target));
-                this.#velocity.set(id, zero());
-                this.#sleeping.add(id);
-            }
-            if (!previous || !previous.positions.has(id) || moved(previous.positions.get(id)!, target)) {
-                this.#sleeping.delete(id);
-            }
-        }
-
-        for (const [id, frame] of hosted.frames) {
-            if (!this.#frameCurrent.has(id)) {
+                return spawnAtOrigin && origin ? origin : position;
+            },
+        );
+        this.#frames.sync(
+            hosted.frames,
+            previous?.frames,
+            (frame) => frame.origin,
+            (_id, frame) => {
                 const parentOrigin = frame.parent
-                    ? this.#frameCurrent.get(frame.parent) ?? hosted.frames.get(frame.parent)?.origin
+                    ? (this.#frames.current.get(frame.parent) ??
+                      hosted.frames.get(frame.parent)?.origin)
                     : undefined;
-                this.#frameCurrent.set(id, copy(parentOrigin ?? frame.origin));
-                this.#frameVelocity.set(id, zero());
-                this.#frameSleeping.add(id);
-            }
-            const before = previous?.frames.get(id)?.origin;
-            if (!before || moved(before, frame.origin)) this.#frameSleeping.delete(id);
-        }
-
-        for (const id of [...this.#current.keys()]) {
-            if (hosted.positions.has(id)) continue;
-            this.#current.delete(id);
-            this.#velocity.delete(id);
-            this.#sleeping.delete(id);
-        }
-        for (const id of [...this.#frameCurrent.keys()]) {
-            if (hosted.frames.has(id)) continue;
-            this.#frameCurrent.delete(id);
-            this.#frameVelocity.delete(id);
-            this.#frameSleeping.delete(id);
-        }
+                return parentOrigin ?? frame.origin;
+            },
+        );
 
         if (this.#options.forces) {
             this.#heat = 1;
-            this.#sleeping.clear();
-            this.#frameSleeping.clear();
+            this.#bodies.sleeping.clear();
+            this.#frames.sleeping.clear();
         }
         if (this.#options.instant) this.settle();
     }
@@ -241,8 +283,8 @@ export class ScopeSimulation {
     setForces(forces: ScopeForceOptions): void {
         this.#options.forces = { ...this.#options.forces, ...forces };
         this.#heat = 1;
-        this.#sleeping.clear();
-        this.#frameSleeping.clear();
+        this.#bodies.sleeping.clear();
+        this.#frames.sleeping.clear();
         if (this.#specs) this.setSpecs(this.#specs, this.#signals);
     }
 
@@ -274,25 +316,19 @@ export class ScopeSimulation {
         for (const id of ids) {
             this.#pinned.add(id);
             const goal = this.#target?.positions.get(id);
-            if (goal) {
-                this.#current.set(id, copy(goal));
-                this.#velocity.set(id, zero());
-            }
+            if (goal) this.#bodies.pin(id, goal);
             const frame = this.#target?.frames.get(id);
-            if (frame) {
-                this.#frameCurrent.set(id, copy(frame.origin));
-                this.#frameVelocity.set(id, zero());
-            }
-            this.#sleeping.add(id);
-            this.#frameSleeping.add(id);
+            if (frame) this.#frames.pin(id, frame.origin);
+            this.#bodies.sleeping.add(id);
+            this.#frames.sleeping.add(id);
         }
     }
 
     unpin(ids: Iterable<string>): void {
         for (const id of ids) {
             this.#pinned.delete(id);
-            this.#sleeping.delete(id);
-            this.#frameSleeping.delete(id);
+            this.#bodies.unpin(id);
+            this.#frames.unpin(id);
         }
     }
 
@@ -320,16 +356,8 @@ export class ScopeSimulation {
     /** Snap every body to its target and stop all motion. */
     settle(): void {
         if (!this.#target) return;
-        for (const [id, target] of this.#target.positions) {
-            this.#current.set(id, copy(target));
-            this.#velocity.set(id, zero());
-            this.#sleeping.add(id);
-        }
-        for (const [id, frame] of this.#target.frames) {
-            this.#frameCurrent.set(id, copy(frame.origin));
-            this.#frameVelocity.set(id, zero());
-            this.#frameSleeping.add(id);
-        }
+        this.#bodies.settle(this.#target.positions, (position) => position);
+        this.#frames.settle(this.#target.frames, (frame) => frame.origin);
         this.#heat = 0;
         this.#accumulator = 0;
     }
@@ -339,12 +367,8 @@ export class ScopeSimulation {
         this.#target = undefined;
         this.#tree = undefined;
         this.#specs = undefined;
-        this.#current.clear();
-        this.#velocity.clear();
-        this.#sleeping.clear();
-        this.#frameCurrent.clear();
-        this.#frameVelocity.clear();
-        this.#frameSleeping.clear();
+        this.#bodies.clear();
+        this.#frames.clear();
         this.#pinned.clear();
         this.#policyPinned.clear();
         this.#layoutOverride = {};
@@ -359,10 +383,10 @@ export class ScopeSimulation {
         if (!this.#target || !this.#tree) {
             throw new Error('ScopeSimulation has no target; call setSpecs first');
         }
-        const positions = new Map(this.#current);
+        const positions = this.#bodies.snapshot();
         const frames = new Map<string, ScopeFrame>();
         for (const [id, frame] of this.#target.frames) {
-            const origin = this.#frameCurrent.get(id) ?? frame.origin;
+            const origin = this.#frames.current.get(id) ?? frame.origin;
             frames.set(id, { ...frame, origin });
         }
 
@@ -402,8 +426,26 @@ export class ScopeSimulation {
         const frameTargets = new Map(
             [...this.#target.frames].map(([id, frame]) => [id, frame.origin] as const),
         );
-        this.relax(this.#current, this.#velocity, this.#sleeping, this.#target.positions, dt, stiffness, damping, mass, forces, maxAcceleration);
-        this.relax(this.#frameCurrent, this.#frameVelocity, this.#frameSleeping, frameTargets, dt, stiffness, damping, mass, forces, maxAcceleration);
+        this.relax(
+            this.#bodies,
+            this.#target.positions,
+            dt,
+            stiffness,
+            damping,
+            mass,
+            forces,
+            maxAcceleration,
+        );
+        this.relax(
+            this.#frames,
+            frameTargets,
+            dt,
+            stiffness,
+            damping,
+            mass,
+            forces,
+            maxAcceleration,
+        );
         if (forces) {
             this.#heat *= this.#options.forces?.cooling ?? 0.96;
             if (this.#heat < 0.01) this.#heat = 0;
@@ -438,7 +480,7 @@ export class ScopeSimulation {
 
             for (const node of entry.nodes) {
                 const id = `${path}/${node.id}`;
-                const position = this.#current.get(id);
+                const position = this.#bodies.current.get(id);
                 if (!position) continue;
                 const [width, height] = node.size ?? [120, 64];
                 bodies.push({ id, position, radius: (Math.max(width, height) / 2) * scale });
@@ -448,7 +490,7 @@ export class ScopeSimulation {
                 if (!childFrame) continue;
                 bodies.push({
                     id: child.path,
-                    position: this.#frameCurrent.get(child.path) ?? childFrame.origin,
+                    position: this.#frames.current.get(child.path) ?? childFrame.origin,
                     radius: (Math.max(childFrame.bounds.size[0], childFrame.bounds.size[1]) / 2) * scale,
                 });
             }
@@ -488,9 +530,7 @@ export class ScopeSimulation {
     }
 
     private relax(
-        current: Map<string, Position>,
-        velocity: Map<string, Position>,
-        sleeping: Set<string>,
+        bodies: BodySet<unknown>,
         target: ReadonlyMap<string, Position>,
         dt: number,
         stiffness: number,
@@ -504,15 +544,13 @@ export class ScopeSimulation {
 
         for (const [id, goal] of target) {
             if (this.#pinned.has(id)) {
-                current.set(id, copy(goal));
-                velocity.set(id, zero());
-                sleeping.add(id);
+                bodies.pin(id, goal);
                 continue;
             }
-            if (sleeping.has(id)) continue;
+            if (bodies.sleeping.has(id)) continue;
 
-            const position = copy(current.get(id) ?? goal);
-            const speed = copy(velocity.get(id) ?? zero());
+            const position = copy(bodies.current.get(id) ?? goal);
+            const speed = copy(bodies.velocity.get(id) ?? zero());
             const force = forces?.get(id);
             const forceAcceleration: Position = {
                 x: (force?.x ?? 0) * this.#heat,
@@ -534,12 +572,10 @@ export class ScopeSimulation {
                 }
             }
             if (awake) {
-                current.set(id, position);
-                velocity.set(id, speed);
+                bodies.current.set(id, position);
+                bodies.velocity.set(id, speed);
             } else {
-                current.set(id, copy(goal));
-                velocity.set(id, zero());
-                sleeping.add(id);
+                bodies.pin(id, goal);
             }
         }
     }
