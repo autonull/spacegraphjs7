@@ -20,6 +20,7 @@ import type { CameraViewport, CardFacing, Projection, RenderOptions } from '../t
 import { parseColor } from '../utils/color';
 import { fitOrthoFrustum, setOrthoFrustum, visibleWorldExtent } from '../utils/CameraUtils';
 import { declutterLabels, type LabelRect } from '../utils/labelDeclutter';
+import { FpsMeter } from '../utils/FpsMeter';
 import { RenderContext } from './RenderContext';
 import { clamp, denormalizeZoom, normalizeZoom, type ZoomRange } from './zoom';
 
@@ -65,10 +66,8 @@ export class WebGLRenderer {
     #size = { width: 1, height: 1 };
     private renderScheduled = false;
     readonly projScreenMatrix: Matrix4;
-    private lastOptTime = 0;
-    private optFrames = 0;
+    private readonly fpsMeter = new FpsMeter(OPT_INTERVAL_MS);
     private fps = 60;
-    private timeSinceLastOptCheck = 0;
 
     constructor(
         public sg: SpaceGraph,
@@ -344,20 +343,8 @@ export class WebGLRenderer {
     }
 
     beginFrameOptimization(timestamp: number): void {
-        if (this.lastOptTime === 0) {
-            this.lastOptTime = timestamp;
-            return;
-        }
-        const delta = timestamp - this.lastOptTime;
-        this.lastOptTime = timestamp;
-        this.optFrames++;
-        this.timeSinceLastOptCheck += delta;
-
-        if (this.timeSinceLastOptCheck >= OPT_INTERVAL_MS) {
-            this.fps = (this.optFrames * 1000) / this.timeSinceLastOptCheck;
-            this.optFrames = 0;
-            this.timeSinceLastOptCheck = 0;
-        }
+        const sample = this.fpsMeter.tick(timestamp);
+        if (sample) this.fps = sample.fps;
     }
 
     getFPS(): number {

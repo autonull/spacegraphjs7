@@ -32,6 +32,8 @@ export type { DOMElementOptions } from './DOMUtils';
 // DOM utilities
 export { createElement, createElementNS, DOMUtils, requireElement } from './DOMUtils';
 export type { SpaceGraphErrorOptions } from './error';
+// Frame-rate measurement
+export { FpsMeter, type FpsSample } from './FpsMeter';
 // Error utilities - unified error handling
 export {
     ConfigurationError,

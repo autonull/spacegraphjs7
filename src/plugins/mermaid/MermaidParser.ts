@@ -259,10 +259,7 @@ export class MermaidParser {
         const defs = [
             { regex: /^([A-Za-z0-9_]+)\[([^\]]+)\]/, shape: 'rect' },
             { regex: /^([A-Za-z0-9_]+)\(([^)]+)\)/, shape: 'round' },
-            { regex: /^([A-Za-z0-9_]+)\(\(([^)]+)\)\)/, shape: 'circle' },
             { regex: /^([A-Za-z0-9_]+)\{([^}]+)\}/, shape: 'diamond' },
-            { regex: /^([A-Za-z0-9_]+)\[\[([^\]]+)\]\]/, shape: 'stadium' },
-            { regex: /^([A-Za-z0-9_]+)\((([^(]+))\)/, shape: 'subroutine' },
             { regex: /^([A-Za-z0-9_]+)>([^<]+)</, shape: 'trapezoid' },
         ];
 

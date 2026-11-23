@@ -1,11 +1,11 @@
 import type { SpaceGraph } from '../../SpaceGraph';
+import { FpsMeter } from '../../utils/FpsMeter';
 import { HUDDOMFactory } from './HUDDOMFactory';
 import { HUDElement, type HUDElementSpec } from './HUDElement';
 import { HUD_COLORS, HUD_STYLES, HUD_ZINDEX } from './HUDStyles';
 
 export class HUDPerformanceMetrics extends HUDElement {
-    private frames = 0;
-    private lastTime = performance.now();
+    private readonly fpsMeter = new FpsMeter(1000);
     private fps = 0;
 
     constructor(sg: SpaceGraph) {
@@ -42,12 +42,11 @@ export class HUDPerformanceMetrics extends HUDElement {
 
     /** Called once per rendered frame; refresh the readout about once a second. */
     tick(now = performance.now()): void {
-        this.frames++;
-        const delta = now - this.lastTime;
-        if (delta < 1000) return;
+        const sample = this.fpsMeter.tick(now);
+        if (!sample) return;
 
-        this.fps = Math.round((this.frames * 1000) / delta);
-        const frameTime = delta / this.frames;
+        this.fps = Math.round(sample.fps);
+        const frameTime = sample.elapsed / sample.frames;
         const fpsEl = HUDDOMFactory.getElementById('sg-fps');
         const frameTimeEl = HUDDOMFactory.getElementById('sg-frame-time');
 
@@ -71,8 +70,5 @@ export class HUDPerformanceMetrics extends HUDElement {
                 memEl.textContent = Math.round(mem.usedJSHeapSize / 1048576).toString();
             }
         }
-
-        this.frames = 0;
-        this.lastTime = now;
     }
 }
