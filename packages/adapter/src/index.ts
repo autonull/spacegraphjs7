@@ -1,4 +1,5 @@
 export { ModelAdapter } from './ModelAdapter';
+export { VocabularyAdapter, type VocabularyAdapterConfig } from './vocabulary-adapter';
 export { diffRenderModels } from './diff';
 export { createPatchPainter } from './patch-painter';
 export { escapeHtml, formatOpacity } from './html';

@@ -1,6 +1,5 @@
 import { foldKernelOps, type KernelOp } from '@spacegraphjs/kernel';
-import { ModelAdapter } from '@spacegraphjs/adapter';
-import type { RenderEdge, RenderNode, NodeStatus } from '@spacegraphjs/renderer';
+import { VocabularyAdapter, type AdapterConfig } from '@spacegraphjs/adapter';
 import type { GraphEdge, GraphNode } from '@spacegraphjs/shared';
 import { WorkflowEventMapper, type WorkflowEvent } from './mapping';
 import { roleOf, type WorkflowView } from './vocabulary';
@@ -71,39 +70,21 @@ export function fixtureOps(): readonly KernelOp[] {
     return [...events.flatMap((event) => mapper.map(event)), ...extra];
 }
 
-export class WorkflowAdapter extends ModelAdapter<
+export class WorkflowAdapter extends VocabularyAdapter<
     GraphNode,
     GraphEdge,
     WorkflowLevel,
     WorkflowView
 > {
-    nodeShape(node: GraphNode): RenderNode['shape'] {
-        const role = roleOf(node);
-        return role === 'step' || role === 'run' || role === 'retry' ? 'card' : 'panel';
-    }
-
-    nodeStatus(node: GraphNode): NodeStatus {
-        if (node.status === 'failed') return 'error';
-        if (node.status === 'active') return 'running';
-        return 'success';
-    }
-
-    isStructuralKind(kind: GraphNode['kind']): boolean {
-        return kind === 'workflow' || kind === 'subworkflow';
-    }
-
-    nodeData(node: GraphNode, level: WorkflowLevel, dimmed: boolean): Record<string, unknown> {
-        return { level, dimmed, kind: node.kind, role: roleOf(node) };
-    }
-
-    toRenderEdge(edge: GraphEdge, _level: WorkflowLevel): RenderEdge {
-        return {
-            id: edge.id,
-            source: edge.source,
-            target: edge.target,
-            kind: edge.kind,
-            visible: true,
-        };
+    constructor(config: AdapterConfig<GraphNode, GraphEdge, WorkflowLevel, WorkflowView> = {}) {
+        super(
+            {
+                cardRoles: ['step', 'run', 'retry'],
+                structuralKinds: ['workflow', 'subworkflow'],
+                roleOf,
+            },
+            config,
+        );
     }
 }
 

@@ -1,6 +1,5 @@
 import { foldKernelOps, type KernelOp } from '@spacegraphjs/kernel';
-import { ModelAdapter } from '@spacegraphjs/adapter';
-import type { RenderEdge, RenderNode, NodeStatus } from '@spacegraphjs/renderer';
+import { VocabularyAdapter, type AdapterConfig } from '@spacegraphjs/adapter';
 import type { GraphEdge, GraphNode } from '@spacegraphjs/shared';
 import { FilesystemEventMapper, type FilesystemEvent } from './mapping';
 import { roleOf, type FileSystemView } from './vocabulary';
@@ -82,39 +81,17 @@ export function fixtureOps(): readonly KernelOp[] {
     return [...fixtureEvents().flatMap((event) => mapper.map(event)), ...extra];
 }
 
-export class FileSystemAdapter extends ModelAdapter<
+export class FileSystemAdapter extends VocabularyAdapter<
     GraphNode,
     GraphEdge,
     FilesystemLevel,
     FileSystemView
 > {
-    nodeShape(node: GraphNode): RenderNode['shape'] {
-        const role = roleOf(node);
-        return role === 'change' || role === 'symbol' ? 'card' : 'panel';
-    }
-
-    nodeStatus(node: GraphNode): NodeStatus {
-        if (node.status === 'failed') return 'error';
-        if (node.status === 'active') return 'running';
-        return 'success';
-    }
-
-    isStructuralKind(kind: GraphNode['kind']): boolean {
-        return kind === 'commit' || kind === 'file';
-    }
-
-    nodeData(node: GraphNode, level: FilesystemLevel, dimmed: boolean): Record<string, unknown> {
-        return { level, dimmed, kind: node.kind, role: roleOf(node) };
-    }
-
-    toRenderEdge(edge: GraphEdge, _level: FilesystemLevel): RenderEdge {
-        return {
-            id: edge.id,
-            source: edge.source,
-            target: edge.target,
-            kind: edge.kind,
-            visible: true,
-        };
+    constructor(config: AdapterConfig<GraphNode, GraphEdge, FilesystemLevel, FileSystemView> = {}) {
+        super(
+            { cardRoles: ['change', 'symbol'], structuralKinds: ['commit', 'file'], roleOf },
+            config,
+        );
     }
 }
 

@@ -1,6 +1,5 @@
 import { foldKernelOps, type KernelOp } from '@spacegraphjs/kernel';
-import { ModelAdapter } from '@spacegraphjs/adapter';
-import type { RenderEdge, RenderNode, NodeStatus } from '@spacegraphjs/renderer';
+import { VocabularyAdapter, type AdapterConfig } from '@spacegraphjs/adapter';
 import type { GraphEdge, GraphNode } from '@spacegraphjs/shared';
 import { DataEventMapper, type DataEvent } from './mapping';
 import { roleOf, type DataView } from './vocabulary';
@@ -109,34 +108,12 @@ export function fixtureOps(): readonly KernelOp[] {
     return [...fixtureEvents().flatMap((event) => mapper.map(event)), ...extra];
 }
 
-export class DataAdapter extends ModelAdapter<GraphNode, GraphEdge, DataLevel, DataView> {
-    nodeShape(node: GraphNode): RenderNode['shape'] {
-        const role = roleOf(node);
-        return role === 'metric' || role === 'model' ? 'card' : 'panel';
-    }
-
-    nodeStatus(node: GraphNode): NodeStatus {
-        if (node.status === 'failed') return 'error';
-        if (node.status === 'active') return 'running';
-        return 'success';
-    }
-
-    isStructuralKind(kind: GraphNode['kind']): boolean {
-        return kind === 'pipeline' || kind === 'dataset';
-    }
-
-    nodeData(node: GraphNode, level: DataLevel, dimmed: boolean): Record<string, unknown> {
-        return { level, dimmed, kind: node.kind, role: roleOf(node) };
-    }
-
-    toRenderEdge(edge: GraphEdge, _level: DataLevel): RenderEdge {
-        return {
-            id: edge.id,
-            source: edge.source,
-            target: edge.target,
-            kind: edge.kind,
-            visible: true,
-        };
+export class DataAdapter extends VocabularyAdapter<GraphNode, GraphEdge, DataLevel, DataView> {
+    constructor(config: AdapterConfig<GraphNode, GraphEdge, DataLevel, DataView> = {}) {
+        super(
+            { cardRoles: ['metric', 'model'], structuralKinds: ['pipeline', 'dataset'], roleOf },
+            config,
+        );
     }
 }
 
