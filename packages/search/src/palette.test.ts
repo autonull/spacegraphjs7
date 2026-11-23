@@ -1,11 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-    PaletteAction,
-    PaletteLens,
-    PaletteSurface,
     PaletteSources,
-    PaletteEntryKind,
-    PaletteEntry,
     PALETTE_GROUP_ORDER,
     PALETTE_NODE_LIMIT,
     paletteEntries,

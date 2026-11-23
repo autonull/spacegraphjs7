@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { RenderModel, RenderTheme } from '@spacegraphjs/renderer';
-import { exportGraph, standaloneHtml, type ExportFormat, type ExportOptions } from './export';
+import { exportGraph, standaloneHtml, type ExportOptions } from './export';
 
 // Mock the svg-renderer
 vi.mock('@spacegraphjs/svg-renderer', () => ({
     renderToSVG: vi.fn(
-        (model, options) => `<svg data-test="rendered">${model.nodes.length} nodes</svg>`,
+        (model, _options) => `<svg data-test="rendered">${model.nodes.length} nodes</svg>`,
     ),
     serializeRenderModel: vi.fn((model) => JSON.stringify(model)),
 }));

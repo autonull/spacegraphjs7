@@ -1,9 +1,8 @@
 // Trace classification tests with a synthetic cause graph.
 
 import { describe, it, expect } from 'bun:test';
-import type { TraceConfig, TraceModel, TraceNode, TraceEdge, TraceOverlay } from './types';
+import type { TraceConfig, TraceModel, TraceNode, TraceEdge } from './types';
 import {
-    classifyTrace,
     traceWhy,
     traceLedHere,
     traceRelated,

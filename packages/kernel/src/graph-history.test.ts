@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import { SessionKernel } from './session';
 import type { KernelOp } from './session';
-import { GraphHistory, createGraphHistory, type GraphSnapshot } from './graph-history';
+import { createGraphHistory } from './graph-history';
 
 const entry = (id: string, op: KernelOp) => ({ id, op });
 

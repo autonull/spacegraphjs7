@@ -9,7 +9,7 @@ import {
     isSavedQuery,
     normalizeSavedQueries,
 } from './saved-queries'
-import { facetsToQuery, facetsFromQuery, type GraphFacets } from './facets'
+import type { GraphFacets } from './facets'
 
 const knownKinds = ['tool', 'file', 'agent'] as const
 const knownStatuses = ['success', 'failed', 'running'] as const

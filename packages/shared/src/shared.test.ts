@@ -4,14 +4,7 @@ import { facetCount, mergeFacets, toggleFacet } from './facets';
 import { noopI18n, passthroughI18n } from './i18n';
 import { createIconRenderer } from '@spacegraphjs/shared/icons';
 import { createPopoverRenderer } from '@spacegraphjs/shared/popover';
-import {
-    cx,
-    cn,
-    styleVar,
-    generateId,
-    fixedSize,
-    absolutePosition,
-} from '@spacegraphjs/shared/css';
+import { cx, styleVar, generateId, fixedSize, absolutePosition } from '@spacegraphjs/shared/css';
 import { useToggle, useDebounce, useLocalStorage } from '@spacegraphjs/shared/hooks';
 
 describe('i18n fallbacks', () => {

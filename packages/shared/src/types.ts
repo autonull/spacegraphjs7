@@ -572,7 +572,7 @@ export function buildRenderModel(
 }
 
 /** Minimal layout function - hosts should provide their own implementation. */
-export function layoutGraph(model: GraphViewData, options: { level: ZoomLevel }): LayoutResult {
+export function layoutGraph(model: GraphViewData, _options: { level: ZoomLevel }): LayoutResult {
     // Placeholder - hosts should override with their layout implementation
     const positions = new Map<string, Position>();
     for (const node of model.nodes) {
@@ -585,7 +585,7 @@ export function layoutGraph(model: GraphViewData, options: { level: ZoomLevel })
 export function turnSubgraph(
     model: GraphViewData,
     turnID: string,
-    limit: number,
+    _limit: number,
 ): TurnSubgraphResult {
     // Placeholder - hosts should override with their turn subgraph implementation
     const turnNode = model.nodes.find((n) => n.id === turnID);

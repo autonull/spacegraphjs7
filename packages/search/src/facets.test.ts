@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createMockNode, createMockModel } from './test-fixtures';
-import type { GraphViewData, GraphNode, GraphFacets } from '@spacegraphjs/shared';
+import type { GraphViewData, GraphFacets } from '@spacegraphjs/shared';
 import {
     applyFacets,
     keepOnly,

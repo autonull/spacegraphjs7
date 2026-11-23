@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest';
 import type { RendererViewport } from '@spacegraphjs/renderer';
 import {
     computeFollowFrame,
-    type FollowMode,
-    type CameraMove,
     DEFAULT_LIVE_FOLLOW_MODE,
     TURN_FOLLOW_MODE,
     NODE_FOLLOW_MODE,

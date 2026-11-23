@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createMockNode, createMockModel } from './test-fixtures';
-import type { GraphViewData, GraphNode, GraphFacets } from '@spacegraphjs/shared';
+import type { GraphViewData } from '@spacegraphjs/shared';
 import {
     search,
     searchBy,
@@ -33,7 +33,7 @@ describe('search', () => {
 describe('searchBy', () => {
     it('returns empty array for empty query', () => {
         const model = createMockModel({ nodes: [createMockNode({ id: '1', label: 'Test' })] });
-        const results = searchBy(model, '  ', (n) => 0);
+        const results = searchBy(model, '  ', (_n) => 0);
         expect(results).toEqual([]);
     });
 
