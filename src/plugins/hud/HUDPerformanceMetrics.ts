@@ -1,18 +1,19 @@
-import { DOMUtils } from '../../utils';
 import type { SpaceGraph } from '../../SpaceGraph';
 import { HUDDOMFactory } from './HUDDOMFactory';
+import { HUDElement, type HUDElementSpec } from './HUDElement';
 import { HUD_COLORS, HUD_STYLES, HUD_ZINDEX } from './HUDStyles';
 
-export class HUDPerformanceMetrics {
-    private metricsEl: HTMLElement | null = null;
+export class HUDPerformanceMetrics extends HUDElement {
     private frames = 0;
     private lastTime = performance.now();
     private fps = 0;
 
-    constructor(private readonly sg: SpaceGraph) {}
+    constructor(sg: SpaceGraph) {
+        super(sg);
+    }
 
-    create(): void {
-        this.metricsEl = DOMUtils.createElement('div', {
+    protected spec(): HUDElementSpec {
+        return {
             className: 'spacegraph-performance-metrics',
             style: {
                 ...HUD_STYLES.base,
@@ -29,17 +30,14 @@ export class HUDPerformanceMetrics {
                 zIndex: HUD_ZINDEX.HUD,
                 pointerEvents: 'none',
             },
-        });
-
-        this.metricsEl.innerHTML = `
-            <div style="font-weight: bold; color: ${HUD_COLORS.primary}; margin-bottom: 4px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em;">Telemetry</div>
-            <div><span style="color: ${HUD_COLORS.textMuted}">FPS:</span> <span id="sg-fps">60</span></div>
-            <div><span style="color: ${HUD_COLORS.textMuted}">Frame:</span> <span id="sg-frame-time">16.7</span>ms</div>
-            <div><span style="color: ${HUD_COLORS.textMuted}">Draw:</span> <span id="sg-draw-calls">0</span></div>
-            <div id="sg-memory-container" style="display: none"><span style="color: ${HUD_COLORS.textMuted}">Mem:</span> <span id="sg-memory">0</span>MB</div>
-        `;
-
-        HUDDOMFactory.appendToRenderer(this.sg, this.metricsEl);
+            html: `
+                <div style="font-weight: bold; color: ${HUD_COLORS.primary}; margin-bottom: 4px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em;">Telemetry</div>
+                <div><span style="color: ${HUD_COLORS.textMuted}">FPS:</span> <span id="sg-fps">60</span></div>
+                <div><span style="color: ${HUD_COLORS.textMuted}">Frame:</span> <span id="sg-frame-time">16.7</span>ms</div>
+                <div><span style="color: ${HUD_COLORS.textMuted}">Draw:</span> <span id="sg-draw-calls">0</span></div>
+                <div id="sg-memory-container" style="display: none"><span style="color: ${HUD_COLORS.textMuted}">Mem:</span> <span id="sg-memory">0</span>MB</div>
+            `,
+        };
     }
 
     /** Called once per rendered frame; refresh the readout about once a second. */
@@ -76,10 +74,5 @@ export class HUDPerformanceMetrics {
 
         this.frames = 0;
         this.lastTime = now;
-    }
-
-    dispose(): void {
-        if (this.metricsEl?.parentElement) this.metricsEl.parentElement.removeChild(this.metricsEl);
-        this.metricsEl = null;
     }
 }

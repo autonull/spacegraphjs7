@@ -17,6 +17,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
 import { midpoint } from '../utils/vector';
 import { safeClone } from '../utils/math';
+import { dataColor } from '../utils/color';
 
 /** The axis an arrowhead points along. */
 const ARROWHEAD_AXIS = new THREE.Vector3(0, 1, 0);
@@ -151,6 +152,16 @@ export class Edge extends Surface {
 
     /** Subclasses drawing their own geometry set this so LOD keeps the base line hidden. */
     suppressLine = false;
+
+    /** Apply a data color, normalized from hex or CSS, to the subclass's own materials. */
+    protected applyDataColor(
+        value: string | number | undefined,
+        ...materials: THREE.Material[]
+    ): void {
+        const color = dataColor(value);
+        if (!color) return;
+        for (const material of materials) (material as THREE.MeshBasicMaterial).color.set(color);
+    }
 
     /** CSS label element for labelled edges; undefined for plain edges (used for label decluttering). */
     get labelElement(): HTMLElement | undefined {

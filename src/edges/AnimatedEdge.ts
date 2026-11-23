@@ -3,7 +3,6 @@ import { ThreeDisposer } from '../utils';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
-import { dataColor } from '../utils/color';
 import { Edge } from './Edge';
 
 export class AnimatedEdge extends Edge {
@@ -55,10 +54,8 @@ export class AnimatedEdge extends Edge {
             if (data.speed !== undefined) this.speed = data.speed;
             if (data.reverse !== undefined) this.isReversed = data.reverse;
 
-            if (data.particleColor) {
-                const color = dataColor(data.particleColor);
-                if (color) (this.particle.material as MeshBasicMaterial).color.set(color);
-            }
+            if (data.particleColor)
+                this.applyDataColor(data.particleColor, this.particle.material as MeshBasicMaterial);
             if (data.particleSize) {
                 const s = data.particleSize / 3;
                 this.particle.scale.set(s, s, s);

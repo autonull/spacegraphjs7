@@ -87,12 +87,7 @@ export class ClusterLayout extends BaseLayout<ClusterLayoutOptions> {
     }
 
     protected defaultConfig(): ClusterLayoutOptions {
-        return {
-            clusterBy: 'category',
-            animate: true,
-            duration: 1.5,
-            nodePadding: 20,
-        };
+        return { clusterBy: 'category', duration: 1.5 };
     }
 }
 

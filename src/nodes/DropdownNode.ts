@@ -84,7 +84,6 @@ export class DropdownNode extends HtmlNode {
     private _onSelectionChange(value: string): void {
         this.selectedValue = value;
         const option = this.options.find((o) => o.id === value);
-        this.data = { ...this.data, value };
-        this.emitDataChanged('value', value, { label: option?.label });
+        this.setDataField('value', value, { label: option?.label });
     }
 }

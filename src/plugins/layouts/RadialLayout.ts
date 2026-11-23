@@ -122,9 +122,7 @@ export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
             baseRadius: 200,
             z: 0,
             startAngle: 0,
-            animate: true,
             duration: 1.0,
-            nodePadding: 20,
         };
     }
 }

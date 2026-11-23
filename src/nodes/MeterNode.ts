@@ -26,8 +26,7 @@ export class MeterNode extends HtmlNode {
             this.valueDisplay.style.color = this._getThresholdColor(value);
         }
 
-        this.data = { ...this.data, value };
-        this.emitDataChanged('value', value);
+        this.setDataField('value', value);
     }
 
     getValue(): number {

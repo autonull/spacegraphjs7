@@ -119,9 +119,7 @@ export class HierarchicalLayout extends BaseLayout<HierarchicalLayoutOptions> {
             rootId: '',
             z: 0,
             direction: 'top-down',
-            animate: true,
             duration: 1.0,
-            nodePadding: 20,
         };
     }
 }

@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { MathPool, withPooledVectors } from '../core/pooling/ObjectPool';
 import type { EdgeSpec } from '../types';
-import { dataColor } from '../utils/color';
 import { ribbonWidth } from '../utils/ribbon';
 import { ThreeDisposer } from '../utils';
 import { directionBetween, midpoint } from '../utils/vector';
@@ -37,8 +36,7 @@ export abstract class MeshEdge extends Edge {
 
     updateSpec(updates: Partial<EdgeSpec>): this {
         super.updateSpec(updates);
-        const color = dataColor(updates.data?.color);
-        if (color) (this.mesh.material as THREE.MeshBasicMaterial).color.set(color);
+        this.applyDataColor(updates.data?.color, this.mesh.material as THREE.Material);
         return this;
     }
 

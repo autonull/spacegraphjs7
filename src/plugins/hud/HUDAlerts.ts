@@ -1,6 +1,7 @@
 import { DOMUtils } from '../../utils';
 import type { SpaceGraph } from '../../SpaceGraph';
 import { HUDDOMFactory } from './HUDDOMFactory';
+import { HUDElement, type HUDElementSpec } from './HUDElement';
 import { HUD_ANIMATIONS, HUD_COLORS, HUD_STYLES, HUD_ZINDEX } from './HUDStyles';
 
 export type AlertVariant = 'info' | 'success' | 'warning' | 'error';
@@ -18,16 +19,13 @@ const ALERT_VARIANTS: Record<AlertVariant, { border: string; icon: string }> = {
     error: { border: HUD_COLORS.error, icon: '❌' },
 };
 
-export class HUDAlerts {
-    private alertsContainer: HTMLElement | null = null;
-    readonly sg: SpaceGraph;
-
+export class HUDAlerts extends HUDElement {
     constructor(sg: SpaceGraph) {
-        this.sg = sg;
+        super(sg);
     }
 
-    create(): void {
-        this.alertsContainer = DOMUtils.createElement('div', {
+    protected spec(): HUDElementSpec {
+        return {
             className: 'spacegraph-alerts-container',
             style: {
                 position: 'absolute',
@@ -39,13 +37,11 @@ export class HUDAlerts {
                 pointerEvents: 'none',
                 zIndex: HUD_ZINDEX.ALERTS,
             },
-        });
-
-        HUDDOMFactory.appendToRenderer(this.sg, this.alertsContainer);
+        };
     }
 
     show(options: AlertOptions | string): void {
-        if (!this.alertsContainer || typeof document === 'undefined') return;
+        if (!this.element || typeof document === 'undefined') return;
 
         const config = typeof options === 'string' ? { message: options } : options;
         const { message, variant = 'info', duration = 3000 } = config;
@@ -69,19 +65,8 @@ export class HUDAlerts {
             <span style="flex: 1">${message}</span>
         `;
 
-        this.alertsContainer.appendChild(alert);
-
+        this.element.appendChild(alert);
         HUDDOMFactory.fadeIn(alert);
-
-        setTimeout(() => {
-            HUDDOMFactory.fadeOutAndRemove(alert);
-        }, duration);
-    }
-
-    dispose(): void {
-        if (this.alertsContainer?.parentElement) {
-            this.alertsContainer.parentElement.removeChild(this.alertsContainer);
-        }
-        this.alertsContainer = null;
+        setTimeout(() => HUDDOMFactory.fadeOutAndRemove(alert), duration);
     }
 }

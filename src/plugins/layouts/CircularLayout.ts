@@ -72,6 +72,6 @@ export class CircularLayout extends BaseLayout<CircularLayoutOptions> {
     }
 
     protected defaultConfig(): CircularLayoutOptions {
-        return { startAngle: 0, z: 0, animate: true, duration: 1.0, nodePadding: 20 };
+        return { startAngle: 0, z: 0, duration: 1.0 };
     }
 }

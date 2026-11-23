@@ -1,18 +1,15 @@
-import { DOMUtils } from '../../utils';
 import type { SpaceGraph } from '../../SpaceGraph';
 import { HUDDOMFactory } from './HUDDOMFactory';
+import { HUDElement, type HUDElementSpec } from './HUDElement';
 import { HUD_STYLES, HUD_ZINDEX } from './HUDStyles';
 
-export class HUDStatusBar {
-    private statusBar: HTMLElement | null = null;
-    readonly sg: SpaceGraph;
-
+export class HUDStatusBar extends HUDElement {
     constructor(sg: SpaceGraph) {
-        this.sg = sg;
+        super(sg);
     }
 
-    create(): void {
-        this.statusBar = DOMUtils.createElement('div', {
+    protected spec(): HUDElementSpec {
+        return {
             className: 'spacegraph-status-bar',
             style: {
                 ...HUD_STYLES.base,
@@ -27,19 +24,16 @@ export class HUDStatusBar {
                 gap: '24px',
                 fontSize: '12px',
                 color: HUD_STYLES.base.color,
+                zIndex: HUD_ZINDEX.HUD,
             },
-        });
-
-        this.statusBar.innerHTML = `
-            <span id="sg-status-selection" style="display: none">Selection: 0 nodes</span>
-            <span id="sg-status-nodes" style="display: none">Nodes: 0</span>
-            <span id="sg-status-edges" style="display: none">Edges: 0</span>
-            <span id="sg-status-camera">Camera: 2D</span>
-            <span id="sg-status-layout" style="display: none">Layout: Idle</span>
-        `;
-
-        this.statusBar.style.zIndex = HUD_ZINDEX.HUD;
-        HUDDOMFactory.appendToRenderer(this.sg, this.statusBar);
+            html: `
+                <span id="sg-status-selection" style="display: none">Selection: 0 nodes</span>
+                <span id="sg-status-nodes" style="display: none">Nodes: 0</span>
+                <span id="sg-status-edges" style="display: none">Edges: 0</span>
+                <span id="sg-status-camera">Camera: 2D</span>
+                <span id="sg-status-layout" style="display: none">Layout: Idle</span>
+            `,
+        };
     }
 
     updateSelection(nodeCount: number, _edgeCount: number): void {
@@ -63,17 +57,12 @@ export class HUDStatusBar {
             edgesEl.style.display = edges > 0 ? 'inline' : 'none';
         }
 
-        // Hide status bar completely if empty
-        if (this.statusBar) {
-            this.statusBar.style.display = nodes === 0 && edges === 0 ? 'none' : 'flex';
-        }
+        if (this.element) this.element.style.display = nodes === 0 && edges === 0 ? 'none' : 'flex';
     }
 
     updateCamera(is3D: boolean): void {
         const el = HUDDOMFactory.getElementById('sg-status-camera');
-        if (el) {
-            el.textContent = `Camera: ${is3D ? '3D' : '2D'}`;
-        }
+        if (el) el.textContent = `Camera: ${is3D ? '3D' : '2D'}`;
     }
 
     updateLayout(isActive: boolean): void {
@@ -82,12 +71,5 @@ export class HUDStatusBar {
             el.textContent = `Layout: ${isActive ? 'Running' : 'Idle'}`;
             el.style.display = isActive ? 'inline' : 'none';
         }
-    }
-
-    dispose(): void {
-        if (this.statusBar?.parentElement) {
-            this.statusBar.parentElement.removeChild(this.statusBar);
-        }
-        this.statusBar = null;
     }
 }

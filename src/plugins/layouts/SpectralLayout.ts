@@ -53,7 +53,7 @@ export class SpectralLayout extends BaseLayout<SpectralLayoutOptions> {
     }
 
     protected defaultConfig(): SpectralLayoutOptions {
-        return { scale: 400, animate: true, duration: 1.5, dimensions: 3, nodePadding: 20, separateOverlaps: true };
+        return { scale: 400, duration: 1.5, dimensions: 3, separateOverlaps: true };
     }
 }
 

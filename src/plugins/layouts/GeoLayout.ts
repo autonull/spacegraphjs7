@@ -42,7 +42,6 @@ export class GeoLayout extends BaseLayout<GeoLayoutOptions> {
             radius: 500,
             mapWidth: 1000,
             mapHeight: 500,
-            animate: true,
             duration: 1.5,
         };
     }

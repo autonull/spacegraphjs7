@@ -269,6 +269,12 @@ export abstract class Node extends Surface {
         this.sg?.events.emit('node:dataChanged', { node: this, property, value, ...extra });
     }
 
+    /** Write one data field and announce the change through a single writer. */
+    protected setDataField(property: string, value: unknown, extra?: Record<string, unknown>): void {
+        this.data = { ...this.data, [property]: value };
+        this.emitDataChanged(property, value, extra);
+    }
+
     private applySpecVector(target: THREE.Vector3, incoming: [number, number, number] | undefined): boolean {
         if (incoming === undefined) return false;
         target.fromArray(incoming);

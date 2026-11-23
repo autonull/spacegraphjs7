@@ -21,8 +21,7 @@ export class ProgressBarNode extends HtmlNode {
             this._stopIndeterminate();
         }
         this._setProgress(value);
-        this.data = { ...this.data, value };
-        this.emitDataChanged('value', value);
+        this.setDataField('value', value);
     }
 
     setIndeterminate(indeterminate: boolean): void {

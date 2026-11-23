@@ -40,7 +40,12 @@ export abstract class BaseLayout<
 
     constructor(config: Partial<Options> = {}) {
         super();
-        this.config = { ...this.defaultConfig(), ...config } as Options;
+        this.config = {
+            animate: true,
+            nodePadding: DEFAULT_NODE_PADDING,
+            ...this.defaultConfig(),
+            ...config,
+        } as Options;
     }
 
     get settings(): Options {

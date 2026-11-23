@@ -55,9 +55,7 @@ export class GridLayout extends BaseLayout<GridLayoutOptions> {
             columns: 0,
             offsetX: 0,
             offsetY: 0,
-            animate: true,
             duration: 1.0,
-            nodePadding: 20,
         };
     }
 }

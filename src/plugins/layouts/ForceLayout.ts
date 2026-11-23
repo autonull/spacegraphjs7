@@ -178,9 +178,7 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
             iterations: 50,
             temperature: 100,
             spacing: 120,
-            animate: true,
             duration: 1.0,
-            nodePadding: 20,
         };
     }
 }

@@ -106,10 +106,8 @@ export class TimelineLayout extends BaseLayout<TimelineLayoutOptions> {
             timeField: 'timestamp',
             orientation: 'horizontal',
             scaleFactor: 0.1,
-            animate: true,
             duration: 1.5,
             staggerLayout: true,
-            nodePadding: 20,
         };
     }
 }

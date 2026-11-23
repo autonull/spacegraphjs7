@@ -170,7 +170,6 @@ export class HtmlNode extends BaseContentNode {
             HtmlNode.CONTENT_SCALE_RANGE.min,
             HtmlNode.CONTENT_SCALE_RANGE.max,
         );
-        this.data = { ...this.data, contentScale: clampedScale };
 
         if (this.contentWrapper) {
             // A (100/scale)% layout size renders at 100% of the parent from the top-left origin.
@@ -178,7 +177,7 @@ export class HtmlNode extends BaseContentNode {
             this.applyContentTransform(clampedScale);
         }
 
-        this.emitDataChanged('contentScale', clampedScale);
+        this.setDataField('contentScale', clampedScale);
     }
 
     private applyContentTransform(scale: number): void {
@@ -288,10 +287,9 @@ export class HtmlNode extends BaseContentNode {
     }
 
     setBackgroundColor(color: string): void {
-        this.data = { ...this.data, backgroundColor: color };
         this.domElement.style.backgroundColor = color;
         this._applyNodeBgColor(color);
-        this.emitDataChanged('backgroundColor', color);
+        this.setDataField('backgroundColor', color);
     }
 
     updateLod(_distance: number): void {
@@ -437,9 +435,7 @@ export class HtmlNode extends BaseContentNode {
         contentWrapper.addEventListener('input', () => {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
-                const html = contentWrapper.innerHTML;
-                this.data = { ...this.data, content: html };
-                this.emitDataChanged('content', html);
+                this.setDataField('content', contentWrapper.innerHTML);
             }, 300);
         });
         contentWrapper.addEventListener('pointerdown', (e) => e.stopPropagation());

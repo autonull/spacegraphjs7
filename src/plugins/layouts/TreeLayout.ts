@@ -89,12 +89,7 @@ export class TreeLayout extends BaseLayout<TreeLayoutOptions> {
     }
 
     protected defaultConfig(): TreeLayoutOptions {
-        return {
-            orientation: 'vertical',
-            animate: true,
-            duration: 1.0,
-            nodePadding: 20,
-        };
+        return { orientation: 'vertical', duration: 1.0 };
     }
 }
 

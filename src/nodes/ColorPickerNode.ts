@@ -77,8 +77,7 @@ export class ColorPickerNode extends HtmlNode {
     private _onColorChange(color: string): void {
         if (this.colorPreview) this.colorPreview.style.backgroundColor = color;
         if (this.hexInput) this.hexInput.value = color.toUpperCase();
-        this.data = { ...this.data, color };
-        this.emitDataChanged('color', color);
+        this.setDataField('color', color);
     }
 
     private _onHexChange(hex: string): void {

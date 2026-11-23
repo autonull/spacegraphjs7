@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
-import { dataColor } from '../utils/color';
 import { clamp } from '../utils/math';
 import { ribbonWidth } from '../utils/ribbon';
 import { ThreeDisposer } from '../utils';
@@ -238,12 +237,12 @@ export class FluxEdge extends Edge {
 
     updateSpec(updates: Partial<EdgeSpec>): this {
         super.updateSpec(updates);
-        const color = dataColor(updates.data?.color);
-        if (color) {
-            (this.mesh.material as THREE.MeshBasicMaterial).color.set(color);
-            (this.halo.material as THREE.MeshBasicMaterial).color.set(color);
-            (this.arrow.material as THREE.MeshBasicMaterial).color.set(color);
-        }
+        this.applyDataColor(
+            updates.data?.color,
+            this.mesh.material as THREE.Material,
+            this.halo.material as THREE.Material,
+            this.arrow.material as THREE.Material,
+        );
         return this;
     }
 
