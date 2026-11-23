@@ -11,7 +11,6 @@ import {
     type GraphRenderer,
     type RenderTheme,
     type RenderModel,
-    type RenderNode,
 } from '@spacegraphjs/renderer';
 import { AccessibilityLayer } from 'spacegraphjs/a11y';
 import type { DepthMode } from 'spacegraphjs/depth';

@@ -43,7 +43,7 @@ export type GraphPopoverProps = Omit<GraphDetailProps, 'node'> & {
  * template hoisting which causes "Client-only API called on the server side" errors during SSR builds.
  */
 export const GraphPopover = (props: GraphPopoverProps) => {
-    const { i18n, Icon, node, onClose, ...detailProps } = props;
+    const { i18n, Icon, node, onClose } = props;
 
     // Create elements lazily on first render to avoid module-level DOM creation
     // that fails during SSR builds

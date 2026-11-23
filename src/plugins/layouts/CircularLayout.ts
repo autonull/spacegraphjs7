@@ -57,7 +57,7 @@ export class CircularLayout extends BaseLayout<CircularLayoutOptions> {
         }
 
         let currentAngle = config.startAngle;
-        this.positionAll(nodes, (node, index) => {
+        this.positionAll(nodes, (_node, index) => {
             // Place node at the start of its angular allocation, then advance
             const angle = currentAngle;
             const share = shares[index] / totalShare;

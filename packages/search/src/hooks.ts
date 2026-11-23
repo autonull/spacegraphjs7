@@ -6,7 +6,6 @@ import {
     facetCounts,
     type SearchFn,
     type SearchTextFn,
-    defaultSearchText,
 } from './search';
 import { navigationHelp } from './navigation';
 
@@ -34,7 +33,6 @@ export function useSearch({
     model,
     initialQuery = '',
     searchFn = (m, q) => rankedSearch(m, q),
-    searchTextFn = defaultSearchText,
 }: UseSearchOptions): UseSearchReturn {
     const [query, setQuery] = createSignal(initialQuery);
     const [activeIndex, setActiveIndex] = createSignal(0);
@@ -92,7 +90,6 @@ export interface UseFindReturn {
 export function useFind({
     model,
     facets,
-    onFacetsChange,
     initialTab = 'search',
 }: UseFindOptions): UseFindReturn {
     const [query, setQuery] = createSignal('');
