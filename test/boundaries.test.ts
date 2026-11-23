@@ -41,6 +41,7 @@ const PROMOTIONS: readonly { helper: string; source: string }[] = [
     { helper: 'createPhysicsPlaySession', source: 'src/world/PhysicsPlaySession.ts' },
     { helper: 'createCameraMotionHandlers', source: 'src/motion/camera-handlers.ts' },
     { helper: 'resolvePolicy', source: 'src/policy/resolve.ts' },
+    { helper: 'innerTree', source: 'src/inspect/inner-topology.ts' },
 ];
 
 describe('promoted helper reuse', () => {

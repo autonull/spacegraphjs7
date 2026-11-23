@@ -52,6 +52,12 @@ export const LIBRARY_ENTRIES: LibraryEntry[] = [
     },
     { subpath: './input', name: 'input', source: 'src/input/index.ts', types: 'dist/input.d.ts' },
     {
+        subpath: './inspect',
+        name: 'inspect',
+        source: 'src/inspect/index.ts',
+        types: 'dist/inspect.d.ts',
+    },
+    {
         subpath: './policy',
         name: 'policy',
         source: 'src/policy/index.ts',

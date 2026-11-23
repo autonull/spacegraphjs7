@@ -72,6 +72,20 @@ describe('second reference host', () => {
         expect(host.moves.some((move) => move.startsWith('flyTo:'))).toBe(true);
     });
 
+    it('builds a bounded local topology through the promoted inspector', () => {
+        const host = new SecondHost();
+        const nodes = [
+            { id: 'root', label: 'Root', kind: 'group' },
+            { id: 'a', label: 'A', kind: 'task' },
+            { id: 'b', label: 'B', kind: 'task' },
+        ];
+        const edges = [
+            { source: 'root', target: 'a', kind: 'link' },
+            { source: 'root', target: 'b', kind: 'parent' },
+        ];
+        expect(host.innerFocus('root', nodes, edges)).toEqual(['b', 'a']);
+    });
+
     it('resolves a host-owned policy through the promoted engine', () => {
         const host = new SecondHost();
         expect(host.policy.values['demo.gap']).toBe(120);

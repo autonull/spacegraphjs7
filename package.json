@@ -56,6 +56,11 @@
             "import": "./dist/input.js",
             "default": "./dist/input.js"
         },
+        "./inspect": {
+            "types": "./dist/inspect.d.ts",
+            "import": "./dist/inspect.js",
+            "default": "./dist/inspect.js"
+        },
         "./policy": {
             "types": "./dist/policy.d.ts",
             "import": "./dist/policy.js",

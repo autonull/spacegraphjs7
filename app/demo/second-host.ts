@@ -2,6 +2,7 @@
 // one workspace — camera verbs, one-authority play/reconcile, a legibility-gated rung and an opt-in
 // vision loop. The page owns rendering; this host owns state and behavior.
 
+import { innerTree, type InnerSourceEdge, type InnerSourceNode } from 'spacegraphjs/inspect';
 import { TouchRecognizer, type TouchGesture, type TouchPoint } from 'spacegraphjs/input';
 import {
     decodePolicyVector,
@@ -183,6 +184,15 @@ export class SecondHost {
 
     addEnergy(value: number): void {
         this.#energy += value;
+    }
+
+    /** Bounded local topology with this host's own containment vocabulary. */
+    innerFocus(
+        focus: string,
+        nodes: readonly InnerSourceNode[],
+        edges: readonly InnerSourceEdge[],
+    ): readonly string[] {
+        return innerTree(focus, nodes, edges, 2, 4, ['parent']).map((chip) => chip.id);
     }
 
     /** Feeds pointer samples through the promoted recognizer and applies this host's own gesture map. */
