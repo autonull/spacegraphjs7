@@ -172,7 +172,7 @@ function createModeToggle(app: SpaceGraphApp, theme: any): HTMLElement {
         container.appendChild(btn);
     });
 
-    const interaction = app.sg.pluginManager.getPlugin('interaction');
+    const interaction = app.sg.pluginManager.get('interaction');
     updateModeStyles(interaction ? (interaction as any).mode : 'default');
 
     return container;

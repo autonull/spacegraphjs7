@@ -128,7 +128,7 @@ export class SpaceGraphApp {
     }
 
     public setMode(mode: 'default' | 'select' | 'connect') {
-        const interaction = this.sg.pluginManager.getPlugin('interaction') as InteractionPlugin;
+        const interaction = this.sg.pluginManager.get('interaction') as InteractionPlugin;
         if (interaction) interaction.mode = mode;
     }
 
@@ -207,7 +207,7 @@ export class SpaceGraphApp {
     }
 
     public removeNode(nodeId: string) {
-        const node = this.sg.graph.getNode(nodeId);
+        const node = this.sg.graph.queryEngine.getNode(nodeId);
         if (node) {
             this.currentSelected.delete(node);
             this.sg.graph.removeNode(nodeId);
@@ -225,7 +225,7 @@ export class SpaceGraphApp {
     }
 
     public removeEdge(edgeId: string) {
-        const edge = this.sg.graph.getEdge(edgeId);
+        const edge = this.sg.graph.queryEngine.getEdge(edgeId);
         if (edge) {
             this.currentSelectedEdges.delete(edge);
             this.sg.graph.removeEdge(edgeId);

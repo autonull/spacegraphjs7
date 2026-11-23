@@ -5,36 +5,20 @@
 export { CameraControls } from './CameraControls';
 // Constants - comprehensive set for developer ergonomics
 export {
-    // Math constants
-    DEG2RAD,
     EPSILON,
     PI,
     RAD2DEG,
     TAU,
-    // Animation duration
-    AnimationDuration,
-    // Animation easing
     Easing,
-    // Color palettes
     EdgeColors,
-    // Input configuration
-    InputConfig,
-    // Input constants
     FingeringPriority,
     InteractionThresholds,
-    // Layout constants
     LayoutDefaults,
     NodeDefaults,
-    // Performance constants
     Performance,
-    // Spatial constants
     Spatial,
-    // Defaults
     Defaults,
-    // WCAG constants
     WCAG,
-    // Zoom constants
-    ZoomConfig,
 } from './constants';
 // Defaults
 export {

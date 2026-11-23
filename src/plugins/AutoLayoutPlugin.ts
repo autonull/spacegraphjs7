@@ -35,7 +35,7 @@ export class AutoLayoutPlugin extends BaseSystemPlugin {
 
     public fixOverlaps(overlaps: VisionIssue[]): void {
         logger.debug(`Auto-fixing ${overlaps.length} overlaps...`);
-        const layoutPlugin = this.sg.pluginManager.getPlugin('ForceLayout') as
+        const layoutPlugin = this.sg.pluginManager.get('ForceLayout') as
             ForceLayout | undefined;
 
         if (

@@ -1,7 +1,7 @@
 // A screenshot path in a doc or a Shot is a contract: it must name a tracked file. Generated labs
 // and atlas directories are gitignored by design and are declared here rather than guessed at.
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
@@ -21,7 +21,10 @@ for (const shot of SHOTS) {
 }
 
 const generated = /^(labs|atlas|demo-atlas|inner-layout|retro-style|capture)\//;
-const markdown = git('ls-files', '*.md').split('\n').filter(Boolean);
+const markdown = git('ls-files', '*.md')
+    .split('\n')
+    .filter(Boolean)
+    .filter((file) => existsSync(resolve(root, file)));
 for (const file of markdown) {
     const text = readFileSync(resolve(root, file), 'utf8');
     for (const [path] of text.matchAll(/docs\/screenshots\/[A-Za-z0-9_.\/-]+\.(?:png|jpe?g|json|html)/g)) {

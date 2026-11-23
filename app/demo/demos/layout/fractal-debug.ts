@@ -22,7 +22,7 @@ export default async function fractalDebugDemo(): Promise<SpaceGraph> {
     const sg = await createDemoWithNodes(nodes);
 
     // Debug timing of plugin access
-    const fractalPlugin = sg.pluginManager.getPlugin('fractal-zoom');
+    const fractalPlugin = sg.pluginManager.get('zoom-bands');
     const levelText = document.createElement('div');
     levelText.id = 'debug-level-text';
     levelText.style.position = 'fixed';

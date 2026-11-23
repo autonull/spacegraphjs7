@@ -84,7 +84,7 @@ export class TreeLayout extends BaseLayout<TreeLayoutOptions> {
         for (const [id, position] of positions) {
             finalPos.set(position.x - centre.x, position.y - centre.y, 0);
             if (config.orientation === 'horizontal') finalPos.set(-finalPos.y, -finalPos.x, 0);
-            this.applyPosition(this.graph.getNode(id) as Node, finalPos);
+            this.applyPosition(this.graph.queryEngine.getNode(id) as Node, finalPos);
         }
     }
 

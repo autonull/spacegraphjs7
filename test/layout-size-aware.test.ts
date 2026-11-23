@@ -167,8 +167,8 @@ const testCases: LayoutTestCase[] = [
         },
         checkSizeAware: (graph) => {
             // Verify that sibling spacing adapts to node sizes
-            const child1 = graph.getNode('child1')!;
-            const child2 = graph.getNode('child2')!;
+            const child1 = graph.queryEngine.getNode('child1')!;
+            const child2 = graph.queryEngine.getNode('child2')!;
             const dx = Math.abs(child1.position.x - child2.position.x);
             // With sizes 250 and 100, spacing should be larger than default
             expect(dx).toBeGreaterThan(50);
@@ -193,8 +193,8 @@ const testCases: LayoutTestCase[] = [
         },
         checkSizeAware: (graph) => {
             // Verify that sibling spacing adapts to node sizes
-            const child1 = graph.getNode('child1')!;
-            const child2 = graph.getNode('child2')!;
+            const child1 = graph.queryEngine.getNode('child1')!;
+            const child2 = graph.queryEngine.getNode('child2')!;
             const dx = Math.abs(child1.position.x - child2.position.x);
             expect(dx).toBeGreaterThan(50);
         },
@@ -218,8 +218,8 @@ const testCases: LayoutTestCase[] = [
         },
         checkSizeAware: (graph) => {
             // Verify that radial spacing adapts to node sizes
-            const child1 = graph.getNode('child1')!;
-            const child2 = graph.getNode('child2')!;
+            const child1 = graph.queryEngine.getNode('child1')!;
+            const child2 = graph.queryEngine.getNode('child2')!;
             const dist = Math.hypot(child1.position.x - child2.position.x, child1.position.y - child2.position.y);
             expect(dist).toBeGreaterThan(50);
         },
@@ -236,17 +236,17 @@ const testCases: LayoutTestCase[] = [
             makeNodeWithSize(graph, 'n5', 250, 120);
             const n6 = new ShapeNode(undefined, { id: 'n6', type: 'ShapeNode', data: {} });
             graph.addNode(n6);
-            graph.getNode('n1')!.data.category = 'A';
-            graph.getNode('n2')!.data.category = 'A';
-            graph.getNode('n3')!.data.category = 'B';
-            graph.getNode('n4')!.data.category = 'B';
-            graph.getNode('n5')!.data.category = 'C';
-            graph.getNode('n6')!.data.category = 'C';
+            graph.queryEngine.getNode('n1')!.data.category = 'A';
+            graph.queryEngine.getNode('n2')!.data.category = 'A';
+            graph.queryEngine.getNode('n3')!.data.category = 'B';
+            graph.queryEngine.getNode('n4')!.data.category = 'B';
+            graph.queryEngine.getNode('n5')!.data.category = 'C';
+            graph.queryEngine.getNode('n6')!.data.category = 'C';
         },
         checkSizeAware: (graph) => {
             // Verify that cluster micro-ring radius adapts to member sizes
-            const n2 = graph.getNode('n2')!; // 250x120 in cluster A
-            const n3 = graph.getNode('n3')!; // 400x200 in cluster B
+            const n2 = graph.queryEngine.getNode('n2')!; // 250x120 in cluster A
+            const n3 = graph.queryEngine.getNode('n3')!; // 400x200 in cluster B
             const distFromOrigin2 = Math.hypot(n2.position.x, n2.position.y);
             const distFromOrigin3 = Math.hypot(n3.position.x, n3.position.y);
             // Larger node should be further from cluster center
@@ -265,17 +265,17 @@ const testCases: LayoutTestCase[] = [
             makeNodeWithSize(graph, 'n5', 250, 120);
             const n6 = new ShapeNode(undefined, { id: 'n6', type: 'ShapeNode', data: {} });
             graph.addNode(n6);
-            graph.getNode('n1')!.data.timestamp = 1000;
-            graph.getNode('n2')!.data.timestamp = 2000;
-            graph.getNode('n3')!.data.timestamp = 3000;
-            graph.getNode('n4')!.data.timestamp = 4000;
-            graph.getNode('n5')!.data.timestamp = 5000;
-            graph.getNode('n6')!.data.timestamp = 6000;
+            graph.queryEngine.getNode('n1')!.data.timestamp = 1000;
+            graph.queryEngine.getNode('n2')!.data.timestamp = 2000;
+            graph.queryEngine.getNode('n3')!.data.timestamp = 3000;
+            graph.queryEngine.getNode('n4')!.data.timestamp = 4000;
+            graph.queryEngine.getNode('n5')!.data.timestamp = 5000;
+            graph.queryEngine.getNode('n6')!.data.timestamp = 6000;
         },
         checkSizeAware: (graph) => {
             // Verify that fallback/timed spacing adapts to node sizes
-            const n1 = graph.getNode('n1')!;
-            const n2 = graph.getNode('n2')!;
+            const n1 = graph.queryEngine.getNode('n1')!;
+            const n2 = graph.queryEngine.getNode('n2')!;
             const dx = Math.abs(n2.position.x - n1.position.x);
             // With sizes 100 and 250, spacing should be larger than default
             expect(dx).toBeGreaterThan(50);

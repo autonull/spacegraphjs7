@@ -34,7 +34,7 @@ export const Animate = {
         to: { x?: number; y?: number; z?: number },
         duration = 1000,
     ): Promise<void> {
-        const node = sg.graph.getNode(nodeId);
+        const node = sg.graph.queryEngine.getNode(nodeId);
         if (!node) return;
         await tween(
             node.position,
@@ -51,13 +51,13 @@ export const Animate = {
     },
 
     async fade(sg: SpaceGraph, nodeId: string, to: number, duration = 500): Promise<void> {
-        const node = sg.graph.getNode(nodeId);
+        const node = sg.graph.queryEngine.getNode(nodeId);
         if (!node) return;
         await tween(node.data, { opacity: to }, duration / 1000);
     },
 
     async scale(sg: SpaceGraph, nodeId: string, to: number, duration = 500): Promise<void> {
-        const node = sg.graph.getNode(nodeId);
+        const node = sg.graph.queryEngine.getNode(nodeId);
         if (!node) return;
         await tween(node.object.scale, { x: to, y: to, z: to }, duration / 1000);
     },
@@ -68,7 +68,7 @@ export const Animate = {
         to: { x?: number; y?: number; z?: number },
         duration = 1000,
     ): Promise<void> {
-        const node = sg.graph.getNode(nodeId);
+        const node = sg.graph.queryEngine.getNode(nodeId);
         if (!node) return;
         await tween(
             node.object.rotation,
@@ -78,7 +78,7 @@ export const Animate = {
     },
 
     async color(sg: SpaceGraph, nodeId: string, to: string | number): Promise<void> {
-        const node = sg.graph.getNode(nodeId);
+        const node = sg.graph.queryEngine.getNode(nodeId);
         if (!node) return;
         node.data.color = to;
     },

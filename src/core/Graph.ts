@@ -196,15 +196,6 @@ export class Graph extends EventEmitter<GraphEventMap> {
     }
 
     // ---- Backward-compatible delegation methods ----
-    getNode(id: string): Node | undefined {
-        return this.queryEngine.getNode(id);
-    }
-    getEdge(id: string): Edge | undefined {
-        return this.queryEngine.getEdge(id);
-    }
-    hasNode(id: string): boolean {
-        return this.queryEngine.hasNode(id);
-    }
     hasEdge(id: string): boolean {
         return this.queryEngine.hasEdge(id);
     }
@@ -234,15 +225,6 @@ export class Graph extends EventEmitter<GraphEventMap> {
     }
     getEdgesForNode(nodeId: string, direction: EdgeDirection = 'both'): Edge[] {
         return this.queryEngine.getEdgesForNode(nodeId, direction);
-    }
-    neighbors(nodeId: string): Node[] {
-        return this.queryEngine.neighbors(nodeId);
-    }
-    getIncomingEdges(nodeId: string): Edge[] {
-        return this.queryEngine.getIncomingEdges(nodeId);
-    }
-    getOutgoingEdges(nodeId: string): Edge[] {
-        return this.queryEngine.getOutgoingEdges(nodeId);
     }
     hasNeighbor(nodeId: string, targetId: string, direction: EdgeDirection = 'both'): boolean {
         return this.queryEngine.hasNeighbor(nodeId, targetId, direction);

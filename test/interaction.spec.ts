@@ -38,7 +38,7 @@ async function getNodeScreenPos(page: any, nodeId: string) {
 /** The widget exposes its overlay through the registered plugin, not a CSS class. */
 async function widgetDisplay(page: any) {
     return page.evaluate(() => {
-        const widget = (window as any)._sg?.pluginManager?.getPlugin('HoverMetaWidget');
+        const widget = (window as any)._sg?.pluginManager?.get('HoverMetaWidget');
         return widget?.overlay?.style.display ?? 'missing';
     });
 }

@@ -57,7 +57,7 @@ const boot = async (): Promise<void> => {
             settled: () => scopesPlugin.simulation.settled,
             energy: () => session.energy,
             playSession: () => ({ active: session.active, preset: session.preset }),
-            positionOf: (id: string) => graph.graph.getNode(id)?.position.toArray(),
+            positionOf: (id: string) => graph.graph.queryEngine.getNode(id)?.position.toArray(),
         },
     });
     document.getElementById('play')!.addEventListener('click', () => enablePlay());

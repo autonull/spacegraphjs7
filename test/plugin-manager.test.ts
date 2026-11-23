@@ -28,10 +28,10 @@ describe('PluginManager lookup', () => {
         const counter = new CounterPlugin();
         plugins.register(counter.id, counter);
 
-        expect(plugins.getPlugin('counter')).toBe(counter);
-        expect(plugins.getPlugin(counter)).toBe(counter);
-        expect(plugins.getPlugin(CounterPlugin)).toBe(counter);
-        expect(plugins.hasPlugin(CounterPlugin)).toBe(true);
+        expect(plugins.get('counter')).toBe(counter);
+        expect(plugins.get(counter)).toBe(counter);
+        expect(plugins.get(CounterPlugin)).toBe(counter);
+        expect(plugins.has(CounterPlugin)).toBe(true);
     });
 
     test('resolves instances whose id differs from their registration key', () => {
@@ -39,8 +39,8 @@ describe('PluginManager lookup', () => {
         const counter = new CounterPlugin('kebab-id');
         plugins.register('CounterPlugin', counter);
 
-        expect(plugins.getPlugin(counter)).toBe(counter);
-        expect(plugins.getPlugin(CounterPlugin)).toBe(counter);
+        expect(plugins.get(counter)).toBe(counter);
+        expect(plugins.get(CounterPlugin)).toBe(counter);
         expect(plugins.require(CounterPlugin)).toBe(counter);
     });
 
@@ -60,7 +60,7 @@ describe('PluginManager.use', () => {
 
         await plugins.use(counter);
 
-        expect(plugins.getPlugin('late')).toBe(counter);
+        expect(plugins.get('late')).toBe(counter);
         expect(counter.calls).toBe(1);
 
         await plugins.initAll();
@@ -76,7 +76,7 @@ describe('PluginManager.use', () => {
         const second = new CounterPlugin('reload');
         await plugins.use(second);
 
-        expect(plugins.getPlugin('reload')).toBe(second);
+        expect(plugins.get('reload')).toBe(second);
         expect(first.calls).toBe(1);
         expect(second.calls).toBe(1);
     });

@@ -175,7 +175,7 @@ test.describe('Behavioral E2E: Plugin System', () => {
             const pm = sg.pluginManager;
             return Boolean(
                 pm.plugins?.has('ForceLayout') ||
-                pm.getPlugin?.('ForceLayout') !== undefined ||
+                pm.get?.('ForceLayout') !== undefined ||
                 pm.plugins?.size > 0,
             );
         });

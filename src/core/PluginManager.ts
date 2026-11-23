@@ -40,7 +40,7 @@ export class PluginManager {
         if (!plugin) {
             const label =
                 typeof key === 'function' ? key.name : typeof key === 'string' ? key : key.id;
-            const available = this.pluginNames.join(', ') || 'none';
+            const available = Array.from(this.plugins.keys()).join(', ') || 'none';
             throw new ConfigurationError(
                 `[PluginManager] Plugin "${label}" is not registered. Available: ${available}`,
             );
@@ -52,27 +52,6 @@ export class PluginManager {
         this.register(plugin.id, plugin);
         if (this.#initialized.has(plugin.id)) return;
         await this.#initOne(plugin.id, plugin);
-    }
-
-    // Aliases for backward compatibility
-    getPlugin<T extends Plugin = Plugin>(key: PluginKey): T | undefined {
-        return this.get(key);
-    }
-
-    hasPlugin(key: PluginKey): boolean {
-        return this.has(key);
-    }
-
-    getPluginNames(): string[] {
-        return this.pluginNames;
-    }
-
-    get pluginNames(): string[] {
-        return Array.from(this.plugins.keys());
-    }
-
-    get pluginCount(): number {
-        return this.plugins.size;
     }
 
     register(name: string, plugin: Plugin): this {

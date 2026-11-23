@@ -41,7 +41,7 @@ export class VisionAutoFixer {
     }
 
     private async fixLegibility(report: VisionReport): Promise<void> {
-        const autoColorPlugin = this.sg.pluginManager.getPlugin('AutoColorPlugin');
+        const autoColorPlugin = this.sg.pluginManager.get('AutoColorPlugin');
         if (hasMethod(autoColorPlugin, 'applyVisionCorrection')) {
             autoColorPlugin.applyVisionCorrection(report.legibility.failures);
             logger.info('AutoColorPlugin corrections applied.');
@@ -51,14 +51,14 @@ export class VisionAutoFixer {
     }
 
     private async fixOverlap(report: VisionReport): Promise<void> {
-        const autoLayoutPlugin = this.sg.pluginManager.getPlugin('AutoLayoutPlugin');
+        const autoLayoutPlugin = this.sg.pluginManager.get('AutoLayoutPlugin');
         if (hasMethod(autoLayoutPlugin, 'fixOverlaps')) {
             autoLayoutPlugin.fixOverlaps(report.overlap.overlaps);
             logger.info('AutoLayoutPlugin overlap corrections applied.');
             return;
         }
 
-        const forceLayout = this.sg.pluginManager.getPlugin('ForceLayout');
+        const forceLayout = this.sg.pluginManager.get('ForceLayout');
         if (forceLayout && 'settings' in forceLayout && hasMethod(forceLayout, 'update')) {
             const settings = forceLayout.settings as { repulsion?: number };
             const originalRepulsion = settings.repulsion ?? 10000;
@@ -71,7 +71,7 @@ export class VisionAutoFixer {
     }
 
     private async fixHierarchy(_report: VisionReport): Promise<void> {
-        const hierLayout = this.sg.pluginManager.getPlugin('HierarchicalLayout');
+        const hierLayout = this.sg.pluginManager.get('HierarchicalLayout');
         if (hierLayout) {
             if (hasMethod(hierLayout, 'fixHierarchy')) {
                 hierLayout.fixHierarchy();
@@ -87,7 +87,7 @@ export class VisionAutoFixer {
     }
 
     private async fixLayout(report: VisionReport): Promise<void> {
-        const autoLayoutPlugin = this.sg.pluginManager.getPlugin('AutoLayoutPlugin');
+        const autoLayoutPlugin = this.sg.pluginManager.get('AutoLayoutPlugin');
         if (hasMethod(autoLayoutPlugin, 'applyVisionCorrection')) {
             const formattedIssues = report.overlap.overlaps.map(
                 (o: { nodeA: string; nodeB: string }) => ({

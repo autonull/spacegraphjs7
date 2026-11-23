@@ -10,7 +10,7 @@ on:
 
 jobs:
     # Tier 1: the documented developer surface. Runs before the heavier build and publish job so a
-    # stale guide, manifest, export or screenshot path fails the pull request early.
+    # stale guide, export or screenshot path fails the pull request early.
     library-surface:
         runs-on: ubuntu-latest
 

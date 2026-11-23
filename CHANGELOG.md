@@ -164,10 +164,9 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
   the projected label minimum, and a 120ms rAF p95 budget. The motion comparison records evidence; pixel
   identity and viewport parity are not gates during active UI development.
 
-### Deprecated
+### Removed
 
-- `FractalZoomPlugin` — use `ZoomBandsPlugin` / `ScaleDomain`. Kept as an exported alias for one
-  minor on the published surface; a removal candidate after that. No new host should adopt it.
+- `FractalZoomPlugin` — use `ZoomBandsPlugin` / `ScaleDomain`. No compatibility alias is kept.
 
 ### Not changed
 
@@ -178,6 +177,6 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 The published surface is alpha and additive. `LIBRARY_CONTRACT_VERSION` bumps only for new capability
 axes or additive fields; capability is probed with `supports(...)`, never by version or renderer
-identity. A moved public name keeps a deprecated alias for one minor, then is removed. The fork's
-internal integration is a separate scope: it deletes superseded code in the same gitlink bump rather
-than carrying shims. See `docs/contract-versioning.md` and `docs/adr/0013-additive-contract-versioning.md`.
+identity. A moved public name is deleted in the change that adds its replacement; no alias or
+deprecation shim is kept. See `docs/contract-versioning.md` and
+`docs/adr/0013-additive-contract-versioning.md`.

@@ -104,12 +104,12 @@ export class SpaceGraph {
     }
     get selectedNodes(): Node[] {
         return this.selected
-            .map((id) => this.graph.getNode(id))
+            .map((id) => this.graph.queryEngine.getNode(id))
             .filter((n): n is Node => n !== undefined);
     }
     get selectedEdges(): Edge[] {
         return this.selected
-            .map((id) => this.graph.getEdge(id))
+            .map((id) => this.graph.queryEngine.getEdge(id))
             .filter((e): e is Edge => e !== undefined);
     }
     get isEmpty(): boolean {
@@ -119,7 +119,7 @@ export class SpaceGraph {
         return {
             nodes: this.nodeCount,
             edges: this.edgeCount,
-            plugins: this.pluginManager.pluginCount,
+            plugins: this.pluginManager.plugins.size,
         };
     }
 
@@ -296,10 +296,12 @@ export class SpaceGraph {
         name: Name,
         options?: Partial<LayoutOptionsFor<Name>>,
     ): Promise<void> {
-        const plugin = this.pluginManager.getPlugin(name);
+        const plugin = this.pluginManager.get(name);
         if (!plugin) {
             const registered = new Set(listLayouts());
-            const available = this.pluginManager.getPluginNames().filter((n) => registered.has(n));
+            const available = Array.from(this.pluginManager.plugins.keys()).filter((n) =>
+                registered.has(n),
+            );
             throw new Error(
                 `[SpaceGraph] Unknown layout "${name}". Available layouts: ${available.join(', ')}. Use listLayouts() for full registry.`
             );
@@ -459,12 +461,8 @@ export class SpaceGraph {
 }
 
 // Convenience factory functions
-import { graph } from './builder';
-
 export const createSpaceGraph = (container: HTMLElement, options?: SpaceGraphOptions) =>
     new SpaceGraph(container, options);
-
-export const createGraph = () => graph();
 
 // SimpleGraph: minimal entry point for static graph dashboards
 // No chrome, no ergonomics, no physics, no vision — just force layout + HTML nodes + edges + camera + events
@@ -518,7 +516,3 @@ export const SimpleGraph = {
         return sg;
     },
 };
-
-// Shorthand factories for quick graph creation
-export const sg = createSpaceGraph;
-export const qg = createGraph;

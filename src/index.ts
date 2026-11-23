@@ -99,7 +99,7 @@ export { HistoryPlugin, type HistoryPluginOptions } from './plugins/HistoryPlugi
 export { MinimapPlugin } from './plugins/MinimapPlugin';
 
 // Convenience factory functions
-export { createSpaceGraph, createGraph, sg, qg } from './SpaceGraph';
+export { createSpaceGraph } from './SpaceGraph';
 
 // Event types for type-safe event handling
 export type { SpaceGraphEvents, SelectionChangedPayload } from './types/events';

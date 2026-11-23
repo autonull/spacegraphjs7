@@ -537,7 +537,6 @@ The event system covers:
 | -------------------------------- | ---------------------------------------------------- |
 | `AutoColorPlugin`                | Harmony-aware color assignment and vision correction |
 | `AutoLayoutPlugin`               | Re-layout and overlap repair                         |
-| `FractalZoomPlugin`              | Recursive detail expansion (deprecated)              |
 | `HistoryPlugin`                  | Undo and redo                                        |
 | `InteractionPlugin`              | Drag, click, hover, and interaction policy           |
 | `HoverMetaWidget`                | Rich hover cards                                     |
@@ -554,7 +553,7 @@ The event system covers:
 
 Plugins receive initialization, pre/post render, node and edge mutation, export/import, and disposal hooks. Core plugins are registered by default; add extra instances through `options.plugins`.
 
-`FractalZoomPlugin` is deprecated: `ZoomBandsPlugin` and the `ScaleDomain` represent the current band/scale mechanism and re-emit the legacy `fractal:level-change` channel for compatibility. It remains exported for one minor and is a removal candidate after that; no new host should adopt it.
+`ZoomBandsPlugin` and `ScaleDomain` are the band/scale mechanism and re-emit the `fractal:level-change` channel for the current adapter.
 
 ---
 

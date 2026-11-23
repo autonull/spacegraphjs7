@@ -49,7 +49,7 @@ describe('layout plugins', () => {
             [0, -100],
         ]);
 
-        const layout = pluginManager.getPlugin<GridLayout>('GridLayout')!;
+        const layout = pluginManager.get<GridLayout>('GridLayout')!;
         await layout.apply({ columns: 1, spacingX: 100, spacingY: 100 });
         expect(positions(graph)).toEqual([
             [0, 0],
@@ -59,7 +59,7 @@ describe('layout plugins', () => {
 
     it('leaves the pinned nodes where they are', async () => {
         const { sg, graph, pluginManager } = makeHost(['a', 'b']);
-        const pinned = graph.getNode('b')!;
+        const pinned = graph.queryEngine.getNode('b')!;
         pinned.setPinned(true);
         pinned.updatePosition(50, 50, 0);
 

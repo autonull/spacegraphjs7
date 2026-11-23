@@ -1,5 +1,5 @@
 import { Box3, Camera, OrthographicCamera, PerspectiveCamera, Vector3 } from 'three';
-import { DEG2RAD } from '../core/constants';
+import { MathConst } from '../core/constants';
 import type { Point2D } from '../types';
 
 export type { Point2D };
@@ -9,7 +9,7 @@ export type { Point2D };
  * screen to its distance from the camera.
  */
 export function halfFovTangent(fovDegrees: number): number {
-    return Math.tan((fovDegrees * DEG2RAD) / 2);
+    return Math.tan((fovDegrees * MathConst.DEG2RAD) / 2);
 }
 
 /**

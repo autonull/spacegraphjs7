@@ -181,7 +181,7 @@ export class MermaidPlugin extends BaseSystemPlugin {
         message: string;
         duration?: number;
     }): void {
-        const hud = this.sg.pluginManager.getPlugin('hud') as HUDPlugin | undefined;
+        const hud = this.sg.pluginManager.get('hud') as HUDPlugin | undefined;
         hud?.showAlert({
             message: options.message,
             variant: options.type,

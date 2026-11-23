@@ -111,7 +111,7 @@ export default async function fractalDemo(): Promise<SpaceGraph> {
     });
 
     document.addEventListener('keydown', (e) => {
-        const fractalPlugin = sg.pluginManager.getPlugin('fractal-zoom');
+        const fractalPlugin = sg.pluginManager.get('zoom-bands');
         if (!fractalPlugin) return;
 
         if (e.key === '+' || e.key === '=') {

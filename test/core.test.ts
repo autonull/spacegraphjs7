@@ -44,8 +44,8 @@ describe('Graph', () => {
             graph.addNode(node);
 
             expect(graph.nodeCount).toBe(1);
-            expect(graph.getNode('test-node')).toBe(node);
-            expect(graph.hasNode('test-node')).toBe(true);
+            expect(graph.queryEngine.getNode('test-node')).toBe(node);
+            expect(graph.queryEngine.hasNode('test-node')).toBe(true);
         });
 
         it('should emit events when nodes are added', async () => {

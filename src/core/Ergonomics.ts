@@ -41,7 +41,7 @@ export class ErgonomicsAPI {
 
     // ============= Quick Access ($ = get node) =============
     $(id: string): Node | undefined {
-        return this.sg.graph.getNode(id);
+        return this.sg.graph.queryEngine.getNode(id);
     }
 
     $$(id: string): Node {
@@ -49,7 +49,7 @@ export class ErgonomicsAPI {
     }
 
     $optional(id: string): Node | null {
-        return this.sg.graph.getNode(id) ?? null;
+        return this.sg.graph.queryEngine.getNode(id) ?? null;
     }
 
     // ============= Query =============
@@ -85,15 +85,15 @@ export class ErgonomicsAPI {
     }
 
     neighbors(nodeId: string): Node[] {
-        return this.sg.graph.neighbors(nodeId);
+        return this.sg.graph.getNeighbors(nodeId);
     }
 
     inEdges(nodeId: string): Edge[] {
-        return this.sg.graph.getIncomingEdges(nodeId);
+        return this.sg.graph.getEdgesForNode(nodeId, 'incoming');
     }
 
     outEdges(nodeId: string): Edge[] {
-        return this.sg.graph.getOutgoingEdges(nodeId);
+        return this.sg.graph.getEdgesForNode(nodeId, 'outgoing');
     }
 
     // ============= Iterator =============
@@ -208,7 +208,7 @@ export class ErgonomicsAPI {
 
     // ============= Quick Access =============
     require(id: string): Node {
-        const node = this.sg.graph.getNode(id);
+        const node = this.sg.graph.queryEngine.getNode(id);
         if (!node) throw new Error(`Node not found: ${id}`);
         return node;
     }
@@ -296,7 +296,7 @@ export class ErgonomicsAPI {
 
     // ============= Node Utilities =============
     clone(id: string, newId?: string): Node | null {
-        const orig = this.sg.graph.getNode(id);
+        const orig = this.sg.graph.queryEngine.getNode(id);
         return orig?.clone(newId ?? `${id}-copy`, [50, 0, 50]) ?? null;
     }
 
@@ -336,7 +336,7 @@ export class ErgonomicsAPI {
     }
 
     toggleVisibility(nodeId: string): boolean {
-        const node = this.sg.graph.getNode(nodeId);
+        const node = this.sg.graph.queryEngine.getNode(nodeId);
         if (!node) return false;
         const visible = !node.visible;
         node.setVisible(visible);
@@ -365,7 +365,7 @@ export class ErgonomicsAPI {
 
     // ============= Data Access =============
     data(id: string, key: string, value?: unknown): unknown {
-        const n = this.sg.graph.getNode(id);
+        const n = this.sg.graph.queryEngine.getNode(id);
         if (!n) return undefined;
         if (value !== undefined) {
             n.updateSpec({ data: { ...n.data, [key]: value } });
@@ -376,7 +376,7 @@ export class ErgonomicsAPI {
 
     /** Writes a data flag and returns the node so the ergonomic API stays fluent. */
     #writeFlag(id: string, key: string, value: unknown): Node | null {
-        const node = this.sg.graph.getNode(id);
+        const node = this.sg.graph.queryEngine.getNode(id);
         if (!node) return null;
         node.updateSpec({ data: { ...node.data, [key]: value } });
         return node;
@@ -519,7 +519,7 @@ export class ErgonomicsAPI {
 
     /** Runs an action on a node and hands it back; null when the node does not exist. */
     private withNode(id: string, action: (node: Node) => void): Node | null {
-        const node = this.sg.graph.getNode(id);
+        const node = this.sg.graph.queryEngine.getNode(id);
         if (!node) return null;
         action(node);
         return node;

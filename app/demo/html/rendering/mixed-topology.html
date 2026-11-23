@@ -189,7 +189,7 @@
 
             const sg = await SpaceGraph.create('#container', { nodes, edges });
 
-            const layout = sg.pluginManager.getPlugin('ForceLayout');
+            const layout = sg.pluginManager.get('ForceLayout');
             if (layout) {
                 layout.settings.attraction = 0.01;
                 layout.settings.repulsion = 80000;

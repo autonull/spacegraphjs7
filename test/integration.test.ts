@@ -155,8 +155,8 @@ describe('SpaceGraphJS v7.0 Integration', () => {
 
             expect(graph.nodeCount).toBe(2);
             expect(graph.edgeCount).toBe(1);
-            expect(graph.hasNode('node1')).toBe(true);
-            expect(graph.hasNode('node2')).toBe(true);
+            expect(graph.queryEngine.hasNode('node1')).toBe(true);
+            expect(graph.queryEngine.hasNode('node2')).toBe(true);
             expect(graph.hasEdge('edge1')).toBe(true);
         });
 
@@ -296,7 +296,7 @@ describe('SpaceGraphJS v7.0 Integration', () => {
             const forceLayout = new ForceLayout();
             plugins.register('force-layout', forceLayout);
 
-            expect(plugins.hasPlugin('force-layout')).toBe(true);
+            expect(plugins.has('force-layout')).toBe(true);
         });
 
         it('should call plugin hooks', async () => {
@@ -354,9 +354,9 @@ describe('SpaceGraphJS v7.0 Integration', () => {
             await layout.init(mockSg, graph, events);
 
             // Get initial positions
-            const n1 = graph.getNode('n1')!;
-            const n2 = graph.getNode('n2')!;
-            const n3 = graph.getNode('n3')!;
+            const n1 = graph.queryEngine.getNode('n1')!;
+            const n2 = graph.queryEngine.getNode('n2')!;
+            const n3 = graph.queryEngine.getNode('n3')!;
 
             const initialDist12 = n1.position.distanceTo(n2.position);
             const initialDist23 = n2.position.distanceTo(n3.position);

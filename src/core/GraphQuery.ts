@@ -71,19 +71,6 @@ export class GraphQuery {
         return result;
     }
 
-    // Backward-compatible aliases
-    neighbors(nodeId: string): Node[] {
-        return this.getNeighbors(nodeId, 'both');
-    }
-
-    getIncomingEdges(nodeId: string): Edge[] {
-        return this.getEdgesForNode(nodeId, 'incoming');
-    }
-
-    getOutgoingEdges(nodeId: string): Edge[] {
-        return this.getEdgesForNode(nodeId, 'outgoing');
-    }
-
     hasNeighbor(nodeId: string, targetId: string, direction: EdgeDirection = 'both'): boolean {
         let found = false;
         this.forEachMatchingEdge(nodeId, direction, (edge, isSource) => {

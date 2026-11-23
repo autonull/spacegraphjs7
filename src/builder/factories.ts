@@ -174,7 +174,7 @@ export const Layout = Object.freeze({
         layoutName: string,
         options?: Record<string, unknown>,
     ): Promise<void> {
-        const plugin = sg.pluginManager.getPlugin(layoutName);
+        const plugin = sg.pluginManager.get(layoutName);
         if (!plugin) throw new Error(`Layout "${layoutName}" not found`);
         if ('applyLayout' in plugin)
             await (

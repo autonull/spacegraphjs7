@@ -208,7 +208,7 @@
                 label: 'Reset Layout',
                 icon: '🔄',
                 onClick: () => {
-                    const layout = app.sg.pluginManager.getPlugin('force-layout');
+                    const layout = app.sg.pluginManager.get('force-layout');
                     if (layout) {
                         layout.settings.enabled = true;
                         app.showAlert('Force layout activated', 'info');

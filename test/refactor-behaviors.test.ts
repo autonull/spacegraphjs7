@@ -10,7 +10,7 @@ const shapeNode = (id: string) =>
 describe('Ergonomics visibility and flags', () => {
     it('hides and shows both the Surface flag and the Object3D', () => {
         const shape = shapeNode('a');
-        const sg = { graph: { getNode: () => shape } } as any;
+        const sg = { graph: { queryEngine: { getNode: () => shape } } } as any;
         const ergo = new ErgonomicsAPI(sg);
 
         expect(ergo.hide('a')).toBe(shape);
@@ -26,7 +26,7 @@ describe('Ergonomics visibility and flags', () => {
 
     it('returns the node from flag writers so the API stays fluent', () => {
         const shape = shapeNode('a');
-        const sg = { graph: { getNode: () => shape } } as any;
+        const sg = { graph: { queryEngine: { getNode: () => shape } } } as any;
         const ergo = new ErgonomicsAPI(sg);
 
         expect(ergo.opacity('a', 0.5)).toBe(shape);

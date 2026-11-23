@@ -87,7 +87,7 @@ export class CameraController {
     }
 
     focusNode(id: string, _padding = 100, duration = 1): SpaceGraph {
-        const node = this.sg.graph.getNode(id);
+        const node = this.sg.graph.queryEngine.getNode(id);
         if (node) {
             const pos = node.position;
             const effectiveDuration = this.#effectiveDuration(duration);

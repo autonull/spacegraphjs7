@@ -194,7 +194,7 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
         if (!sg) return undefined;
 
         const viewport = sg.viewport;
-        const zoomBandsPlugin = sg.pluginManager.getPlugin('zoom-bands') as
+        const zoomBandsPlugin = sg.pluginManager.get('zoom-bands') as
             { bands: { band: string } } | undefined;
         return {
             zoom: viewport.zoom,
@@ -208,7 +208,7 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
         const sg = this.#sg;
         if (!sg) return undefined;
 
-        const node = sg.graph.getNode(id);
+        const node = sg.graph.queryEngine.getNode(id);
         if (!node) return undefined;
 
         return worldToScreen(node.position, sg.renderer.camera, sg.renderer.renderer.domElement);
@@ -311,7 +311,7 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
 
     #emitViewport(viewport: RendererViewport): void {
         const sg = this.#sg;
-        const zoomBandsPlugin = sg?.pluginManager.getPlugin('zoom-bands') as
+        const zoomBandsPlugin = sg?.pluginManager.get('zoom-bands') as
             { bands: { band: string } } | undefined;
         const band = viewport.band ?? zoomBandsPlugin?.bands.band;
         this.emit('viewportChange', {

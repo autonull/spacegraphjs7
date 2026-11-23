@@ -4,7 +4,7 @@
 
 - Every manifest entry declares `minContractVersion`: the first contract version that carried it. `minContractVersion(manifest, axis)` reads one; `contractFloor(manifest)` returns the lowest version a consumer needs to discover them all.
 - An additive change bumps the minor (`1.1.0` emphasis, `1.2.0` widgets, `1.3.0` motion/world, `1.4.0` version metadata). Consumers that understand an older version see only the axes they know; no value is removed.
-- Public names keep a deprecated alias for one minor when moved (for example `renderNodeWidget` in a host adapter). After one minor the alias is a removal candidate.
+- Public names are renamed in place: superseded names are deleted, not kept as aliases.
 - The manifest is a runtime assembly: `buildManifest(version, entries)` collects library and host contributions. There is no generated file to keep in sync.
 
 A version bump does not choose a default or declare a winning configuration.
@@ -18,14 +18,13 @@ additive field, with a `minContractVersion` on each new manifest entry. Capabili
 never selects a backend and never grants a capability. Breaking moves are recorded in `CHANGELOG.md`
 and in [ADR 0013](./adr/0013-additive-contract-versioning.md).
 
-## Two scopes, two deprecation policies
+## No compatibility aliases
 
-- **Published library surface:** a renamed public symbol keeps a deprecated alias for one minor,
-  then becomes a removal candidate. `FractalZoomPlugin` is the current example; `ZoomBandsPlugin`
-  and `ScaleDomain` replace it.
-- **Fork integration:** `docs/capabilities.md` states the internal policy — no `CONTRACT_VERSION`,
+- **Published library surface:** a renamed public symbol is deleted in the same change that adds
+  its replacement. `FractalZoomPlugin` was removed in favour of `ZoomBandsPlugin` and `ScaleDomain`.
+- **Fork integration:** `docs/capabilities.md` states the same policy — no `CONTRACT_VERSION`,
   no `negotiateContract`, no aliases, no `@deprecated` shims; delete superseded code in the same
-  gitlink bump. This governs the fork's own wiring, not consumers of the published packages.
+  gitlink bump.
 
-Both rules shrink the same surface in the long run; neither promotes a default. Open questions and
-their knob families live in `docs/not-decided.md`; settled decisions live in `docs/adr/`.
+Neither rule promotes a default. Open questions and their knob families live in
+`docs/not-decided.md`; settled decisions live in `docs/adr/`.

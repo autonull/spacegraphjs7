@@ -70,7 +70,7 @@ export class SelectionManager {
     getSelectedNodes(): Set<Node> {
         return new Set(
             this.sg.selection.list
-                .map((id) => this.sg.graph.getNode(id))
+                .map((id) => this.sg.graph.queryEngine.getNode(id))
                 .filter((node): node is Node => node !== undefined),
         );
     }

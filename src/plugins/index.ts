@@ -11,7 +11,6 @@ export {
 } from './BaseSystemPlugin';
 export { type DOMOverlayOptions, DOMOverlayPlugin } from './DOMOverlayPlugin';
 export { type ErgonomicsConfig, ErgonomicsPlugin } from './ErgonomicsPlugin';
-export { FractalZoomPlugin } from './FractalZoomPlugin';
 export { HistoryPlugin, type HistoryPluginOptions } from './HistoryPlugin';
 export { type HUDElementOptions, HUDPlugin } from './HUDPlugin';
 export type { AlertOptions } from './hud/HUDAlerts';

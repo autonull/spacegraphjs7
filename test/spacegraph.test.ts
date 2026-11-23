@@ -1,4 +1,4 @@
-import { PluginManager, VisionManager } from 'spacegraphjs/core';
+import { GraphQuery, PluginManager, VisionManager } from 'spacegraphjs/core';
 import { DottedEdge, DynamicThicknessEdge } from 'spacegraphjs/edges';
 import {
     AudioNode,
@@ -117,9 +117,12 @@ function makeSpaceGraph() {
     // Forward-reference to the SpaceGraph proxy
     let sg: any;
 
+    const nodes = new Map<string, any>();
+    const edges = new Map<string, any>();
     const graph = {
-        nodes: new Map<string, any>(),
-        edges: new Map<string, any>(),
+        nodes,
+        edges,
+        queryEngine: new GraphQuery(nodes, edges),
         addNode(spec: any) {
             const NodeType = nodeTypeRegistry.get(spec.type);
             if (!NodeType) return null;
@@ -159,12 +162,6 @@ function makeSpaceGraph() {
             this.nodes.clear();
             this.edges.clear();
         },
-        getNode(id: string) {
-            return this.nodes.get(id);
-        },
-        getEdge(id: string) {
-            return this.edges.get(id);
-        },
         getNodes() {
             return this.nodes.values();
         },
@@ -175,7 +172,7 @@ function makeSpaceGraph() {
 
     const pluginManager = {
         register: vi.fn((name: string, p: any) => pluginRegistry.set(name, p)),
-        getPlugin: (name: string) => pluginRegistry.get(name),
+        get: (name: string) => pluginRegistry.get(name),
         registerNodeType: (name: string, T: any) => nodeTypeRegistry.set(name, T),
         registerEdgeType: (name: string, T: any) => edgeTypeRegistry.set(name, T),
         getNodeType: (name: string) => nodeTypeRegistry.get(name),
@@ -337,13 +334,13 @@ function makeSpaceGraph() {
     };
 
     const getNode = function (this: any, id: string) {
-        return this.graph.getNode(id);
+        return this.graph.queryEngine.getNode(id);
     };
     const getEdge = function (this: any, id: string) {
-        return this.graph.getEdge(id);
+        return this.graph.queryEngine.getEdge(id);
     };
     const hasNode = function (this: any, id: string) {
-        return this.graph.hasNode(id);
+        return this.graph.queryEngine.hasNode(id);
     };
     const hasEdge = function (this: any, id: string) {
         return this.graph.hasEdge(id);
@@ -372,7 +369,7 @@ function makeSpaceGraph() {
         return this;
     };
     const layout = async function (this: any, name: string, options?: Record<string, unknown>) {
-        const plugin = this.pluginManager.getPlugin(name);
+        const plugin = this.pluginManager.get(name);
         if (plugin && 'applyLayout' in plugin) {
             await (plugin as any).applyLayout(options);
         }
@@ -1231,14 +1228,14 @@ describe('Graph Serialization', () => {
         sg1.graph.addNode({ id: 'dup', type: 'ShapeNode', label: 'one', position: [0, 0, 0] });
         sg2.graph.addNode({ id: 'dup', type: 'ShapeNode', label: 'two', position: [100, 0, 0] });
 
-        expect(sg1.graph.getNode('dup')).not.toBe(sg2.graph.getNode('dup'));
-        expect(sg1.graph.getNode('dup').position.x).toBe(0);
-        expect(sg2.graph.getNode('dup').position.x).toBe(100);
+        expect(sg1.graph.queryEngine.getNode('dup')).not.toBe(sg2.graph.queryEngine.getNode('dup'));
+        expect(sg1.graph.queryEngine.getNode('dup').position.x).toBe(0);
+        expect(sg2.graph.queryEngine.getNode('dup').position.x).toBe(100);
 
         sg1.graph.removeNode('dup');
 
-        expect(sg1.graph.getNode('dup')).toBeUndefined();
-        expect(sg2.graph.getNode('dup')).toBeDefined();
+        expect(sg1.graph.queryEngine.getNode('dup')).toBeUndefined();
+        expect(sg2.graph.queryEngine.getNode('dup')).toBeDefined();
     });
 
     it('imports graph data correctly', () => {
@@ -1338,8 +1335,8 @@ describe('Graph CRUD', () => {
         sg.graph.addNode({ id: 'node-B', type: 'ShapeNode', position: [100, 0, 0] });
         sg.graph.addEdge({ id: 'edge-1', source: 'node-A', target: 'node-B', type: 'Edge' });
 
-        const nodeA = sg.graph.getNode('node-A');
-        const edge1 = sg.graph.getEdge('edge-1');
+        const nodeA = sg.graph.queryEngine.getNode('node-A');
+        const edge1 = sg.graph.queryEngine.getEdge('edge-1');
 
         expect(nodeA).toBeDefined();
         expect(nodeA.id).toBe('node-A');
@@ -1347,8 +1344,8 @@ describe('Graph CRUD', () => {
         expect(edge1).toBeDefined();
         expect(edge1.id).toBe('edge-1');
 
-        expect(sg.graph.getNode('missing')).toBeUndefined();
-        expect(sg.graph.getEdge('missing')).toBeUndefined();
+        expect(sg.graph.queryEngine.getNode('missing')).toBeUndefined();
+        expect(sg.graph.queryEngine.getEdge('missing')).toBeUndefined();
     });
 });
 
@@ -1361,7 +1358,7 @@ describe('PluginManager', () => {
         const pm = new PluginManager(sg);
         const plugin = new ForceLayout();
         pm.register('ForceLayout', plugin);
-        expect(pm.getPlugin('ForceLayout')).toBe(plugin);
+        expect(pm.get('ForceLayout')).toBe(plugin);
     });
 
     it('throws error when registering with invalid name or undefined plugin', () => {
@@ -1395,7 +1392,7 @@ describe('PluginManager', () => {
 
     it('returns undefined for unknown plugin', () => {
         const pm = new PluginManager(sg);
-        expect(pm.getPlugin('NonExistent')).toBeUndefined();
+        expect(pm.get('NonExistent')).toBeUndefined();
     });
 });
 
