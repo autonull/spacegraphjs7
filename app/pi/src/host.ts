@@ -45,20 +45,18 @@ import {
     WidgetLayer,
     WidgetRegistry,
     type InstrumentData,
-    type InstrumentKit,
 } from 'spacegraphjs/widgets';
 import {
     AgentAdapter,
     cardMarkup,
     composedCardMarkup,
-    focusCardMarkup,
     nodeSize,
     portalPreview,
     toAdapterModel,
     type AgentLevel,
 } from './adapter';
 import { anatomyChapter, derivePorts } from './anatomy';
-import { innerTree, type InnerLayout } from './inner';
+import { innerTree } from './inner';
 import {
     applyEdgeAttention,
     applyNodeAttention,
@@ -160,7 +158,6 @@ import { buildReportHTML } from './report';
 import { STUDY_TASKS } from './study';
 import { traceOrder } from './trace';
 import {
-    contextualInstruments,
     createCommandSurface,
     createInspector,
     createStateFrame,
@@ -177,6 +174,7 @@ import {
 import { SHORTCUT_HELP } from './help';
 import { ChromeController } from './chrome';
 import { button, el } from './dom';
+import { FocusLens } from './focus-lens';
 import { drawMinimap } from './minimap';
 import { configureVision, VisionController } from './vision-controller';
 import { TranscriptView } from './transcript';
@@ -301,17 +299,15 @@ export class PiHost {
     #transcriptWidth = 320;
     #transcriptHeight = 200;
     readonly chrome: ChromeController;
+    readonly lens: FocusLens;
     readonly transcript: TranscriptView;
     #initialFitDone = false;
     #initialFitTimer?: ReturnType<typeof setTimeout>;
     #policyPanel?: ReturnType<typeof mountPolicyPanel>;
     #inspector?: Inspector;
-    #focusConnector?: SVGLineElement;
     #commandSurface?: CommandSurface;
     #stateFrame?: StateFrame;
     #manualFrame?: { readonly state: FrameState; readonly detail: string };
-    #instrumentFocus = '';
-    #lensSignature = '';
     #policyListeners = new Set<(event: PolicyChangeEvent) => void>();
     #recorder: SessionRecorder;
     #startedAt = typeof performance === 'undefined' ? 0 : performance.now();
@@ -320,8 +316,6 @@ export class PiHost {
     #lastEdgeClick?: { id: string; at: number };
     #hover?: { id: string; at: number };
     #dissolving?: string;
-    #instruments?: InstrumentKit;
-    #inspectorInstruments?: InstrumentKit;
     #clientID = '';
     #baselineKernel = fixtureKernel();
     #shotReady = true;
@@ -441,6 +435,19 @@ export class PiHost {
             surface: () => this.#surface,
             resize: () => this.renderer.resize(),
             record: (kind, meta) => this.recordEvent(kind, meta),
+        });
+        this.lens = new FocusLens({
+            view: () => this.#view,
+            model: () => this.#model,
+            positions: () => this.#positions,
+            portals: () => this.#portalByNode,
+            policy: () => this.#resolved,
+            selection: () => this.#controller.selection,
+            revealed: () => this.#revealed,
+            inspector: () => this.#inspector,
+            cardSize: (kind, html, dense) => this.cardSize(kind, html, dense),
+            screenPosition: (id) => this.renderer.getNodeScreenPosition?.(id),
+            viewport: () => this.renderer.getViewport(),
         });
     }
 
@@ -689,7 +696,7 @@ export class PiHost {
         const kitData = (node: RenderNode): InstrumentData => this.instrumentData(node);
         const kitAction = (action: string, node: RenderNode): void =>
             this.onInstrumentAction(action, node);
-        this.#instruments = createInstrumentKit(el('instrument-kit'), kitData, kitAction);
+        const instruments = createInstrumentKit(el('instrument-kit'), kitData, kitAction);
         this.#annotationWidgets = createAnnotationWidgets(el('annotation-list'), (id) =>
             this.removeNote(id),
         );
@@ -709,7 +716,7 @@ export class PiHost {
         this.#inspector = createInspector((tab, pinned) =>
             this.recordEvent('inspector:change', { tab, pinned }),
         );
-        this.#inspectorInstruments = createInstrumentKit(
+        const inspectorInstruments = createInstrumentKit(
             this.#inspector.signals,
             kitData,
             kitAction,
@@ -730,7 +737,7 @@ export class PiHost {
         const connectorLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         connector.append(connectorLine);
         el('canvas').append(connector);
-        this.#focusConnector = connectorLine;
+        this.lens.attach(connectorLine, instruments, inspectorInstruments);
         this.#commandSurface = createCommandSurface(() => this.commands(), {
             help: () => this.help(),
         });
@@ -2824,131 +2831,11 @@ export class PiHost {
 
     /** Dockable inspector anchored to the focused node; markup changes only with focus or data. */
     private renderFocusLens(): void {
-        const inspector = this.#inspector;
-        if (!inspector) return;
-        const overlay = inspector.element;
-        const depth = Number(this.#resolved.values['emphasis.innerDepth']);
-        const focus = this.#revealed || this.#controller.selection[0] || '';
-        if (!focus || depth <= 0) {
-            overlay.hidden = true;
-            this.#focusConnector?.parentElement?.toggleAttribute('hidden', true);
-            return;
-        }
-        const point = this.renderer.getNodeScreenPosition?.(focus);
-        const adapterNode = toAdapterModel(this.#view).nodes.find((node) => node.id === focus);
-        const modelNode = this.#model?.nodes.find((node) => node.id === focus);
-        if (!point || !adapterNode || !modelNode) {
-            overlay.hidden = true;
-            this.#focusConnector?.parentElement?.toggleAttribute('hidden', true);
-            return;
-        }
-        const layout = String(this.#resolved.values['emphasis.innerLayout']) as InnerLayout;
-        const scope = this.#portalByNode.get(focus);
-        document.documentElement.dataset.scopeFocus = scope ?? '';
-        const chips = innerTree(focus, this.#view.nodes, this.#view.edges, depth);
-        const signature = [
-            focus,
-            depth,
-            layout,
-            adapterNode.kind,
-            adapterNode.status,
-            chips.map((chip) => chip.id).join(','),
-        ].join('|');
-        if (signature !== this.#lensSignature) {
-            overlay.dataset.kind = adapterNode.kind;
-            const ports = derivePorts(focus, this.#view.edges, (id) => this.#positions.get(id));
-            inspector.slot.innerHTML = focusCardMarkup(
-                {
-                    ...adapterNode,
-                    ...(scope ? { scope } : {}),
-                    ...(ports ? { data: { ...adapterNode.data, ports } } : {}),
-                },
-                chips,
-                layout,
-            );
-            this.#lensSignature = signature;
-        }
-        this.refreshInstruments(modelNode);
-        const canvas = el('canvas');
-        const canvasRect = canvas.getBoundingClientRect();
-        if (!inspector.pinned) {
-            const viewport = this.renderer.getViewport();
-            const pixelsPerWorld =
-                (canvas.clientWidth || 1000) / Math.max(viewport.extent?.width ?? 1000, 1);
-            const scale =
-                focus === this.#revealed ? Number(this.#resolved.values['emphasis.focusScale']) : 1;
-            const [cardWidth, cardHeight] = this.cardSize(
-                adapterNode.kind,
-                true,
-                denseType(this.#resolved.values),
-            );
-            const onScreenWidth = cardWidth * scale * pixelsPerWorld;
-            const onScreenHeight = cardHeight * scale * pixelsPerWorld;
-            const width = Math.round(Math.max(300, Math.min(420, onScreenWidth)));
-            const height = Math.round(Math.max(210, Math.min(300, onScreenHeight)));
-            overlay.style.width = `${width}px`;
-            overlay.style.height = `${height}px`;
-            const cardRect = document.getElementById(`node-html-${focus}`)?.getBoundingClientRect();
-            const card = cardRect
-                ? {
-                      left: cardRect.left - canvasRect.left,
-                      right: cardRect.right - canvasRect.left,
-                      top: cardRect.top - canvasRect.top,
-                      bottom: cardRect.bottom - canvasRect.top,
-                  }
-                : {
-                      left: point.x - onScreenWidth / 2,
-                      right: point.x + onScreenWidth / 2,
-                      top: point.y - onScreenHeight / 2,
-                      bottom: point.y + onScreenHeight / 2,
-                  };
-            const centerX = (card.left + card.right) / 2;
-            const centerY = (card.top + card.bottom) / 2;
-            const margin = 12;
-            const candidates = [
-                { x: centerX - width / 2, y: card.bottom + margin },
-                { x: centerX - width / 2, y: card.top - height - margin },
-                { x: card.right + margin, y: centerY - height / 2 },
-                { x: card.left - width - margin, y: centerY - height / 2 },
-            ];
-            const fits = (spot: { x: number; y: number }): boolean =>
-                spot.x >= margin &&
-                spot.y >= margin &&
-                spot.x + width <= canvas.clientWidth - margin &&
-                spot.y + height <= canvas.clientHeight - margin;
-            const spot = candidates.find(fits) ?? candidates[0]!;
-            const x = Math.min(
-                Math.max(margin, spot.x),
-                Math.max(margin, canvas.clientWidth - width - margin),
-            );
-            const y = Math.min(
-                Math.max(margin, spot.y),
-                Math.max(margin, canvas.clientHeight - height - margin),
-            );
-            overlay.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
-        }
-        overlay.hidden = false;
-        const line = this.#focusConnector;
-        const parent = line?.parentElement;
-        if (line && parent) {
-            const lensRect = overlay.getBoundingClientRect();
-            line.setAttribute('x1', String(Math.round(point.x)));
-            line.setAttribute('y1', String(Math.round(point.y)));
-            line.setAttribute('x2', String(Math.round(lensRect.left - canvasRect.left + 12)));
-            line.setAttribute('y2', String(Math.round(lensRect.top - canvasRect.top + 12)));
-            parent.toggleAttribute('hidden', false);
-        }
+        this.lens.render();
     }
 
-    /** The rail shows at most two contextual instruments; the inspector holds the full kit. */
     private refreshInstruments(node?: RenderNode): void {
-        if (!this.#instruments) return;
-        const scoped = node ? [{ ...node, widgets: contextualInstruments(node) }] : [];
-        this.#instruments.refresh(scoped);
-        const key = node ? `${node.id}:${node.status ?? ''}` : '';
-        if (key === this.#instrumentFocus) return;
-        this.#instrumentFocus = key;
-        this.#inspectorInstruments?.refresh(node ? [node] : []);
+        this.lens.refreshInstruments(node);
     }
 
     private bindTranscript(): void {
