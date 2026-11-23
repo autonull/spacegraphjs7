@@ -48,13 +48,10 @@ export class AudioNode extends BaseContentNode {
     updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
 
-        if (updates.label !== undefined && this.titleElement) {
-            this.titleElement.textContent = updates.label ?? 'Audio Player';
-        }
+        this.syncTitleLabel(updates);
+        this.syncDataColor(updates);
 
         if (updates.data) {
-            if (updates.data.color)
-                this.domElement.style.backgroundColor = updates.data.color as string;
             if (updates.data.src && updates.data.src !== this.audioElement.src) {
                 this.audioElement.src = updates.data.src as string;
             }

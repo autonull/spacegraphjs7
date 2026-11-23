@@ -11,57 +11,59 @@ export interface MermaidNodeData extends BaseNodeData {
     color?: string;
 }
 
+const SHAPE_BORDER = 'border: 2px solid rgba(255,255,255,0.3);';
+
 const SHAPE_STYLES: Record<MermaidNodeShape, string> = {
     rect: `
     border-radius: 4px;
-    border: 2px solid rgba(255,255,255,0.3);
+    ${SHAPE_BORDER}
   `,
     round: `
     border-radius: 16px;
-    border: 2px solid rgba(255,255,255,0.3);
+    ${SHAPE_BORDER}
   `,
     stadium: `
     border-radius: 50px;
-    border: 2px solid rgba(255,255,255,0.3);
+    ${SHAPE_BORDER}
   `,
     circle: `
     border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.3);
+    ${SHAPE_BORDER}
   `,
     diamond: `
     border-radius: 4px;
-    border: 2px solid rgba(255,255,255,0.3);
+    ${SHAPE_BORDER}
     transform: rotate(45deg);
   `,
     hexagon: `
     border-radius: 20px;
-    border: 2px solid rgba(255,255,255,0.3);
+    ${SHAPE_BORDER}
     clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
   `,
     parallelogram: `
     border-radius: 4px;
-    border: 2px solid rgba(255,255,255,0.3);
+    ${SHAPE_BORDER}
     transform: skewX(-15deg);
   `,
     parallelogram_alt: `
     border-radius: 4px;
-    border: 2px solid rgba(255,255,255,0.3);
+    ${SHAPE_BORDER}
     transform: skewX(15deg);
   `,
     trapezoid: `
     border-radius: 4px;
-    border: 2px solid rgba(255,255,255,0.3);
+    ${SHAPE_BORDER}
     clip-path: polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%);
   `,
     subroutine: `
     border-radius: 8px;
-    border: 2px solid rgba(255,255,255,0.3);
+    ${SHAPE_BORDER}
     border-style: double;
     border-width: 4px;
   `,
     cylinder: `
     border-radius: 8px;
-    border: 2px solid rgba(255,255,255,0.3);
+    ${SHAPE_BORDER}
     border-bottom-left-radius: 50%;
     border-bottom-right-radius: 50%;
   `,

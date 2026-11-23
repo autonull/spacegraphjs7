@@ -59,10 +59,9 @@ export class MathNode extends BaseContentNode {
 
         let needsRender = false;
 
+        this.syncDataColor(updates);
+
         if (updates.data) {
-            if (updates.data.color) {
-                this.domElement.style.backgroundColor = updates.data.color as string;
-            }
             if (updates.data.fontSize) {
                 this.domElement.style.fontSize = `${updates.data.fontSize as number}px`;
             }

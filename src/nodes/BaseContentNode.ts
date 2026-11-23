@@ -67,4 +67,10 @@ export abstract class BaseContentNode extends DOMNode {
             this.titleElement.textContent = updates.label;
         }
     }
+
+    /** Apply a data-driven background colour when one was supplied. */
+    protected syncDataColor(updates: Partial<NodeSpec>): void {
+        if (updates.data?.color)
+            this.domElement.style.backgroundColor = updates.data.color as string;
+    }
 }
