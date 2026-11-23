@@ -11,6 +11,13 @@ export abstract class MeshEdge extends Edge {
     protected initialized = false;
     abstract readonly mesh: THREE.Mesh;
 
+    /** Tags a prepared mesh for picking, attaches it to the scene and enables updates. */
+    protected mountMesh(mesh: THREE.Mesh, type: string): void {
+        mesh.userData = { edgeId: this.id, type };
+        this.sg?.renderer.scene.add(mesh);
+        this.initialized = true;
+    }
+
     /** Orients and scales the mesh over the source→target span. */
     protected abstract place(
         direction: THREE.Vector3,

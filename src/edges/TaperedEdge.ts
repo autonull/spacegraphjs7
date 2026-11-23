@@ -68,9 +68,7 @@ export class TaperedEdge extends MeshEdge {
         });
 
         this.mesh = new THREE.Mesh(geometry, material);
-        this.mesh.userData = { edgeId: this.id, type: 'edge-taper' };
-        this.sg?.renderer.scene.add(this.mesh);
-        this.initialized = true;
+        this.mountMesh(this.mesh, 'edge-taper');
     }
 
     protected place(direction: THREE.Vector3, _target: THREE.Vector3, width: number, length: number): void {

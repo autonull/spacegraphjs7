@@ -36,9 +36,7 @@ export class DynamicThicknessEdge extends MeshEdge {
         });
 
         this.mesh = this.cylinder = new THREE.Mesh(geometry, material);
-        this.mesh.userData = { edgeId: this.id, type: 'edge-cylinder' };
-        this.sg?.renderer.scene.add(this.mesh);
-        this.initialized = true;
+        this.mountMesh(this.mesh, 'edge-cylinder');
     }
 
     protected place(_direction: THREE.Vector3, target: THREE.Vector3, width: number, length: number): void {
