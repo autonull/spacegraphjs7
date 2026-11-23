@@ -1,7 +1,6 @@
 import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
 import { focusNodeCamera } from '../utils/CameraUtils';
-import { selectionChanged } from './Selection';
 import type { SpaceGraphApp } from './SpaceGraphApp';
 
 /**
@@ -15,13 +14,7 @@ function setSelection(app: SpaceGraphApp, nodes: Node[], edges: Edge[]): void {
 
     const selectedNodes = [...app.currentSelected];
     const selectedEdges = [...app.currentSelectedEdges];
-    app.sg.events.emit(
-        'selection:changed',
-        selectionChanged(
-            selectedNodes.map((node) => node.id),
-            selectedEdges.map((edge) => edge.id),
-        ),
-    );
+    app.emitSelectionChanged();
 
     if (app.options.onNodeSelect) app.options.onNodeSelect([...selectedNodes]);
     if (app.options.onEdgeSelect) app.options.onEdgeSelect([...selectedEdges]);

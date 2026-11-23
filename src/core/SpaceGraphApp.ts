@@ -198,7 +198,7 @@ export class SpaceGraphApp {
 
     public importData(data: any) {
         this.sg.import(data);
-        this._emitSelectionChanged();
+        this.emitSelectionChanged();
     }
 
     public focusOnNodes(nodeIds: string[], padding = 100, duration = 1.5) {
@@ -207,7 +207,7 @@ export class SpaceGraphApp {
 
     public addNode(nodeSpec: any) {
         this.sg.graph.addNode(nodeSpec);
-        this._emitSelectionChanged();
+        this.emitSelectionChanged();
     }
 
     public updateNode(nodeId: string, nodeSpec: any) {
@@ -219,13 +219,13 @@ export class SpaceGraphApp {
         if (node) {
             this.currentSelected.delete(node);
             this.sg.graph.removeNode(nodeId);
-            this._emitSelectionChanged();
+            this.emitSelectionChanged();
         }
     }
 
     public addEdge(edgeSpec: any) {
         this.sg.graph.addEdge(edgeSpec);
-        this._emitSelectionChanged();
+        this.emitSelectionChanged();
     }
 
     public updateEdge(edgeId: string, edgeSpec: any) {
@@ -237,7 +237,7 @@ export class SpaceGraphApp {
         if (edge) {
             this.currentSelectedEdges.delete(edge);
             this.sg.graph.removeEdge(edgeId);
-            this._emitSelectionChanged();
+            this.emitSelectionChanged();
         }
     }
 
@@ -245,7 +245,7 @@ export class SpaceGraphApp {
         this.clearSelectionStyles();
         this.currentSelected.clear();
         this.currentSelectedEdges.clear();
-        this._emitSelectionChanged();
+        this.emitSelectionChanged();
     }
 
     public getSelectedNodes(): Node[] {
@@ -264,7 +264,7 @@ export class SpaceGraphApp {
         this.hud.dispose();
     }
 
-    private _emitSelectionChanged(): void {
+    emitSelectionChanged(): void {
         this.sg.events.emit(
             'selection:changed',
             selectionChanged(

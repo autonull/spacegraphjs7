@@ -6,7 +6,6 @@ import {
     renderToolbarActions,
     setupSearchHUD,
 } from './SpaceGraphAppHUD';
-import { selectionChanged } from './Selection';
 
 export function setupDefaultHUD(app: SpaceGraphApp, theme: any) {
     if (typeof document === 'undefined') return;
@@ -20,15 +19,7 @@ export function setupDefaultHUD(app: SpaceGraphApp, theme: any) {
 
     renderToolbar(app, theme);
 
-    const nodes = [...app.currentSelected];
-    const edges = [...app.currentSelectedEdges];
-    app.sg.events.emit(
-        'selection:changed',
-        selectionChanged(
-            nodes.map((node) => node.id),
-            edges.map((edge) => edge.id),
-        ),
-    );
+    app.emitSelectionChanged();
     renderToolbarActions(app);
 }
 

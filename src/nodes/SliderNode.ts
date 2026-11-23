@@ -1,4 +1,4 @@
-import { BoxGeometry, Mesh, MeshStandardMaterial, Raycaster, Vector3 } from 'three';
+import { BoxGeometry, Mesh, MeshStandardMaterial, Raycaster } from 'three';
 import type { HitResult } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
@@ -70,10 +70,6 @@ export class SliderNode extends WidgetNode {
         this._value = (v - this._min) / (this._max - this._min);
         this.updateThumbPosition();
         this.updateLabel();
-    }
-
-    isDraggable(_localPos: Vector3): boolean {
-        return false;
     }
 
     hitTest(raycaster: Raycaster): HitResult | null {

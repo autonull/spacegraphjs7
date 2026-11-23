@@ -425,7 +425,7 @@ export abstract class Node extends Surface {
         return this;
     }
 
-    isDraggable(_localPos: THREE.Vector3): boolean {
+    isDraggable(_localPos?: THREE.Vector3): boolean {
         if (this.data?.draggable === false) return false;
         return true;
     }
@@ -602,7 +602,7 @@ export abstract class Node extends Surface {
     }
 
     toggle(): this {
-        return this.setVisibleFlag(!this.visible);
+        return this.toggleVisible();
     }
 
     enable(): this {
@@ -707,7 +707,7 @@ export abstract class Node extends Surface {
     }
 
     isDraggableFlag(): boolean {
-        return this.readDataFlag('draggable', true);
+        return this.isDraggable();
     }
 
     /** Normalize tags from array or comma-separated string to a clean array. */

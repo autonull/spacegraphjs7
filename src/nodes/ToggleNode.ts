@@ -1,5 +1,3 @@
-import type * as THREE from 'three';
-import type { HitResult } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { WidgetNode, type WidgetNodeData } from './WidgetNode';
@@ -54,10 +52,6 @@ export class ToggleNode extends WidgetNode {
     }
 
     onPointerUp(): void {}
-
-    hitTest(raycaster: THREE.Raycaster): HitResult | null {
-        return this.hitTestObject(raycaster, this.mesh, { recursive: false, normal: false });
-    }
 
     updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);

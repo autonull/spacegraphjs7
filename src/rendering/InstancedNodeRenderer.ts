@@ -100,7 +100,10 @@ export class InstancedNodeRenderer {
             this.expandFamily(family);
             const expandedState = this.familyStates.get(family);
             if (expandedState && expandedState.freeSlots.length > 0) {
-                return expandedState.freeSlots.pop()!;
+                const slot = expandedState.freeSlots.pop()!;
+                expandedState.activeCount++;
+                expandedState.mesh.count = expandedState.activeCount;
+                return slot;
             }
             return -1;
         }
@@ -157,12 +160,7 @@ export class InstancedNodeRenderer {
     }
 
     public dispose() {
-        for (const state of this.familyStates.values()) {
-            this.scene.remove(state.mesh);
-            state.mesh.geometry.dispose();
-            (state.mesh.material as Material).dispose();
-            state.mesh.dispose();
-        }
+        for (const state of this.familyStates.values()) this.disposeMesh(state.mesh);
         this.familyStates.clear();
         this.nodeToSlot.clear();
     }
@@ -192,19 +190,7 @@ export class InstancedNodeRenderer {
         ];
 
         for (const family of families) {
-            const { geometry, material } = this.createGeometryAndMaterial(family);
-            const mesh = new InstancedMesh(geometry, material, DEFAULT_CAPACITY);
-            mesh.instanceMatrix.setUsage(DynamicDrawUsage);
-            mesh.count = 0;
-            mesh.frustumCulled = false;
-
-            if (!mesh.instanceColor) {
-                mesh.instanceColor = new InstancedBufferAttribute(
-                    new Float32Array(DEFAULT_CAPACITY * 3),
-                    3,
-                );
-            }
-            mesh.instanceColor.setUsage(DynamicDrawUsage);
+            const mesh = this.createMesh(family, DEFAULT_CAPACITY);
 
             const state: GeometryFamilyState = {
                 mesh,
@@ -237,6 +223,25 @@ export class InstancedNodeRenderer {
         return { geometry, material };
     }
 
+    private createMesh(family: GeometryFamily, capacity: number): InstancedMesh {
+        const { geometry, material } = this.createGeometryAndMaterial(family);
+        const mesh = new InstancedMesh(geometry, material, capacity);
+        mesh.instanceMatrix.setUsage(DynamicDrawUsage);
+        mesh.count = 0;
+        mesh.frustumCulled = false;
+        if (!mesh.instanceColor)
+            mesh.instanceColor = new InstancedBufferAttribute(new Float32Array(capacity * 3), 3);
+        mesh.instanceColor.setUsage(DynamicDrawUsage);
+        return mesh;
+    }
+
+    private disposeMesh(mesh: InstancedMesh): void {
+        this.scene.remove(mesh);
+        mesh.geometry.dispose();
+        (mesh.material as Material).dispose();
+        mesh.dispose();
+    }
+
     private expandFamily(family: GeometryFamily) {
         const oldState = this.familyStates.get(family);
         if (!oldState) return;
@@ -244,19 +249,8 @@ export class InstancedNodeRenderer {
         const newCapacity = oldState.slots.length * 2;
         const oldMesh = oldState.mesh;
 
-        const { geometry, material } = this.createGeometryAndMaterial(family);
-        const newMesh = new InstancedMesh(geometry, material, newCapacity);
-        newMesh.instanceMatrix.setUsage(DynamicDrawUsage);
+        const newMesh = this.createMesh(family, newCapacity);
         newMesh.count = oldMesh.count;
-        newMesh.frustumCulled = false;
-
-        if (!newMesh.instanceColor) {
-            newMesh.instanceColor = new InstancedBufferAttribute(
-                new Float32Array(newCapacity * 3),
-                3,
-            );
-        }
-        newMesh.instanceColor.setUsage(DynamicDrawUsage);
 
         const matrix = new Matrix4();
         const color = new Color();
@@ -297,10 +291,7 @@ export class InstancedNodeRenderer {
             needsColorUpdate: true,
         };
 
-        this.scene.remove(oldMesh);
-        oldMesh.geometry.dispose();
-        (oldMesh.material as Material).dispose();
-        oldMesh.dispose();
+        this.disposeMesh(oldMesh);
 
         this.familyStates.set(family, newState);
         this.scene.add(newMesh);
