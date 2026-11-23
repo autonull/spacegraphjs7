@@ -1,8 +1,8 @@
 # TODO11 — A library developers can build on
 
 > **Status: COMPLETE (2026-11-23).** All six foundations (D1–D6) and the cross-cutting gates are
-> landed and verified; see §6 for evidence. Every item in §7 is external, blocked by publication,
-> deferred to a separate feature, or reserved for the next minor — none is outstanding local work.
+> landed and verified; see §6 for evidence. Publication is not planned, so no registry-mode work is
+> pending. §7 lists the remaining non-local items and, separately, the ones deliberately declined.
 
 Purpose: SpaceGraphJS already has unusually broad mechanisms — three renderers, two framework
 bindings, four domain vocabularies, a layout catalogue, a plugin system and a vision loop. What it
@@ -180,17 +180,22 @@ a red gate green. No human verdict or study result is recorded as developer work
 ## 7. Remaining work
 
 The developer-side foundations are now gates and the plan is complete. No local implementation is
-outstanding. Each item below is external, blocked by publication, deferred to a separate feature, or
-reserved for the next minor. The "Reopen when" column is the condition that would turn it into work;
-none is met at this commit.
+outstanding. The items below are new-feature, optional, next-minor, deferred or external; the
+"Reopen when" column names the condition that would turn one into work. None is met at this commit.
+Items deliberately declined are listed after the table.
 
 | # | Item | Category | Blocker / why not now | Reopen when |
 | - | ---- | -------- | --------------------- | ----------- |
-| 1 | Registry-mode onboarding and published-version upgrade | External | `npm view` returns 404 for `spacegraphjs` and `create-spacegraph`; literal `pnpm dlx create-spacegraph` and "download the previous release" cannot run offline or in CI. `test:quickstart` and `check:upgrade` use packed tarballs instead | Both packages are published; add registry-mode jobs then, without mocks |
-| 2 | D2 previous-release baseline | External | `test/fixtures/public-surface.json` was recorded from this checkout, not an npm release; `check:upgrade` against packed declarations is the strongest local proof available | A published release exists; replace the baseline with it (strict npm upgrade also depends on item 1) |
-| 3 | D3 per-pixel parity | Non-goal | `test:publish` mounts SpaceGraph and Cytoscape from packed bytes with the shared model; `test/conformance` covers identity, capabilities and the static SVG draw; the capability matrix records intentional differences | Never under the §5 non-goals |
-| 4 | D4 optional vision helpers (`spacegraphVision`, `visionAssert`) | New feature | The quality floor checks labels, overlap, DOM budget, edge endpoints, DOM mirror items/roles/tabindex, RTL direction, reduced motion and the preference boundary; the quickstart claims were corrected rather than building these helpers | A separate feature plan approves them |
-| 5 | D5 generated-domain benchmark | Optional | `test:extension` runs the generated domain's conformance suite and one-way dependency guard; the benchmark demo uses the shared registry, not a scaffold-generated host | A scaffold-generated host benchmark is requested |
-| 6 | E3 deprecation pointers | Next minor | `docs/api-compatibility.json` is machine-ready; aliases are kept until the minor boundary and `check:compat` does not flip them | The next minor release; apply the `@deprecated` pointers, keep the aliases |
-| 7 | Local trace and replay | Deferred | Observation side of the loop; the measurement side (D4) is trustworthy, but traces stay local and opt-in | A separate feature plan for observation |
-| 8 | Human verdicts and recruitment | External | The nine evidence entries and the n ≥ 5 study remain pending; no default may flip from a screenshot alone | Study results and human verdicts are recorded |
+| 1 | D4 optional vision helpers (`spacegraphVision`, `visionAssert`) | New feature | The quality floor checks labels, overlap, DOM budget, edge endpoints, DOM mirror items/roles/tabindex, RTL direction, reduced motion and the preference boundary; the quickstart claims were corrected rather than building these helpers | A separate feature plan approves them |
+| 2 | D5 generated-domain benchmark | Optional | `test:extension` runs the generated domain's conformance suite and one-way dependency guard; the benchmark demo uses the shared registry, not a scaffold-generated host | A scaffold-generated host benchmark is requested |
+| 3 | E3 deprecation pointers | Next minor | `docs/api-compatibility.json` is machine-ready; aliases are kept until the minor boundary and `check:compat` does not flip them | The next minor release; apply the `@deprecated` pointers, keep the aliases |
+| 4 | Local trace and replay | Deferred | Observation side of the loop; the measurement side (D4) is trustworthy, but traces stay local and opt-in | A separate feature plan for observation |
+| 5 | Human verdicts and recruitment | External | The nine evidence entries and the n ≥ 5 study remain pending; no default may flip from a screenshot alone | Study results and human verdicts are recorded |
+
+### Declined — not pending work
+
+| Item | Why declined |
+| ---- | ------------ |
+| Registry-mode onboarding and published-version upgrade | Publication is not planned. `npm view` returns 404 for `spacegraphjs` and `create-spacegraph`; literal `pnpm dlx create-spacegraph` and "download the previous release" cannot run offline or in CI. `test:quickstart` and `check:upgrade` use packed tarballs as the standing local mode, not a placeholder. Do not simulate registry access with mocks. |
+| D2 previous-release baseline | No npm release exists. `test/fixtures/public-surface.json` is recorded from this checkout and `check:upgrade` verifies it against packed declarations — the appropriate baseline while development stays local. |
+| D3 per-pixel parity | Screenshots change during active UI development, so a pixel lock would be counterproductive and go stale immediately. `test:publish` mounts SpaceGraph and Cytoscape from packed bytes with the shared model and `test:conformance` covers identity, capabilities and the static SVG draw; the capability matrix records intentional differences. |
