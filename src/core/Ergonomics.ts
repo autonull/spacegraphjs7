@@ -294,14 +294,7 @@ export class ErgonomicsAPI {
     // ============= Node Utilities =============
     clone(id: string, newId?: string): Node | null {
         const orig = this.sg.graph.getNode(id);
-        if (!orig) return null;
-        return this.sg.graph.addNode({
-            id: newId ?? `${id}-copy`,
-            type: orig.type,
-            label: orig.label,
-            position: [orig.position.x + 50, orig.position.y, orig.position.z + 50],
-            data: { ...orig.data },
-        });
+        return orig?.clone(newId ?? `${id}-copy`, [50, 0, 50]) ?? null;
     }
 
     move(id: string, x: number, y: number, z = 0): Node | null {

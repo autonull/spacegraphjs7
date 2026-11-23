@@ -743,13 +743,17 @@ export abstract class Node extends Surface {
         return this.#normalizeTags();
     }
 
-    clone(newId: string): Node | null {
+    clone(newId: string, offset: readonly [number, number, number] = [20, 20, 0]): Node | null {
         return (
             this.sg?.graph.addNode({
                 id: newId,
                 type: this.type,
                 label: this.label,
-                position: [this.position.x + 20, this.position.y + 20, this.position.z],
+                position: [
+                    this.position.x + offset[0],
+                    this.position.y + offset[1],
+                    this.position.z + offset[2],
+                ],
                 data: { ...this.data },
             }) ?? null
         );

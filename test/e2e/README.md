@@ -55,14 +55,14 @@ SG_INNER_LAYOUT_DIR=/tmp/inner pnpm run test:inner-layout
 
 ## Full-scope demo atlas (`demo-atlas.spec.ts`)
 
-`pnpm run test:demo-atlas` discovers every demo from `app/demo/src/registry.ts` — 37 standalone HTML
-pages under `app/demo/html/<category>/`, 43 showcase modules under `app/demo/demos/<category>/` and
-all 19 `window.__demo` capabilities — captures 99 frames and writes a self-contained browsable
+`pnpm run test:demo-atlas` discovers every demo from `app/demo/src/registry.ts` — 41 standalone HTML
+pages under `app/demo/html/<category>/`, 45 showcase modules under `app/demo/demos/<category>/` and
+all 39 `window.__demo` capabilities — captures 125 frames and writes a self-contained browsable
 report to `docs/screenshots/demo-atlas/index.html`. Each card shows the frame, its registry category,
 pass/fail, evidence lines and console errors. Failures are recorded per card, not fatal.
 
 ```bash
-pnpm run test:demo-atlas                          # all 99 frames (~2.2 min)
+pnpm run test:demo-atlas                          # all 125 frames
 SG_DEMO_ATLAS_FILTER=mermaid pnpm run test:demo-atlas # iterate on one surface
 SG_DEMO_ATLAS_DIR=/tmp/demo-atlas pnpm run test:demo-atlas
 ```
@@ -119,9 +119,9 @@ pnpm run test:all-demos
 
 Driven by `app/demo/src/registry.ts`:
 
-- **37 HTML demos** in `app/demo/html/{core,interaction,layout,rendering,plugins,smoke}/`
-- **43 showcase modules** in `app/demo/demos/{core,interaction,layout,rendering,plugins,smoke}/`
-- **19 host capabilities** in `app/demo/src/gallery.ts`, run through `window.__demo`
+- **41 HTML demos** in `app/demo/html/{core,interaction,layout,rendering,plugins,smoke}/`
+- **45 showcase modules** in `app/demo/demos/{core,interaction,layout,rendering,plugins,smoke}/`
+- **39 host capabilities** in `app/demo/src/gallery.ts`, run through `window.__demo`
 
-**Total: 99 demo surfaces automatically tested.** `smoke` demos (empty, single-node, debug,
+**Total: 125 demo surfaces automatically tested.** `smoke` demos (empty, single-node, debug,
 verification*, hardening, benchmark, …) are grouped separately from capability demos.
