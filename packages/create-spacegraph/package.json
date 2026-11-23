@@ -8,6 +8,12 @@
         "create-spacegraph-domain": "./domain.js"
     },
     "type": "module",
+    "files": [
+        "index.js",
+        "domain.js",
+        "templates/",
+        "README.md"
+    ],
     "author": "SpaceGraphJS Team",
     "license": "MIT",
     "sideEffects": false

@@ -155,6 +155,11 @@
             "types": "./dist/experiments.d.ts",
             "import": "./dist/experiments.js",
             "default": "./dist/experiments.js"
+        },
+        "./quality": {
+            "types": "./dist/quality.d.ts",
+            "import": "./dist/quality.js",
+            "default": "./dist/quality.js"
         }
     },
     "files": [
@@ -163,7 +168,14 @@
         "LICENSE"
     ],
     "scripts": {
-        "check": "pnpm -r --if-present typecheck",
+        "check": "pnpm -r --if-present typecheck && pnpm run check:compat",
+        "check:compat": "tsx script/check-compat.ts",
+        "check:compat:update": "tsx script/check-compat.ts --update",
+        "check:docs-commands": "tsx script/check-docs-commands.ts",
+        "check:evidence": "tsx script/evidence.ts",
+        "check:evidence:write": "tsx script/evidence.ts --write",
+        "check:generated": "tsx script/check-generated.ts",
+        "check:paths": "tsx script/check-paths.ts",
         "build": "pnpm run build:lib && pnpm run build:packages && pnpm run build:demo",
         "build:demo": "vite build --config app/demo/vite.config.ts",
         "build:lib": "vite build --config vite.lib.config.ts",
@@ -192,6 +204,9 @@
         "verify:visual": "pnpm run test:atlas && pnpm run test:demo-atlas && pnpm run test:inner-layout && pnpm run test:retro-style",
         "test:full": "pnpm test && pnpm run test:kernel",
         "test:publish": "tsx script/publish-check.ts",
+        "test:quickstart": "tsx script/quickstart-check.ts",
+        "test:conformance": "vitest run test/conformance.test.ts packages/react-spacegraph/test/binding.test.ts packages/solid-spacegraph/test/binding.test.ts",
+        "verify:library": "pnpm run check:docs-commands && pnpm run test:quickstart && pnpm run check:compat && pnpm run test:conformance && pnpm run check:generated && pnpm run check:paths",
         "test:explorer": "playwright test --config playwright.demo.config.ts test/e2e/explorer.spec.ts",
         "test:capture-matrix": "playwright test --config playwright.demo.config.ts test/e2e/capture-matrix.spec.ts",
         "test:screenshots": "mkdir -p screenshots && playwright test test/e2e/demo-screenshots.spec.ts --reporter=list",

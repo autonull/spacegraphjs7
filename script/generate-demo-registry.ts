@@ -1,5 +1,5 @@
-import { readdirSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 
 // Regenerates app/demo/src/registry.ts from the demo folder tree. Run after adding, removing or
 // recategorizing a demo: `pnpm exec tsx script/generate-demo-registry.ts`.
@@ -81,7 +81,10 @@ export const demoPath = (id: string) => '/' + (byId.get(id)?.path ?? id + '.html
 export const demoCategory = (id: string) => byId.get(id)?.category ?? 'core';
 `;
 
-writeFileSync(resolve(demo, 'src/registry.ts'), source);
+const outIndex = process.argv.indexOf('--out');
+const out = outIndex >= 0 ? resolve(process.argv[outIndex + 1]) : resolve(demo, 'src/registry.ts');
+mkdirSync(dirname(out), { recursive: true });
+writeFileSync(out, source);
 console.log(
     `registry: ${hosts.length} hosts, ${pages.length} html demos, ${modules.length} modules`,
 );

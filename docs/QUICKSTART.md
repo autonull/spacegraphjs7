@@ -7,15 +7,7 @@
 ## Prerequisites
 
 - Node.js 18+
-- pnpm or pnpm
-
----
-
-## Installation
-
-```bash
-pnpm install spacegraphjs three
-```
+- pnpm 10+
 
 ---
 
@@ -24,12 +16,15 @@ pnpm install spacegraphjs three
 ### 1. Create a project
 
 ```bash
-mkdir my-graph && cd my-graph
-pnpm create -y
-pnpm install spacegraphjs three vite
+pnpm dlx create-spacegraph my-graph
+cd my-graph
+pnpm install
 ```
 
-### 2. Create `index.html`
+The scaffold writes `index.html`, `src/main.ts`, `tsconfig.json` and `vite.config.ts`, and declares
+`spacegraphjs` and `three` as dependencies. Run `pnpm run dev` now to see a two-node graph.
+
+### 2. Use this `index.html` (or keep the scaffold's version)
 
 ```html
 <!DOCTYPE html>
@@ -53,20 +48,20 @@ pnpm install spacegraphjs three vite
     </head>
     <body>
         <div id="container"></div>
-        <script type="module" src="/main.ts"></script>
+        <script type="module" src="/src/main.ts"></script>
     </body>
 </html>
 ```
 
-### 3. Create `main.ts`
+### 3. Replace `src/main.ts` with this graph
 
 ```typescript
-import { SpaceGraph } from 'spacegraphjs';
+import { SpaceGraph, type GraphSpec } from 'spacegraphjs';
 
 const container = document.getElementById('container')!;
 
 // SpaceGraph.create is an async factory that initializes the engine and loads the spec.
-const graph = await SpaceGraph.create(container, {
+const spec: GraphSpec = {
     nodes: [
         {
             id: 'node-a',
@@ -110,7 +105,9 @@ const graph = await SpaceGraph.create(container, {
             type: 'Edge',
         },
     ],
-});
+};
+
+const graph = await SpaceGraph.create(container, spec);
 
 // The graph is ready to render.
 graph.render();
@@ -118,7 +115,9 @@ graph.render();
 console.log('🚀 SpaceGraph initialized!');
 ```
 
-### 4. Create `vite.config.ts`
+### 4. Keep the generated `vite.config.ts`
+
+The scaffold writes the equivalent of:
 
 ```typescript
 import { defineConfig } from 'vite';
@@ -133,10 +132,35 @@ export default defineConfig({
 ### 5. Run
 
 ```bash
-pnpm dlx vite
+pnpm run dev
 ```
 
 Open http://localhost:5173 — you should see three connected nodes.
+
+---
+
+## Check quality (optional)
+
+`spacegraphjs/quality` is one import for a legibility, accessibility and DOM-budget floor. It reads a
+graph spec or `RenderModel`; it does not capture a screenshot or change a default.
+
+```typescript
+import { checkQuality } from 'spacegraphjs/quality';
+
+const report = checkQuality(spec);
+console.log(report.score, report.issues);
+```
+
+Measured defects can be corrected within a bounded number of edits. Each edit is re-checked; an edit
+that does not improve the score is discarded. Preferences are never changed automatically — they are
+logged for a human decision under ADR 0008.
+
+```typescript
+import { correctQuality } from 'spacegraphjs/quality';
+
+const outcome = correctQuality(spec, { maxEdits: 2 });
+console.log(outcome.before, outcome.after, outcome.applied);
+```
 
 ---
 
@@ -150,51 +174,6 @@ Open http://localhost:5173 — you should see three connected nodes.
 | **Frame a node** | Middle-click on node |
 | **Select Node**  | Click on node        |
 | **Multi-select** | Shift + click        |
-
----
-
-## Enable Vision System (Optional)
-
-The vision system analyzes your graph and auto-fixes quality issues.
-
-### 1. Install vision plugin
-
-```bash
-pnpm install spacegraphjs
-```
-
-### 2. Update `vite.config.ts`
-
-```typescript
-import { defineConfig } from 'vite';
-import { spacegraphVision } from 'spacegraphjs/vision';
-
-export default defineConfig({
-    plugins: [
-        spacegraphVision({
-            enabled: true,
-            autoFix: true,
-            thresholds: {
-                layout: 80,
-                legibility: 85,
-            },
-        }),
-    ],
-});
-```
-
-### 3. Run with vision
-
-```bash
-pnpm dlx vite
-```
-
-The vision plugin will analyze your graph on build and report:
-
-- Layout quality score
-- Overlapping nodes
-- Text legibility issues
-- Color harmony suggestions
 
 ---
 
@@ -246,23 +225,17 @@ layout.init(graph, graph.graph, graph.events);
 await layout.apply();
 ```
 
-### Add Vision Assertions to Tests
+### Add a Quality Assertion to Tests
 
 ```typescript
 // tests/graph.test.ts
-import { test, expect } from 'vitest';
-import { visionAssert } from 'spacegraphjs/vision-test';
+import { expect, test } from 'vitest';
+import { checkQuality } from 'spacegraphjs/quality';
+import { spec } from '../src/main';
 
-test('graph has no overlaps', async () => {
-    await visionAssert.noOverlap('my-graph');
-});
-
-test('all text is legible', async () => {
-    await visionAssert.allTextLegible('my-graph');
-});
-
-test('meets WCAG AA', async () => {
-    await visionAssert.wcagCompliance('my-graph', 'AA');
+test('the graph meets the quality floor', () => {
+    const report = checkQuality(spec, { minScore: 80 });
+    expect(report.issues).toEqual([]);
 });
 ```
 
@@ -270,13 +243,14 @@ test('meets WCAG AA', async () => {
 
 ## Examples
 
-| Example                                 | Description             |
-| --------------------------------------- | ----------------------- |
-| [Basic Graph](./examples/basic)         | Simple nodes and edges  |
-| [HTML Nodes](./examples/html-nodes)     | Rich HTML content       |
-| [Image Nodes](./examples/images)        | Image textures          |
-| [Force Layout](./examples/force-layout) | Physics-based layout    |
-| [Large Graph](./examples/large)         | 1000+ nodes performance |
+Runnable examples live in the demo registry:
+
+| Example                                              | Description             |
+| ---------------------------------------------------- | ----------------------- |
+| [Quickstart](../app/demo/html/plugins/quickstart.html) | The scaffolded graph    |
+| [Layouts](../app/demo/html/layout/layouts.html)      | Layout strategies       |
+| [HTML nodes](../app/demo/html/rendering/html.html)   | Rich HTML content        |
+| [Large graph](../app/demo/html/rendering/large.html) | 1000+ nodes performance |
 
 ---
 
@@ -304,12 +278,6 @@ pnpm install three
 2. Ensure container has dimensions (`width: 100vw; height: 100vh;`)
 3. Call `graph.render()` after creating the graph
 
-### Vision plugin not working
-
-1. Ensure `enabled: true` in config
-2. Check build output for vision reports
-3. Verify thresholds are reasonable (0-100)
-
 ---
 
 ## Get Help
@@ -322,7 +290,7 @@ pnpm install three
 
 ## What's Next?
 
-1. **Explore the API** — Read the [API Reference](./docs/api)
+1. **Explore the API** — Read the [API Reference](./api)
 2. **Build something** — Create your first project
 3. **Join the community** — Say hi on Matrix
 4. **Contribute** — Check

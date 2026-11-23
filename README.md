@@ -28,7 +28,7 @@ It works as a full engine (`spacegraphjs`), as a lean canvas entry (`spacegraphj
 | 🎮 **Interaction**     | Selection, focus, fit, navigation trail, semantic zoom bands, search, graph queries                           |
 | ♿ **Accessibility**   | Hidden DOM mirror, roving tabindex, keyboard traversal, live announcements, RTL support                       |
 | 🧩 **Extensibility**   | Plugin system, custom node/edge types, custom layouts, renderer adapters                                      |
-| 🧭 **Host contract**   | Framework-agnostic `RenderModel`, capability negotiation, React/Solid/Vue bindings                            |
+| 🧭 **Host contract**   | Framework-agnostic `RenderModel`, capability negotiation, React/Solid bindings                                |
 
 ---
 
@@ -65,7 +65,7 @@ The important idea is not autonomous replacement of the developer. It is **makin
 
 | Layer                | Responsibility                                        | Key pieces                                                                                                                    |
 | -------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **Host application** | Owns domain data, persistence, detail panels, routing | Your React, Solid, Vue, or vanilla app                                                                                        |
+| **Host application** | Owns domain data, persistence, detail panels, routing | Your React, Solid, or vanilla app                                                                                             |
 | **Bindings**         | Lifecycle, controller wiring, framework reactivity    | `GraphBinding`; `react-spacegraph` and `solid-spacegraph` over the contract                                                   |
 | **Contract**         | Dependency-free types and capability negotiation      | `@spacegraphjs/renderer` — `GraphRenderer`, `RenderModel`, `RenderTheme`, `supports`                                          |
 | **Adapters**         | Geometry, hit-testing, camera, rendering              | `@spacegraphjs/spacegraph-renderer` (2D + 3D), `@spacegraphjs/cytoscape-renderer` (2D), `@spacegraphjs/svg-renderer` (static) |

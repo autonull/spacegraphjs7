@@ -33,7 +33,10 @@ Generic capabilities provided by the SpaceGraphJS library, used by the demo and 
 | `@spacegraphjs/spacegraph-renderer` | 0.3.1   | 2D ortho + 3D perspective, CSS3D HTML cards, CSS2D edge labels                 |
 | `@spacegraphjs/svg-renderer`        | 0.2.0   | Static SVG export, `InlineGraph`, serialization                                |
 
-> **Note:** `@spacegraphjs/cytoscape-renderer` has been removed from this fork (Phase 2.6). The SpaceGraph renderer is the only interactive renderer.
+> **Live backends:** `@spacegraphjs/spacegraph-renderer` and `@spacegraphjs/cytoscape-renderer` are
+> both interactive; `@spacegraphjs/svg-renderer` is static. See
+> [the renderer and binding capability matrix](./renderer-capability-matrix.md) for the tested
+> declarations and intentional differences.
 
 ## Breaking-Change Policy
 

@@ -30,6 +30,7 @@ const packages = [
     { name: '@spacegraphjs/workflow', dir: join(root, 'packages/domain/workflow') },
     { name: '@spacegraphjs/filesystem', dir: join(root, 'packages/domain/filesystem') },
     { name: '@spacegraphjs/data', dir: join(root, 'packages/domain/data') },
+    { name: '@spacegraphjs/agent', dir: join(root, 'packages/domain/agent') },
 ];
 
 // The packages' runtime dependencies are not part of the tarball; the consumer resolves them from the

@@ -29,6 +29,12 @@ alias stays and gains a `@deprecated` pointer at the next minor boundary, per
 
 ## Verification
 
+The machine-readable form of the alias table and its deprecation metadata is
+`docs/api-compatibility.json`. `pnpm run check:compat` asserts every alias is still present, reads a
+deprecation pointer where the manifest marks one, and compares `test/fixtures/public-surface.json`
+with the exports of every published entry. A removal fails until it is reviewed and the snapshot is
+refreshed with `pnpm run check:compat:update`; additions are reported without failing.
+
 `test/package-exports.test.ts` checks the committed manifest against `LIBRARY_ENTRIES`;
 `test/boundaries.test.ts` checks one-definition/two-consumer promotion rules. No export was moved,
 so both remain unchanged by this review.

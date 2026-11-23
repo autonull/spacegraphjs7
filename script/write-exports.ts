@@ -9,16 +9,22 @@
 //
 // `test/package-exports.test.ts` asserts the committed manifest matches what this script writes, so a
 // subpath cannot be published without a build artifact behind it.
-import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { LIBRARY_ENTRIES } from './library-entries';
 
 const root = resolve(import.meta.dirname, '..');
+const outIndex = process.argv.indexOf('--out');
+const outDir = outIndex >= 0 ? resolve(process.argv[outIndex + 1]) : root;
+const output = (relative: string) => {
+    const path = resolve(outDir, relative);
+    mkdirSync(dirname(path), { recursive: true });
+    return path;
+};
 
 const read = (path: string) => JSON.parse(readFileSync(path, 'utf8'));
 
-const rootManifestPath = resolve(root, 'package.json');
-const rootManifest = read(rootManifestPath);
+const rootManifest = read(resolve(root, 'package.json'));
 rootManifest.exports = Object.fromEntries(
     LIBRARY_ENTRIES.map((entry) => [
         entry.subpath,
@@ -33,7 +39,7 @@ rootManifest.main = './dist/index.js';
 rootManifest.module = './dist/index.js';
 rootManifest.types = './dist/index.d.ts';
 rootManifest.files = ['dist', 'README.md', 'LICENSE'];
-writeFileSync(rootManifestPath, `${JSON.stringify(rootManifest, null, 2)}\n`);
+writeFileSync(output('package.json'), `${JSON.stringify(rootManifest, null, 4)}\n`);
 
 for (const name of [
     'renderer',
@@ -42,8 +48,7 @@ for (const name of [
     'cytoscape-renderer',
     'svg-renderer',
 ]) {
-    const manifestPath = resolve(root, 'packages', name, 'package.json');
-    const manifest = read(manifestPath);
+    const manifest = read(resolve(root, 'packages', name, 'package.json'));
     manifest.main = './dist/index.js';
     manifest.module = './dist/index.js';
     manifest.types = './dist/index.d.ts';
@@ -55,7 +60,7 @@ for (const name of [
         },
     };
     manifest.files = ['dist', 'README.md'];
-    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    writeFileSync(output(join('packages', name, 'package.json')), `${JSON.stringify(manifest, null, 4)}\n`);
 }
 
 console.log('wrote the exports maps');

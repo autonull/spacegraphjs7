@@ -136,4 +136,10 @@ export const LIBRARY_ENTRIES: LibraryEntry[] = [
         source: 'src/experiments/index.ts',
         types: 'dist/experiments.d.ts',
     },
+    {
+        subpath: './quality',
+        name: 'quality',
+        source: 'src/quality/index.ts',
+        types: 'dist/quality.d.ts',
+    },
 ];

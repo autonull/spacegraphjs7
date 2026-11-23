@@ -227,7 +227,7 @@ Extend the recorder with neutral ergonomic signals: time-to-first-relevant-node,
 
 ### C1. Instrument kit
 
-Host-side components rendered as sanitized `RenderNode.html` + `WidgetLayer` slots: sparkline, log-tail, status strip, diff strip, tabs, meter. Built in **Pi and Graph IDE simultaneously** so promotion to the library is pull-legal from day one. No new node classes; the rectangle ladder (overview line → mini-instrument → full panel → portal) becomes the `docs/screenshots/full_gui.png` reference design realized.
+Host-side components rendered as sanitized `RenderNode.html` + `WidgetLayer` slots: sparkline, log-tail, status strip, diff strip, tabs, meter. Built in **Pi and Graph IDE simultaneously** so promotion to the library is pull-legal from day one. No new node classes; the rectangle ladder (overview line → mini-instrument → full panel → portal) becomes the `docs/screenshots/spacegraphj/full_gui.png` reference design realized.
 
 ### C2. Orchestration verbs (Pi host policy over the existing server seam)
 

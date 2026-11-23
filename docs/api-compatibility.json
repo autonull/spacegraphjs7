@@ -1,0 +1,71 @@
+{
+    "version": 1,
+    "policy": {
+        "rule": "A published alias stays until the next minor, then gains an @deprecated pointer and remains until removal.",
+        "reference": "docs/contract-versioning.md; docs/adr/0013-additive-contract-versioning.md",
+        "deprecateAt": "next-minor"
+    },
+    "aliases": [
+        {
+            "symbols": ["getNode", "getEdge", "hasNode"],
+            "prefixes": ["query"],
+            "replacement": "graph.query engine methods",
+            "source": "src/core/Graph.ts",
+            "deprecated": false
+        },
+        {
+            "symbols": ["neighbors", "getIncomingEdges", "getOutgoingEdges"],
+            "replacement": "typed traversal on GraphQuery",
+            "source": "src/core/GraphQuery.ts",
+            "deprecated": false
+        },
+        {
+            "symbols": [
+                "getPlugin",
+                "hasPlugin",
+                "getPluginNames",
+                "pluginNames",
+                "pluginCount"
+            ],
+            "replacement": "the typed plugin registry accessors",
+            "source": "src/core/PluginManager.ts",
+            "deprecated": false
+        },
+        {
+            "symbols": ["DEG2RAD", "AnimationDuration", "InputConfig", "ZoomConfig"],
+            "prefixes": ["ZOOM_"],
+            "replacement": "Interaction, Zoom and the typed constant groups",
+            "source": "src/core/constants.ts",
+            "deprecated": false
+        },
+        {
+            "symbols": ["FractalZoomPlugin"],
+            "replacement": "ZoomBandsPlugin",
+            "source": "src/plugins/FractalZoomPlugin.ts",
+            "deprecated": true
+        },
+        {
+            "symbols": ["createGraph", "sg", "qg"],
+            "replacement": "createSpaceGraph",
+            "source": "src/index.ts",
+            "deprecated": false
+        }
+    ],
+    "duplicateExports": [
+        {
+            "symbols": ["LayoutConfig", "LayoutOptions"],
+            "paths": ["src/index.ts", "src/layout/index.ts"],
+            "action": "keep both until the next minor"
+        },
+        {
+            "symbols": ["layout"],
+            "paths": ["src/index.ts", "src/layout/index.ts"],
+            "action": "keep both and document the distinction"
+        },
+        {
+            "symbols": ["types", "builder"],
+            "paths": ["src/types.ts", "src/types/index.ts", "src/builder.ts", "src/builder/index.ts"],
+            "action": "keep published entries until the next minor"
+        }
+    ]
+}

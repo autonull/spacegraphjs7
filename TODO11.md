@@ -153,26 +153,53 @@ instead of inventing a binding.
 
 ---
 
-## 6. Progress (not started)
+## 6. Progress (2026-11-23)
 
-| Phase | Landed (file:line) | Commands | Gate | Non-goal honored |
-| ----- | ------------------ | -------- | ---- | ---------------- |
-| 1 | — | — | — | — |
-| 2 | — | — | — | — |
-| 3 | — | — | — | — |
+| Foundation | Landed (file:line) | Commands | Gate | Non-goal honored |
+| ---------- | ------------------ | -------- | ---- | ---------------- |
+| Cross-cutting | `script/check-generated.ts:1`; `--out` in `script/generate-demo-registry.ts:84` and `script/write-exports.ts:16`; `script/check-paths.ts:1`; `script/check-docs-commands.ts:1`; `verify:library` and `check:*` in `package.json:172`; CI job `.github/workflows/ci.yml:14` | `pnpm run verify:library` | All six gates green: docs lint, quickstart, compat, conformance, generated, paths | No release suite rerun for docs-only fixes; no new harness for generators or packs |
+| D1 | `docs/QUICKSTART.md:16` (scaffold entry, `GraphSpec`, real quality API); `README.md:31,68` (Vue claim removed); `packages/create-spacegraph/README.md:1`; `packages/create-spacegraph/index.js:1` (published range, runnable async app, vite config, `SPACEGRAPHJS_SPEC`); `script/quickstart-check.ts:1` | `pnpm run test:quickstart` | Scaffold + the guide's `index.html`, `src/main.ts`, `vite.config.ts` typecheck and build against packed tarballs; scaffold default matches the root version | No Vue binding invented; the guide runs the real scaffold rather than a parallel stub |
+| D2 | `docs/api-compatibility.json:1`; `script/check-compat.ts:1`; `test/fixtures/public-surface.json:1`; `check:compat` in root `check` (`package.json:171`); `docs/api-compatibility-review.md:30` | `pnpm run check:compat` | 6 aliases present, 31 entries / 1171 exported names, 0 removals | No alias removed, no `@deprecated` flipped early (E3 stays next minor) |
+| D3 | `test/conformance.test.ts:1`; `docs/renderer-capability-matrix.md:1`; `test:conformance` (`package.json:208`) | `pnpm run test:conformance` | 3 files / 12 tests: same `MODEL` on all three renderers plus React/Solid bindings; matrix corrected (SpaceGraph zoom max 1) | No renderer branch; differences declared as capabilities only |
+| D4 | `src/quality/index.ts:1` (`checkQuality`, `correctQuality`); `./quality` subpath (`script/library-entries.ts:140`); `test/quality.test.ts:1`; quality section in `docs/QUICKSTART.md:142` | `pnpm exec vitest run test/quality.test.ts` | 5 tests: defects scored, floor throws, bounded re-verified fixes, preferences never applied | No default flip; preferences logged, not changed; no screenshot captured |
+| D5 (partial) | `docs/extension-recipe.md:1`; fourth domain added to the published-byte pack list (`script/publish-check.ts:33`) | `pnpm run test:publish` | Four domains packed and imported from tarballs; recipe names the four declarations and three gates | No library special case added for a domain |
+| D6 | `docs/evidence/record.json:1`; `script/evidence.ts:1`; `check:evidence` / `check:evidence:write` (`package.json:175`) | `pnpm run check:evidence` | Nine entries migrated, source hash verified, decision/pair paths tracked or regenerable, no default field | No published subpath; human verdicts still external |
 
-Fill a row when the phase lands. A human verdict or study result is never recorded as developer work
-completed.
+Final verification in one pass: `pnpm exec tsc --noEmit -p tsconfig.json`, `pnpm run build:lib`,
+`pnpm run verify:library`, `pnpm exec vitest run test/quality.test.ts`, `pnpm run check:evidence`,
+`pnpm run test:exports`, `pnpm run test:publish`, `pnpm test` (145 files). All green. No retry turned a
+red gate green. No human verdict or study result is recorded as developer work.
 
 ---
 
-## 7. Open gates and deferred work
+## 7. Remaining work
 
-1. **Phases 1–2 (blocking for the definition of done).** Onboarding, compatibility, parity and the
-   quality floor must pass before the plan can be called complete.
-2. **E3 (next minor).** Apply the `@deprecated` pointers in `docs/api-compatibility-review.md` at the
-   minor boundary; keep the aliases until then. D2 makes the manifest ready but does not flip it.
-3. **Local trace and replay (deferred).** The loop's observation side; add after D4 proves the
+The foundations now run as gates; the items below are the honest gaps between those gates and the
+full definition of done.
+
+1. **D1 verbatim execution (strict mode).** `test:quickstart` runs the scaffold bin with `node` and
+   `SPACEGRAPHJS_SPEC` pointed at a packed tarball, then symlinks dependencies instead of running
+   `pnpm dlx` / `pnpm install`. It proves the documented files work against published bytes offline,
+   but it does not execute the registry path. Add a registry-mode job if literal `pnpm dlx` execution
+   is required.
+2. **D2 real previous-version upgrade.** `test/fixtures/public-surface.json` was recorded from the
+   current source in this pass; it is a baseline, not the last npm-published surface. A strict upgrade
+   test must download or pin the previous release and import its aliases before flipping the baseline.
+3. **D3 interactive parity.** Conformance is model-level (node/edge identity, declared capabilities,
+   static SVG draw); it does not mount WebGL/Cytoscape renderers in a real browser. Add a browser spec
+   if per-pixel or mount parity is required. The capability matrix already lists the intentional
+   differences, including SVG's `zoomRange.max = 1`.
+4. **D4 full a11y floor.** `checkQuality` covers labels, overlap, DOM budget, edge endpoints and the
+   defect-versus-preference boundary. It does not yet assert the hidden DOM mirror, RTL or reduced
+   motion; those remain host tests. The unimplemented `spacegraphVision` and `visionAssert` claims
+   were removed from the quickstart rather than built.
+5. **D5 scaffold proof.** The fourth domain (`agent`) predates this pass. It now ships through the
+   publish check and has a recipe, but no gate runs the output of `create-spacegraph-domain`, and the
+   benchmark demo is not run against a generated domain.
+6. **E3 (next minor).** Apply the `@deprecated` pointers listed in `docs/api-compatibility.json` at
+   the minor boundary; keep the aliases until then. `check:compat` makes the manifest ready but does
+   not flip it.
+7. **Local trace and replay (deferred).** The loop's observation side; add after D4 proves the
    measurement side is trustworthy.
-4. **Human verdicts and recruitment (external).** The nine pending entries and the n ≥ 5 study. No
-   default from a screenshot alone.
+8. **Human verdicts and recruitment (external).** The nine entries in the evidence record and the
+   n ≥ 5 study remain pending. No default may flip from a screenshot alone.

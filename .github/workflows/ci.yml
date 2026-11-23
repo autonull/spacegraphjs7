@@ -9,7 +9,38 @@ on:
     workflow_dispatch:
 
 jobs:
+    # Tier 1: the documented developer surface. Runs before the heavier build and publish job so a
+    # stale guide, manifest, export or screenshot path fails the pull request early.
+    library-surface:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 10
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22'
+                  cache: 'pnpm'
+
+            - name: Install dependencies
+              run: pnpm install --no-frozen-lockfile
+
+            - name: Build the published bytes the quickstart consumes
+              run: |
+                  pnpm run build:lib
+                  pnpm run build:packages
+
+            - name: Verify the library surface
+              run: pnpm run verify:library
+
     library:
+        needs: library-surface
         runs-on: ubuntu-latest
 
         steps:

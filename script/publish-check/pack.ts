@@ -23,6 +23,8 @@ export const RUNTIME_DEPENDENCIES = [
 export interface PackageRef {
     readonly name: string;
     readonly dir: string;
+    /** Source-only packages (for example a scaffold) have no dist to require. */
+    readonly requiresDist?: boolean;
 }
 
 export function createPackedConsumer(
@@ -36,7 +38,7 @@ export function createPackedConsumer(
     mkdirSync(tarballs, { recursive: true });
 
     for (const pkg of packages) {
-        if (!existsSync(join(pkg.dir, 'dist'))) {
+        if (pkg.requiresDist !== false && !existsSync(join(pkg.dir, 'dist'))) {
             throw new Error(`${pkg.name} has no dist; run the build first`);
         }
         const output = execFileSync('npm', ['pack', '--json', '--pack-destination', tarballs], {

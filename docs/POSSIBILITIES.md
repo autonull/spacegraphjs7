@@ -18,7 +18,7 @@ graph**. The graph stops being a diagram *about* a domain and becomes the domain
 
 ## 1. The rectangle ladder
 
-`docs/screenshots/full_gui.png` and `graph_view.png` show the two ends: a dense instrument
+`docs/screenshots/spacegraphj/full_gui.png` and `graph_view.png` show the two ends: a dense instrument
 workspace built from rectangles, and the same structure seen from far away. One node, four rungs:
 
 | Rung | What the rectangle shows |
