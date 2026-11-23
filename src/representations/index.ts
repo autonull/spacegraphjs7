@@ -4,6 +4,7 @@
 // the config.
 
 import { boundsOfMap } from '../layout/bounds';
+import { appendTo } from '../utils/collection';
 import type { GraphLayout, Position } from '../layout/strategies';
 
 interface RepresentationNode {
@@ -50,6 +51,10 @@ function layoutSpacing(cellHeight: number, options: RepresentationOptions = {}) 
     return { gap, rowGap, rowHeight: cellHeight + rowGap };
 }
 
+function summaryLayout(positions: Map<string, Position>): GraphLayout {
+    return { positions, clusters: new Map(), bounds: boundsOfMap(positions), strategy: 'lanes' };
+}
+
 /**
  * The rows of a summary: the root row first (the nodes without a row of their own), then one row
  * per row key in the model's order. Within a row the host orders the nodes.
@@ -71,10 +76,7 @@ function summaryRows<Node extends RepresentationNode>(
             continue;
         }
 
-        const bucket = byRow.get(String(key));
-
-        if (bucket) bucket.push(node);
-        else byRow.set(String(key), [node]);
+        appendTo(byRow, String(key), node);
     }
 
     const rows: Node[][] = [];
@@ -201,7 +203,6 @@ function logLayout<Node extends RepresentationNode>(
     for (const nodes of summaryRows(model, config)) {
         for (const node of nodes) {
             const height = config.nodeSizeFn(node)[1];
-            // Single column: x is centered, y stacks across every row
             positions.set(node.id, { x: 0, y: cursor + height / 2, z: 0 });
             cursor += height + gap;
         }

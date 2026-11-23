@@ -8,10 +8,6 @@ export class HUDPerformanceMetrics extends HUDElement {
     private readonly fpsMeter = new FpsMeter(1000);
     private fps = 0;
 
-    constructor(sg: SpaceGraph) {
-        super(sg);
-    }
-
     protected spec(): HUDElementSpec {
         return {
             className: 'spacegraph-performance-metrics',

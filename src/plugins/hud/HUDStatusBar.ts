@@ -4,10 +4,6 @@ import { HUDElement, type HUDElementSpec } from './HUDElement';
 import { HUD_STYLES, HUD_ZINDEX } from './HUDStyles';
 
 export class HUDStatusBar extends HUDElement {
-    constructor(sg: SpaceGraph) {
-        super(sg);
-    }
-
     protected spec(): HUDElementSpec {
         return {
             className: 'spacegraph-status-bar',

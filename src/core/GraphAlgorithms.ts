@@ -18,20 +18,20 @@ export class GraphAlgorithms {
      */
     #linkIndex(): Map<string, Node[]> {
         if (this.#linkIndexCache) return this.#linkIndexCache;
-        const links = new Map<string, Node[]>();
+        const buckets = new Map<string, Set<Node>>();
         const link = (from: string, to: Node) => {
-            const list = links.get(from);
-            if (!list) {
-                links.set(from, [to]);
-                return;
-            }
-            if (!list.includes(to)) list.push(to);
+            const bucket = buckets.get(from);
+            if (bucket) bucket.add(to);
+            else buckets.set(from, new Set([to]));
         };
 
         for (const edge of this.edges.values()) {
             link(edge.source.id, edge.target);
             link(edge.target.id, edge.source);
         }
+        const links: Map<string, Node[]> = new Map(
+            [...buckets].map(([from, to]) => [from, [...to]] as const),
+        );
         this.#linkIndexCache = links;
         return links;
     }
@@ -153,6 +153,12 @@ export class GraphAlgorithms {
         for (const edge of this.edges.values()) {
             inDegree.set(edge.target.id, (inDegree.get(edge.target.id) ?? 0) + 1);
         }
+        const outgoing = new Map<string, string[]>();
+        for (const edge of this.edges.values()) {
+            const targets = outgoing.get(edge.source.id);
+            if (targets) targets.push(edge.target.id);
+            else outgoing.set(edge.source.id, [edge.target.id]);
+        }
         const queue: string[] = [];
         for (const [id, degree] of inDegree) if (degree === 0) queue.push(id);
         const result: Node[] = [];
@@ -160,12 +166,10 @@ export class GraphAlgorithms {
             const id = queue.shift()!;
             const node = this.nodes.get(id);
             if (node) result.push(node);
-            for (const edge of this.edges.values()) {
-                if (edge.source.id === id) {
-                    const newDegree = (inDegree.get(edge.target.id) ?? 1) - 1;
-                    inDegree.set(edge.target.id, newDegree);
-                    if (newDegree === 0) queue.push(edge.target.id);
-                }
+            for (const target of outgoing.get(id) ?? []) {
+                const newDegree = (inDegree.get(target) ?? 1) - 1;
+                inDegree.set(target, newDegree);
+                if (newDegree === 0) queue.push(target);
             }
         }
         return result;

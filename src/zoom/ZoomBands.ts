@@ -3,6 +3,7 @@
 // changes. The controller stays policy-free so any graph app can reuse it.
 
 import { clamp, normalizeZoom, type ZoomRange } from '../core/zoom';
+import { ConfigurationError } from '../utils/error';
 
 export interface ZoomBand {
     id: string;
@@ -46,19 +47,19 @@ export class ZoomBands {
 
     constructor(config: ZoomBandsConfig) {
         const bands = [...config.bands].sort((a, b) => a.min - b.min);
-        if (!bands.length) throw new Error('ZoomBands requires at least one band');
+        if (!bands.length) throw new ConfigurationError('ZoomBands requires at least one band');
         if (bands[0].min !== 0 || bands[bands.length - 1].max !== 1) {
-            throw new Error('ZoomBands: bands must cover the full [0, 1] range');
+            throw new ConfigurationError('ZoomBands: bands must cover the full [0, 1] range');
         }
         bands.forEach((band, i) => {
             if (band.min >= band.max) {
-                throw new Error(
+                throw new ConfigurationError(
                     `ZoomBands: invalid range for band "${band.id}" [${band.min}, ${band.max}]`,
                 );
             }
             const previous = bands[i - 1];
             if (previous && previous.max !== band.min) {
-                throw new Error(`ZoomBands: gap or overlap before band "${band.id}"`);
+                throw new ConfigurationError(`ZoomBands: gap or overlap before band "${band.id}"`);
             }
         });
         this.#bands = bands;

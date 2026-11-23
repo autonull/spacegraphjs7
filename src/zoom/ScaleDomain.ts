@@ -3,6 +3,7 @@
 // The semantics replace the deprecated FractalZoomPlugin without touching camera or renderer.
 
 import { clamp, denormalizeZoom, normalizeZoom, type ZoomRange } from '../core/zoom';
+import { ConfigurationError } from '../utils/error';
 import { lerp } from '../utils/math';
 import { ZoomBands, type ZoomBand, type ZoomBandChange, type ZoomBandListener } from './ZoomBands';
 
@@ -57,14 +58,15 @@ export class ScaleDomain {
 
     constructor(config: ScaleDomainConfig) {
         const stops = [...config.stops].sort((a, b) => a.at - b.at);
-        if (stops.length < 2) throw new Error('ScaleDomain requires at least two stops');
+        if (stops.length < 2)
+            throw new ConfigurationError('ScaleDomain requires at least two stops');
         if (stops[0]?.at !== 0 || stops[stops.length - 1]?.at !== 1) {
-            throw new Error('ScaleDomain: stops must cover the full [0, 1] range');
+            throw new ConfigurationError('ScaleDomain: stops must cover the full [0, 1] range');
         }
         stops.forEach((stop, index) => {
             const next = stops[index + 1];
             if (next && stop.at >= next.at) {
-                throw new Error(`ScaleDomain: invalid position for stop "${stop.id}"`);
+                throw new ConfigurationError(`ScaleDomain: invalid position for stop "${stop.id}"`);
             }
         });
         this.stops = stops;

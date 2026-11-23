@@ -127,14 +127,18 @@ export class DragHandler extends InteractionHandler {
         }
 
         const nodes = this.sg.graph.nodes;
-        const descendants: Node[] = [];
+        const parentIds = new Map<string, string>();
+        for (const node of nodes.values()) {
+            const parent = parentIdOf(node);
+            if (parent) parentIds.set(node.id, parent);
+        }
 
+        const descendants: Node[] = [];
         for (const candidate of nodes.values()) {
             if (candidate === group) continue;
 
             const visited = new Set<string>();
-            let parent = parentIdOf(candidate);
-
+            let parent = parentIds.get(candidate.id);
             while (parent) {
                 if (visited.has(parent)) break;
                 visited.add(parent);
@@ -142,9 +146,7 @@ export class DragHandler extends InteractionHandler {
                     descendants.push(candidate);
                     break;
                 }
-
-                const ancestor = nodes.get(parent);
-                parent = ancestor ? parentIdOf(ancestor) : undefined;
+                parent = parentIds.get(parent);
             }
         }
 

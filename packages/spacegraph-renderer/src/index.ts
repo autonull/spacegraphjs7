@@ -158,10 +158,7 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
     }
 
     protected updateEdge(edge: RenderEdge, theme: RenderTheme): void {
-        const sg = this.#sg;
-        if (!sg) return;
-        const spec = edgeSpec(edge, theme);
-        sg.loadSpec({ nodes: [], edges: [spec] });
+        this.addEdge(edge, theme);
     }
 
     protected removeEdge(id: string): void {

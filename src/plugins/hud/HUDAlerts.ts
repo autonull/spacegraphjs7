@@ -20,10 +20,6 @@ const ALERT_VARIANTS: Record<AlertVariant, { border: string; icon: string }> = {
 };
 
 export class HUDAlerts extends HUDElement {
-    constructor(sg: SpaceGraph) {
-        super(sg);
-    }
-
     protected spec(): HUDElementSpec {
         return {
             className: 'spacegraph-alerts-container',

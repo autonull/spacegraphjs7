@@ -128,9 +128,6 @@ export abstract class BaseLayout<
         return { children, rootId: resolved };
     }
 
-    /**
-     * Move every node to the position the calculator returns.
-     */
     protected positionAll(
         nodes: Node[],
         calculate: (node: Node, index: number, total: number) => Vector3,

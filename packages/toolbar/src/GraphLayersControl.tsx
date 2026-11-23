@@ -102,6 +102,31 @@ export function GraphLayersControl(props: GraphLayersControlProps): JSX.Element 
               });
 
     const option = (input: MenuOptionProps) => menuOption(input, LAYER_OPTION_CLASS);
+    const facetSection = (
+        sectionSlot: string,
+        slot: string,
+        title: string,
+        values: readonly string[],
+        keyOf: (value: string) => string,
+        pressed: (value: string) => boolean | undefined,
+        onToggle: (value: string) => void,
+        counts: FacetDisplayCounts,
+    ) => (
+        <div data-slot={sectionSlot} class="flex flex-col">
+            <div class="px-1 py-1 text-11-medium uppercase tracking-wide text-text-weak">{title}</div>
+            {values.map((value) =>
+                option({
+                    label: `${i18n.t(keyOf(value))} · ${countLabel(value, counts) ?? '0/0'}`,
+                    onClick: () => onToggle(value),
+                    pressed: pressed(value),
+                    slot,
+                    value,
+                    keepOpen: true,
+                    ariaLabel: i18n.t(keyOf(value)),
+                }),
+            )}
+        </div>
+    );
 
     const levelControl = () => (
         <Show when={rest.onLevel}>
@@ -253,38 +278,26 @@ export function GraphLayersControl(props: GraphLayersControlProps): JSX.Element 
                         onInput={(event) => changeFacets({ query: event.currentTarget.value })}
                     />
                     <div class="flex max-h-72 flex-col gap-2 overflow-y-auto">
-                        <div data-slot="graph-facet-kinds" class="flex flex-col">
-                            <div class="px-1 py-1 text-11-medium uppercase tracking-wide text-text-weak">
-                                {i18n.t('ui.toolbar.facets.kinds')}
-                            </div>
-                            {NODE_KINDS.map((kind) =>
-                                option({
-                                    label: `${i18n.t(VOCABULARY_KEYS.kind[kind])} · ${countLabel(kind, rest.facetCounts?.kinds ?? []) ?? '0/0'}`,
-                                    onClick: () => toggleKind(kind),
-                                    pressed: facets()?.kinds.has(kind),
-                                    slot: 'graph-facet-kind',
-                                    value: kind,
-                                    keepOpen: true,
-                                    ariaLabel: i18n.t(VOCABULARY_KEYS.kind[kind]),
-                                }),
-                            )}
-                        </div>
-                        <div data-slot="graph-facet-statuses" class="flex flex-col">
-                            <div class="px-1 py-1 text-11-medium uppercase tracking-wide text-text-weak">
-                                {i18n.t('ui.toolbar.facets.statuses')}
-                            </div>
-                            {NODE_STATUSES.map((status) =>
-                                option({
-                                    label: `${i18n.t(VOCABULARY_KEYS.status[status])} · ${countLabel(status, rest.facetCounts?.statuses ?? []) ?? '0/0'}`,
-                                    onClick: () => toggleStatus(status),
-                                    pressed: facets()?.statuses.has(status),
-                                    slot: 'graph-facet-status',
-                                    value: status,
-                                    keepOpen: true,
-                                    ariaLabel: i18n.t(VOCABULARY_KEYS.status[status]),
-                                }),
-                            )}
-                        </div>
+                        {facetSection(
+                            'graph-facet-kinds',
+                            'graph-facet-kind',
+                            i18n.t('ui.toolbar.facets.kinds'),
+                            NODE_KINDS,
+                            (kind) => VOCABULARY_KEYS.kind[kind],
+                            (kind) => facets()?.kinds.has(kind),
+                            toggleKind,
+                            rest.facetCounts?.kinds ?? [],
+                        )}
+                        {facetSection(
+                            'graph-facet-statuses',
+                            'graph-facet-status',
+                            i18n.t('ui.toolbar.facets.statuses'),
+                            NODE_STATUSES,
+                            (status) => VOCABULARY_KEYS.status[status],
+                            (status) => facets()?.statuses.has(status),
+                            toggleStatus,
+                            rest.facetCounts?.statuses ?? [],
+                        )}
                     </div>
                     <button
                         type="button"

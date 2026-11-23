@@ -1,6 +1,7 @@
 import type { VisionModelLoader } from '..';
 import type { InferenceSession } from 'onnxruntime-web';
 import { gradeFor } from '../grade';
+import { createLogger } from '../../utils/logger';
 import { nodesOf } from '../nodesOf';
 import * as THREE from 'three';
 import type {
@@ -12,6 +13,21 @@ import type {
     VisionReport,
     VisionStrategy,
 } from '../types';
+
+interface AnalysisNode {
+    id: string;
+    data?: {
+        color?: number;
+        fontSize?: number;
+        fontWeight?: number;
+        size?: number;
+        width?: number;
+        height?: number;
+    };
+    position: { x: number; y: number };
+}
+
+const logger = createLogger('OnnxStrategy');
 
 export class OnnxStrategy implements VisionStrategy {
     readonly id = 'onnx';
@@ -39,7 +55,7 @@ export class OnnxStrategy implements VisionStrategy {
             const result = await session.run(inputs);
             return (result[output].data as Float32Array)[0] * scale;
         } catch (e) {
-            if (label) console.error(`${label} inference failed`, e);
+            if (label) logger.error(`${label} inference failed`, e);
             return undefined;
         }
     }
@@ -93,10 +109,10 @@ export class OnnxStrategy implements VisionStrategy {
         const session = this.session('tla');
         if (!session) return { wcagAA: true, averageContrast: 100, failures: [] };
 
-        const failures: any[] = [];
+        const failures: LegibilityResult['failures'] = [];
         let totalScore = 0;
 
-        for (const node of context.nodes as any[]) {
+        for (const node of context.nodes as AnalysisNode[]) {
             const bg = new THREE.Color(0x1a1a2e); // Default background
             const fg = new THREE.Color(node.data?.color ?? 0xffffff);
             const size = (node.data?.fontSize ?? 14) / 50.0;
@@ -127,15 +143,12 @@ export class OnnxStrategy implements VisionStrategy {
     private async analyzeOverlap(context: VisionContext): Promise<OverlapResult> {
         const session = this.session('odn');
         if (!session) {
-            console.warn(
-                '[OnnxStrategy] ODN session not found. Available:',
-                this.modelLoader.getAvailableModels(),
-            );
+            logger.warn('ODN session not found. Available:', this.modelLoader.getAvailableModels());
             return { hasOverlaps: false, overlapCount: 0, overlaps: [] };
         }
 
-        const overlaps: any[] = [];
-        const nodes = context.nodes as any[];
+        const overlaps: OverlapResult['overlaps'] = [];
+        const nodes = context.nodes as AnalysisNode[];
 
         for (let i = 0; i < nodes.length; i++) {
             for (let j = i + 1; j < nodes.length; j++) {
@@ -171,7 +184,7 @@ export class OnnxStrategy implements VisionStrategy {
         };
     }
 
-    private getNodeBounds(node: any): THREE.Box2 {
+    private getNodeBounds(node: AnalysisNode): THREE.Box2 {
         const size = node.data?.size ?? 50;
         const width = node.data?.width ?? size;
         const height = node.data?.height ?? size;
@@ -185,8 +198,8 @@ export class OnnxStrategy implements VisionStrategy {
         const session = this.session('vhs');
         if (!session) return { hasRoot: false, rootIds: [], depth: 0, levels: [], score: 100 };
 
-        const nodes = context.nodes as any[];
-        const edges = (context.graph as any).edges?.size ?? 0;
+        const nodes = context.nodes as AnalysisNode[];
+        const edges = (context.graph as { edges?: { size: number } }).edges?.size ?? 0;
 
         const input = new Float32Array([0.5, 0.5, nodes.length / 1000, edges / 2000]);
         const tensor = await this.tensor(input, [1, 4]);
@@ -202,7 +215,7 @@ export class OnnxStrategy implements VisionStrategy {
         if (!session)
             return { fittsLawCompliant: true, averageTargetSize: 44, smallTargets: [], score: 100 };
 
-        const nodes = context.nodes as any[];
+        const nodes = context.nodes as AnalysisNode[];
         const smallTargets = nodes.filter((n) => (n.data?.size ?? 50) < 20);
         const pctSmall = smallTargets.length / Math.max(1, nodes.length);
 
@@ -228,7 +241,7 @@ export class OnnxStrategy implements VisionStrategy {
         const session = this.session('che');
         if (!session) return 100;
 
-        const nodes = context.nodes as any[];
+        const nodes = context.nodes as AnalysisNode[];
         if (nodes.length < 3) return 100;
 
         let totalScore = 0;

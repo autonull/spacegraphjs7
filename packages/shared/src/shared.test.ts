@@ -5,7 +5,7 @@ import { noopI18n, passthroughI18n } from './i18n';
 import { createIconRenderer } from '@spacegraphjs/shared/icons';
 import { createPopoverRenderer } from '@spacegraphjs/shared/popover';
 import { cx, styleVar, generateId, fixedSize, absolutePosition } from '@spacegraphjs/shared/css';
-import { useToggle, useDebounce, useLocalStorage } from '@spacegraphjs/shared/hooks';
+import { useToggle, useDebounce, useLocalStorage, useControlledValue } from '@spacegraphjs/shared/hooks';
 
 describe('i18n fallbacks', () => {
     it('passes keys through without a plural suffix', () => {
@@ -100,6 +100,15 @@ describe('shared hooks', () => {
         expect(result).toBeDefined();
         expect(typeof result[0]).toBe('function'); // Accessor
         expect(typeof result[1]).toBe('function'); // Setter
+    });
+
+    it('reads the latest uncontrolled value from the accessor', () => {
+        const [value, setValue] = useControlledValue<number>(undefined, undefined, 1);
+        expect(value()).toBe(1);
+        setValue(5);
+        expect(value()).toBe(5);
+        setValue((previous) => previous + 1);
+        expect(value()).toBe(6);
     });
 });
 

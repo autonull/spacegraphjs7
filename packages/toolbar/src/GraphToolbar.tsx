@@ -345,6 +345,11 @@ interface GraphToolbarCommandControlsProps {
     Icon?: IconComponent;
 }
 
+const RENDERER_LABELS: Record<string, string> = {
+    spacegraph: 'SpaceGraph',
+    cytoscape: 'Cytoscape',
+};
+
 function GraphToolbarCommandControls(props: GraphToolbarCommandControlsProps): JSX.Element {
     const { i18n, Icon, ...rest } = props;
     const renderIcon = Icon ?? createIconRenderer();
@@ -392,11 +397,6 @@ interface GraphRendererStatusProps {
 function GraphRendererStatus(props: GraphRendererStatusProps): JSX.Element {
     const { renderer, compact, onSplitView, onBack, endInset, i18n, Icon } = props;
     const renderIcon = Icon ?? createIconRenderer();
-
-    const RENDERER_LABELS: Record<string, string> = {
-        spacegraph: 'SpaceGraph',
-        cytoscape: 'Cytoscape',
-    };
 
     return (
         <div

@@ -10,7 +10,6 @@ export class GraphQuery {
         private readonly edges: Map<string, Edge>,
     ) {}
 
-    // Core query methods
     getNode(id: string): Node | undefined {
         return this.nodes.get(id);
     }
@@ -35,7 +34,6 @@ export class GraphQuery {
         return this.edges.values();
     }
 
-    // Unified query - supports multiple filter types
     query(predicate: (node: Node) => boolean): Node[] {
         return [...this.nodes.values()].filter(predicate);
     }
@@ -45,12 +43,10 @@ export class GraphQuery {
         return this.query((node) => node.constructor.name === type);
     }
 
-    // Query nodes by data predicate
     getNodesByData(predicate: (data: NodeData) => boolean): Node[] {
         return this.query((node) => predicate(node.data));
     }
 
-    // Find single result
     findNode(predicate: (node: Node) => boolean): Node | undefined {
         return [...this.nodes.values()].find(predicate);
     }
@@ -59,7 +55,6 @@ export class GraphQuery {
         return [...this.edges.values()].find(predicate);
     }
 
-    // Neighborhood queries
     getNeighbors(nodeId: string, direction: EdgeDirection = 'both'): Node[] {
         const neighbors = new Set<Node>();
         this.forEachMatchingEdge(nodeId, direction, (edge, isSource) => {
@@ -89,7 +84,6 @@ export class GraphQuery {
         return this.getEdgesForNode(nodeId, 'outgoing');
     }
 
-    // Check if nodes are connected
     hasNeighbor(nodeId: string, targetId: string, direction: EdgeDirection = 'both'): boolean {
         let found = false;
         this.forEachMatchingEdge(nodeId, direction, (edge, isSource) => {
@@ -101,7 +95,6 @@ export class GraphQuery {
         return found;
     }
 
-    // Spatial queries
     getNodesNear(
         position: { x: number; y: number; z: number; distanceTo: (p: any) => number },
         radius: number,
@@ -115,7 +108,6 @@ export class GraphQuery {
         return [...this.nodes.values()].map(predicate);
     }
 
-    // Direct iteration
     forEachNode(callback: (node: Node) => void): void {
         for (const node of this.nodes.values()) callback(node);
     }
@@ -124,7 +116,6 @@ export class GraphQuery {
         for (const edge of this.edges.values()) callback(edge);
     }
 
-    // Ergonomic: Group nodes by data property
     groupByData(key: string): Map<unknown, Node[]> {
         const groups = new Map<unknown, Node[]>();
         for (const node of this.nodes.values()) {
@@ -134,7 +125,6 @@ export class GraphQuery {
         return groups;
     }
 
-    // Node Degree Utilities
     getNodeDegrees(): Map<string, number> {
         const degrees = new Map<string, number>();
         for (const edge of this.edges.values()) {

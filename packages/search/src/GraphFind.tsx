@@ -32,6 +32,11 @@ const NODE_KINDS = ['turn', 'phase', 'tool', 'file', 'error', 'note', 'group'] a
 const NODE_STATUSES = ['pending', 'running', 'completed', 'failed', 'cancelled'] as const;
 const DOMAINS = ['session', 'filesystem', 'code', 'terminal', 'browser'] as const;
 
+const facetChipClass = (active: boolean) =>
+    `flex items-center gap-1 rounded-sm px-2 py-1 text-11-regular transition-colors ${
+        active ? 'bg-primary-weaker text-primary-base' : 'text-text-base hover:bg-surface-base-hover'
+    }`;
+
 export const GraphFind = (props: GraphFindProps) => {
     const [query, setQuery] = createSignal('');
     const [activeIndex, setActiveIndex] = createSignal(0);
@@ -172,7 +177,6 @@ export const GraphFind = (props: GraphFindProps) => {
             btn.onclick = () => setActiveTab(tab);
         });
         
-        // Update aria-selected on tab change
         createEffect(() => {
             const currentTab = activeTab();
             tabButtons.forEach((btn, i) => {
@@ -187,7 +191,6 @@ export const GraphFind = (props: GraphFindProps) => {
         ensureTemplates();
         const container = getNextElement(searchTabTemplate!) as HTMLElement;
         
-        // Search input
         const inputContainer = getNextElement(searchInputTemplate!) as HTMLElement;
         const iconSpan = inputContainer.firstChild as HTMLElement;
         const input = iconSpan.nextSibling as HTMLInputElement;
@@ -215,14 +218,12 @@ export const GraphFind = (props: GraphFindProps) => {
 
         container.appendChild(inputContainer);
 
-        // Results list
         const resultsContainer = getNextElement(searchResultTemplate!) as HTMLElement;
         const ul = resultsContainer.querySelector('ul')!;
         
         createEffect(() => {
             const res = searchResults();
             
-            // Clear existing results
             ul.innerHTML = '';
             
             if (res.length === 0 && query().trim().length > 0) {
@@ -270,60 +271,60 @@ export const GraphFind = (props: GraphFindProps) => {
         ensureTemplates();
         const container = getNextElement(filterTabTemplate!) as HTMLElement;
         const section = getNextElement(filterSectionTemplate!) as HTMLElement;
-        
-        // Kinds section
-        const kindsLabel = section.querySelector('label')!;
-        kindsLabel.textContent = props.t('ui.facets.kinds');
-        const kindsContainer = section.querySelectorAll('.flex.flex-wrap.gap-1')[0] as HTMLElement;
-        
-        NODE_KINDS.forEach((kind) => {
-            const chip = getNextElement(filterChipTemplate!) as HTMLElement;
-            const isActive = props.facets.kinds.has(kind);
-            chip.className = `flex items-center gap-1 rounded-sm px-2 py-1 text-11-regular transition-colors ${
-                isActive ? 'bg-primary-weaker text-primary-base' : 'text-text-base hover:bg-surface-base-hover'
-            }`;
-            chip.textContent = props.t(props.vocabularyKeys.kind[kind] ?? kind);
-            chip.setAttribute('aria-pressed', String(isActive));
-            chip.onclick = () => toggleKind(kind);
-            kindsContainer.appendChild(chip);
-        });
+        const labels = section.querySelectorAll('label');
+        const chipContainers = section.querySelectorAll('.flex.flex-wrap.gap-1');
 
-        // Statuses section
-        const statusesLabel = section.querySelectorAll('label')[1]!;
-        statusesLabel.textContent = props.t('ui.facets.statuses');
-        const statusesContainer = section.querySelectorAll('.flex.flex-wrap.gap-1')[1] as HTMLElement;
-        
-        NODE_STATUSES.forEach((status) => {
-            const chip = getNextElement(filterChipTemplate!) as HTMLElement;
-            const isActive = props.facets.statuses.has(status);
-            chip.className = `flex items-center gap-1 rounded-sm px-2 py-1 text-11-regular transition-colors ${
-                isActive ? 'bg-primary-weaker text-primary-base' : 'text-text-base hover:bg-surface-base-hover'
-            }`;
-            chip.textContent = props.t(props.vocabularyKeys.status[status] ?? status);
-            chip.setAttribute('aria-pressed', String(isActive));
-            chip.onclick = () => toggleStatus(status);
-            statusesContainer.appendChild(chip);
-        });
+        const addFacetChips = (
+            index: number,
+            values: readonly string[],
+            labelKey: string,
+            isActive: (value: string) => boolean,
+            text: (value: string) => string,
+            onToggle: (value: string) => void,
+            isDisabled?: (value: string) => boolean,
+        ) => {
+            labels[index]!.textContent = props.t(labelKey);
+            const chipContainer = chipContainers[index] as HTMLElement;
 
-        // Domains section
-        const domainsLabel = section.querySelectorAll('label')[2]!;
-        domainsLabel.textContent = props.t('ui.facets.domains');
-        const domainsContainer = section.querySelectorAll('.flex.flex-wrap.gap-1')[2] as HTMLElement;
-        
-        DOMAINS.forEach((domain) => {
-            const chip = getNextElement(filterChipTemplate!) as HTMLElement;
-            const isActive = props.facets.domains.has(domain);
-            chip.className = `flex items-center gap-1 rounded-sm px-2 py-1 text-11-regular transition-colors ${
-                isActive ? 'bg-primary-weaker text-primary-base' : 'text-text-base hover:bg-surface-base-hover'
-            }`;
-            chip.textContent = `${props.t(props.vocabularyKeys.domain[domain] ?? domain)} (${countLabel(domain, counts().domains)})`;
-            chip.setAttribute('aria-pressed', String(isActive));
-            if (domain === 'session') chip.setAttribute('disabled', 'true');
-            chip.onclick = () => toggleDomain(domain);
-            domainsContainer.appendChild(chip);
-        });
+            for (const value of values) {
+                const chip = getNextElement(filterChipTemplate!) as HTMLElement;
+                const active = isActive(value);
+                chip.className = facetChipClass(active);
+                chip.textContent = text(value);
+                chip.setAttribute('aria-pressed', String(active));
+                if (isDisabled?.(value)) chip.setAttribute('disabled', 'true');
+                chip.onclick = () => onToggle(value);
+                chipContainer.appendChild(chip);
+            }
+        };
 
-        // Clear button
+        addFacetChips(
+            0,
+            NODE_KINDS,
+            'ui.facets.kinds',
+            (kind) => props.facets.kinds.has(kind),
+            (kind) => props.t(props.vocabularyKeys.kind[kind] ?? kind),
+            toggleKind,
+        );
+        addFacetChips(
+            1,
+            NODE_STATUSES,
+            'ui.facets.statuses',
+            (status) => props.facets.statuses.has(status),
+            (status) => props.t(props.vocabularyKeys.status[status] ?? status),
+            toggleStatus,
+        );
+        addFacetChips(
+            2,
+            DOMAINS,
+            'ui.facets.domains',
+            (domain) => props.facets.domains.has(domain),
+            (domain) =>
+                `${props.t(props.vocabularyKeys.domain[domain] ?? domain)} (${countLabel(domain, counts().domains)})`,
+            toggleDomain,
+            (domain) => domain === 'session',
+        );
+
         const clearBtn = getNextElement(clearButtonTemplate!) as HTMLElement;
         insert(clearBtn, () => props.t('ui.facets.clear'));
         clearBtn.onclick = clearFacets;
@@ -386,7 +387,6 @@ export const GraphFind = (props: GraphFindProps) => {
         return container;
     };
 
-    // Handle keyboard navigation for search results
     createEffect(() => {
         if (activeTab() === 'search') {
             const results = searchResults();

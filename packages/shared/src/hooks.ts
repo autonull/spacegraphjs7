@@ -5,6 +5,9 @@
 import { createSignal, createEffect, onCleanup, onMount } from 'solid-js';
 import type { Accessor } from 'solid-js';
 
+const resolveUpdater = <T>(next: T, current: T): T =>
+    typeof next === 'function' ? (next as (prev: T) => T)(current) : next;
+
 /**
  * Hook for detecting clicks outside an element.
  * @param element - Ref to the element
@@ -145,19 +148,17 @@ export function useControlledValue<T>(
     const [uncontrolledValue, setUncontrolledValue] = createSignal(defaultValue);
     const isControlled = controlledValue !== undefined;
 
-    const value = isControlled ? controlledValue : uncontrolledValue();
+    const value = (): T => (isControlled ? (controlledValue as T) : uncontrolledValue());
     const setValue = (next: T) => {
-        const newValue =
-            typeof next === 'function'
-                ? (next as (prev: T) => T)(isControlled ? controlledValue : uncontrolledValue())
-                : next;
-        if (!isControlled) {
-            setUncontrolledValue(newValue as Exclude<T, Function>);
-        }
+        const newValue = resolveUpdater(
+            next,
+            isControlled ? (controlledValue as T) : uncontrolledValue(),
+        );
+        if (!isControlled) setUncontrolledValue(newValue as Exclude<T, Function>);
         onChange?.(newValue);
     };
 
-    return [() => value, setValue];
+    return [value, setValue];
 }
 
 /**
@@ -240,7 +241,7 @@ export function useLocalStorage<T>(
     const [value, setValue] = createSignal(initializer as unknown as T);
 
     const setStoredValue = (next: T) => {
-        const newValue = typeof next === 'function' ? (next as (prev: T) => T)(value()) : next;
+        const newValue = resolveUpdater(next, value());
         setValue(newValue as Exclude<T, Function>);
         if (typeof window !== 'undefined') {
             try {
@@ -295,7 +296,7 @@ export function useSyncedState<T>(
 
     const setValue = (next: T) => {
         synced = false;
-        const newValue = typeof next === 'function' ? (next as (prev: T) => T)(localValue()) : next;
+        const newValue = resolveUpdater(next, localValue());
         setLocalValue(newValue as Exclude<T, Function>);
         onChange(newValue);
     };

@@ -226,10 +226,6 @@ export class HtmlNode extends BaseContentNode {
     }
 
     setSelectedStyle(selected: boolean): void {
-        this.applySelectedStyle(selected);
-    }
-
-    private applySelectedStyle(selected: boolean): void {
         this.domElement?.classList.toggle('selected', selected);
         if (selected) this.domElement?.setAttribute('data-selected', 'true');
         else this.domElement?.removeAttribute('data-selected');
@@ -248,7 +244,7 @@ export class HtmlNode extends BaseContentNode {
     /** Single writer for `controlState` so DOM visuals stay in sync with interaction state. */
     override setControlState(state: ControlState): this {
         super.setControlState(state);
-        this.applySelectedStyle(state === 'selected');
+        this.setSelectedStyle(state === 'selected');
         return this;
     }
 
@@ -261,7 +257,6 @@ export class HtmlNode extends BaseContentNode {
 
     onPreRender(dt: number): void {
         super.onPreRender(dt);
-        // T1.3: a billboard stays screen-facing when the camera pose changes after the node was placed.
         this.faceCamera();
     }
 
