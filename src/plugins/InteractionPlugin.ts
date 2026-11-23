@@ -323,6 +323,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
 
         const selectedNodes = Array.from(this.selectionManager.getSelectedNodes());
         const selectedEdges = Array.from(this.selectionManager.getSelectedEdges());
+        const mod = e.ctrlKey || e.metaKey;
 
         switch (e.key) {
             case 'Escape':
@@ -340,7 +341,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
                 break;
 
             case 'a':
-                if (e.ctrlKey || e.metaKey) {
+                if (mod) {
                     e.preventDefault();
                     const allNodes = Array.from(this.sg.graph.nodes.values());
                     this.keyboardShortcuts.handleSelectAll(allNodes);
@@ -348,28 +349,28 @@ export class InteractionPlugin extends BaseSystemPlugin {
                 break;
 
             case 'c':
-                if ((e.ctrlKey || e.metaKey) && selectedNodes.length > 0) {
+                if (mod && selectedNodes.length > 0) {
                     e.preventDefault();
                     this.copiedNodes = [...selectedNodes];
                 }
                 break;
 
             case 'v':
-                if ((e.ctrlKey || e.metaKey) && this.copiedNodes.length > 0) {
+                if (mod && this.copiedNodes.length > 0) {
                     e.preventDefault();
                     this._handlePaste();
                 }
                 break;
 
             case 'z':
-                if (e.ctrlKey || e.metaKey) {
+                if (mod) {
                     e.preventDefault();
                     (this.sg.events as any).emit('history:undo' as any, {});
                 }
                 break;
 
             case 'y':
-                if (e.ctrlKey || e.metaKey) {
+                if (mod) {
                     e.preventDefault();
                     (this.sg.events as any).emit('history:redo' as any, {});
                 }

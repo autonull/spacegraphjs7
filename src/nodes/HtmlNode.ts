@@ -11,6 +11,14 @@ import type { ControlState } from '../plugins/interaction/ControlStateBorder';
 
 const PARENT_ROTATION = new Quaternion();
 
+/** Match a wrapper's layout size to its visual size for correct scrollbar behavior. */
+function setContentTransform(element: HTMLElement, scale: number): void {
+    const layoutPercent = 100 / scale;
+    element.style.width = `${layoutPercent}%`;
+    element.style.height = `${layoutPercent}%`;
+    element.style.transform = `scale(${scale})`;
+}
+
 export class HtmlNode extends BaseContentNode {
     static typeName: string = 'HtmlNode';
     public static MIN_SIZE = { width: 80, height: 40 };
@@ -92,26 +100,30 @@ export class HtmlNode extends BaseContentNode {
 
     updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
-
         const data = updates.data as SpaceGraphNodeData | undefined;
+        if (data) this.applyDataUpdates(data);
+        this.applyContentUpdates(updates, data);
+        return this;
+    }
 
-        if (data) {
-            if (data.color !== undefined) this._applyBackgroundColor(data.color as string | number);
-            if (data.backgroundColor !== undefined) {
-                this._applyBackgroundColor(data.backgroundColor as string | number);
-            }
-            if (data.className !== undefined) {
-                this.domElement.className = `spacegraph-html-node ${data.className as string}`;
-            }
-            if (data.pointerEvents !== undefined) {
-                this.domElement.style.pointerEvents = data.pointerEvents as string;
-            }
-            if (data.width !== undefined || data.height !== undefined) this._handleSizeUpdate(data);
-            if (data.contentScale !== undefined) this.setContentScale(data.contentScale as number);
-            if (data.billboard !== undefined) this.billboard = data.billboard as boolean;
-            if (data.labelLod !== undefined) this.labelLod = data.labelLod as LabelLodLevel[];
-            if (data.style !== undefined) Object.assign(this.domElement.style, data.style);
-        }
+    private applyDataUpdates(data: SpaceGraphNodeData): void {
+        if (data.color !== undefined) this._applyBackgroundColor(data.color as string | number);
+        if (data.backgroundColor !== undefined)
+            this._applyBackgroundColor(data.backgroundColor as string | number);
+        if (data.className !== undefined)
+            this.domElement.className = `spacegraph-html-node ${data.className as string}`;
+        if (data.pointerEvents !== undefined)
+            this.domElement.style.pointerEvents = data.pointerEvents as string;
+        if (data.width !== undefined || data.height !== undefined) this._handleSizeUpdate(data);
+        if (data.contentScale !== undefined) this.setContentScale(data.contentScale as number);
+        if (data.billboard !== undefined) this.billboard = data.billboard as boolean;
+        if (data.labelLod !== undefined) this.labelLod = data.labelLod as LabelLodLevel[];
+        if (data.style !== undefined) Object.assign(this.domElement.style, data.style);
+    }
+
+    private applyContentUpdates(updates: Partial<NodeSpec>, data: SpaceGraphNodeData | undefined): void {
+        const wrapper = this.contentWrapper;
+        if (!wrapper) return;
 
         // The host's markup is the content. A label never replaces it: a card that shows a styled
         // document keeps it when the model updates, and only a card without markup falls back to its
@@ -119,28 +131,19 @@ export class HtmlNode extends BaseContentNode {
         const hasMarkup = this.data?.html !== undefined || this.data?.content !== undefined;
 
         if (data?.html !== undefined) {
-            if (this.contentWrapper && this.contentWrapper.innerHTML !== data.html) {
-                this.contentWrapper.innerHTML = data.html as string;
+            if (wrapper.innerHTML !== data.html) {
+                wrapper.innerHTML = data.html as string;
                 this.markInteractiveContent();
             }
-        } else if (data?.content !== undefined) {
-            if (
-                this.contentWrapper &&
-                !this.contentWrapper.isContentEditable &&
-                this.contentWrapper.textContent !== data.content
-            ) {
-                this.contentWrapper.textContent = data.content as string;
-            }
-        } else if (
-            !hasMarkup &&
-            updates.label !== undefined &&
-            this.contentWrapper &&
-            !this.contentWrapper.isContentEditable
-        ) {
-            this.contentWrapper.textContent = updates.label;
+            return;
         }
-
-        return this;
+        if (data?.content !== undefined) {
+            if (!wrapper.isContentEditable && wrapper.textContent !== data.content)
+                wrapper.textContent = data.content as string;
+            return;
+        }
+        if (!hasMarkup && updates.label !== undefined && !wrapper.isContentEditable)
+            wrapper.textContent = updates.label;
     }
 
     setSize(width: number, height: number, scaleContent: boolean | number = true): this {
@@ -179,11 +182,7 @@ export class HtmlNode extends BaseContentNode {
     }
 
     private applyContentTransform(scale: number): void {
-        if (!this.contentWrapper) return;
-        const layoutPercent = 100 / scale;
-        this.contentWrapper.style.width = `${layoutPercent}%`;
-        this.contentWrapper.style.height = `${layoutPercent}%`;
-        this.contentWrapper.style.transform = `scale(${scale})`;
+        if (this.contentWrapper) setContentTransform(this.contentWrapper, scale);
     }
 
     adjustContentScale(deltaFactor: number): void {
@@ -332,7 +331,27 @@ export class HtmlNode extends BaseContentNode {
     }
 
     private _createInnerContent(spec: NodeSpec): void {
-        const useRawHtml = spec.data?.useRawHtml === true;
+        const data = (spec.data as SpaceGraphNodeData) ?? {};
+        const wrapper = this.createInnerWrapper();
+        const contentWrapper = this.createContentWrapper(data);
+        this.applyGroupLayout(wrapper, contentWrapper, data);
+
+        if (data.html) {
+            contentWrapper.innerHTML = data.html as string;
+            if (this.shouldStripFrameStyles(spec)) this.stripFrameStyles();
+        } else if (data.editable) {
+            this.setupEditableContent(contentWrapper, data, spec.label);
+        } else {
+            contentWrapper.innerHTML = (data.content as string) ?? spec.label ?? 'HTML Node';
+        }
+
+        wrapper.appendChild(contentWrapper);
+        this.domElement.appendChild(wrapper);
+        this.contentWrapper = contentWrapper;
+        this.markInteractiveContent();
+    }
+
+    private createInnerWrapper(): HTMLElement {
         const wrapper = DOMUtils.createElement('div');
         wrapper.className = 'node-inner-wrapper';
         Object.assign(wrapper.style, {
@@ -346,7 +365,10 @@ export class HtmlNode extends BaseContentNode {
             position: 'relative',
             boxSizing: 'border-box',
         });
+        return wrapper;
+    }
 
+    private createContentWrapper(data: SpaceGraphNodeData): HTMLElement {
         const contentWrapper = DOMUtils.createElement('div');
         contentWrapper.className = 'node-content';
         Object.assign(contentWrapper.style, {
@@ -362,89 +384,84 @@ export class HtmlNode extends BaseContentNode {
             pointerEvents: 'auto',
             overflow: 'auto',
         });
-        const data = (spec.data as SpaceGraphNodeData) ?? {};
-        const initialScale = (data.contentScale as number) ?? 1.0;
-        const initialLayoutPercent = 100 / initialScale;
         contentWrapper.style.transformOrigin = 'top left';
-        contentWrapper.style.width = `${initialLayoutPercent}%`;
-        contentWrapper.style.height = `${initialLayoutPercent}%`;
-        contentWrapper.style.transform = `scale(${initialScale})`;
+        setContentTransform(contentWrapper, (data.contentScale as number) ?? 1.0);
+        return contentWrapper;
+    }
 
-        if (data.group === true) {
-            wrapper.style.height = '100%';
-            wrapper.style.minHeight = '100%';
-            wrapper.style.overflow = 'hidden';
-            contentWrapper.style.flex = '1 1 auto';
-            contentWrapper.style.height = '100%';
-            contentWrapper.style.overflow = 'hidden';
-        }
+    private applyGroupLayout(
+        wrapper: HTMLElement,
+        contentWrapper: HTMLElement,
+        data: SpaceGraphNodeData,
+    ): void {
+        if (data.group !== true) return;
+        wrapper.style.height = '100%';
+        wrapper.style.minHeight = '100%';
+        wrapper.style.overflow = 'hidden';
+        contentWrapper.style.flex = '1 1 auto';
+        contentWrapper.style.height = '100%';
+        contentWrapper.style.overflow = 'hidden';
+    }
 
-        if (data.html) {
-            contentWrapper.innerHTML = data.html as string;
-            if (
-                useRawHtml ||
-                (!spec.data?.className &&
-                    !spec.data?.style &&
-                    !spec.data?.color &&
-                    !spec.data?.backgroundColor)
-            ) {
-                Object.assign(this.domElement.style, {
-                    padding: '0',
-                    border: 'none',
-                    backgroundColor: 'transparent',
-                    backdropFilter: 'none',
-                    boxShadow: 'none',
-                });
-            }
-        } else if (data.editable) {
-            contentWrapper.contentEditable = 'true';
-            contentWrapper.spellcheck = false;
-            contentWrapper.dataset.sgInteractive = 'true';
-            contentWrapper.innerHTML = (data.content as string) ?? spec.label ?? 'HTML Node';
+    private shouldStripFrameStyles(spec: NodeSpec): boolean {
+        return (
+            spec.data?.useRawHtml === true ||
+            (!spec.data?.className &&
+                !spec.data?.style &&
+                !spec.data?.color &&
+                !spec.data?.backgroundColor)
+        );
+    }
 
-            let debounceTimer: ReturnType<typeof setTimeout>;
-            contentWrapper.addEventListener('input', () => {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => {
-                    this.data = { ...this.data, content: contentWrapper.innerHTML };
-                    this.emitDataChanged('content', contentWrapper.innerHTML);
-                }, 300);
-            });
+    private stripFrameStyles(): void {
+        Object.assign(this.domElement.style, {
+            padding: '0',
+            border: 'none',
+            backgroundColor: 'transparent',
+            backdropFilter: 'none',
+            boxShadow: 'none',
+        });
+    }
 
-            contentWrapper.addEventListener('pointerdown', (e) => e.stopPropagation());
-            contentWrapper.addEventListener('touchstart', (e) => e.stopPropagation(), {
-                passive: true,
-            });
-            contentWrapper.addEventListener(
-                'wheel',
-                (e) => {
-                    const isScrollable =
-                        contentWrapper.scrollHeight > contentWrapper.clientHeight ||
-                        contentWrapper.scrollWidth > contentWrapper.clientWidth;
-                    const canScrollY =
-                        (e.deltaY < 0 && contentWrapper.scrollTop > 0) ||
-                        (e.deltaY > 0 &&
-                            contentWrapper.scrollTop <
-                                contentWrapper.scrollHeight - contentWrapper.clientHeight);
-                    const canScrollX =
-                        (e.deltaX < 0 && contentWrapper.scrollLeft > 0) ||
-                        (e.deltaX > 0 &&
-                            contentWrapper.scrollLeft <
-                                contentWrapper.scrollWidth - contentWrapper.clientWidth);
-                    if (isScrollable && (canScrollY || canScrollX)) {
-                        e.stopPropagation();
-                    }
-                },
-                { passive: false },
-            );
-        } else {
-            contentWrapper.innerHTML = (data.content as string) ?? spec.label ?? 'HTML Node';
-        }
+    private setupEditableContent(
+        contentWrapper: HTMLElement,
+        data: SpaceGraphNodeData,
+        label: string | undefined,
+    ): void {
+        contentWrapper.contentEditable = 'true';
+        contentWrapper.spellcheck = false;
+        contentWrapper.dataset.sgInteractive = 'true';
+        contentWrapper.innerHTML = (data.content as string) ?? label ?? 'HTML Node';
 
-        wrapper.appendChild(contentWrapper);
-        this.domElement.appendChild(wrapper);
-        this.contentWrapper = contentWrapper;
-        this.markInteractiveContent();
+        let debounceTimer: ReturnType<typeof setTimeout>;
+        contentWrapper.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const html = contentWrapper.innerHTML;
+                this.data = { ...this.data, content: html };
+                this.emitDataChanged('content', html);
+            }, 300);
+        });
+        contentWrapper.addEventListener('pointerdown', (e) => e.stopPropagation());
+        contentWrapper.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+        contentWrapper.addEventListener('wheel', (e) => this.handleContentWheel(e, contentWrapper), {
+            passive: false,
+        });
+    }
+
+    private handleContentWheel(event: WheelEvent, contentWrapper: HTMLElement): void {
+        const isScrollable =
+            contentWrapper.scrollHeight > contentWrapper.clientHeight ||
+            contentWrapper.scrollWidth > contentWrapper.clientWidth;
+        const canScrollY =
+            (event.deltaY < 0 && contentWrapper.scrollTop > 0) ||
+            (event.deltaY > 0 &&
+                contentWrapper.scrollTop < contentWrapper.scrollHeight - contentWrapper.clientHeight);
+        const canScrollX =
+            (event.deltaX < 0 && contentWrapper.scrollLeft > 0) ||
+            (event.deltaX > 0 &&
+                contentWrapper.scrollLeft < contentWrapper.scrollWidth - contentWrapper.clientWidth);
+        if (isScrollable && (canScrollY || canScrollX)) event.stopPropagation();
     }
 
     /**
@@ -503,6 +520,22 @@ export class HtmlNode extends BaseContentNode {
     }
 
     private _createResizeHandle(): void {
+        const handle = this.createResizeHandleElement();
+        this.domElement.appendChild(handle);
+        this.resizeHandle = handle;
+
+        this.domElement.addEventListener('mouseenter', () => {
+            handle.style.opacity = '1';
+        });
+        this.domElement.addEventListener('mouseleave', () => {
+            if (!handle.dataset.resizing) handle.style.opacity = '0';
+        });
+
+        handle.style.touchAction = 'none';
+        handle.addEventListener('pointerdown', (event) => this.beginHandleResize(handle, event));
+    }
+
+    private createResizeHandleElement(): HTMLElement {
         const handle = DOMUtils.createElement('div');
         handle.className = 'resize-handle';
         handle.title = 'Resize Node';
@@ -520,58 +553,46 @@ export class HtmlNode extends BaseContentNode {
             transition: opacity 0.2s;
             z-index: 10;
         `;
+        return handle;
+    }
 
-        this.domElement.appendChild(handle);
-        this.resizeHandle = handle;
+    private beginHandleResize(handle: HTMLElement, event: PointerEvent): void {
+        event.preventDefault();
+        event.stopPropagation();
 
-        this.domElement.addEventListener('mouseenter', () => {
-            handle.style.opacity = '1';
-        });
-        this.domElement.addEventListener('mouseleave', () => {
-            if (!handle.dataset.resizing) handle.style.opacity = '0';
-        });
+        const rect = this.domElement.getBoundingClientRect();
+        const start = {
+            clientX: event.clientX,
+            clientY: event.clientY,
+            width: this.size.width,
+            height: this.size.height,
+            screenWidth: Math.max(1, rect.width),
+            screenHeight: Math.max(1, rect.height),
+        };
 
-        handle.style.touchAction = 'none';
-        handle.addEventListener('pointerdown', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
+        handle.dataset.resizing = 'true';
+        handle.setPointerCapture?.(event.pointerId);
+        this.startResize();
 
-            const rect = this.domElement.getBoundingClientRect();
-            const start = {
-                clientX: event.clientX,
-                clientY: event.clientY,
-                width: this.size.width,
-                height: this.size.height,
-                screenWidth: Math.max(1, rect.width),
-                screenHeight: Math.max(1, rect.height),
-            };
+        const move = (next: PointerEvent) => {
+            this.resize(
+                start.width + ((next.clientX - start.clientX) * start.width) / start.screenWidth,
+                start.height + ((next.clientY - start.clientY) * start.height) / start.screenHeight,
+            );
+        };
+        const finish = () => {
+            delete handle.dataset.resizing;
+            if (handle.hasPointerCapture?.(event.pointerId))
+                handle.releasePointerCapture?.(event.pointerId);
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', finish);
+            window.removeEventListener('pointercancel', finish);
+            this.endResize();
+        };
 
-            handle.dataset.resizing = 'true';
-            handle.setPointerCapture?.(event.pointerId);
-            this.startResize();
-
-            const move = (next: PointerEvent) => {
-                this.resize(
-                    start.width +
-                        ((next.clientX - start.clientX) * start.width) / start.screenWidth,
-                    start.height +
-                        ((next.clientY - start.clientY) * start.height) / start.screenHeight,
-                );
-            };
-            const finish = () => {
-                delete handle.dataset.resizing;
-                if (handle.hasPointerCapture?.(event.pointerId))
-                    handle.releasePointerCapture?.(event.pointerId);
-                window.removeEventListener('pointermove', move);
-                window.removeEventListener('pointerup', finish);
-                window.removeEventListener('pointercancel', finish);
-                this.endResize();
-            };
-
-            window.addEventListener('pointermove', move);
-            window.addEventListener('pointerup', finish);
-            window.addEventListener('pointercancel', finish);
-        });
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', finish);
+        window.addEventListener('pointercancel', finish);
     }
 
     private _requestDelete(): void {
