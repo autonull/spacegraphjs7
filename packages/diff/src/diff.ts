@@ -1,5 +1,5 @@
 import type { CodeDiff, CodeDiffSource } from '@spacegraphjs/shared';
-import { diffTone, type DiffTone } from '@spacegraphjs/shared';
+import type { DiffTone } from '@spacegraphjs/shared';
 
 /** One changed file of a finished turn, as reported by the host's turn-diff source. */
 export type GraphDiff = CodeDiff;

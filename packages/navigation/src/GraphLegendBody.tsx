@@ -20,7 +20,6 @@ import {
     sourceLabel,
     CONFIDENCE_STYLE,
 } from './legendUtils';
-import { GraphIconButton } from './GraphIconButton';
 
 const CONFIDENCE_STYLE_LOCAL = CONFIDENCE_STYLE;
 

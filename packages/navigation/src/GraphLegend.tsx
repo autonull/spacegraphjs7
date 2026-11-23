@@ -4,12 +4,11 @@ import type {
     Layout,
     GraphSnapshotMeta,
     I18n,
-    IconProps,
     IconComponent,
 } from '@spacegraphjs/shared';
 import { createIconRenderer, passthroughI18n } from '@spacegraphjs/shared';
-import { Show, type JSX, onMount } from 'solid-js';
-import { GraphLegendBody, type GraphLegendBodyProps } from './GraphLegendBody';
+import { onMount } from 'solid-js';
+import { GraphLegendBody } from './GraphLegendBody';
 import { GraphIconButton } from './GraphIconButton';
 
 export type GraphLegendProps = {

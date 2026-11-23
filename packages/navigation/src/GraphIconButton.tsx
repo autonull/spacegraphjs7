@@ -1,4 +1,4 @@
-import type { IconProps, IconComponent } from '@spacegraphjs/shared';
+import type { IconComponent } from '@spacegraphjs/shared';
 import { createIconRenderer } from '@spacegraphjs/shared';
 
 export type GraphIconButtonProps = {

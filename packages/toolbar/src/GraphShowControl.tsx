@@ -9,7 +9,6 @@ import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shar
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { DetailMode, GraphViewData } from '@spacegraphjs/shared/types';
 import { menuOption } from './MenuOption';
-import { ToolbarMenu } from './ToolbarMenu';
 import { DETAIL_MODES, VOCABULARY_KEYS } from '@spacegraphjs/shared/types';
 import { GraphIconButton } from './GraphIconButton';
 

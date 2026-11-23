@@ -1,4 +1,4 @@
-import { passthroughI18n, type I18n, type CodeDiff, type CodeDiffSource } from '@spacegraphjs/shared';
+import { passthroughI18n, type I18n, type CodeDiffSource } from '@spacegraphjs/shared';
 import { For, Show, createEffect, createMemo } from 'solid-js';
 import { diffTone, type DiffTone, TONE_CLASS } from './diff';
 

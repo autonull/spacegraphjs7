@@ -4,7 +4,6 @@
  */
 
 import type { JSX } from 'solid-js';
-import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
 import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shared/popover';
 
 export interface ToolbarMenuProps {
