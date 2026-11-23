@@ -10,7 +10,6 @@ import {
     LANES,
 } from '@spacegraphjs/shared';
 import { passthroughI18n, type IconProps, type I18n } from '@spacegraphjs/shared';
-import { createIconRenderer } from '@spacegraphjs/shared';
 import { Show, type JSX } from 'solid-js';
 import {
     kindAccent,
@@ -47,7 +46,6 @@ export type GraphLegendBodyProps = {
  */
 export const GraphLegendBody = (props: GraphLegendBodyProps) => {
     const i18n = props.i18n ?? passthroughI18n;
-    const Icon = props.Icon ?? createIconRenderer();
     const now = Date.now();
 
     const swatch = (color: string) => (

@@ -19,8 +19,7 @@ export interface GraphZoomControlProps {
 }
 
 export function GraphZoomControl(props: GraphZoomControlProps): JSX.Element {
-    const { zoomPercent, onZoomOut, onZoomIn, zoomOutDisabled, zoomInDisabled, onFit, i18n, Icon } =
-        props;
+    const { zoomPercent, onZoomOut, onZoomIn, zoomOutDisabled, zoomInDisabled, i18n, Icon } = props;
     const renderIcon = Icon ?? createIconRenderer();
 
     return (

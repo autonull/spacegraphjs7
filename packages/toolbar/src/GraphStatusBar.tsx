@@ -1,4 +1,4 @@
-import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
+import type { IconComponent } from '@spacegraphjs/shared/icons';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import { Show, type JSX } from 'solid-js';
 import { GraphIconButton } from './GraphIconButton';
@@ -34,7 +34,6 @@ export type GraphStatusBarProps = {
  */
 export const GraphStatusBar = (props: GraphStatusBarProps): JSX.Element => {
     const { i18n, Icon, ...rest } = props;
-    const renderIcon = createIconRenderer(Icon);
 
     return (
         <Show when={rest.count > 0}>

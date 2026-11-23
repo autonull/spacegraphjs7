@@ -1,4 +1,4 @@
-import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
+import type { IconComponent } from '@spacegraphjs/shared/icons';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { GraphCompareChanges } from './GraphCompare';
 import { Show, type JSX } from 'solid-js';
@@ -20,8 +20,7 @@ export type GraphCompareBarProps = {
  * A compact bar showing the comparison status with actions to compare or clear.
  */
 export const GraphCompareBar = (props: GraphCompareBarProps): JSX.Element => {
-    const { i18n, Icon, changes, onCompare, onClear } = props;
-    const renderIcon = createIconRenderer(Icon);
+    const { i18n, changes, onCompare, onClear } = props;
 
     const hasChanges = () => changes.added.size + changes.removed.size + changes.changed.size > 0;
 

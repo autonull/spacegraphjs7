@@ -58,7 +58,7 @@ const option = (input: { label: string; onClick: () => void; slot?: string; valu
 );
 
 export const GraphExportControl = (props: GraphExportControlProps): JSX.Element => {
-    const { onExport, renderModel, onCopyView, t, plural, Icon, Popover } = props;
+    const { onExport, renderModel, onCopyView, t, Icon, Popover } = props;
     const renderIcon = Icon ?? createIconRenderer();
     const PopoverComponent = Popover ?? createPopoverRenderer();
 

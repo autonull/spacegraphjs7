@@ -30,7 +30,6 @@ export type WorkflowRetry = {
 };
 
 export const retryChains = (view: WorkflowView): readonly WorkflowRetry[] => {
-    const nodes = new Map(view.nodes.map((node) => [node.id, node]));
     return view.nodes
         .filter((node) => roleOf(node) === 'retry')
         .map((node) => {
