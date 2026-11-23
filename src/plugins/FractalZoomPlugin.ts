@@ -87,25 +87,22 @@ export class FractalZoomPlugin extends BaseSystemPlugin {
         });
     }
 
+    private distanceForLevel(index: number): number {
+        const { minDistance, maxDistance } = this.config.levels[index];
+        return (minDistance + maxDistance) / 2;
+    }
+
     zoomIn(): void {
         if (this.currentLevel < this.config.levels.length - 1) {
             const nextLevel = this.currentLevel + 1;
-            const targetDistance =
-                (this.config.levels[nextLevel].minDistance +
-                    this.config.levels[nextLevel].maxDistance) /
-                2;
-            this.zoomTo(targetDistance, nextLevel);
+            this.zoomTo(this.distanceForLevel(nextLevel), nextLevel);
         }
     }
 
     zoomOut(): void {
         if (this.currentLevel > 0) {
             const prevLevel = this.currentLevel - 1;
-            const targetDistance =
-                (this.config.levels[prevLevel].minDistance +
-                    this.config.levels[prevLevel].maxDistance) /
-                2;
-            this.zoomTo(targetDistance, prevLevel);
+            this.zoomTo(this.distanceForLevel(prevLevel), prevLevel);
         }
     }
 
@@ -198,13 +195,8 @@ export class FractalZoomPlugin extends BaseSystemPlugin {
         for (const edge of this.sg.graph.edges.values()) {
             const edgeImportance = (edge.data?.importance as number) ?? 1.0;
 
-            // If edge importance is lower than threshold, hide it
-            if (edgeImportance < importanceThreshold) {
-                if (edge.object) edge.object.visible = false;
-            } else {
-                // Let other plugins (like LOD) decide base on other factors,
-                // but we at least allow it.
-            }
+            // Lower-importance edges hide here; other plugins (like LOD) decide the rest.
+            if (edgeImportance < importanceThreshold && edge.object) edge.object.visible = false;
         }
     }
 }

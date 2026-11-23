@@ -40,6 +40,16 @@ const POSITION_STYLES = {
     'bottom-left': { bottom: '20px', left: '20px', top: 'auto', right: 'auto' },
 } as const;
 
+const PANEL_STYLES = {
+    position: 'absolute',
+    background: 'rgba(0, 0, 0, 0.85)',
+    color: '#ffffff',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    zIndex: '10000',
+    backdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+} as const;
+
 /**
  * ZoomUIPlugin — a container-scoped zoom-level indicator and one-time hint.
  *
@@ -90,16 +100,10 @@ export class ZoomUIPlugin extends BaseSystemPlugin {
         el.className = 'fractal-level-indicator';
 
         Object.assign(el.style, {
-            position: 'absolute',
-            background: 'rgba(0, 0, 0, 0.85)',
-            color: '#ffffff',
+            ...PANEL_STYLES,
             padding: '14px 22px',
             borderRadius: '10px',
             fontSize: '14px',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            zIndex: '10000',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
             transition: 'all 0.3s ease',
             ...POSITION_STYLES[this.config.levelIndicatorPosition],
@@ -151,19 +155,14 @@ export class ZoomUIPlugin extends BaseSystemPlugin {
         const el = document.createElement('div');
         el.className = 'fractal-zoom-hint';
         Object.assign(el.style, {
-            position: 'absolute',
+            ...PANEL_STYLES,
             bottom: '30px',
             left: '50%',
             transform: 'translateX(-50%) translateY(20px)',
-            background: 'rgba(0, 0, 0, 0.85)',
-            color: '#ffffff',
             padding: '12px 24px',
             borderRadius: '8px',
             fontSize: '13px',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             zIndex: '10001',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
             opacity: '0',
             transition: 'all 0.4s ease',
         });

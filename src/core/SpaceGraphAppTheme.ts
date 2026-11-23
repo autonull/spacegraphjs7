@@ -23,18 +23,16 @@ export function setupDefaultHUD(app: SpaceGraphApp, theme: any) {
     renderToolbarActions(app);
 }
 
+export function refreshChrome(app: SpaceGraphApp, theme: NonNullable<typeof app.options.theme>) {
+    setupDefaultHUD(app, theme);
+    if (app.options.enableSearch) setupSearchHUD(app, theme);
+    if (app.buttons.length > 0) renderButtons(app, theme);
+}
+
 export function setTheme(
     app: SpaceGraphApp,
     theme: Partial<NonNullable<typeof app.options.theme>>,
 ) {
     app.options.theme = { ...app.options.theme, ...theme };
-
-    setupDefaultHUD(app, app.options.theme);
-    if (app.options.enableSearch) {
-        setupSearchHUD(app, app.options.theme);
-    }
-    if (app.buttons.length > 0) {
-        renderButtons(app, app.options.theme);
-    }
-    renderToolbarActions(app);
+    refreshChrome(app, app.options.theme);
 }

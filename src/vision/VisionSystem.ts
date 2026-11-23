@@ -29,28 +29,24 @@ export class VisionSystem {
             this.strategies.set('hybrid', hybrid);
         }
 
-        // Set default strategy
-        const strategyName = options.strategy ?? 'heuristics';
-        const strategy = this.strategies.get(strategyName);
+        this.currentStrategy = this.requireStrategy(options.strategy ?? 'heuristics');
+    }
 
+    private requireStrategy(name: string): VisionStrategy {
+        const strategy = this.strategies.get(name);
         if (!strategy) {
-            const available = Array.from(this.strategies.keys()).join(', ');
-            throw new Error(`Unknown vision strategy: ${strategyName}. Available: ${available}`);
+            throw new Error(
+                `Unknown vision strategy: ${name}. Available: ${this.getAvailableStrategies().join(', ')}`,
+            );
         }
-
-        this.currentStrategy = strategy;
+        return strategy;
     }
 
     /**
      * Set the vision strategy
      */
     setStrategy(name: string): void {
-        const strategy = this.strategies.get(name);
-        if (!strategy) {
-            const available = Array.from(this.strategies.keys()).join(', ');
-            throw new Error(`Unknown vision strategy: ${name}. Available: ${available}`);
-        }
-        this.currentStrategy = strategy;
+        this.currentStrategy = this.requireStrategy(name);
     }
 
     /**

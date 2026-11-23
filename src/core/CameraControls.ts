@@ -410,16 +410,21 @@ export class CameraControls {
         return this.zoomStack.length > 0;
     }
 
-    setTargetSmooth(target: Vector3, radius: number, duration = 1.0, zoom?: number): void {
+    private beginFlight(duration: number): CameraFlight {
         const flight = (this.flight ??= createFlight());
+        flight.startTime = performance.now();
+        flight.duration = duration * 1000;
+        return flight;
+    }
+
+    setTargetSmooth(target: Vector3, radius: number, duration = 1.0, zoom?: number): void {
+        const flight = this.beginFlight(duration);
         flight.fromTarget.copy(this.target);
         flight.fromRadius = this.spherical.radius;
         flight.target = target.clone();
         flight.radius = radius;
         flight.zoom = zoom !== undefined && this.isOrthographic ? this.clampOrthoZoom(zoom) : null;
         if (flight.zoom !== null) flight.fromZoom = (this.camera as OrthographicCamera).zoom;
-        flight.startTime = performance.now();
-        flight.duration = duration * 1000;
         this.requestFrame();
     }
 
@@ -465,13 +470,11 @@ export class CameraControls {
                 this.flight.theta = null;
             }
         } else {
-            const flight = (this.flight ??= createFlight());
+            const flight = this.beginFlight(duration);
             flight.fromPhi = this.spherical.phi;
             flight.fromTheta = this.spherical.theta;
             flight.phi = targetPhi;
             flight.theta = theta;
-            flight.startTime = performance.now();
-            flight.duration = duration * 1000;
         }
         this.requestFrame();
     }

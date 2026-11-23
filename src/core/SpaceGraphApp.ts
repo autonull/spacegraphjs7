@@ -13,7 +13,7 @@ import {
 } from './SpaceGraphAppHUD';
 import { setupHotkeys, setupInteractionHandlers } from './SpaceGraphAppInteraction';
 import { selectionChanged } from './Selection';
-import { setTheme, setupDefaultHUD } from './SpaceGraphAppTheme';
+import { refreshChrome, setTheme } from './SpaceGraphAppTheme';
 
 export interface SpaceGraphAppOptions {
     spec?: GraphSpec;
@@ -118,15 +118,7 @@ export class SpaceGraphApp {
 
         await app.sg.pluginManager.initAll();
         addGrid(app);
-        setupDefaultHUD(app, theme);
-
-        if (resolvedOptions.enableSearch) {
-            setupSearchHUD(app, theme);
-        }
-
-        if (app.buttons.length > 0) {
-            renderButtons(app, theme);
-        }
+        refreshChrome(app, theme);
 
         return app;
     }
