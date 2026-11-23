@@ -60,10 +60,11 @@ export const simulateFixture = (vector: PolicyVector): SimulatedFixture => {
     };
     const positionsOf = (): Map<string, Position> => {
         const positions = new Map<string, Position>();
+        const nodeByID = new Map(view.nodes.map((node) => [node.id, node]));
         for (const [qualified, point] of simulation.view().positions) {
             const id = scopes.nodeById.get(qualified);
             if (!id) continue;
-            const node = view.nodes.find((candidate) => candidate.id === id);
+            const node = nodeByID.get(id);
             const unitId = typeof node?.data?.unitId === 'string' ? node.data.unitId : undefined;
             const offset = sampleDepth(continuum, axisValue(turns, unitId), 1200).offset;
             positions.set(id, { x: point.x, y: point.y, z: point.z + offset });

@@ -94,9 +94,10 @@ export const levelForZoom = (zoom: number, current: AgentLevel, bands: BandConfi
 export const windowedView = (view: AgentView, turns: number): { view: AgentView; hidden: number } => {
     const recent = (view.turns ?? []).slice(-turns);
     if (!recent.length) return { view, hidden: 0 };
+    const nodeByID = new Map(view.nodes.map((node) => [node.id, node]));
     const recentUnits = new Set(
         recent.flatMap((id) => {
-            const unit = view.nodes.find((node) => node.id === id);
+            const unit = nodeByID.get(id);
             const unitId = unit?.data?.unitId;
             return unitId === undefined ? [id] : [id, String(unitId)];
         }),
