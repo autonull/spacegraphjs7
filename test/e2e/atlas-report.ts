@@ -19,17 +19,15 @@ export interface ReportGroup {
     entries: ReportEntry[];
 }
 
-const escape = (value: string) =>
-    value.replace(/[&<>"']/g, (char) => {
-        const map: Record<string, string> = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;',
-        };
-        return map[char]!;
-    });
+const ESCAPES: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+};
+
+const escape = (value: string) => value.replace(/[&<>"']/g, (char) => ESCAPES[char]!);
 
 function card(entry: ReportEntry): string {
     const status = entry.errors.length ? 'fail' : 'pass';

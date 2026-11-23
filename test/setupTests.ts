@@ -106,13 +106,17 @@ if (typeof (globalThis as any).HTMLMediaElement !== 'undefined') {
 }
 
 // Silence specific jsdom/getContext and chart warnings that are noisy in CI
+const IGNORED_WARNINGS = [
+    "Not implemented: HTMLCanvasElement's getContext() method",
+    "Failed to create chart: can't acquire context",
+] as const;
+
 const _origConsoleError = console.error.bind(console);
 console.error = (...args: any[]) => {
     try {
         const s = args.map((a) => String(a)).join(' ');
         if (
-            s.includes("Not implemented: HTMLCanvasElement's getContext() method") ||
-            s.includes("Failed to create chart: can't acquire context") ||
+            IGNORED_WARNINGS.some((warning) => s.includes(warning)) ||
             s.includes('AutoColorPlugin not found')
         ) {
             return;
@@ -128,10 +132,7 @@ const _origStderrWrite = process.stderr.write.bind(process.stderr) as any;
 process.stderr.write = (chunk: any, ...args: any[]) => {
     try {
         const s = String(chunk);
-        if (
-            s.includes("Not implemented: HTMLCanvasElement's getContext() method") ||
-            s.includes("Failed to create chart: can't acquire context")
-        ) {
+        if (IGNORED_WARNINGS.some((warning) => s.includes(warning))) {
             return true;
         }
     } catch (e) {

@@ -10,24 +10,19 @@ import { DEMOS } from '../../app/demo/src/registry.js';
 export const OUT = process.env.SG_ATLAS_DIR ?? resolve('docs/screenshots/atlas');
 export const VIEWPORT = { width: 1440, height: 900 };
 
+const SCREENSHOT_ERRORS = [
+    'WebSocket connection',
+    'ERR_CONNECTION_REFUSED',
+    'Outdated Optimize Dep',
+    'Failed to load resource: the server responded with a status of 400',
+    'Failed to load resource: the server responded with a status of 403',
+] as const;
+
 /** Known console noise, by gate strictness: basic checks, screenshot gates, full atlas. */
 export const EXPECTED_ERRORS = {
-    basic: ['WebSocket connection', 'ERR_CONNECTION_REFUSED'],
-    screenshots: [
-        'WebSocket connection',
-        'ERR_CONNECTION_REFUSED',
-        'Outdated Optimize Dep',
-        'Failed to load resource: the server responded with a status of 400',
-        'Failed to load resource: the server responded with a status of 403',
-    ],
-    atlas: [
-        'favicon',
-        'WebSocket connection',
-        'ERR_CONNECTION_REFUSED',
-        'Outdated Optimize Dep',
-        'Failed to load resource: the server responded with a status of 400',
-        'Failed to load resource: the server responded with a status of 403',
-    ],
+    basic: SCREENSHOT_ERRORS.slice(0, 2),
+    screenshots: SCREENSHOT_ERRORS,
+    atlas: ['favicon', ...SCREENSHOT_ERRORS],
 } as const;
 
 export const isExpectedError = (message: string, patterns: readonly string[]): boolean =>

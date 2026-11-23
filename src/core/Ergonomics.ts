@@ -218,14 +218,17 @@ export class ErgonomicsAPI {
         fn(this.sg);
     }
 
-    freeze(): { release: () => void } {
+    #paused(): () => void {
         this.sg.pause();
-        return { release: () => this.sg.render() };
+        return () => this.sg.render();
+    }
+
+    freeze(): { release: () => void } {
+        return { release: this.#paused() };
     }
 
     suspend(): { resume: () => void } {
-        this.sg.pause();
-        return { resume: () => this.sg.render() };
+        return { resume: this.#paused() };
     }
 
     transaction(updates: (sg: SpaceGraph) => void): void {

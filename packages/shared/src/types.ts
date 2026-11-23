@@ -544,19 +544,18 @@ export function buildRenderModel(
 ): RenderModel {
     // Minimal implementation - hosts should override with their adapter
     return {
-        nodes: model.nodes.map((node) => ({
-            id: node.id,
-            kind: node.kind,
-            label: node.label,
-            summary: node.summary,
-            position: [
-                options.positions.get(node.id)?.x ?? 0,
-                options.positions.get(node.id)?.y ?? 0,
-                0,
-            ] as [number, number, number],
-            status: node.status as RenderNode['status'],
-            shape: 'card' as const,
-        })),
+        nodes: model.nodes.map((node) => {
+            const position = options.positions.get(node.id);
+            return {
+                id: node.id,
+                kind: node.kind,
+                label: node.label,
+                summary: node.summary,
+                position: [position?.x ?? 0, position?.y ?? 0, 0] as [number, number, number],
+                status: node.status as RenderNode['status'],
+                shape: 'card' as const,
+            };
+        }),
         edges: options.edges
             ? model.edges.map((edge, index) => ({
                   id: edge.id ?? `edge-${index}`,

@@ -11,6 +11,9 @@ import type { ControlState } from '../plugins/interaction/ControlStateBorder';
 
 const PARENT_ROTATION = new Quaternion();
 
+const contentOf = (data: SpaceGraphNodeData, label: string | undefined) =>
+    (data.content as string) ?? label ?? 'HTML Node';
+
 /** Match a wrapper's layout size to its visual size for correct scrollbar behavior. */
 function setContentTransform(element: HTMLElement, scale: number): void {
     const layoutPercent = 100 / scale;
@@ -345,7 +348,7 @@ export class HtmlNode extends BaseContentNode {
         } else if (data.editable) {
             this.setupEditableContent(contentWrapper, data, spec.label);
         } else {
-            contentWrapper.innerHTML = (data.content as string) ?? spec.label ?? 'HTML Node';
+            contentWrapper.innerHTML = contentOf(data, spec.label);
         }
 
         wrapper.appendChild(contentWrapper);
@@ -434,7 +437,7 @@ export class HtmlNode extends BaseContentNode {
         contentWrapper.contentEditable = 'true';
         contentWrapper.spellcheck = false;
         contentWrapper.dataset.sgInteractive = 'true';
-        contentWrapper.innerHTML = (data.content as string) ?? label ?? 'HTML Node';
+        contentWrapper.innerHTML = contentOf(data, label);
 
         let debounceTimer: ReturnType<typeof setTimeout>;
         contentWrapper.addEventListener('input', () => {

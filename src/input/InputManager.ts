@@ -409,7 +409,6 @@ export class InputSource {
     }
 
     on<T extends InputEventType>(type: T, handler?: (event: InputEvent) => void): void {
-        const originalHandler = handler;
         const wrappedHandler = (e: unknown) => {
             if (!this.enabled) return;
             const event = this.normalizeEvent(type, e);
@@ -421,7 +420,7 @@ export class InputSource {
         };
         this.boundHandlers.push({
             type,
-            original: originalHandler as (e: unknown) => void,
+            original: handler as (e: unknown) => void,
             handler: wrappedHandler as (e: unknown) => void,
         });
         this.element.addEventListener(type, wrappedHandler, { passive: false });
