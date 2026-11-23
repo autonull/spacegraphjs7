@@ -24,10 +24,8 @@ const ToolbarMenu = (props: {
     align?: 'start' | 'end';
     children: JSX.Element;
     Popover?: PopoverComponent;
-    Icon?: IconComponent;
 }) => {
     const PopoverComponent = props.Popover ?? createPopoverRenderer();
-    const IconComponent = props.Icon ?? createIconRenderer();
 
     return (
         <PopoverComponent
@@ -43,13 +41,7 @@ const ToolbarMenu = (props: {
     );
 };
 
-const option = (input: {
-    label: string;
-    onClick: () => void;
-    slot?: string;
-    value?: string;
-    Icon: IconComponent;
-}) => (
+const option = (input: { label: string; onClick: () => void; slot?: string; value?: string }) => (
     <button
         type="button"
         data-slot={input.slot}
@@ -88,28 +80,24 @@ export const GraphExportControl = (props: GraphExportControlProps): JSX.Element 
                     label={t('ui.toolbar.export')}
                     icon="outline-share"
                     Popover={PopoverComponent}
-                    Icon={renderIcon}
                 >
                     {option({
                         label: t('ui.toolbar.exportSvg'),
                         onClick: () => onExport?.('svg', renderModel!),
                         slot: 'graph-export-option',
                         value: 'svg',
-                        Icon: renderIcon,
                     })}
                     {option({
                         label: t('ui.toolbar.exportJson'),
                         onClick: () => onExport?.('json', renderModel!),
                         slot: 'graph-export-option',
                         value: 'json',
-                        Icon: renderIcon,
                     })}
                     {option({
                         label: t('ui.toolbar.exportHtml'),
                         onClick: () => onExport?.('html', renderModel!),
                         slot: 'graph-export-option',
                         value: 'html',
-                        Icon: renderIcon,
                     })}
                 </ToolbarMenu>
             </Show>
