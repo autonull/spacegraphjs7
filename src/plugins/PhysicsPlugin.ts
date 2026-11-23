@@ -1,4 +1,4 @@
-import { MathPool } from '../core';
+import { MathPool, withPooledVectors } from '../core';
 import type * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
@@ -52,16 +52,25 @@ export class PhysicsPlugin extends BaseSystemPlugin {
         this.prev.clear();
     }
 
-    private _step(dt: number) {
+    private movable(node: Node): boolean {
+        return !node.data?.pinned && !node.data?.physicsStatic;
+    }
+
+    private _step(dt: number): void {
         const nodes = Array.from(this.sg.graph.nodes.values()) as Node[];
+        this._integrate(nodes, dt);
+        this._applySprings();
+        this._applyCollisions(nodes);
+        this._sync(nodes);
+    }
+
+    private _integrate(nodes: readonly Node[], dt: number): void {
         const grav = this.settings.gravity;
 
         for (const node of nodes) {
-            if (node.data?.pinned || node.data?.physicsStatic) continue;
+            if (!this.movable(node)) continue;
 
-            if (!this.prev.has(node.id)) {
-                this.prev.set(node.id, node.position.clone());
-            }
+            if (!this.prev.has(node.id)) this.prev.set(node.id, node.position.clone());
 
             const prev = this.prev.get(node.id)!;
             const cur = node.position;
@@ -82,79 +91,63 @@ export class PhysicsPlugin extends BaseSystemPlugin {
             prev.copy(cur);
             node.updatePosition(nx, ny, nz);
         }
+    }
 
-        if (this.settings.springStiffness > 0) {
-            for (const [, edge] of this.sg.graph.edges) {
-                const n1 = edge.source;
-                const n2 = edge.target;
-                if (!n1 || !n2) continue;
+    private _applySprings(): void {
+        if (this.settings.springStiffness <= 0) return;
+        const pool = MathPool.getInstance();
 
-                const diff = MathPool.getInstance()
-                    .acquireVector3()
-                    .subVectors(n2.position, n1.position);
+        for (const [, edge] of this.sg.graph.edges) {
+            const n1 = edge.source;
+            const n2 = edge.target;
+            if (!n1 || !n2) continue;
+
+            withPooledVectors(pool, 1, (diff) => {
+                diff.subVectors(n2.position, n1.position);
                 const dist = diff.length() || 0.0001;
-
-                const displacement = dist - this.settings.springRestLength;
-                const force = displacement * this.settings.springStiffness;
-
+                const force = (dist - this.settings.springRestLength) * this.settings.springStiffness;
                 diff.normalize().multiplyScalar(force * 0.5);
 
-                if (!n1.data?.pinned && !n1.data?.physicsStatic) {
-                    n1.position.add(diff);
-                }
-                if (!n2.data?.pinned && !n2.data?.physicsStatic) {
-                    n2.position.sub(diff);
-                }
-
-                MathPool.getInstance().releaseVector3(diff);
-            }
+                if (this.movable(n1)) n1.position.add(diff);
+                if (this.movable(n2)) n2.position.sub(diff);
+            });
         }
+    }
 
-        if (this.settings.collide || this.settings.repulsion > 0) {
-            for (let i = 0; i < nodes.length; i++) {
-                for (let j = i + 1; j < nodes.length; j++) {
-                    const n1 = nodes[i];
-                    const n2 = nodes[j];
+    private _applyCollisions(nodes: readonly Node[]): void {
+        if (!this.settings.collide && this.settings.repulsion <= 0) return;
+        const pool = MathPool.getInstance();
 
-                    const diff = MathPool.getInstance()
-                        .acquireVector3()
-                        .subVectors(n1.position, n2.position);
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const n1 = nodes[i]!;
+                const n2 = nodes[j]!;
+
+                withPooledVectors(pool, 3, (diff, diffNormalized, push) => {
+                    diff.subVectors(n1.position, n2.position);
                     const distSq = diff.lengthSq() || 0.0001;
                     const dist = Math.sqrt(distSq);
-
-                    const diffNormalized = MathPool.getInstance()
-                        .acquireVector3()
-                        .copy(diff)
-                        .divideScalar(dist);
-                    const push = MathPool.getInstance().acquireVector3();
+                    diffNormalized.copy(diff).divideScalar(dist);
 
                     if (this.settings.collide && dist < this.settings.collisionRadius * 2) {
-                        const overlap = this.settings.collisionRadius * 2 - dist;
-                        push.copy(diffNormalized).multiplyScalar(overlap * 0.5);
-
-                        if (!n1.data?.pinned && !n1.data?.physicsStatic) n1.position.add(push);
-                        if (!n2.data?.pinned && !n2.data?.physicsStatic) n2.position.sub(push);
+                        push.copy(diffNormalized).multiplyScalar((this.settings.collisionRadius * 2 - dist) * 0.5);
+                        if (this.movable(n1)) n1.position.add(push);
+                        if (this.movable(n2)) n2.position.sub(push);
                     }
 
                     if (this.settings.repulsion > 0 && distSq < 100000) {
-                        const repForce = this.settings.repulsion / distSq;
-                        push.copy(diffNormalized).multiplyScalar(repForce);
-
-                        if (!n1.data?.pinned && !n1.data?.physicsStatic) n1.position.add(push);
-                        if (!n2.data?.pinned && !n2.data?.physicsStatic) n2.position.sub(push);
+                        push.copy(diffNormalized).multiplyScalar(this.settings.repulsion / distSq);
+                        if (this.movable(n1)) n1.position.add(push);
+                        if (this.movable(n2)) n2.position.sub(push);
                     }
-
-                    MathPool.getInstance().releaseVector3(push);
-                    MathPool.getInstance().releaseVector3(diffNormalized);
-                    MathPool.getInstance().releaseVector3(diff);
-                }
+                });
             }
         }
+    }
 
-        for (const node of nodes) {
+    private _sync(nodes: readonly Node[]): void {
+        for (const node of nodes)
             node.updatePosition(node.position.x, node.position.y, node.position.z);
-        }
-
         for (const [, edge] of this.sg.graph.edges) edge.update?.();
     }
 }

@@ -47,6 +47,41 @@ export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
 
         const radiusStep = config.radiusStep ?? (maxHeightByDepth.get(1) ?? 0) + padding;
 
+        // One ring placement serves both tree children and orphans: each node gets an angular
+        // share of the ring proportional to its width, and the caller decides which ring to use.
+        const placeRing = (
+            ids: readonly string[],
+            radius: number,
+            startAngle: number,
+            span: number,
+        ): { min: number; max: number }[] => {
+            const shares = ids.map((id) => {
+                const bounds = nodes.get(id)?.getLayoutBounds() ?? {
+                    width: 200,
+                    height: 100,
+                    depth: 1,
+                };
+                return bounds.width + padding;
+            });
+            const total = shares.reduce((sum, share) => sum + share, 0);
+            let cursor = startAngle;
+
+            return ids.map((id, index) => {
+                const min = cursor;
+                const max = cursor + (shares[index]! / total) * span;
+                const angle = (min + max) / 2;
+                cursor = max;
+
+                const node = nodes.get(id);
+                if (node)
+                    this.applyPosition(
+                        node,
+                        new Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, config.z),
+                    );
+                return { min, max };
+            });
+        };
+
         const queue: Array<{ id: string; depth: number; minAngle: number; maxAngle: number }> = [
             {
                 id: resolvedRootId,
@@ -57,78 +92,28 @@ export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
         ];
         const visited = new Set<string>([resolvedRootId]);
 
-        while (queue.length) {
-            const { id, depth, minAngle, maxAngle } = queue.shift()!;
+        for (let head = 0; head < queue.length; head++) {
+            const { id, depth, minAngle, maxAngle } = queue[head]!;
             const nodeChildren = (children.get(id) ?? []).filter((child) => !visited.has(child));
             if (!nodeChildren.length) continue;
 
-            // Compute angular shares proportional to (node width + padding)
-            const shares: number[] = [];
-            let totalShare = 0;
-            for (const childId of nodeChildren) {
-                const node = nodes.get(childId);
-                const bounds = node?.getLayoutBounds() ?? { width: 200, height: 100, depth: 1 };
-                const share = bounds.width + padding;
-                shares.push(share);
-                totalShare += share;
-            }
-
             const radius = config.baseRadius + depth * radiusStep;
-            let currentAngle = minAngle;
+            const placed = placeRing(nodeChildren, radius, minAngle, maxAngle - minAngle);
 
-            for (const [i, childId] of nodeChildren.entries()) {
+            nodeChildren.forEach((childId, index) => {
                 visited.add(childId);
-                // Angular share proportional to (node width + padding) / totalShare
-                const share = shares[i] / totalShare;
-                const angle = currentAngle + share * (maxAngle - minAngle) / 2;
-                currentAngle += share * (maxAngle - minAngle);
-
-                const node = nodes.get(childId);
-                if (node) {
-                    this.applyPosition(
-                        node,
-                        new Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, config.z),
-                    );
-                }
                 queue.push({
                     id: childId,
                     depth: depth + 1,
-                    minAngle: currentAngle - share * (maxAngle - minAngle),
-                    maxAngle: currentAngle,
+                    minAngle: placed[index]!.min,
+                    maxAngle: placed[index]!.max,
                 });
-            }
+            });
         }
 
         const orphans = [...nodes.keys()].filter((id) => !visited.has(id));
-        if (orphans.length) {
-            // Compute shares for orphans too
-            const shares: number[] = [];
-            let totalShare = 0;
-            for (const id of orphans) {
-                const node = nodes.get(id);
-                const bounds = node?.getLayoutBounds() ?? { width: 200, height: 100, depth: 1 };
-                const share = bounds.width + padding;
-                shares.push(share);
-                totalShare += share;
-            }
-
-            const outerRadius = config.baseRadius + nodes.size * radiusStep;
-            let currentAngle = config.startAngle;
-            for (const [i, id] of orphans.entries()) {
-                const share = shares[i] / totalShare;
-                const angle = currentAngle + share * Math.PI;
-                currentAngle += share * 2 * Math.PI;
-
-                this.applyPosition(
-                    nodes.get(id) as Node,
-                    new Vector3(
-                        Math.cos(angle) * outerRadius,
-                        Math.sin(angle) * outerRadius,
-                        config.z,
-                    ),
-                );
-            }
-        }
+        if (orphans.length)
+            placeRing(orphans, config.baseRadius + nodes.size * radiusStep, config.startAngle, 2 * Math.PI);
     }
 
     protected defaultConfig(): RadialLayoutOptions {

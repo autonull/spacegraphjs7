@@ -176,6 +176,170 @@ const unionBounds = (a: ScopeBounds, b: ScopeBounds): ScopeBounds => {
     };
 };
 
+interface ScopeLayoutState {
+    readonly tree: ScopeTree;
+    readonly options: ScopeLayoutOptions;
+    readonly padding: number;
+    readonly localsByPath: Map<string, Map<string, Position>>;
+    readonly boundsByPath: Map<string, ScopeBounds>;
+    readonly locals: Map<string, Position>;
+    readonly frames: Map<string, ScopeFrame>;
+    readonly world: Map<string, Position>;
+    readonly edges: ScopeEdgeView[];
+}
+
+/** Shared 3-axis transform; only z tolerates a missing component, as scope positions allow. */
+const transformPoint = (origin: Position, scale: number, point: Position): Position => ({
+    x: origin.x + scale * point.x,
+    y: origin.y + scale * point.y,
+    z: origin.z + scale * (point.z ?? 0),
+});
+
+type ScopeItemExtra = Pick<GridMeta, 'lane' | 'row'> & Pick<TreeMeta, 'parent'>;
+
+const makeItem = (
+    id: string,
+    width: number,
+    height: number,
+    links: readonly string[],
+    depth: number,
+    extra?: ScopeItemExtra,
+): SolverItem => ({
+    id,
+    width,
+    height,
+    depth,
+    meta: { links, radius: Math.max(width, height) / 2, ...extra },
+});
+
+const portalSize = (bounds: ScopeBounds, padding: number): readonly [number, number] => [
+    bounds.size[0] + padding * 2,
+    bounds.size[1] + padding * 2,
+];
+
+function solveScopes(state: ScopeLayoutState, entry: ScopeEntry): void {
+    for (const child of entry.children) solveScopes(state, child);
+
+    const links = new Map<string, string[]>();
+    const addLink = (from: string, to: string): void => appendTo(links, from, to);
+    const portalNodeIds = new Map(
+        entry.nodes
+            .filter((node) => node.scope && entry.children.some((child) => child.spec.id === node.scope))
+            .map((node) => [node.scope!, node.id]),
+    );
+    const localId = (qualified: string): string | undefined => {
+        const prefix = `${entry.path}/`;
+        if (!qualified.startsWith(prefix)) return undefined;
+        const local = qualified.slice(prefix.length);
+        return portalNodeIds.get(local) ?? local;
+    };
+
+    for (const edge of entry.edges) {
+        const source = localId(resolveScopeRef(state.tree, entry.path, edge.source));
+        const target = localId(resolveScopeRef(state.tree, entry.path, edge.target));
+        if (source === undefined || target === undefined) continue;
+        addLink(source, target);
+        addLink(target, source);
+    }
+
+    const items: SolverItem[] = [];
+    for (const node of entry.nodes) {
+        const child = node.scope
+            ? entry.children.find((candidate) => candidate.spec.id === node.scope)
+            : undefined;
+        const bounds = child ? state.boundsByPath.get(child.path)! : undefined;
+        const [declaredWidth, declaredHeight] = node.size ?? [DEFAULT_WIDTH, DEFAULT_HEIGHT];
+        const [width, height] = bounds ? portalSize(bounds, state.padding) : [declaredWidth, declaredHeight];
+        items.push(
+            makeItem(node.id, width, height, links.get(node.id) ?? [], node.depth ?? 0, {
+                lane: node.lane,
+                row: node.row,
+                parent: node.parent,
+            }),
+        );
+    }
+
+    for (const child of entry.children) {
+        if (portalNodeIds.has(child.spec.id)) continue;
+        const [width, height] = portalSize(state.boundsByPath.get(child.path)!, state.padding);
+        items.push(makeItem(child.spec.id, width, height, links.get(child.spec.id) ?? [], 0));
+    }
+
+    const solver = makeSolver(
+        entry.spec.strategy ?? state.options.strategy ?? 'force',
+        (hashPath(entry.path) ^ (state.options.seed ?? 0)) >>> 0,
+        state.options,
+        items,
+    );
+    const previous = state.options.previous?.get(entry.path);
+    const solved = solver.place(items, state.options.warmStart ? previous : undefined);
+    const local = new Map<string, Position>();
+
+    for (const item of items) {
+        const qualified = `${entry.path}/${item.id}`;
+        const held = state.options.pinned?.has(qualified) ? previous?.get(item.id) : undefined;
+        const position = held ?? solved.get(item.id) ?? zero();
+        local.set(item.id, position);
+        state.locals.set(qualified, position);
+    }
+    state.localsByPath.set(entry.path, local);
+    state.boundsByPath.set(entry.path, boundsOf(items, local));
+}
+
+function placeFrames(state: ScopeLayoutState, entry: ScopeEntry, parent?: ScopeFrame): void {
+    const scale = (parent?.scale ?? 1) * (entry.spec.scale ?? 1);
+    const local = state.localsByPath.get(entry.path)!;
+    const parentEntry = parent ? state.tree.byPath.get(parent.id) : undefined;
+    const portalNodeId =
+        parentEntry?.nodes.find((node) => node.scope === entry.spec.id)?.id ?? entry.spec.id;
+    const portal = parent ? state.localsByPath.get(parent.id)?.get(portalNodeId) : undefined;
+    const offset = entry.spec.offset ?? zero();
+    const origin = parent
+        ? transformPoint(parent.origin, parent.scale, {
+              x: (portal?.x ?? 0) + offset.x,
+              y: (portal?.y ?? 0) + offset.y,
+              z: (portal?.z ?? 0) + offset.z,
+          })
+        : { x: offset.x, y: offset.y, z: offset.z };
+
+    const frame: ScopeFrame = {
+        id: entry.path,
+        parent: parent?.id,
+        depth: entry.depth,
+        origin,
+        scale,
+        bounds: scaleBounds(state.boundsByPath.get(entry.path)!, origin, scale),
+        active: state.options.active ? state.options.active.has(entry.path) : true,
+    };
+    state.frames.set(entry.path, frame);
+
+    for (const node of entry.nodes)
+        state.world.set(
+            `${entry.path}/${node.id}`,
+            transformPoint(origin, scale, local.get(node.id) ?? zero()),
+        );
+    for (const child of entry.children) placeFrames(state, child, frame);
+}
+
+function collectScopeEdges(state: ScopeLayoutState, entry: ScopeEntry): void {
+    for (const edge of entry.edges) {
+        const source = resolveScopeRef(state.tree, entry.path, edge.source);
+        const target = resolveScopeRef(state.tree, entry.path, edge.target);
+        const from = state.world.get(source) ?? state.frames.get(source)?.origin;
+        const to = state.world.get(target) ?? state.frames.get(target)?.origin;
+        if (!from || !to) throw new ScopeError('unknown-endpoint', `cannot project edge ${edge.id}`);
+        state.edges.push({
+            id: edge.id,
+            source,
+            target,
+            from,
+            to,
+            interScope: scopeOf(state.tree, source) !== scopeOf(state.tree, target),
+        });
+    }
+    for (const child of entry.children) collectScopeEdges(state, child);
+}
+
 /** Scale-aware packing: sparse coverage tightens collision slack toward the target, floored at half. */
 export const occupancySpacingFactor = (occupancy?: number, target?: number): number => {
     if (!occupancy || !target || target <= 0) return 1;
@@ -237,164 +401,32 @@ export function activeScopePaths(tree: ScopeTree, signals: ScopeSignals = {}): R
 
 /** Solve every scope, compose their frames, and project the full graph into world space. */
 export function layoutScopes(tree: ScopeTree, options: ScopeLayoutOptions = {}): ScopeLayout {
-    const padding = options.nodePadding ?? 20;
-    const localsByPath = new Map<string, Map<string, Position>>();
-    const boundsByPath = new Map<string, ScopeBounds>();
-    const locals = new Map<string, Position>();
-
-    const solve = (entry: ScopeEntry): void => {
-        for (const child of entry.children) solve(child);
-
-        const links = new Map<string, string[]>();
-        const addLink = (from: string, to: string): void => appendTo(links, from, to);
-        const portalNodeIds = new Map(
-            entry.nodes
-                .filter((node) => node.scope && entry.children.some((child) => child.spec.id === node.scope))
-                .map((node) => [node.scope!, node.id]),
-        );
-        const localId = (qualified: string): string | undefined => {
-            const prefix = `${entry.path}/`;
-            if (!qualified.startsWith(prefix)) return undefined;
-            const local = qualified.slice(prefix.length);
-            return portalNodeIds.get(local) ?? local;
-        };
-
-        for (const edge of entry.edges) {
-            const source = localId(resolveScopeRef(tree, entry.path, edge.source));
-            const target = localId(resolveScopeRef(tree, entry.path, edge.target));
-            if (source === undefined || target === undefined) continue;
-            addLink(source, target);
-            addLink(target, source);
-        }
-
-        const items: SolverItem[] = [];
-        for (const node of entry.nodes) {
-            const child = node.scope ? entry.children.find((candidate) => candidate.spec.id === node.scope) : undefined;
-            const [declaredWidth, declaredHeight] = node.size ?? [DEFAULT_WIDTH, DEFAULT_HEIGHT];
-            const bounds = child ? boundsByPath.get(child.path)! : undefined;
-            const width = bounds ? bounds.size[0] + padding * 2 : declaredWidth;
-            const height = bounds ? bounds.size[1] + padding * 2 : declaredHeight;
-            items.push({
-                id: node.id,
-                width,
-                height,
-                depth: node.depth ?? 0,
-                meta: {
-                    links: links.get(node.id) ?? [],
-                    radius: Math.max(width, height) / 2,
-                    lane: node.lane,
-                    row: node.row,
-                    parent: node.parent,
-                },
-            });
-        }
-
-        for (const child of entry.children) {
-            if (portalNodeIds.has(child.spec.id)) continue;
-            const bounds = boundsByPath.get(child.path)!;
-            const width = bounds.size[0] + padding * 2;
-            const height = bounds.size[1] + padding * 2;
-            items.push({
-                id: child.spec.id,
-                width,
-                height,
-                depth: 0,
-                meta: { links: links.get(child.spec.id) ?? [], radius: Math.max(width, height) / 2 },
-            });
-        }
-
-        const solver = makeSolver(
-            entry.spec.strategy ?? options.strategy ?? 'force',
-            (hashPath(entry.path) ^ (options.seed ?? 0)) >>> 0,
-            options,
-            items,
-        );
-        const previous = options.previous?.get(entry.path);
-        const solved = solver.place(items, options.warmStart ? previous : undefined);
-        const local = new Map<string, Position>();
-
-        for (const item of items) {
-            const qualified = `${entry.path}/${item.id}`;
-            const held = options.pinned?.has(qualified) ? previous?.get(item.id) : undefined;
-            const position = held ?? solved.get(item.id) ?? zero();
-            local.set(item.id, position);
-            locals.set(qualified, position);
-        }
-        localsByPath.set(entry.path, local);
-        boundsByPath.set(entry.path, boundsOf(items, local));
+    const state: ScopeLayoutState = {
+        tree,
+        options,
+        padding: options.nodePadding ?? 20,
+        localsByPath: new Map(),
+        boundsByPath: new Map(),
+        locals: new Map(),
+        frames: new Map(),
+        world: new Map(),
+        edges: [],
     };
-    for (const root of tree.roots) solve(root);
+    for (const root of tree.roots) solveScopes(state, root);
+    for (const root of tree.roots) placeFrames(state, root);
+    for (const root of tree.roots) collectScopeEdges(state, root);
 
-    const frames = new Map<string, ScopeFrame>();
-    const world = new Map<string, Position>();
-
-    const placeFrame = (entry: ScopeEntry, parent?: ScopeFrame): void => {
-        const scale = (parent?.scale ?? 1) * (entry.spec.scale ?? 1);
-        const local = localsByPath.get(entry.path)!;
-        const parentEntry = parent ? tree.byPath.get(parent.id) : undefined;
-        const portalNodeId =
-            parentEntry?.nodes.find((node) => node.scope === entry.spec.id)?.id ?? entry.spec.id;
-        const portal = parent ? localsByPath.get(parent.id)?.get(portalNodeId) : undefined;
-        const offset = entry.spec.offset ?? zero();
-        const origin = parent
-            ? {
-                  x: parent.origin.x + parent.scale * ((portal?.x ?? 0) + offset.x),
-                  y: parent.origin.y + parent.scale * ((portal?.y ?? 0) + offset.y),
-                  z: parent.origin.z + parent.scale * ((portal?.z ?? 0) + offset.z),
-              }
-            : { x: offset.x, y: offset.y, z: offset.z };
-
-        frames.set(entry.path, {
-            id: entry.path,
-            parent: parent?.id,
-            depth: entry.depth,
-            origin,
-            scale,
-            bounds: scaleBounds(boundsByPath.get(entry.path)!, origin, scale),
-            active: options.active ? options.active.has(entry.path) : true,
-        });
-
-        for (const node of entry.nodes) {
-            const position = local.get(node.id) ?? zero();
-            world.set(`${entry.path}/${node.id}`, {
-                x: origin.x + scale * position.x,
-                y: origin.y + scale * position.y,
-                z: origin.z + scale * (position.z ?? 0),
-            });
-        }
-        for (const child of entry.children) placeFrame(child, frames.get(entry.path)!);
-    };
-    for (const root of tree.roots) placeFrame(root);
-
-    const edges: ScopeEdgeView[] = [];
-    const collectEdges = (entry: ScopeEntry): void => {
-        for (const edge of entry.edges) {
-            const source = resolveScopeRef(tree, entry.path, edge.source);
-            const target = resolveScopeRef(tree, entry.path, edge.target);
-            const from = world.get(source) ?? frames.get(source)?.origin;
-            const to = world.get(target) ?? frames.get(target)?.origin;
-            if (!from || !to) {
-                throw new ScopeError('unknown-endpoint', `cannot project edge ${edge.id}`);
-            }
-            edges.push({
-                id: edge.id,
-                source,
-                target,
-                from,
-                to,
-                interScope: scopeOf(tree, source) !== scopeOf(tree, target),
-            });
-        }
-        for (const child of entry.children) collectEdges(child);
-    };
-    for (const root of tree.roots) collectEdges(root);
-
-    const frameBounds = [...frames.values()].map((frame) => frame.bounds);
+    const frameBounds = [...state.frames.values()].map((frame) => frame.bounds);
     const bounds = frameBounds.length
-        ? frameBounds.slice(1).reduce(unionBounds, frameBounds[0])
+        ? frameBounds.slice(1).reduce(unionBounds, frameBounds[0]!)
         : emptyBounds();
-
-    return { positions: world, locals, frames, edges, bounds };
+    return {
+        positions: state.world,
+        locals: state.locals,
+        frames: state.frames,
+        edges: state.edges,
+        bounds,
+    };
 }
 
 /** The incremental change between two scope layouts, for animated transitions. */

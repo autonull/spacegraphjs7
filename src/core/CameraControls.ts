@@ -18,6 +18,37 @@ import type { Surface } from './Surface';
 // The flight curve. gsap's `power2.out` is the cubic-out curve the camera has always used.
 const cubicOut = gsap.parseEase('power2.out');
 
+/** The channels of one camera flight. All share a clock; `null` means a channel is not animated. */
+interface CameraFlight {
+    target: Vector3 | null;
+    radius: number | null;
+    phi: number | null;
+    theta: number | null;
+    zoom: number | null;
+    startTime: number;
+    duration: number;
+    fromTarget: Vector3;
+    fromRadius: number;
+    fromPhi: number;
+    fromTheta: number;
+    fromZoom: number;
+}
+
+const createFlight = (): CameraFlight => ({
+    target: null,
+    radius: null,
+    phi: null,
+    theta: null,
+    zoom: null,
+    startTime: 0,
+    duration: 0,
+    fromTarget: new Vector3(),
+    fromRadius: 0,
+    fromPhi: 0,
+    fromTheta: 0,
+    fromZoom: 1,
+});
+
 export interface CameraControlsConfig {
     enableRotate: boolean;
     enableZoom: boolean;
@@ -89,18 +120,7 @@ export class CameraControls {
     }> = [];
     readonly MAX_ZOOM_DEPTH = 8;
     private keyState = new Map<string, boolean>();
-    private targetNext: Vector3 | null = null;
-    private radiusNext: number | null = null;
-    private phiNext: number | null = null;
-    private thetaNext: number | null = null;
-    private zoomNext: number | null = null;
-    private animStartTime = 0;
-    private animDuration = 0;
-    private startTarget = new Vector3();
-    private startRadius = 0;
-    private startPhi = 0;
-    private startTheta = 0;
-    private startZoom = 1;
+    private flight: CameraFlight | null = null;
     private isOrthographic = false;
     private orbitInOrthographic = false;
     private orthoCamera: OrthographicCamera | null = null;
@@ -204,7 +224,15 @@ export class CameraControls {
         this.zoom(factor);
     }
 
-    update(): void {
+    /** Mirrors the historical guard: only target, phi and zoom sustain a flight. */
+    private get activeFlight(): CameraFlight | null {
+        const flight = this.flight;
+        return flight && (flight.target || flight.phi !== null || flight.zoom !== null)
+            ? flight
+            : null;
+    }
+
+    private applyKeyboardInput(): void {
         _camRight.setFromMatrixColumn(this.camera.matrix, 0);
         _camForward.setFromMatrixColumn(this.camera.matrix, 2).negate();
         _camUp.copy(this.camera.up);
@@ -226,7 +254,9 @@ export class CameraControls {
         for (const { key, factor } of KEY_CONFIG.zoom) {
             if (this.keyState.get(key)) this.scale *= factor;
         }
+    }
 
+    private integrateDeltas(): void {
         this.spherical.theta += this.sphericalDelta.theta;
         this.spherical.phi += this.sphericalDelta.phi;
         this.spherical.phi = clamp(this.spherical.phi, 0.01, Math.PI - 0.01);
@@ -243,53 +273,53 @@ export class CameraControls {
             );
         }
         this.target.add(this.panOffset);
+    }
 
-        if (this.targetNext || this.phiNext !== null || this.zoomNext !== null) {
-            const elapsed = performance.now() - this.animStartTime;
-            const t = Math.min(elapsed / this.animDuration, 1);
-            const eased = cubicOut(t);
+    private advanceFlight(): void {
+        const flight = this.activeFlight;
+        if (!flight) return;
 
-            if (this.sg?.events) {
-                this.sg.events.emit('camera:fly:progress', t);
-            }
+        const t = Math.min((performance.now() - flight.startTime) / flight.duration, 1);
+        const eased = cubicOut(t);
+        this.sg?.events?.emit('camera:fly:progress', t);
 
-            if (this.targetNext) this.target.lerpVectors(this.startTarget, this.targetNext, eased);
-            if (this.radiusNext)
-                this.spherical.radius =
-                    this.startRadius + (this.radiusNext - this.startRadius) * eased;
-            if (this.phiNext !== null)
-                this.spherical.phi = this.startPhi + (this.phiNext - this.startPhi) * eased;
-            if (this.thetaNext !== null)
-                this.spherical.theta = this.startTheta + (this.thetaNext - this.startTheta) * eased;
-            if (this.zoomNext !== null) {
-                const ortho = this.camera as OrthographicCamera;
-                ortho.zoom = this.startZoom + (this.zoomNext - this.startZoom) * eased;
-                ortho.updateProjectionMatrix();
-            }
-            if (t >= 1) {
-                this.targetNext = null;
-                this.radiusNext = null;
-                this.phiNext = null;
-                this.thetaNext = null;
-                this.zoomNext = null;
-                if (this.sg?.events) {
-                    this.sg.events.emit('camera:fly:end');
-                }
-            }
+        if (flight.target) this.target.lerpVectors(flight.fromTarget, flight.target, eased);
+        if (flight.radius)
+            this.spherical.radius = flight.fromRadius + (flight.radius - flight.fromRadius) * eased;
+        if (flight.phi !== null)
+            this.spherical.phi = flight.fromPhi + (flight.phi - flight.fromPhi) * eased;
+        if (flight.theta !== null)
+            this.spherical.theta = flight.fromTheta + (flight.theta - flight.fromTheta) * eased;
+        if (flight.zoom !== null) {
+            const ortho = this.camera as OrthographicCamera;
+            ortho.zoom = flight.fromZoom + (flight.zoom - flight.fromZoom) * eased;
+            ortho.updateProjectionMatrix();
         }
 
+        if (t >= 1) {
+            flight.target = null;
+            flight.radius = null;
+            flight.phi = null;
+            flight.theta = null;
+            flight.zoom = null;
+            this.sg?.events?.emit('camera:fly:end');
+        }
+    }
+
+    private commitCamera(): void {
         this.camera.position.copy(this.target).add(_tempVec.setFromSpherical(this.spherical));
         this.camera.lookAt(this.target);
         this.sphericalDelta.set(0, 0, 0);
         this.scale = 1;
         this.panOffset.set(0, 0, 0);
-        if (
-            this.targetNext ||
-            this.phiNext !== null ||
-            this.zoomNext !== null ||
-            [...this.keyState.values()].some(Boolean)
-        )
-            this.requestFrame();
+    }
+
+    update(): void {
+        this.applyKeyboardInput();
+        this.integrateDeltas();
+        this.advanceFlight();
+        this.commitCamera();
+        if (this.activeFlight || [...this.keyState.values()].some(Boolean)) this.requestFrame();
     }
 
     panBy(dx: number, dy: number): void {
@@ -381,28 +411,21 @@ export class CameraControls {
     }
 
     setTargetSmooth(target: Vector3, radius: number, duration = 1.0, zoom?: number): void {
-        this.startTarget.copy(this.target);
-        this.startRadius = this.spherical.radius;
-        this.targetNext = target.clone();
-        this.radiusNext = radius;
-        if (zoom !== undefined && this.isOrthographic) {
-            this.startZoom = (this.camera as OrthographicCamera).zoom;
-            this.zoomNext = this.clampOrthoZoom(zoom);
-        } else {
-            this.zoomNext = null;
-        }
-        this.animStartTime = performance.now();
-        this.animDuration = duration * 1000;
+        const flight = (this.flight ??= createFlight());
+        flight.fromTarget.copy(this.target);
+        flight.fromRadius = this.spherical.radius;
+        flight.target = target.clone();
+        flight.radius = radius;
+        flight.zoom = zoom !== undefined && this.isOrthographic ? this.clampOrthoZoom(zoom) : null;
+        if (flight.zoom !== null) flight.fromZoom = (this.camera as OrthographicCamera).zoom;
+        flight.startTime = performance.now();
+        flight.duration = duration * 1000;
         this.requestFrame();
     }
 
     // Abandon any in-flight camera animation so an explicit programmatic move is authoritative.
     cancelTweens(): void {
-        this.targetNext = null;
-        this.radiusNext = null;
-        this.phiNext = null;
-        this.thetaNext = null;
-        this.zoomNext = null;
+        this.flight = null;
     }
 
     setTarget(x: number, y: number, z: number): void {
@@ -437,15 +460,18 @@ export class CameraControls {
         if (duration <= 0) {
             this.spherical.phi = targetPhi;
             this.spherical.theta = theta;
-            this.phiNext = null;
-            this.thetaNext = null;
+            if (this.flight) {
+                this.flight.phi = null;
+                this.flight.theta = null;
+            }
         } else {
-            this.startPhi = this.spherical.phi;
-            this.startTheta = this.spherical.theta;
-            this.phiNext = targetPhi;
-            this.thetaNext = theta;
-            this.animStartTime = performance.now();
-            this.animDuration = duration * 1000;
+            const flight = (this.flight ??= createFlight());
+            flight.fromPhi = this.spherical.phi;
+            flight.fromTheta = this.spherical.theta;
+            flight.phi = targetPhi;
+            flight.theta = theta;
+            flight.startTime = performance.now();
+            flight.duration = duration * 1000;
         }
         this.requestFrame();
     }
