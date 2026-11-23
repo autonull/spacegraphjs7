@@ -1,41 +1,13 @@
 // Minimal graph types for trace classification.
 // The host provides these; the trace package never imports session vocabulary.
+import type { GraphEdge, GraphNode, GraphViewData } from '@spacegraphjs/kernel';
 
-export interface TraceNode {
-    id: string;
-    kind: string;
-    label: string;
-    summary?: string;
-    status?: string;
-    turnID?: string;
-    messageID?: string;
-    partID?: string;
-    toolID?: string;
-    time?: number;
-    derived?: boolean;
-    minLevel?: string;
-    clusterOf?: string[];
-    data?: Record<string, unknown>;
-}
-
-export interface TraceEdge {
-    id: string;
-    kind: string;
-    source: string;
-    target: string;
-    confidence?: string;
-    label?: string;
-    data?: Record<string, unknown>;
-}
-
-export interface TraceModel {
-    root: string;
+export type TraceNode = GraphNode & { summary?: string };
+export type TraceEdge = GraphEdge & { label?: string; data?: Record<string, unknown> };
+export type TraceModel = Omit<GraphViewData, 'nodes' | 'edges'> & {
     nodes: readonly TraceNode[];
     edges: readonly TraceEdge[];
-    turns: readonly string[];
-    turnByMessageID: Map<string, string>;
-    activeTurn?: string;
-}
+};
 
 // Host-provided traversal functions.
 export interface TraceTraversal {

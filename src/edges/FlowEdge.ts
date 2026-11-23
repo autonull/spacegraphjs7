@@ -1,6 +1,7 @@
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
+import { EdgeColors } from '../core/constants';
 import { Edge, withEdgeData } from './Edge';
 
 /**
@@ -33,7 +34,7 @@ export class FlowEdge extends Edge {
                 dashed: true,
                 dashSize: 5,
                 gapSize: 5,
-                color: 0x00ff00,
+                color: EdgeColors.FLOW,
                 thickness: data?.lineWidth ?? 2,
                 opacity,
             }),

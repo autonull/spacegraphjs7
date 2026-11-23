@@ -1,6 +1,7 @@
 import { ANATOMY_KINDS, anatomyCard } from './anatomy';
 import { registerCardTemplate } from './adapter';
 import { PiHost, el } from './host';
+import { renderEvidence } from './index-views';
 import { decodeOp } from './ops';
 import { installShellTokens } from './shell';
 
@@ -9,11 +10,7 @@ installShellTokens(document);
 const clientID = crypto.randomUUID();
 const host = new PiHost();
 
-const showError = (message: string): void => {
-    const item = document.createElement('li');
-    item.textContent = message;
-    el('evidence').replaceChildren(item);
-};
+const showError = (message: string): void => renderEvidence([message]);
 
 const boot = async (): Promise<void> => {
     const params = new URLSearchParams(location.search);

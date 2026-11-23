@@ -86,6 +86,9 @@ export const EdgeColors = Object.freeze({
     INCOMING: 0xffaa00,
     OUTGOING: 0xff6600,
     INACTIVE: 0x666666,
+    MUTED: 0x888888,
+    FLOW: 0x00ff00,
+    PARTICLE_TRACK: 0x444444,
 } as const);
 
 export const WCAG = Object.freeze({

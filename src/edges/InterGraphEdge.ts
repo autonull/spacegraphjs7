@@ -5,6 +5,7 @@ import type { EdgeData, EdgeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 import { dataColor, toCssColor } from '../utils/color';
 import { worldToClient } from '../utils/projection';
+import { EdgeColors } from '../core/constants';
 import { Edge } from './Edge';
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
@@ -27,7 +28,7 @@ export class InterGraphEdge extends Edge {
         this.svgLine = DOMUtils.createElementNS(SVG_NAMESPACE, 'path') as SVGPathElement;
 
         const data = spec.data as EdgeData & { color?: number | string };
-        this.svgLine.setAttribute('stroke', toCssColor(data?.color ?? 0x666666));
+        this.svgLine.setAttribute('stroke', toCssColor(data?.color ?? EdgeColors.INACTIVE));
         this.svgLine.setAttribute('stroke-width', '2');
         this.svgLine.setAttribute('fill', 'none');
         this.svgLine.setAttribute('stroke-dasharray', '5, 5');

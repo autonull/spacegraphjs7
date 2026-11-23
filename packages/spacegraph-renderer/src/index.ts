@@ -6,6 +6,7 @@ import {
     type GraphRenderer,
     type Projection,
     type RendererCapabilities,
+    rendererCapabilities,
     type RendererViewport,
     type RenderModel,
     type RenderTheme,
@@ -23,14 +24,12 @@ import { CAMERA_MOTION_VERBS } from 'spacegraphjs/motion';
 import { SCENE_FEATURES } from 'spacegraphjs/world';
 import { edgeSpec, nodeSpec, spaceGraphTheme } from './mapping';
 
-const CAPABILITIES: RendererCapabilities = {
+const CAPABILITIES: RendererCapabilities = rendererCapabilities({
     projections: ['2d', '3d'],
     depths: ['flat', 'layered', 'depth-stack', 'orbit'],
     domNodes: true,
     maxDomNodes: 80,
-    edgeLabels: true,
     clusterNodes: true,
-    minimap: false,
     maxRecommendedNodes: 300,
     zoomRange: { min: 0, max: 1 },
     cardFacing: true,
@@ -39,7 +38,7 @@ const CAPABILITIES: RendererCapabilities = {
     widgetSlots: [...WIDGET_SLOTS],
     motionVerbs: [...CAMERA_MOTION_VERBS],
     sceneFeatures: [...SCENE_FEATURES],
-};
+});
 
 // Wraps the lean SpaceGraphJS core behind the dependency-free contract. It is the only package that
 // imports both the core and the contract; the core never imports the contract.

@@ -797,17 +797,16 @@ export abstract class Node extends Surface {
     }
 
     dispose(): void {
-        this.emit('surface:destroying', { surface: this, timestamp: Date.now() });
-        this.emit('node:destroying', { node: this, timestamp: Date.now() });
-        this.object.parent?.remove(this.object);
-        if (this.outlineObject) {
-            this.outlineObject.parent?.remove(this.outlineObject);
-            this.outlineObject.geometry?.dispose();
-            (this.outlineObject.material as THREE.Material)?.dispose();
-            this.outlineObject = undefined;
-        }
-        ThreeDisposer.dispose(this.object);
-        this.removeAllListeners();
+        this.destroySurface('node', () => {
+            this.object.parent?.remove(this.object);
+            if (this.outlineObject) {
+                this.outlineObject.parent?.remove(this.outlineObject);
+                this.outlineObject.geometry?.dispose();
+                (this.outlineObject.material as THREE.Material)?.dispose();
+                this.outlineObject = undefined;
+            }
+            ThreeDisposer.dispose(this.object);
+        });
     }
 }
 

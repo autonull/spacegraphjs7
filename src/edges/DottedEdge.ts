@@ -1,6 +1,7 @@
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
+import { EdgeColors } from '../core/constants';
 import { Edge, withEdgeData } from './Edge';
 
 /**
@@ -24,7 +25,7 @@ export class DottedEdge extends Edge {
                 dashed: true,
                 dashSize: 8,
                 gapSize: 6,
-                color: 0x888888,
+                color: EdgeColors.MUTED,
                 thickness: 2,
             }),
             source,

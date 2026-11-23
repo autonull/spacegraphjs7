@@ -432,14 +432,12 @@ export class Edge extends Surface {
     }
 
     dispose(): void {
-        this.emit('surface:destroying', { surface: this, timestamp: Date.now() });
-        this.emit('edge:destroying', { edge: this, timestamp: Date.now() });
-        this.line?.geometry?.dispose();
-        this.line?.material?.dispose();
-        this.line?.parent?.remove(this.line);
-
-        disposeArrowheads(this.arrowheads);
-        this.removeAllListeners();
+        this.destroySurface('edge', () => {
+            this.line?.geometry?.dispose();
+            this.line?.material?.dispose();
+            this.line?.parent?.remove(this.line);
+            disposeArrowheads(this.arrowheads);
+        });
     }
 
     private _setGradientColors(): void {

@@ -8,6 +8,7 @@ import {
     type GraphRenderer,
     type Projection,
     type RendererCapabilities,
+    rendererCapabilities,
     type RenderEdge,
     type RenderModel,
     type RenderNode,
@@ -198,21 +199,9 @@ export class InlineGraph {
     }
 }
 
-const SVG_CAPABILITIES: RendererCapabilities = {
-    projections: ['2d'],
-    depths: ['flat'],
-    domNodes: false,
-    maxDomNodes: 0,
-    edgeLabels: true,
-    clusterNodes: false,
-    minimap: false,
-    maxRecommendedNodes: 1000,
+const SVG_CAPABILITIES: RendererCapabilities = rendererCapabilities({
     zoomRange: { min: 1, max: 1 },
-    cardFacing: false,
-    fitInsets: false,
-    motionVerbs: [],
-    sceneFeatures: [],
-};
+});
 
 /** The static SVG backend behind the shared renderer contract. Camera and selection calls no-op. */
 export class SvgRenderer extends ModelRenderer implements GraphRenderer {

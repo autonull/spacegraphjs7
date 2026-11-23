@@ -3,6 +3,7 @@ import { ThreeDisposer } from '../utils';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
+import { EdgeColors } from '../core/constants';
 import { Edge } from './Edge';
 
 export class AnimatedEdge extends Edge {
@@ -26,7 +27,7 @@ export class AnimatedEdge extends Edge {
         this.isReversed = data?.reverse ?? false;
 
         const material = this.object.material;
-        material.color.setHex(data?.color ?? 0x444444);
+        material.color.setHex(data?.color ?? EdgeColors.PARTICLE_TRACK);
         material.transparent = true;
         material.opacity = 0.4;
 

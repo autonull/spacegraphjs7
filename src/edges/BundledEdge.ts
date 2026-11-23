@@ -6,6 +6,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
 import { dataColor } from '../utils/color';
 import { directionBetween, perpendicularTo } from '../utils/vector';
+import { EdgeColors } from '../core/constants';
 import { Edge } from './Edge';
 
 export class BundledEdge extends Edge {
@@ -38,7 +39,7 @@ export class BundledEdge extends Edge {
         }
 
         const material = new THREE.LineBasicMaterial({
-            color: data?.color ?? 0x888888,
+            color: data?.color ?? EdgeColors.MUTED,
             transparent: true,
             opacity: data?.opacity ?? 0.6,
         });

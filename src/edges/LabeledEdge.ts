@@ -5,6 +5,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec, LabelLodLevel } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 import { midpoint } from '../utils/vector';
+import { EdgeColors } from '../core/constants';
 import { Edge, withEdgeData } from './Edge';
 
 /**
@@ -26,7 +27,7 @@ export class LabeledEdge extends Edge {
     private ready = false;
 
     constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
-        super(sg, withEdgeData(spec, { color: 0x888888 }), source, target);
+        super(sg, withEdgeData(spec, { color: EdgeColors.MUTED }), source, target);
 
         const data = spec.data as EdgeData & {
             labelColor?: string;

@@ -3,6 +3,17 @@ import type { Catalog } from './catalog';
 import { button, el } from './dom';
 import type { ScopeSpec } from 'spacegraphjs/layout';
 
+/** Replace the evidence list with one row per line. */
+export function renderEvidence(lines: readonly string[]): void {
+    el('evidence').replaceChildren(
+        ...lines.map((line) => {
+            const item = document.createElement('li');
+            item.textContent = line;
+            return item;
+        }),
+    );
+}
+
 export function renderOverview(
     specs: readonly ScopeSpec[],
     view: GraphViewData,

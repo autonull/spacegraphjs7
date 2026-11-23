@@ -9,26 +9,19 @@ import {
     type RenderTheme,
     type RenderNode,
     type RenderEdge,
+    rendererCapabilities,
 } from '@spacegraphjs/renderer';
 import type { Core } from 'cytoscape';
 import { frameInRegion } from './fit';
 import { cytoscapeStyle, edgeElement, nodeElement, normalizeTheme } from './mapping';
 
-const CAPABILITIES: RendererCapabilities = {
-    projections: ['2d'],
-    depths: ['flat'],
+const CAPABILITIES: RendererCapabilities = rendererCapabilities({
     domNodes: true,
     maxDomNodes: 20,
-    edgeLabels: true,
     clusterNodes: true,
-    minimap: false,
-    maxRecommendedNodes: 1000,
     zoomRange: { min: 0, max: Number.POSITIVE_INFINITY },
-    cardFacing: false,
     fitInsets: true,
-    motionVerbs: [],
-    sceneFeatures: [],
-};
+});
 
 const FIT_MARGIN = 30;
 

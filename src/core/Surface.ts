@@ -100,6 +100,14 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
 
     abstract delete(): void;
 
+    /** Announce destruction, run subtype cleanup, then drop every listener. */
+    protected destroySurface(kind: string, cleanup: () => void): void {
+        this.emit('surface:destroying', { surface: this, timestamp: Date.now() });
+        this.emit(`${kind}:destroying`, { [kind]: this, timestamp: Date.now() });
+        cleanup();
+        this.removeAllListeners();
+    }
+
     isDraggable(_localPos: Vector3): boolean {
         return true;
     }

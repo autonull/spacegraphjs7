@@ -173,9 +173,15 @@ import {
 } from './shell';
 import { SHORTCUT_HELP } from './help';
 import { ChromeController } from './chrome';
-import { button, el } from './dom';
+import { button, el, ensureChild, pruneChildren } from './dom';
 import { FocusLens } from './focus-lens';
-import { mountFirstRunHint, renderOverview, renderProofLine, renderTurnMap } from './index-views';
+import {
+    mountFirstRunHint,
+    renderOverview,
+    renderProofLine,
+    renderTurnMap,
+    renderEvidence,
+} from './index-views';
 import { drawMinimap } from './minimap';
 import { configureVision, VisionController } from './vision-controller';
 import { TranscriptView } from './transcript';
@@ -1083,13 +1089,11 @@ export class PiHost {
             const point = this.renderer.getNodeScreenPosition?.(node.id);
             if (!point) continue;
             live.add(node.id);
-            let halo = this.#fieldNodes.get(node.id);
-            if (!halo) {
-                halo = document.createElement('i');
-                halo.className = 'field-node';
-                field.append(halo);
-                this.#fieldNodes.set(node.id, halo);
-            }
+            const halo = ensureChild(this.#fieldNodes, node.id, field, () => {
+                const element = document.createElement('i');
+                element.className = 'field-node';
+                return element;
+            });
             halo.dataset.kind = node.kind;
             halo.style.setProperty('--field-kind', `var(--kind-${node.kind}, var(--view-causal))`);
             const size = Math.round(
@@ -1098,11 +1102,7 @@ export class PiHost {
             halo.style.setProperty('--field-size', `${size}px`);
             halo.style.transform = `translate(${Math.round(point.x)}px, ${Math.round(point.y)}px)`;
         }
-        for (const [id, halo] of this.#fieldNodes) {
-            if (live.has(id)) continue;
-            halo.remove();
-            this.#fieldNodes.delete(id);
-        }
+        pruneChildren(this.#fieldNodes, live);
     }
 
     /** Square-cornered scope frames and turn tabs, behind the cards and ribbons. */
@@ -1139,13 +1139,11 @@ export class PiHost {
             const minY = rect ? rect.y : Math.min(...points.map((point) => point.y)) - 34;
             const maxX = rect ? rect.x + rect.width : Math.max(...points.map((point) => point.x)) + 30;
             const maxY = rect ? rect.y + rect.height : Math.max(...points.map((point) => point.y)) + 30;
-            let hull = this.#hulls.get(spec.id);
-            if (!hull) {
-                hull = document.createElement('div');
-                hull.className = 'field-hull';
-                layer.append(hull);
-                this.#hulls.set(spec.id, hull);
-            }
+            const hull = ensureChild(this.#hulls, spec.id, layer, () => {
+                const element = document.createElement('div');
+                element.className = 'field-hull';
+                return element;
+            });
             const portalID = [...this.#portalByNode].find(([, scope]) => scope === spec.id)?.[0];
             const portal = portalID ? this.#view.nodes.find((node) => node.id === portalID) : undefined;
             const status = String(portal?.data?.status ?? portal?.status ?? '');
@@ -1161,11 +1159,7 @@ export class PiHost {
             hull.style.setProperty('--hull-label', `"${label}"`);
         }
 
-        for (const [id, hull] of this.#hulls) {
-            if (live.has(id)) continue;
-            hull.remove();
-            this.#hulls.delete(id);
-        }
+        pruneChildren(this.#hulls, live);
     }
 
     /** Resolve a spec id to its scope path; nested delegate scopes are path-qualified. */
@@ -2967,13 +2961,7 @@ export class PiHost {
 
     private showEvidence(lines: readonly string[]): void {
         this.#evidence = lines;
-        el('evidence').replaceChildren(
-            ...lines.map((line) => {
-                const item = document.createElement('li');
-                item.textContent = line;
-                return item;
-            }),
-        );
+        renderEvidence(lines);
     }
 
     private renderStatus(): void {

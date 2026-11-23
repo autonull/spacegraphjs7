@@ -227,6 +227,25 @@ export type RendererViewport = {
     band?: string;
 };
 
+/** The baseline 2D, dependency-free renderer profile; a backend overrides what it can honour. */
+export const rendererCapabilities = (
+    overrides: Partial<RendererCapabilities> = {},
+): RendererCapabilities => ({
+    projections: ['2d'],
+    depths: ['flat'],
+    domNodes: false,
+    maxDomNodes: 0,
+    edgeLabels: true,
+    clusterNodes: false,
+    minimap: false,
+    maxRecommendedNodes: 1000,
+    cardFacing: false,
+    fitInsets: false,
+    motionVerbs: [],
+    sceneFeatures: [],
+    ...overrides,
+});
+
 /**
  * Screen-space margins, in CSS pixels of the renderer's surface, that the framed content must stay
  * clear of: an inspector drawn over the canvas, a floating header, a bottom sheet, a minimap.
