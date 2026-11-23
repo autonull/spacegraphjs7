@@ -19,7 +19,7 @@ export class TextMeshNode extends Object3DNode {
         this.spriteMat = this.sprite.material as SpriteMaterial;
         this._object.add(this.sprite);
 
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
+        this.syncSpecTransform();
     }
 
     updateSpec(updates: Partial<NodeSpec>): this {

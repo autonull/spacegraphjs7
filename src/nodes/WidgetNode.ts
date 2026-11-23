@@ -62,7 +62,7 @@ export abstract class WidgetNode extends Node {
         this.focusable = true;
 
         this.initLabel(data);
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
+        this.syncSpecTransform();
     }
 
     get object(): Object3D {

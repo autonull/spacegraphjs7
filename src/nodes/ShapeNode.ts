@@ -74,7 +74,7 @@ export class ShapeNode extends Node {
         }
 
         this.applyOpacity();
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
+        this.syncSpecTransform();
     }
 
     get object(): Object3D {

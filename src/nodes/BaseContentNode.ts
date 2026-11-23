@@ -57,7 +57,7 @@ export abstract class BaseContentNode extends DOMNode {
         }
 
         if (updatePositionOnInit) {
-            this.updatePosition(this.position.x, this.position.y, this.position.z);
+            this.syncSpecTransform();
         }
     }
 

@@ -373,6 +373,11 @@ export abstract class Node extends Surface {
         return this;
     }
 
+    /** Aligns the Object3D transform with the spec-parsed position after construction. */
+    protected syncSpecTransform(): void {
+        this.updatePosition(this.position.x, this.position.y, this.position.z);
+    }
+
     moveBy(dx: number, dy: number, dz = 0): this {
         return this.updatePosition(
             this.position.x + dx,

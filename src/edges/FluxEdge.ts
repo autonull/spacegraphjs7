@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { EdgeColors } from '../core/constants';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
@@ -89,7 +90,7 @@ export class FluxEdge extends Edge {
             result.setIndex(indices);
             return result;
         };
-        const color = (spec.data?.color as number | undefined) ?? 0x3b82f6;
+        const color = (spec.data?.color as number | undefined) ?? EdgeColors.MESH_DEFAULT;
 
         this.mesh = new THREE.Mesh(geometry(this.#positions, this.#colors), this.material(color, 1, false));
         this.halo = new THREE.Mesh(

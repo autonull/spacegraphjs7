@@ -79,7 +79,7 @@ export class GlobeNode extends Node {
             this._renderMarkers(spec.data.markers as GlobeNodeData['markers'], r);
         }
 
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
+        this.syncSpecTransform();
     }
 
     get object(): Object3D {

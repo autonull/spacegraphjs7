@@ -1,7 +1,9 @@
 import { defineDomain, type DomainVocabulary, type Kernel } from '@spacegraphjs/kernel';
 import type { GraphNode, GraphViewData } from '@spacegraphjs/shared';
 import {
+    commonVocabulary,
     createRoleReader,
+    createRoleTags,
     dataString,
     mapViewEdges,
     mapViewNodes,
@@ -17,17 +19,7 @@ export type AgentEdgeKind = (typeof EDGE_KINDS)[number];
 export const AGENT_ROLES = ['run', 'unit', 'message', 'action', 'failure', 'retry', 'delegation', 'artifact', 'state'] as const;
 export type AgentRole = (typeof AGENT_ROLES)[number];
 
-export const ROLE_TAGS: Readonly<Record<string, AgentRole>> = {
-    run: 'run',
-    unit: 'unit',
-    message: 'message',
-    action: 'action',
-    failure: 'failure',
-    retry: 'retry',
-    delegation: 'delegation',
-    artifact: 'artifact',
-    state: 'state',
-};
+export const ROLE_TAGS = createRoleTags(AGENT_ROLES);
 
 /** Agent relations are conventions over ordinary edges; hosts may tag their own with `data.relation`. */
 export const AGENT_RELATIONS = {
@@ -67,11 +59,9 @@ export interface AgentView extends GraphViewData {
 
 export const agentVocabulary: DomainVocabulary = {
     lanes: ['run', 'unit', 'message', 'action'],
-    levels: ['overview', 'execution', 'detail'],
+    ...commonVocabulary(roleOf),
     laneOf: (node) => dataString(node, 'lane') ?? (roleOf(node) === 'run' ? 'run' : undefined),
     scopeIdOf: (node) => dataString(node, 'unitId') ?? dataString(node, 'runId'),
-    shapeOf: (node) => roleOf(node),
-    statusOf: (node) => node.status ?? dataString(node, 'status'),
     edgesVisibleAt: (edge, level) => level !== 'overview' || edge.kind !== 'orders',
 };
 

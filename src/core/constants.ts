@@ -80,6 +80,7 @@ export const Defaults = Object.freeze({
 
 export const EdgeColors = Object.freeze({
     DEFAULT: 0x00d0ff,
+    MESH_DEFAULT: 0x3b82f6,
     HIGHLIGHT: 0x00ffff,
     SELECTED: 0x00ff88,
     INCOMING: 0xffaa00,

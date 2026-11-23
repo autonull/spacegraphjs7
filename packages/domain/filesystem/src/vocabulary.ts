@@ -1,7 +1,9 @@
 import { defineDomain, type DomainVocabulary, type Kernel } from '@spacegraphjs/kernel';
 import type { GraphNode, GraphViewData } from '@spacegraphjs/shared';
 import {
+    commonVocabulary,
     createRoleReader,
+    createRoleTags,
     dataString,
     mapViewEdges,
     mapViewNodes,
@@ -25,13 +27,7 @@ export const FILESYSTEM_ROLES = [
 ] as const;
 export type FilesystemRole = (typeof FILESYSTEM_ROLES)[number];
 
-export const ROLE_TAGS: Readonly<Record<string, FilesystemRole>> = {
-    commit: 'commit',
-    file: 'file',
-    symbol: 'symbol',
-    change: 'change',
-    artifact: 'artifact',
-};
+export const ROLE_TAGS = createRoleTags(FILESYSTEM_ROLES);
 
 /** Relations are conventions over ordinary edges; hosts may tag their own with `data.relation`. */
 export const FILESYSTEM_RELATIONS = {
@@ -55,12 +51,10 @@ export interface FileSystemView extends GraphViewData {
 
 export const filesystemVocabulary: DomainVocabulary = {
     lanes: ['commit', 'file', 'symbol', 'change'],
-    levels: ['overview', 'execution', 'detail'],
+    ...commonVocabulary(roleOf),
     laneOf: (node) =>
         dataString(node, 'lane') ?? (roleOf(node) === 'commit' ? 'commit' : undefined),
     scopeIdOf: (node) => dataString(node, 'fileId') ?? dataString(node, 'commitId'),
-    shapeOf: (node) => roleOf(node),
-    statusOf: (node) => node.status ?? dataString(node, 'status'),
     edgesVisibleAt: (edge, level) =>
         level !== 'overview' || (edge.kind !== 'orders' && edge.kind !== 'depends'),
 };

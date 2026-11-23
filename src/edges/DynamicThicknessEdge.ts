@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { EdgeColors } from '../core/constants';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
@@ -31,7 +32,7 @@ export class DynamicThicknessEdge extends MeshEdge {
         geometry.rotateX(Math.PI / 2);
 
         const material = new THREE.MeshBasicMaterial({
-            color: (spec.data?.color as number) ?? 0x3b82f6,
+            color: (spec.data?.color as number) ?? EdgeColors.MESH_DEFAULT,
         });
 
         this.mesh = this.cylinder = new THREE.Mesh(geometry, material);

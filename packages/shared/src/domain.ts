@@ -16,6 +16,28 @@ export const createRoleReader =
     }): string =>
         dataString(node, 'role') ?? tags[node.kind] ?? node.kind;
 
+/** Builds the identity kind→role table from a domain's role list. */
+export const createRoleTags = <Role extends string>(
+    roles: readonly Role[],
+): Readonly<Record<string, Role>> =>
+    Object.fromEntries(roles.map((role) => [role, role])) as Readonly<Record<string, Role>>;
+
+/** The three rungs every domain vocabulary exposes. */
+export const DOMAIN_LEVELS = ['overview', 'execution', 'detail'] as const;
+
+type VocabularyNode = {
+    readonly kind: string;
+    readonly status?: string;
+    readonly data?: Readonly<Record<string, unknown>>;
+};
+
+/** Level ladder and default shape/status readers shared by all domain vocabularies. */
+export const commonVocabulary = (roleOf: (node: VocabularyNode) => string) => ({
+    levels: DOMAIN_LEVELS,
+    shapeOf: (node: VocabularyNode) => roleOf(node),
+    statusOf: (node: VocabularyNode) => node.status ?? dataString(node, 'status'),
+});
+
 /** An edge's advisory relation: host tag first, then its open-ended kind. */
 export const relationOf = (edge: {
     readonly kind: string;

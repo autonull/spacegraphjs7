@@ -38,7 +38,7 @@ export abstract class TexturedMeshNode extends Node {
         });
         this.plane = new Mesh(this.planeGeometry, this.planeMaterial);
         this._object.add(this.plane);
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
+        this.syncSpecTransform();
     }
 
     get object(): Object3D {

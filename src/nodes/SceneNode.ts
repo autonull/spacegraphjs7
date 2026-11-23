@@ -35,7 +35,7 @@ export class SceneNode extends Object3DNode {
             logger.warn('Node %s: No URL provided.', this.id);
         }
 
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
+        this.syncSpecTransform();
     }
 
     update() {

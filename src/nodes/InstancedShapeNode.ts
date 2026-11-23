@@ -30,7 +30,7 @@ export class InstancedShapeNode extends BaseInstancedNode {
     constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
         super(sg, spec);
         this.registerInstance();
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
+        this.syncSpecTransform();
     }
 
     dispose(): void {

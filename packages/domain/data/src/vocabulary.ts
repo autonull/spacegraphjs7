@@ -2,7 +2,9 @@ import { defineDomain, type DomainVocabulary, type Kernel } from '@spacegraphjs/
 import type { GraphViewData } from '@spacegraphjs/shared';
 import {
     buildRunView,
+    commonVocabulary,
     createRoleReader,
+    createRoleTags,
     dataString,
     relationOf,
 } from '@spacegraphjs/shared/domain';
@@ -32,14 +34,7 @@ export const DATA_ROLES = [
 ] as const;
 export type DataRole = (typeof DATA_ROLES)[number];
 
-export const ROLE_TAGS: Readonly<Record<string, DataRole>> = {
-    pipeline: 'pipeline',
-    dataset: 'dataset',
-    step: 'step',
-    run: 'run',
-    model: 'model',
-    metric: 'metric',
-};
+export const ROLE_TAGS = createRoleTags(DATA_ROLES);
 
 /** Relations are conventions over ordinary edges; hosts may tag their own with `data.relation`. */
 export const DATA_RELATIONS = {
@@ -64,12 +59,10 @@ export interface DataView extends GraphViewData {
 
 export const dataVocabulary: DomainVocabulary = {
     lanes: ['pipeline', 'step', 'run', 'metric'],
-    levels: ['overview', 'execution', 'detail'],
+    ...commonVocabulary(roleOf),
     laneOf: (node) =>
         dataString(node, 'lane') ?? (roleOf(node) === 'pipeline' ? 'pipeline' : undefined),
     scopeIdOf: (node) => dataString(node, 'stepId') ?? dataString(node, 'pipelineId'),
-    shapeOf: (node) => roleOf(node),
-    statusOf: (node) => node.status ?? dataString(node, 'status'),
     edgesVisibleAt: (edge, level) =>
         level !== 'overview' || (edge.kind !== 'orders' && edge.kind !== 'evaluates'),
 };

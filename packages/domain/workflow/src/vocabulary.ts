@@ -2,7 +2,9 @@ import { defineDomain, type DomainVocabulary, type Kernel } from '@spacegraphjs/
 import type { GraphViewData } from '@spacegraphjs/shared';
 import {
     buildRunView,
+    commonVocabulary,
     createRoleReader,
+    createRoleTags,
     dataString,
     relationOf,
 } from '@spacegraphjs/shared/domain';
@@ -34,15 +36,7 @@ export const WORKFLOW_ROLES = [
 ] as const;
 export type WorkflowRole = (typeof WORKFLOW_ROLES)[number];
 
-export const ROLE_TAGS: Readonly<Record<string, WorkflowRole>> = {
-    workflow: 'workflow',
-    subworkflow: 'subworkflow',
-    step: 'step',
-    run: 'run',
-    trigger: 'trigger',
-    retry: 'retry',
-    artifact: 'artifact',
-};
+export const ROLE_TAGS = createRoleTags(WORKFLOW_ROLES);
 
 /** Relations are conventions over ordinary edges; hosts may tag their own with `data.relation`. */
 export const WORKFLOW_RELATIONS = {
@@ -67,15 +61,13 @@ export interface WorkflowView extends GraphViewData {
 
 export const workflowVocabulary: DomainVocabulary = {
     lanes: ['workflow', 'step', 'run', 'artifact'],
-    levels: ['overview', 'execution', 'detail'],
+    ...commonVocabulary(roleOf),
     laneOf: (node) =>
         dataString(node, 'lane') ?? (roleOf(node) === 'workflow' ? 'workflow' : undefined),
     scopeIdOf: (node) =>
         dataString(node, 'subworkflowId') ??
         dataString(node, 'stepId') ??
         dataString(node, 'workflowId'),
-    shapeOf: (node) => roleOf(node),
-    statusOf: (node) => node.status ?? dataString(node, 'status'),
     edgesVisibleAt: (edge, level) => level !== 'overview' || edge.kind !== 'orders',
 };
 

@@ -45,7 +45,7 @@ export class GroupNode extends Object3DNode {
         mesh.add(edges);
 
         this._object.add(mesh);
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
+        this.syncSpecTransform();
     }
 
     updateSpec(updates: Partial<NodeSpec>): this {
