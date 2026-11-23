@@ -1,11 +1,17 @@
 import { expect, type Page } from '@playwright/test';
 
+export const ready = (page: Page) =>
+    page.waitForFunction(() => (window as any).__pi?.ready === true);
+
+export const settle = (page: Page): Promise<void> =>
+    page.evaluate(() => (window as any).__pi.settle());
+
 /** One deterministic boot: ready hooks, a populated kernel and a mounted shell before assertions. */
 export const boot = async (page: Page, query = ''): Promise<string[]> => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(`/${query}`);
-    await page.waitForFunction(() => (window as any).__pi?.ready === true);
+    await ready(page);
     await expect
         .poll(() => page.evaluate(() => (window as any).__pi.ops()), { timeout: 10_000 })
         .toBeGreaterThan(0);

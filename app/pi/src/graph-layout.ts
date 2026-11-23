@@ -26,6 +26,16 @@ export type GraphLayoutMode = (typeof GRAPH_LAYOUTS)[number];
 export const isGraphLayoutMode = (value: string | null | undefined): value is GraphLayoutMode =>
     value !== null && value !== undefined && (GRAPH_LAYOUTS as readonly string[]).includes(value);
 
+function boundsOf(positions: ReadonlyMap<string, Position>, card: readonly [number, number]) {
+    const xs = [...positions.values()].map((point) => point.x);
+    const ys = [...positions.values()].map((point) => point.y);
+    const [width, height] = card;
+    return {
+        min: { x: Math.min(...xs) - width / 2, y: Math.min(...ys) - height / 2, z: 0 },
+        max: { x: Math.max(...xs) + width / 2, y: Math.max(...ys) + height / 2, z: 0 },
+    };
+}
+
 const CARD: readonly [number, number] = [200, 72];
 export const CHAPTER_CARD: readonly [number, number] = [360, 200];
 export const ERGONOMIC_CARD: readonly [number, number] = [240, 88];
@@ -106,15 +116,10 @@ const chapterLayout = (view: AgentView): GraphLayout => {
             },
         ]),
     );
-    const xs = [...positions.values()].map((point) => point.x);
-    const ys = [...positions.values()].map((point) => point.y);
     return {
         positions,
         clusters: new Map(),
-        bounds: {
-            min: { x: Math.min(...xs) - CHAPTER_CARD[0] / 2, y: Math.min(...ys) - CHAPTER_CARD[1] / 2, z: 0 },
-            max: { x: Math.max(...xs) + CHAPTER_CARD[0] / 2, y: Math.max(...ys) + CHAPTER_CARD[1] / 2, z: 0 },
-        },
+        bounds: boundsOf(positions, CHAPTER_CARD),
         strategy: 'chapters',
     };
 };
@@ -128,15 +133,10 @@ const ergonomicGraphLayout = (view: AgentView, viewport: ErgonomicsViewport): Gr
         { minCard: ERGONOMIC_CARD, maxColumns: 4, targetOccupancy: 0.62 },
     );
     if (!solved) return undefined;
-    const xs = [...solved.positions.values()].map((point) => point.x);
-    const ys = [...solved.positions.values()].map((point) => point.y);
     return {
         positions: solved.positions,
         clusters: new Map(),
-        bounds: {
-            min: { x: Math.min(...xs) - solved.card[0] / 2, y: Math.min(...ys) - solved.card[1] / 2, z: 0 },
-            max: { x: Math.max(...xs) + solved.card[0] / 2, y: Math.max(...ys) + solved.card[1] / 2, z: 0 },
-        },
+        bounds: boundsOf(solved.positions, solved.card),
         strategy: 'ergonomic',
     };
 };

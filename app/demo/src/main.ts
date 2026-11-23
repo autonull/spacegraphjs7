@@ -447,25 +447,23 @@ async function main(): Promise<void> {
     renderGallery();
     renderViews();
 
-    for (const id of ['spacegraph', 'cytoscape', 'svg'] as const) {
-        el(`renderer-${id}`).addEventListener('click', () => void mountRenderer(id));
-    }
-    for (const id of ['dark', 'light'] as const) {
-        el(`theme-${id}`).addEventListener('click', () => {
-            themeName = id;
-            document.documentElement.dataset.theme = id;
-            const theme = readTheme();
-            renderer?.setTheme(theme);
-            paint();
-        });
-    }
-    for (const mode of DEPTHS) {
-        el(`depth-${mode}`).addEventListener('click', () => {
-            host.depth = mode;
-            renderer?.setDepth(mode);
-            paint();
-        });
-    }
+    const bindPicker = <T extends string>(prefix: string, ids: readonly T[], apply: (id: T) => void) => {
+        for (const id of ids) el(`${prefix}-${id}`).addEventListener('click', () => apply(id));
+    };
+
+    bindPicker('renderer', ['spacegraph', 'cytoscape', 'svg'] as const, (id) => void mountRenderer(id));
+    bindPicker('theme', ['dark', 'light'] as const, (id) => {
+        themeName = id;
+        document.documentElement.dataset.theme = id;
+        const theme = readTheme();
+        renderer?.setTheme(theme);
+        paint();
+    });
+    bindPicker('depth', DEPTHS, (mode) => {
+        host.depth = mode;
+        renderer?.setDepth(mode);
+        paint();
+    });
 
     el<HTMLInputElement>('search').addEventListener('input', (event) =>
         renderSearch((event.target as HTMLInputElement).value),

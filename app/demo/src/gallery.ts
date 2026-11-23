@@ -635,7 +635,6 @@ export const CAPABILITIES: readonly Capability[] = [
                 activeTurn?: string;
             };
 
-            // Define facet accessors for the host model
             const accessors: FacetAccessors = {
                 kind: (node) => node.kind,
                 status: (node) => node.status,
@@ -656,7 +655,6 @@ export const CAPABILITIES: readonly Capability[] = [
                 ),
             ];
 
-            // Test applyFacets
             const facets: GraphFacets = {
                 query: '',
                 kinds: new Set(['tool']),
@@ -665,7 +663,6 @@ export const CAPABILITIES: readonly Capability[] = [
             };
             const filtered = applyFacets({ model, facets, accessors });
 
-            // Test composeScopes
             const composed = composeScopes({
                 model,
                 facets,
@@ -675,11 +672,9 @@ export const CAPABILITIES: readonly Capability[] = [
                 collapseGroups: (m) => m,
             });
 
-            // Test facetsToQuery / facetsFromQuery round-trip
             const queryString = facetsToQuery(facets, knownKinds, knownStatuses, knownDomains);
             const parsed = facetsFromQuery(queryString, knownKinds, knownStatuses, knownDomains);
 
-            // Test facetCounts
             const counts = facetCounts(
                 model,
                 facets,
@@ -689,10 +684,8 @@ export const CAPABILITIES: readonly Capability[] = [
                 knownDomains,
             );
 
-            // Test hasFacets
             const hasAny = hasFacets(facets);
 
-            // Test saved queries
             const serializeOpts = { knownKinds, knownStatuses, knownDomains };
             const savedQueries: SavedQuery[] = [];
             const newSaved = saveQuery(savedQueries, facets, 'Failed tools', serializeOpts);
@@ -703,7 +696,6 @@ export const CAPABILITIES: readonly Capability[] = [
             ]);
             const isSaved = isSavedQuery(newSaved, facets, serializeOpts);
 
-            // Test palette
             const sources: PaletteSources = {
                 actions: [
                     { id: 'export', label: 'Export graph', detail: 'Save as JSON' },

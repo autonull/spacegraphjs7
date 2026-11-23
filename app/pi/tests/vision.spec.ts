@@ -4,7 +4,7 @@ import { encodePolicyVector, POLICY_SCHEMA } from '../src/policy';
 import { FIT_OCTAVES } from '../src/policy/adaptive-fit';
 import { GRAPH_LAYOUTS } from '../src/graph-layout';
 import { SHOTS } from '../src/shots';
-import { boot } from './boot';
+import { boot, ready, settle } from './boot';
 
 const DEPTHS = ['flat', 'layered', 'depth-stack', 'orbit'] as const;
 const ARRANGEMENTS = ['stacked', 'side', 'floating'] as const;
@@ -18,6 +18,12 @@ const settledBoot = async (page: Page): Promise<void> => {
 
 const VIEWPORT = { width: 1600, height: 1000 };
 
+const trackErrors = (page: Page) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    return () => expect(errors).toEqual([]);
+};
+
 const openShot = async (
     page: Page,
     query: string,
@@ -25,7 +31,7 @@ const openShot = async (
 ): Promise<void> => {
     if (viewport) await page.setViewportSize(viewport);
     await page.goto(`/?${query}`);
-    await page.waitForFunction(() => (window as any).__pi?.ready === true);
+    await ready(page);
     await page.waitForFunction(() => (window as any).__pi?.shotReady?.() === true);
 };
 
@@ -36,7 +42,7 @@ const openSettledShot = async (
 ): Promise<void> => {
     await openShot(page, query, viewport);
     await page.evaluate(() => (window as any).__pi.pause(true));
-    await page.evaluate(() => (window as any).__pi.settle());
+    await settle(page);
 };
 
 const assertScene = async (page: Page): Promise<void> => {
@@ -51,8 +57,7 @@ const assertScene = async (page: Page): Promise<void> => {
 
 test.describe('Pi flagship vision atlas', () => {
     test('adaptive fit stays legible across three octaves and two aspects', async ({ page }) => {
-        const errors: string[] = [];
-        page.on('pageerror', (error) => errors.push(error.message));
+        const assertNoErrors = trackErrors(page);
         for (const octave of FIT_OCTAVES) {
             for (const aspect of ['wide', 'narrow'] as const) {
                 const shot = SHOTS.find(
@@ -62,24 +67,22 @@ test.describe('Pi flagship vision atlas', () => {
                 await assertScene(page);
             }
         }
-        expect(errors).toEqual([]);
+        assertNoErrors();
     });
 
     test('opt-in scale-aware packing stays legible at mid and near', async ({ page }) => {
-        const errors: string[] = [];
-        page.on('pageerror', (error) => errors.push(error.message));
+        const assertNoErrors = trackErrors(page);
         for (const id of ['fit-wide-mid', 'fit-wide-near', 'fit-narrow-mid']) {
             const shot = SHOTS.find((entry) => entry.id === id)!;
             await openSettledShot(page, `shot=${id}&ui=scale-aware`, shot.viewport!);
             await assertScene(page);
         }
-        expect(errors).toEqual([]);
+        assertNoErrors();
     });
 
     test('graph arrangements pass the vision gates across octaves, aspects and themes', async ({ page }) => {
         test.setTimeout(240_000);
-        const errors: string[] = [];
-        page.on('pageerror', (error) => errors.push(error.message));
+        const assertNoErrors = trackErrors(page);
         const light = encodePolicyVector(POLICY_SCHEMA, { 'theme.variant': 'light' });
         for (const mode of GRAPH_LAYOUTS) {
             for (const octave of FIT_OCTAVES) {
@@ -96,7 +99,7 @@ test.describe('Pi flagship vision atlas', () => {
                 }
             }
         }
-        expect(errors).toEqual([]);
+        assertNoErrors();
     });
 
     test('graph arrangements pass the vision gates under reduced motion', async ({ page }) => {
@@ -108,8 +111,7 @@ test.describe('Pi flagship vision atlas', () => {
     });
 
     test('intermediate frames of a graph morph stay legible', async ({ page }) => {
-        const errors: string[] = [];
-        page.on('pageerror', (error) => errors.push(error.message));
+        const assertNoErrors = trackErrors(page);
         await openShot(page, 'shot=fit-wide-mid&graphLayout=timeline&graphMorph=1', VIEWPORT);
         await page.evaluate(() => (window as any).__pi.pause(true));
         await page.evaluate(() => (window as any).__pi.setGraphLayout('lanes'));
@@ -118,14 +120,13 @@ test.describe('Pi flagship vision atlas', () => {
             await page.evaluate(() => (window as any).__pi.advance(0.05));
             await assertScene(page);
         }
-        await page.evaluate(() => (window as any).__pi.settle());
+        await settle(page);
         await assertScene(page);
-        expect(errors).toEqual([]);
+        assertNoErrors();
     });
 
     test('bounded recursion keeps intermediate frames legible on re-entry', async ({ page }) => {
-        const errors: string[] = [];
-        page.on('pageerror', (error) => errors.push(error.message));
+        const assertNoErrors = trackErrors(page);
         await openShot(page, 'shot=recursion', VIEWPORT);
         const chips = page.locator('#focus-lens .focus-chip');
         const count = await chips.count();
@@ -144,14 +145,13 @@ test.describe('Pi flagship vision atlas', () => {
             await page.evaluate(() => (window as any).__pi.advance(0.05));
             await assertScene(page);
         }
-        await page.evaluate(() => (window as any).__pi.settle());
+        await settle(page);
         await assertScene(page);
-        expect(errors).toEqual([]);
+        assertNoErrors();
     });
 
     test('opt-in dense typography stays legible across the fit matrix', async ({ page }) => {
-        const errors: string[] = [];
-        page.on('pageerror', (error) => errors.push(error.message));
+        const assertNoErrors = trackErrors(page);
         for (const octave of FIT_OCTAVES) {
             for (const aspect of ['wide', 'narrow'] as const) {
                 const label = octave < 0 ? 'far' : octave > 0 ? 'near' : 'mid';
@@ -161,25 +161,24 @@ test.describe('Pi flagship vision atlas', () => {
                     await page.evaluate(() => document.documentElement.dataset.density),
                 ).toBe('dense');
                 await page.evaluate(() => (window as any).__pi.pause(true));
-                await page.evaluate(() => (window as any).__pi.settle());
+                await settle(page);
                 await assertScene(page);
             }
         }
-        expect(errors).toEqual([]);
+        assertNoErrors();
     });
 
     for (const depth of DEPTHS) {
         test(`depth ${depth} passes the vision gates in every arrangement`, async ({ page }) => {
-            const errors: string[] = [];
-            page.on('pageerror', (error) => errors.push(error.message));
+            const assertNoErrors = trackErrors(page);
             await settledBoot(page);
             await page.evaluate((mode) => (window as any).__pi.setDepth(mode), depth);
             for (const arrangement of ARRANGEMENTS) {
                 await page.evaluate((value) => (window as any).__pi.setArrangement(value), arrangement);
-                await page.evaluate(() => (window as any).__pi.settle());
+                await settle(page);
                 await assertScene(page);
             }
-            expect(errors).toEqual([]);
+            assertNoErrors();
         });
     }
 
@@ -187,7 +186,7 @@ test.describe('Pi flagship vision atlas', () => {
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await settledBoot(page);
         await page.evaluate(() => (window as any).__pi.loadFixture());
-        await page.evaluate(() => (window as any).__pi.settle());
+        await settle(page);
         await assertScene(page);
         expect(await page.evaluate(() => (window as any).__pi.attention().failures)).toBeGreaterThan(0);
     });
@@ -196,7 +195,7 @@ test.describe('Pi flagship vision atlas', () => {
         await settledBoot(page);
         await page.evaluate(() => (window as any).__pi.loadFixture());
         await page.evaluate(() => (window as any).__pi.setWindowSize(1));
-        await page.evaluate(() => (window as any).__pi.settle());
+        await settle(page);
         await assertScene(page);
         expect(await page.evaluate(() => (window as any).__pi.hidden())).toBeGreaterThan(0);
     });
@@ -207,7 +206,7 @@ test.describe('Pi flagship vision atlas', () => {
             (window as any).__pi.scopes().find((id: string) => id.startsWith('unit-')),
         );
         await page.evaluate((id) => (window as any).__pi.setLaneScope(id), scope);
-        await page.evaluate(() => (window as any).__pi.settle());
+        await settle(page);
         await assertScene(page);
     });
 
@@ -249,7 +248,7 @@ test.describe('Pi flagship vision atlas', () => {
             await page.evaluate(() => (window as any).__pi.advance(0.05));
             await assertScene(page);
         }
-        await page.evaluate(() => (window as any).__pi.settle());
+        await settle(page);
         await assertScene(page);
     });
 
@@ -260,7 +259,7 @@ test.describe('Pi flagship vision atlas', () => {
         for (const variant of ['dark', 'light']) {
             const policy = variant === 'light' ? `&policy=${encodeURIComponent(light)}` : '';
             await page.goto(`/?shot=cockpit${policy}`);
-            await page.waitForFunction(() => (window as any).__pi?.ready === true);
+            await ready(page);
             await expect
                 .poll(() => page.evaluate(() => (window as any).__pi.simulation().settled), {
                     timeout: 10_000,
@@ -279,7 +278,7 @@ test.describe('Pi flagship vision atlas', () => {
             await page.evaluate(() => (window as any).__pi.advance(0.05));
             await assertScene(page);
         }
-        await page.evaluate(() => (window as any).__pi.settle());
+        await settle(page);
         await assertScene(page);
     });
 
@@ -334,7 +333,7 @@ test.describe('Pi flagship vision atlas', () => {
         });
         const link = await page.evaluate(() => (window as any).__pi.permalink());
         await page.goto(link);
-        await page.waitForFunction(() => (window as any).__pi?.ready === true);
+        await ready(page);
         expect(await page.evaluate(() => (window as any).__pi.surface())).toBe('map');
         expect(await page.evaluate(() => (window as any).__pi.arrangement())).toBe('stacked');
         expect(await page.evaluate(() => (window as any).__pi.levelMode())).toBe('detail');
@@ -367,7 +366,7 @@ test.describe('Pi flagship vision atlas', () => {
 
     test('the opt-in URL boots a loop whose report agrees with the gate', async ({ page }) => {
         await page.goto('/?visionLoop=on');
-        await page.waitForFunction(() => (window as any).__pi?.ready === true);
+        await ready(page);
         await expect
             .poll(() => page.evaluate(() => (window as any).__pi.visionLoop().report !== undefined), {
                 timeout: 10_000,
