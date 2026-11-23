@@ -1,6 +1,7 @@
 import { Vector3 } from 'three';
 import { DEFAULT_NODE_BOUNDS, declaredNodeBounds, type NodeBounds } from '../../layout/node-bounds';
 import type { Node } from '../../nodes/Node';
+import { appendTo } from '../../utils/collection';
 import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
 type BoundsCarrier = {
@@ -56,9 +57,7 @@ export class HierarchicalLayout extends BaseLayout<HierarchicalLayoutOptions> {
 
         const byLevel = new Map<number, string[]>();
         for (const [id, lv] of level) {
-            const bucket = byLevel.get(lv);
-            if (bucket) bucket.push(id);
-            else byLevel.set(lv, [id]);
+            appendTo(byLevel, lv, id);
         }
 
         const padding = config.nodePadding ?? 20;

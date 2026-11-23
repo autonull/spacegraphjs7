@@ -1,3 +1,4 @@
+import { appendTo } from '../utils/collection';
 import type { Placement, PlacementItem, Position } from './placement';
 
 /** The tree's vocabulary: the parent a box hangs from. */
@@ -76,10 +77,7 @@ export class TreePlacement implements Placement<TreeMeta> {
             const parent = item.meta?.parent;
 
             if (!parent || !byID.has(parent)) continue;
-            const siblings = children.get(parent);
-
-            if (siblings) siblings.push(item.id);
-            else children.set(parent, [item.id]);
+            appendTo(children, parent, item.id);
         }
 
         const blocks = new Map<string, Block>();

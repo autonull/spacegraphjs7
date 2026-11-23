@@ -1,3 +1,4 @@
+import { clamp } from '../utils/math';
 import type { Position } from './placement';
 
 /** Host-agnostic inputs: a graph, the surface it must fit, and the legibility floor. */
@@ -49,8 +50,6 @@ export interface ErgonomicLayout {
 }
 
 const DEFAULT_CARD: readonly [number, number] = [180, 72];
-const clamp = (value: number, low: number, high: number): number =>
-    Math.min(high, Math.max(low, value));
 
 /**
  * Place highly connected nodes first, then the unplaced node with the strongest ties to what is

@@ -1,6 +1,9 @@
 // utils/index.ts - Consolidated utility exports
 // All utilities re-exported from single source for better tree-shaking
 
+// Collection utilities
+export { appendTo } from './collection';
+
 // Camera utilities
 export type { FitInsets, FitSurface, FitViewResult, InsetRegion } from './CameraUtils';
 export {

@@ -4,6 +4,7 @@
 //
 // Every result is deterministic for a given tree, seed and previous state. No renderer is involved.
 
+import { appendTo } from '../utils/collection';
 import { computeIncremental, interpolatedPositions, type IncrementalLayout } from './incremental';
 import type { PlacementItem, Position } from './placement';
 import {
@@ -245,11 +246,7 @@ export function layoutScopes(tree: ScopeTree, options: ScopeLayoutOptions = {}):
         for (const child of entry.children) solve(child);
 
         const links = new Map<string, string[]>();
-        const addLink = (from: string, to: string): void => {
-            const existing = links.get(from);
-            if (existing) existing.push(to);
-            else links.set(from, [to]);
-        };
+        const addLink = (from: string, to: string): void => appendTo(links, from, to);
         const portalNodeIds = new Map(
             entry.nodes
                 .filter((node) => node.scope && entry.children.some((child) => child.spec.id === node.scope))

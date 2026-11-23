@@ -170,17 +170,20 @@ export class HtmlNode extends BaseContentNode {
         this.data = { ...this.data, contentScale: clampedScale };
 
         if (this.contentWrapper) {
-            // Adjust layout size to match visual size for correct scrollbar behavior.
-            // With transform-origin: top left, visual size = layout size * scale.
-            // Setting layout size to (100/scale)% makes visual size = 100% of parent.
-            const layoutSizePercent = 100 / clampedScale;
+            // A (100/scale)% layout size renders at 100% of the parent from the top-left origin.
             this.contentWrapper.style.transformOrigin = 'top left';
-            this.contentWrapper.style.width = `${layoutSizePercent}%`;
-            this.contentWrapper.style.height = `${layoutSizePercent}%`;
-            this.contentWrapper.style.transform = `scale(${clampedScale})`;
+            this.applyContentTransform(clampedScale);
         }
 
         this.emitDataChanged('contentScale', clampedScale);
+    }
+
+    private applyContentTransform(scale: number): void {
+        if (!this.contentWrapper) return;
+        const layoutPercent = 100 / scale;
+        this.contentWrapper.style.width = `${layoutPercent}%`;
+        this.contentWrapper.style.height = `${layoutPercent}%`;
+        this.contentWrapper.style.transform = `scale(${scale})`;
     }
 
     adjustContentScale(deltaFactor: number): void {
@@ -311,25 +314,14 @@ export class HtmlNode extends BaseContentNode {
         // The edges of a hidden card must go with it: the plugin reads the CSS object's visibility to
         // decide, and a card that only changed its CSS would leave its edges drawn.
         this.cssObject.visible = !hidden;
-        if (this.contentWrapper) {
-            const combinedScale = baseScale * (level?.scale ?? 1.0);
-            const layoutPercent = 100 / combinedScale;
-            this.contentWrapper.style.width = `${layoutPercent}%`;
-            this.contentWrapper.style.height = `${layoutPercent}%`;
-            this.contentWrapper.style.transform = `scale(${combinedScale})`;
-        }
+        this.applyContentTransform(baseScale * (level?.scale ?? 1.0));
     }
 
     private resetLodStyles(): void {
         const baseScale = (this.data?.contentScale as number) ?? 1.0;
-        const layoutPercent = 100 / baseScale;
         this.domElement.style.visibility = '';
         this.domElement.style.display = 'flex';
-        if (this.contentWrapper) {
-            this.contentWrapper.style.width = `${layoutPercent}%`;
-            this.contentWrapper.style.height = `${layoutPercent}%`;
-            this.contentWrapper.style.transform = `scale(${baseScale})`;
-        }
+        this.applyContentTransform(baseScale);
     }
 
     dispose(): void {

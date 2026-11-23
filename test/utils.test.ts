@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { requireElement, seededRandom } from 'spacegraphjs/utils';
+import { appendTo, requireElement, seededRandom } from 'spacegraphjs/utils';
 
 describe('seededRandom', () => {
     const draw = (random: () => number): number[] => [random(), random(), random()];
@@ -22,5 +22,18 @@ describe('requireElement', () => {
 
     it('throws a labelled error when the id is missing', () => {
         expect(() => requireElement('absent', 'demo host')).toThrow('demo host: missing #absent');
+    });
+});
+
+describe('appendTo', () => {
+    it('creates a bucket on first use and appends to it afterwards', () => {
+        const buckets = new Map<string, number[]>();
+        appendTo(buckets, 'a', 1);
+        appendTo(buckets, 'a', 2);
+        appendTo(buckets, 'b', 3);
+        expect([...buckets]).toEqual([
+            ['a', [1, 2]],
+            ['b', [3]],
+        ]);
     });
 });

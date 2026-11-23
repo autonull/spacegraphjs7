@@ -2,6 +2,7 @@
 // it analyzes, maps a report to normalized scores, hands them to the host policy, then measures
 // again. Every mutation happens in the host callback, only when a cycle is explicitly requested.
 
+import { clamp01 } from '../utils/math';
 import type { ScopePolicyInput } from '../layout/scope-policy';
 import type { VisionReport } from './types';
 
@@ -36,8 +37,6 @@ export interface VisionLoop {
     reportUnsupported(): readonly VisionUnsupported[];
     cycle(): Promise<VisionLoopReport | undefined>;
 }
-
-const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
 /** Normalized 0..1 scores. Overlap is the only "higher is worse" score. */
 export const visionScores = (report: VisionReport): VisionLoopScores => ({

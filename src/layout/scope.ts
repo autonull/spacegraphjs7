@@ -4,6 +4,7 @@
 //
 // This module owns the tree, its validation and its references. Geometry lives in scope-layout.ts.
 
+import { appendTo } from '../utils/collection';
 import type { Position } from './placement';
 
 export type ScopeStrategy = 'force' | 'grid' | 'tree';
@@ -122,9 +123,7 @@ export function buildScopeTree(specs: readonly ScopeSpec[]): ScopeTree {
             roots.push(spec);
             continue;
         }
-        const siblings = childrenOf.get(spec.parent);
-        if (siblings) siblings.push(spec);
-        else childrenOf.set(spec.parent, [spec]);
+        appendTo(childrenOf, spec.parent, spec);
     }
 
     const byPath = new Map<string, ScopeEntry>();

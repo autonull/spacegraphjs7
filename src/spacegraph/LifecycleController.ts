@@ -1,5 +1,5 @@
 import { applyDefaultInputConfig } from '../input/DefaultInputConfig';
-import { forwardGraphEvents } from '../core/forwardEvents';
+import { forwardGraphEvents, GRAPH_EVENT_NAMES } from '../core/forwardEvents';
 import { Graph } from '../core/Graph';
 import { WebGLRenderer } from '../core/WebGLRenderer';
 import { Selection } from '../core/Selection';
@@ -45,16 +45,7 @@ export class LifecycleController {
 
     #subscribeToGraphEvents(): void {
         const schedule = () => this.sg.requestFrame();
-        for (const event of [
-            'node:added',
-            'node:removed',
-            'node:updated',
-            'edge:added',
-            'edge:removed',
-            'edge:updated',
-            'graph:cleared',
-            'selection:changed',
-        ] as const) {
+        for (const event of [...GRAPH_EVENT_NAMES, 'selection:changed']) {
             this.sg.events.on(event, schedule);
         }
     }

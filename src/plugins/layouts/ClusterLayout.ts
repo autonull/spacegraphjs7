@@ -1,5 +1,6 @@
 import { Vector3 } from 'three';
 import type { Node } from '../../nodes/Node';
+import { appendTo } from '../../utils/collection';
 import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
 export interface ClusterLayoutOptions extends LayoutOptions {
@@ -24,9 +25,7 @@ export class ClusterLayout extends BaseLayout<ClusterLayoutOptions> {
                 node.data?.[config.clusterBy] != null
                     ? String(node.data[config.clusterBy])
                     : 'Uncategorized';
-            const bucket = clusters.get(key);
-            if (bucket) bucket.push(node);
-            else clusters.set(key, [node]);
+            appendTo(clusters, key, node);
         }
 
         const padding = config.nodePadding ?? 20;

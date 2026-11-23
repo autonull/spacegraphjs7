@@ -3,7 +3,7 @@ import type { EventEmitter } from './EventEmitter';
 
 // Graph mutations are owned by the Graph's own emitter. Mirror them onto the
 // SpaceGraph event system so host subscriptions (sg.watch, plugins, HUD) see them.
-const GRAPH_EVENT_NAMES = [
+export const GRAPH_EVENT_NAMES = [
     'node:added',
     'node:removed',
     'node:updated',

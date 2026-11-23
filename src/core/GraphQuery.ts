@@ -2,6 +2,7 @@ import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
 import type { NodeData } from '../types';
 import type { EdgeDirection } from './Graph';
+import { appendTo } from '../utils/collection';
 
 export class GraphQuery {
     constructor(
@@ -128,11 +129,7 @@ export class GraphQuery {
         const groups = new Map<unknown, Node[]>();
         for (const node of this.nodes.values()) {
             const value = (node.data as Record<string, unknown>)[key];
-            if (value !== undefined) {
-                const list = groups.get(value) ?? [];
-                list.push(node);
-                groups.set(value, list);
-            }
+            if (value !== undefined) appendTo(groups, value, node);
         }
         return groups;
     }

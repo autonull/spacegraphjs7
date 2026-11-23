@@ -7,6 +7,7 @@
 // placement.ts`) decides where a box goes. The three grid-shaped views share one engine, and the
 // tree and the force simulation are engines of their own. Nothing here measures a card.
 
+import { appendTo } from '../utils/collection';
 import { lookup } from '../utils/record';
 import { boundsOf, type LayoutBounds } from './bounds';
 import { ForcePlacement, type ForceMeta } from './force';
@@ -172,6 +173,21 @@ function finishLayout(
     };
 }
 
+/** Derived cluster chips keep their membership order; their bounds drive the host's bands. */
+function addDerivedClusters<Node extends LayoutNode, Edge extends LayoutEdge, Name extends string>(
+    model: LayoutModel<Node, Edge>,
+    config: LayoutConfig<Node, Edge, Name>,
+    positions: ReadonlyMap<string, Position>,
+    clusters: Map<string, LayoutBounds>,
+): void {
+    for (const node of model.nodes) {
+        const members = config.clusterOfFn?.(node);
+        if (!members) continue;
+        const bounds = memberPositions(members, positions);
+        if (bounds) clusters.set(node.id, bounds);
+    }
+}
+
 /**
  * The nodes of a model bucketed by the turn they belong to, in model order, and the nodes that
  * belong to no turn at all.
@@ -191,10 +207,7 @@ function bucketByTurn<Node extends LayoutNode, Edge extends LayoutEdge, Name ext
             continue;
         }
 
-        const bucket = byTurn.get(turn);
-
-        if (bucket) bucket.push(node);
-        else byTurn.set(turn, [node]);
+        appendTo(byTurn, turn, node);
     }
 
     return { global, byTurn };
@@ -289,14 +302,6 @@ function lanesLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
     // A host that draws a subset (a level, a lens) restricts the nodes that consume space.
     const nodes = options.include ? model.nodes.filter(options.include) : model.nodes;
 
-    const owners = new Map<string, string>();
-
-    for (const node of nodes) {
-        const owner = config.ownerTurnFn?.(model, node);
-
-        if (owner) owners.set(node.id, owner);
-    }
-
     // One pass over the visible nodes builds the session column and the per-turn buckets.
     // Filtering the whole node list once per turn was quadratic, and a long session paid for it
     // (T6.6). A node that names both a turn and an owner belongs to the owner's column: it is
@@ -306,18 +311,11 @@ function lanesLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
 
     for (const node of nodes) {
         const turn = config.turnIdFn(node);
-        const owner = owners.get(node.id);
+        const owner = config.ownerTurnFn?.(model, node);
         const column = node.id === model.root ? SESSION_COLUMN : (owner ?? turn ?? SESSION_COLUMN);
 
-        if (column === SESSION_COLUMN) {
-            sessionColumn.push(node);
-            continue;
-        }
-
-        const bucket = byTurn.get(column);
-
-        if (bucket) bucket.push(node);
-        else byTurn.set(column, [node]);
+        if (column === SESSION_COLUMN) sessionColumn.push(node);
+        else appendTo(byTurn, column, node);
     }
 
     // Every turn is a column, including an empty one: the column is the turn's place in the
@@ -351,16 +349,7 @@ function lanesLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
     const positions = placedPositions(layout.place(items));
     const clusters = new Map<string, LayoutBounds>();
 
-    // Derived clusters keep their membership order; their bounds drive the host's bands.
-    for (const node of model.nodes) {
-        const members = config.clusterOfFn?.(node);
-
-        if (!members) continue;
-
-        const bounds = memberPositions(members, positions);
-
-        if (bounds) clusters.set(node.id, bounds);
-    }
+    addDerivedClusters(model, config, positions, clusters);
 
     // Turn bands span all of a turn's members and the turn node itself.
     const allByTurn = nodesByTurn(model, config);
@@ -403,23 +392,21 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
 
     const layout = new GridPlacement({ lanePitch: bandPitch, step: gap, groupGap: 0, depthStep });
     const items: PlacementItem<GridMeta>[] = [];
-
-    // The leading block (the root group, or the first turn when the model has none) opens the timeline.
-    const [leading] = turnBlocks(model, config);
-
-    if (leading && leading.length > 0)
-        for (let i = 0; i < leading.length; i += columns)
-            for (const node of leading.slice(i, i + columns))
+    const pushRow = (nodes: readonly Node[], group: string): void => {
+        for (let i = 0; i < nodes.length; i += columns)
+            for (const node of nodes.slice(i, i + columns))
                 items.push({
                     id: node.id,
                     width: cardWidth(node),
                     depth: depthOf(config.depthMap, node.kind),
-                    meta: {
-                        group: SESSION_COLUMN,
-                        row: Math.floor(i / columns),
-                        columnWidth: bandWidth,
-                    },
+                    meta: { group, row: Math.floor(i / columns), columnWidth: bandWidth },
                 });
+    };
+
+    // The leading block (the root group, or the first turn when the model has none) opens the timeline.
+    const [leading] = turnBlocks(model, config);
+
+    if (leading && leading.length > 0) pushRow(leading, SESSION_COLUMN);
 
     // Each turn gets its own column band. The members come from one pass over the model, not one
     // filter per turn (T6.6).
@@ -433,19 +420,7 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
         if (turnNodes.length === 0) continue;
 
         columnsByTurn.set(turnID, turnNodes);
-
-        for (let i = 0; i < turnNodes.length; i += columns)
-            for (const node of turnNodes.slice(i, i + columns))
-                items.push({
-                    id: node.id,
-                    width: cardWidth(node),
-                    depth: depthOf(config.depthMap, node.kind),
-                    meta: {
-                        group: turnID,
-                        row: Math.floor(i / columns),
-                        columnWidth: bandWidth,
-                    },
-                });
+        pushRow(turnNodes, turnID);
     }
 
     const positions = placedPositions(layout.place(items));
@@ -472,16 +447,7 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
         if (members) clusters.set(turnID, members);
     }
 
-    // Derived clusters
-    for (const node of model.nodes) {
-        const members = config.clusterOfFn?.(node);
-
-        if (!members) continue;
-
-        const bounds = memberPositions(members, positions);
-
-        if (bounds) clusters.set(node.id, bounds);
-    }
+    addDerivedClusters(model, config, positions, clusters);
 
     if (!rows) return finishLayout(positions, 'timeline', clusters);
     const oriented = new Map(
@@ -540,9 +506,7 @@ function hierarchyLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name 
     for (const node of model.nodes) {
         const parentId = config.parentOfFn?.(model, node);
         if (parentId && nodeById.has(parentId)) {
-            const bucket = children.get(parentId);
-            if (bucket) bucket.push(node);
-            else children.set(parentId, [node]);
+            appendTo(children, parentId, node);
         } else {
             roots.push(node);
         }
