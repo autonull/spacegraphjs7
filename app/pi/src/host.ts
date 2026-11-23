@@ -19,7 +19,7 @@ import {
 } from '@spacegraphjs/navigation/follow';
 import { GraphController } from 'spacegraphjs/control';
 import { sampleDepth, type DepthAxis } from 'spacegraphjs/depth';
-import { Navigation, Trail } from 'spacegraphjs/navigation';
+import { Trail } from 'spacegraphjs/navigation';
 import {
     occupancySpacingFactor,
     scopeFieldRects,
@@ -37,7 +37,7 @@ import {
     representationRung,
     representationWeights,
 } from 'spacegraphjs/salience';
-import { lerp, requireElement } from 'spacegraphjs/utils';
+import { lerp } from 'spacegraphjs/utils';
 import type { RenderNode } from '@spacegraphjs/renderer';
 import {
     createInstrumentKit,
@@ -81,7 +81,6 @@ import { buildCatalog, mountCatalog, type Catalog } from './catalog';
 import { FIXTURE_ID, fixtureKernel, richFixtureKernel } from './fixture';
 import { foldKernelOps } from './ops';
 import {
-    UNSUPPORTED,
     decayActivity,
     exportHTML,
     exportJSON,
@@ -178,6 +177,7 @@ import {
 import { SHORTCUT_HELP } from './help';
 import { ChromeController } from './chrome';
 import { button, el } from './dom';
+import { drawMinimap } from './minimap';
 import { configureVision, VisionController } from './vision-controller';
 import { TranscriptView } from './transcript';
 
@@ -3275,55 +3275,7 @@ export class PiHost {
     }
 
     private renderMinimap(): void {
-        const width = 176;
-        const height = 112;
-        const positions = new Map(
-            (this.#model?.nodes ?? []).map(
-                (node) => [node.id, { x: node.position[0], y: node.position[1] }] as const,
-            ),
-        );
-        const viewport = this.renderer.getViewport();
-        const projection = Navigation.project({
-            positions,
-            box: { width, height },
-            padding: 8,
-            ...(viewport.extent
-                ? {
-                      viewport: {
-                          center: [viewport.center[0], viewport.center[1]] as [number, number],
-                          extent: viewport.extent,
-                      },
-                  }
-                : {}),
-        });
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-        svg.setAttribute('role', 'img');
-        svg.setAttribute('aria-label', 'Graph overview minimap');
-        if (projection.viewRect) {
-            const view = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            view.dataset.minimapView = 'true';
-            view.setAttribute('x', projection.viewRect.x.toFixed(1));
-            view.setAttribute('y', projection.viewRect.y.toFixed(1));
-            view.setAttribute('width', Math.max(1, projection.viewRect.width).toFixed(1));
-            view.setAttribute('height', Math.max(1, projection.viewRect.height).toFixed(1));
-            view.setAttribute('fill', 'none');
-            view.setAttribute('stroke', 'var(--sg-colors-accent)');
-            svg.append(view);
-        }
-        for (const [id, point] of positions) {
-            const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            const projected = projection.project(point);
-            dot.dataset.minimapNode = id;
-            dot.setAttribute('cx', projected.x.toFixed(1));
-            dot.setAttribute('cy', projected.y.toFixed(1));
-            dot.setAttribute('r', id === this.#revealed ? '3' : '1.6');
-            dot.setAttribute(
-                'fill',
-                id === this.#revealed ? 'var(--sg-colors-ring)' : 'var(--sg-colors-edge)',
-            );
-            svg.append(dot);
-        }
-        el('minimap').replaceChildren(svg);
+        drawMinimap(this.#model, this.#revealed, this.renderer.getViewport());
     }
+
 }
