@@ -1,4 +1,3 @@
-import { Vector3 } from 'three';
 import { ForceCore, type ForceCoreConfig } from '../../layout/force-core';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutConfig } from './BaseLayout';
@@ -44,7 +43,7 @@ export interface ForceLayoutConfig extends LayoutConfig {
  * Force-directed layout using spring-electrical model.
  * Simulates physical forces (repulsion between nodes, attraction along edges)
  * to produce aesthetically pleasing layouts with minimal edge crossings.
- * 
+ *
  * Now uses shared ForceCore for the simulation logic, ensuring consistency
  * with ForcePlacement and eliminating drift between engines.
  */
@@ -53,7 +52,6 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
     readonly name = 'Force Directed';
 
     #core: ForceCore;
-    #velocities = new Map<string, Vector3>();
 
     constructor(config: Partial<ForceLayoutConfig> = {}) {
         super(config);
@@ -85,46 +83,15 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
         };
     }
 
-    private get forceConfig(): ForceLayoutConfig {
-        return this.config as ForceLayoutConfig;
-    }
-
     /** The simulation owns every node: it reads the pinned ones but never moves them. */
     protected override readonly ownsEveryNode = true;
 
-    /**
-     * Reset the layout's internal state. Call this before re-running layout on the same nodes
-     * to ensure a fresh simulation from current positions.
-     */
-    reset(): void {
-        this.#velocities.clear();
-    }
+    /** Compatibility no-op: the simulation rebuilds its state on every placement. */
+    reset(): void {}
 
     protected place(nodes: Node[], config: ForceLayoutConfig): void {
         // Recreate core with merged config to pick up runtime overrides
         this.#core = new ForceCore(this.#coreConfig(config));
-
-        // Always reset velocities for a fresh simulation
-        this.#velocities.clear();
-
-        // Optionally randomize positions first
-        if (config.randomize) {
-            const seed = config.seed ?? 42;
-            const random = this.#mulberry32(seed);
-            for (const node of nodes) {
-                if (!this.isPinned(node)) {
-                    node.position.set(
-                        (random() - 0.5) * 400,
-                        (random() - 0.5) * 400,
-                        (random() - 0.5) * 400,
-                    );
-                    node.object.position.copy(node.position);
-                }
-            }
-        }
-
-        // Initialize velocities
-        for (const node of nodes) this.#velocities.set(node.id, new Vector3());
 
         // Run the simulation using ForceCore
         this.#core.run(
@@ -132,7 +99,9 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
             (node) => this.#getEdgeLinks(node),
             (node) => this.collisionRadius(node, this.nodePadding(config)),
             (node) => this.isPinned(node),
-            (node, z) => { node.position.z = z; },
+            (node, z) => {
+                node.position.z = z;
+            },
         );
 
         // Sync positions to Three.js objects
@@ -150,21 +119,6 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
             else if (edge.target.id === node.id) links.push(edge.source.id);
         }
         return links;
-    }
-
-    #mulberry32(seed: number): () => number {
-        let t = seed >>> 0;
-        return () => {
-            t += 0x6d2b79f5;
-            let r = Math.imul(t ^ (t >>> 15), 1 | t);
-            r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
-            return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-        };
-    }
-
-    override dispose(): void {
-        super.dispose();
-        this.#velocities.clear();
     }
 
     protected defaultConfig(): ForceLayoutConfig {

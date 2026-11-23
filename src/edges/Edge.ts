@@ -18,9 +18,13 @@ import type { EdgeData, EdgeSpec } from '../types';
 import { midpoint } from '../utils/vector';
 import { safeClone } from '../utils/math';
 import { dataColor } from '../utils/color';
-
-/** The axis an arrowhead points along. */
-const ARROWHEAD_AXIS = new THREE.Vector3(0, 1, 0);
+import {
+    type ArrowheadPair,
+    createArrowheads,
+    disposeArrowheads,
+    styleArrowheads,
+    updateArrowheads,
+} from './EdgeArrowheads';
 
 const isFiniteVector = (vector: THREE.Vector3): boolean =>
     isFinite(vector.x) && isFinite(vector.y) && isFinite(vector.z);
@@ -61,17 +65,13 @@ export class Edge extends Surface {
     data: EdgeData;
     line: Line2;
     geometry: LineGeometry;
-    arrowheads: { source: THREE.Mesh | null; target: THREE.Mesh | null } = {
-        source: null,
-        target: null,
-    };
+    arrowheads: ArrowheadPair = { source: null, target: null };
     isHighlighted = false;
     isHovered = false;
     lastActivityTime = 0;
     private _colorStart = new THREE.Color();
     private _colorEnd = new THREE.Color();
     private _gradientKey = '';
-    private _direction = new THREE.Vector3();
     private _sourcePos = new THREE.Vector3();
     private _targetPos = new THREE.Vector3();
 
@@ -142,7 +142,12 @@ export class Edge extends Surface {
         this.line.renderOrder = -1;
         this.line.userData = { edgeId: this.id };
 
-        this._createArrowheads();
+        this.arrowheads = createArrowheads(
+            this.data,
+            this.id,
+            this.line.renderOrder,
+            Edge.DEFAULT_OPACITY,
+        );
         this.update();
     }
 
@@ -327,7 +332,10 @@ export class Edge extends Surface {
         this._setGradientColors();
         if (this.line.material.dashed) this.line.computeLineDistances();
         this.geometry.computeBoundingSphere();
-        this._updateArrowheads();
+        if (this.sg?.renderer?.scene && this.source && this.target) {
+            const { sourcePos, targetPos } = this.endpointPositions();
+            updateArrowheads(this.arrowheads, this.sg.renderer.scene, sourcePos, targetPos);
+        }
     }
 
     setHighlight(highlight: boolean): void {
@@ -351,8 +359,7 @@ export class Edge extends Surface {
         const arrowheadColor = highlight
             ? Edge.HIGHLIGHT_COLOR
             : (this.data.arrowheadColor ?? this.data.color ?? EdgeColors.DEFAULT);
-        this._setArrowheadStyle(this.arrowheads.source, Edge.HIGHLIGHT_OPACITY, arrowheadColor);
-        this._setArrowheadStyle(this.arrowheads.target, Edge.HIGHLIGHT_OPACITY, arrowheadColor);
+        styleArrowheads(this.arrowheads, Edge.HIGHLIGHT_OPACITY, arrowheadColor);
 
         if (highlight && this.isHovered) this.setHoverStyle(false, true);
     }
@@ -372,10 +379,7 @@ export class Edge extends Surface {
         mat.linewidth = hovered ? baseThickness * Edge.HOVER_THICKNESS_MULT : baseThickness;
         mat.needsUpdate = true;
 
-        if (!this.isHighlighted) {
-            this._setArrowheadStyle(this.arrowheads.source, opacity);
-            this._setArrowheadStyle(this.arrowheads.target, opacity);
-        }
+        if (!this.isHighlighted) styleArrowheads(this.arrowheads, opacity);
     }
 
     hitTest(raycaster: THREE.Raycaster): HitResult | null {
@@ -435,39 +439,8 @@ export class Edge extends Surface {
         this.line?.material?.dispose();
         this.line?.parent?.remove(this.line);
 
-        const disposeArrowhead = (arrowhead: THREE.Mesh | null) => {
-            arrowhead?.geometry?.dispose();
-            (arrowhead?.material as THREE.Material)?.dispose();
-            arrowhead?.parent?.remove(arrowhead);
-        };
-        disposeArrowhead(this.arrowheads.source);
-        disposeArrowhead(this.arrowheads.target);
-        this.arrowheads.source = null;
-        this.arrowheads.target = null;
+        disposeArrowheads(this.arrowheads);
         this.removeAllListeners();
-    }
-
-    private _createArrowheads(): void {
-        const { arrowhead } = this.data;
-        if (arrowhead === true || arrowhead === 'target' || arrowhead === 'both')
-            this.arrowheads.target = this._createSingleArrowhead();
-        if (arrowhead === 'source' || arrowhead === 'both')
-            this.arrowheads.source = this._createSingleArrowhead();
-    }
-
-    private _createSingleArrowhead(): THREE.Mesh {
-        const size = this.data.arrowheadSize ?? Defaults.ARROWHEAD_SIZE;
-        const geometry = new THREE.ConeGeometry(size / 2, size, 8);
-        const material = new THREE.MeshBasicMaterial({
-            color: this.data.arrowheadColor ?? this.data.color ?? EdgeColors.DEFAULT,
-            opacity: Edge.DEFAULT_OPACITY,
-            transparent: true,
-            depthTest: false,
-        });
-        const arrowhead = new THREE.Mesh(geometry, material);
-        arrowhead.renderOrder = this.line.renderOrder + 1;
-        arrowhead.userData = { edgeId: this.id, type: 'edge-arrowhead' };
-        return arrowhead;
     }
 
     private _setGradientColors(): void {
@@ -509,41 +482,6 @@ export class Edge extends Surface {
             this.line.material.vertexColors = false;
             this.line.material.needsUpdate = true;
             this.line.material.color.set(this.data.color ?? EdgeColors.DEFAULT);
-        }
-    }
-
-    private _updateArrowheads(): void {
-        if (!this.sg?.renderer?.scene) return;
-        if (!this.source || !this.target) return;
-
-        const { sourcePos, targetPos } = this.endpointPositions();
-
-        const scene = this.sg.renderer.scene;
-
-        const updateArrowhead = (
-            arrowhead: THREE.Mesh | null,
-            endPos: THREE.Vector3,
-            startPos: THREE.Vector3,
-        ) => {
-            if (!arrowhead) return;
-            arrowhead.position.copy(endPos);
-            this._direction.subVectors(endPos, startPos).normalize();
-            arrowhead.quaternion.setFromUnitVectors(ARROWHEAD_AXIS, this._direction);
-            if (scene && arrowhead.parent !== scene) scene.add(arrowhead);
-        };
-
-        updateArrowhead(this.arrowheads.target, targetPos, sourcePos);
-        updateArrowhead(this.arrowheads.source, sourcePos, targetPos);
-    }
-
-    private _setArrowheadStyle(
-        arrowhead: THREE.Mesh | null,
-        opacity: number,
-        color?: number,
-    ): void {
-        if (arrowhead?.material instanceof THREE.MeshBasicMaterial) {
-            if (color !== undefined) arrowhead.material.color.setHex(color);
-            arrowhead.material.opacity = opacity;
         }
     }
 }
