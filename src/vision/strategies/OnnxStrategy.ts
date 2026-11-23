@@ -1,5 +1,6 @@
 import type { VisionModelLoader } from '..';
 import { gradeFor } from '../grade';
+import { nodesOf } from '../nodesOf';
 import * as THREE from 'three';
 import type {
     ErgonomicsResult,
@@ -23,7 +24,7 @@ export class OnnxStrategy implements VisionStrategy {
     }
 
     async analyze(graph: unknown, camera: unknown): Promise<VisionReport> {
-        const nodes = this.extractNodes(graph);
+        const nodes = nodesOf(graph);
         const context: VisionContext = { graph, camera, nodes };
 
         const [legibility, overlap, hierarchy, ergonomics, colorScore] = await Promise.all([
@@ -65,17 +66,6 @@ export class OnnxStrategy implements VisionStrategy {
                 ],
             },
         };
-    }
-
-    private extractNodes(graph: unknown): any[] {
-        if (graph && typeof graph === 'object' && 'getNodes' in graph) {
-            const nodes = (graph as any).getNodes();
-            return Array.from(nodes.values ? nodes.values() : nodes);
-        }
-        if (graph && typeof graph === 'object' && 'nodes' in graph && graph.nodes instanceof Map) {
-            return Array.from(graph.nodes.values());
-        }
-        return [];
     }
 
     private async analyzeLegibility(context: VisionContext): Promise<LegibilityResult> {

@@ -3,6 +3,7 @@
 
 import { ErgonomicsAnalyzer, HierarchyAnalyzer, LegibilityAnalyzer, OverlapAnalyzer } from '..';
 import { gradeFor, type VisionGrade } from '../grade';
+import { nodesOf } from '../nodesOf';
 import { clamp } from '../../utils/math';
 import type {
     ErgonomicsResult,
@@ -71,7 +72,7 @@ export class HeuristicsStrategy implements VisionStrategy {
         const context: VisionContext = {
             graph,
             camera,
-            nodes: this.extractNodes(graph),
+            nodes: nodesOf(graph),
         };
 
         const [legibility, overlap, hierarchy, ergonomics] = await Promise.all([
@@ -84,14 +85,6 @@ export class HeuristicsStrategy implements VisionStrategy {
         const overall = this.computeOverallScore({ legibility, overlap, hierarchy, ergonomics });
 
         return { legibility, overlap, hierarchy, ergonomics, overall };
-    }
-
-    private extractNodes(graph: unknown): unknown[] {
-        if (graph && typeof graph === 'object' && 'getNodes' in graph) {
-            const g = graph as { getNodes: () => Iterable<unknown> };
-            return Array.from(g.getNodes());
-        }
-        return [];
     }
 
     private computeOverallScore(results: {
