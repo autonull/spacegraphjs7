@@ -29,4 +29,4 @@ that must place the camera exactly (a permalink, a reduced-motion jump) never ha
 renderer's zoom scale. `getViewport` is optional: a renderer that cannot report its camera leaves it
 undefined, and a host reads that as "no read-back", never as a broken camera.
 
-Tests: `bun test` from this directory.
+Tests: `pnpm test` from this directory.

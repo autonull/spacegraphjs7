@@ -1,4 +1,4 @@
-import { describe, test } from 'bun:test';
+import { describe, test } from 'vitest';
 import { adapterConformance } from '@spacegraphjs/adapter';
 import { buildWorkflowView } from './vocabulary';
 import { FIXTURE_POSITIONS, fixtureOps, foldWorkflowOps, workflowAdapter } from './fixture';

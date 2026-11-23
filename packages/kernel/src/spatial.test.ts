@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { SpatialIndex2D } from './spatial';
 
 describe('SpatialIndex2D', () => {

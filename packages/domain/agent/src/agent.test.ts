@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { Kernel } from '@spacegraphjs/kernel';
 import type { KernelOp } from '@spacegraphjs/kernel';
 import { AgentEventMapper } from './mapping';

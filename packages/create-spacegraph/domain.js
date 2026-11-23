@@ -75,7 +75,7 @@ library API to express host vocabulary.
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "bun test",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "build": "vite build"
   },
@@ -86,6 +86,9 @@ library API to express host vocabulary.
     "@spacegraphjs/search": "workspace:*",
     "@spacegraphjs/shared": "workspace:*",
     "@spacegraphjs/trace": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.5"
   }
 }
 `,
@@ -328,7 +331,7 @@ export const POSITIONS = new Map<string, { x: number; y: number; z: number }>([
     [id('local', 'out'), { x: 400, y: 0, z: 0 }],
 ]);
 `;
-files['domain/src/conformance.test.ts'] = `import { describe, test } from 'bun:test';
+files['domain/src/conformance.test.ts'] = `import { describe, test } from 'vitest';
 import { adapterConformance } from '@spacegraphjs/adapter';
 import { build{{Name}}View } from './vocabulary';
 import { {{Name}}Adapter, POSITIONS, fixtureOps, foldOps } from './fixture';

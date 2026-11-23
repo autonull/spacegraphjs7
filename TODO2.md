@@ -168,7 +168,7 @@ Two domains prove the recipe once; two visibly different additions make it gener
       3 hosts / 38 pages / 45 modules). Fix the dead `gallery.html` links in `showcase.html`/`learn.html`
       (now `#capabilities`), `app/demo/README.md`, and the stale `docs/performance.md` commands.
 
-**Gate (green):** each new domain `bun test` (19), `typecheck`, `build`; `pnpm --filter demo test`
+**Gate (green):** each new domain `pnpm test` (19), `typecheck`, `build`; `pnpm --filter demo test`
 (10) and `build`; compositional Playwright (1); root `pnpm test` (761); `pnpm --filter pi verify`;
 `pnpm run generate:registry`. No library API was added.
 
@@ -332,7 +332,7 @@ game-engine API; additional domains beyond the four until a host needs them; the
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Flagship             | `pnpm --filter pi test` (38), `test:e2e` (28), `verify:visual` (12), `verify`, `scale`, `build`, package `tsc --noEmit` — green incl. portal glyph/breadcrumb and Trail/minimap                                                                 |
 | Vision on new states | `verify:visual` asserts overlap, legibility, hierarchy, ergonomics and layout score on settled, playing, trace, zoom-ladder rungs and reduced-motion scenes; strategy recorded per capture                                                      |
-| Domains              | `bun test` + `typecheck` + `build` in each of the four `packages/domain/*`; conformance included — Phase B green                                                                                                                                |
+| Domains              | `pnpm test` + `typecheck` + `build` in each of the four `packages/domain/*`; conformance included — Phase B green                                                                                                                                |
 | Composition + scenes | **Phase C green:** compositional trace (2), graph diff (1), flagship (1) specs; Pi annotation/report specs (2); `pnpm --filter demo build`, demo-error check (39), `video:flagship` recaptured                                                  |
 | Runtime loop         | **Phase D green:** `test/vision-loop.test.ts` deterministic fixture; `createVisionAssert.record()` records gate/loop agreement or the explicit fixer-path note; `verify:visual` (14) covers toggle and `?visionLoop=on`                         |
 | Adapter seams        | **Phase E green:** `test/world.test.ts` (6) + demo adapter spec/unit; Graph IDE page spec; no library implementation; `docs/world.md` and `docs/semantic-wrappers.md` updated; demo-error check (40)                                            |
@@ -414,7 +414,7 @@ contract + registry over branches; host owns policy; legibility gates spectacle.
 
 ### Landed (Phase A)
 
-- Renderer bridge declares `emphasis`/`widgetSlots`; emphasized edges widen. Tests: `bun test` in
+- Renderer bridge declares `emphasis`/`widgetSlots`; emphasized edges widen. Tests: `pnpm test` in
   `packages/spacegraph-renderer` (22 pass) + typecheck.
 - Flagship: `app/pi/src/play.ts`, `permalink.ts`, `trace.ts`; representation ladder in `adapter.ts`;
   honest vision strategy in `host.ts`/`engine.ts`/`src/vision/assert.ts`; guided replay and Playground

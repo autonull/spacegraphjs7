@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { frameInRegion } from './fit';
 
 const surface = { width: 1000, height: 800 };

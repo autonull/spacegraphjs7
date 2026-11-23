@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { ContrastAuditor } from '@spacegraphjs/renderer';
 import { CYTOSCAPE_THEME, CYTOSCAPE_TOKENS, CytoscapeThemeBridge } from './theme';
 

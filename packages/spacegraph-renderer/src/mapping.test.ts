@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { RENDER_THEME, node, edge } from '../../renderer/test/fixtures';
 import { edgeSpec, nodeSpec, parseColor, spaceGraphTheme, statusColor } from './mapping';
 

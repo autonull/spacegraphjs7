@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { ContrastAuditor, DEFAULT_THEME, resolveTheme } from '@spacegraphjs/renderer';
 
 describe('SpaceGraph renderer theme', () => {

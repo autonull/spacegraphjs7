@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { Kernel } from './kernel';
 import { deriveScope } from './scope';
 import type { Edge, Node } from './kernel';

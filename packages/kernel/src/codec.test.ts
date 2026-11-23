@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { KernelCodec, KERNEL_FORMAT } from './codec';
 import { Kernel } from './kernel';
 import { SessionKernel } from './session';

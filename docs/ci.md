@@ -42,12 +42,12 @@ cd spacegraphjs && pnpm vitest run packages/spacegraph-renderer/
 cd spacegraphjs && pnpm vitest run packages/svg-renderer/
 
 # Boundary tests (enforce dependency rules)
-cd spacegraphjs && bun run test:boundaries
+cd spacegraphjs && pnpm run test:boundaries
 ```
 
 ## Full Fork Gate (`graph:verify`)
 
-The fork's `bun run graph:verify` includes all SpaceGraphJS tests plus OpenCode integration tests:
+The fork's `pnpm run graph:verify` includes all SpaceGraphJS tests plus OpenCode integration tests:
 
 1. Library build — `spacegraphjs` builds all packages (types + dist)
 2. Contract conformance — shared renderer contract suite against both adapters

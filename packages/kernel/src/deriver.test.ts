@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { defineDeriver, inputToken, pipe, runPipeline } from './deriver';
 import { randomKernel } from './generator';
 import { Kernel } from './kernel';

@@ -26,11 +26,6 @@ jobs:
                   node-version: '22'
                   cache: 'pnpm'
 
-            - name: Setup Bun
-              uses: oven-sh/setup-bun@v2
-              with:
-                  bun-version: '1.4.3'
-
             - name: Install dependencies
               run: pnpm install --no-frozen-lockfile
 
@@ -50,7 +45,7 @@ jobs:
               run: |
                   for p in renderer adapter spacegraph-renderer cytoscape-renderer svg-renderer; do
                       echo "--- packages/$p ---"
-                      (cd "packages/$p" && bun test)
+                      (cd "packages/$p" && pnpm test)
                   done
 
             - name: Install Playwright Browsers
@@ -86,11 +81,6 @@ jobs:
               with:
                   node-version: '22'
                   cache: 'pnpm'
-
-            - name: Setup Bun
-              uses: oven-sh/setup-bun@v2
-              with:
-                  bun-version: '1.4.3'
 
             - name: Install dependencies
               run: pnpm install --no-frozen-lockfile

@@ -132,7 +132,7 @@ host-specific renderer branch was added.
 - JS-cost isolation: 60 sequential `__pi.advance(1/60)` calls averaged **0.368 ms** each; 20
   `__pi.paint()` calls (full model rebuild) averaged **2.295 ms**. The flight path no longer pays the
   full rebuild cost per frame.
-- Focused gates after the change: `packages/renderer` `bun test src/index.test.ts` (7 passed),
+- Focused gates after the change: `packages/renderer` `pnpm exec vitest run src/index.test.ts` (7 passed),
   `cd app/pi && pnpm run check:fast` (141 passed) and `pnpm run e2e:chrome` (17 passed).
 
 **Open:** the 80 ms flight target is still unverified on real hardware. The residual cost in the Xvfb

@@ -1,4 +1,4 @@
-import { describe, test } from 'bun:test';
+import { describe, test } from 'vitest';
 import { adapterConformance } from '@spacegraphjs/adapter';
 import { dataAdapter, FIXTURE_POSITIONS, fixtureOps, foldDataOps } from './fixture';
 import { buildDataView } from './vocabulary';

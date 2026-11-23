@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect } from 'vitest';
 import { collapseGroups, isGroup, getGroupIds } from './collapse';
 import type { GraphViewData, GraphNode, GraphEdge } from './types';
 

@@ -203,7 +203,7 @@ the progress block below records what has actually landed.
 3. The both-themes vision test (`app/pi/tests/vision.spec.ts:113`) boots eight pages (~26s). Keep one
    representative shot in both themes plus the unit `ContrastAuditor` audit; leave the full matrix at the
    boundary gate.
-4. Root AGENTS names `bun run check`, but `package.json` has no `check` script. Add one wrapping package
+4. Root AGENTS names `pnpm run check`, but `package.json` has no `check` script. Add one wrapping package
    typechecks so the fast loop has one unambiguous command.
 
 **Frame hygiene (2026-11-21): a screenshot audit found two overlapping frames and two awkward readouts.**

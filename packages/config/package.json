@@ -19,10 +19,13 @@
             "default": "./dist/library.js"
         }
     },
-    "files": ["dist", "README.md"],
+    "files": [
+        "dist",
+        "README.md"
+    ],
     "scripts": {
         "typecheck": "tsc --noEmit",
-        "test": "bun test",
+        "test": "vitest run",
         "build": "vite build"
     },
     "dependencies": {

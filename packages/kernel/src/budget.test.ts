@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { expect, test } from 'vitest';
 import { applyNodeBudget } from './budget';
 import { Kernel } from './kernel';
 

@@ -17,6 +17,7 @@ import { join, resolve } from 'node:path';
 import { createPackedConsumer, RUNTIME_DEPENDENCIES } from './publish-check/pack.js';
 
 const root = resolve(import.meta.dirname, '..');
+const tsx = resolve(root, 'node_modules/.bin/tsx');
 const packages = [
     { name: 'spacegraphjs', dir: root },
     { name: '@spacegraphjs/renderer', dir: join(root, 'packages/renderer') },
@@ -49,18 +50,14 @@ try {
     );
 
     console.log('\nnode check: the published contract and adapters');
-    execFileSync('bun', ['run', 'check.ts'], { cwd: consumer, stdio: 'inherit' });
+    execFileSync(tsx, ['check.ts'], { cwd: consumer, stdio: 'inherit' });
 
     console.log('\nbrowser check: both interactive adapters mount and draw');
-    execFileSync(
-        'bun',
-        ['run', resolve(import.meta.dirname, 'publish-check/consumer/browser-check.ts')],
-        {
-            cwd: consumer,
-            stdio: 'inherit',
-            env: { ...process.env, CONSUMER_ROOT: consumer },
-        },
-    );
+    execFileSync(tsx, [resolve(import.meta.dirname, 'publish-check/consumer/browser-check.ts')], {
+        cwd: consumer,
+        stdio: 'inherit',
+        env: { ...process.env, CONSUMER_ROOT: consumer },
+    });
 
     console.log('\npublish check passed');
 } finally {

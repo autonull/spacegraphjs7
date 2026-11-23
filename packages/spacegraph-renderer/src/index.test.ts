@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { supports, supportsEmphasis } from '@spacegraphjs/renderer';
 import { WIDGET_SLOTS } from 'spacegraphjs/widgets';
 import { SpaceGraphRenderer } from './index';

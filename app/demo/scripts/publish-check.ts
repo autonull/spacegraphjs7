@@ -9,9 +9,14 @@ import { join, resolve } from 'node:path';
 import { createPackedConsumer, RUNTIME_DEPENDENCIES } from '../../../script/publish-check/pack.js';
 
 const root = resolve(import.meta.dirname, '../../..');
+const tsx = resolve(root, 'node_modules/.bin/tsx');
 const packages = [
     { name: 'spacegraphjs', dir: root },
     { name: '@spacegraphjs/adapter', dir: join(root, 'packages/adapter') },
+    { name: '@spacegraphjs/agent', dir: join(root, 'packages/domain/agent') },
+    { name: '@spacegraphjs/data', dir: join(root, 'packages/domain/data') },
+    { name: '@spacegraphjs/filesystem', dir: join(root, 'packages/domain/filesystem') },
+    { name: '@spacegraphjs/workflow', dir: join(root, 'packages/domain/workflow') },
     { name: '@spacegraphjs/cytoscape-renderer', dir: join(root, 'packages/cytoscape-renderer') },
     { name: '@spacegraphjs/kernel', dir: join(root, 'packages/kernel') },
     { name: '@spacegraphjs/overlays', dir: join(root, 'packages/overlays') },
@@ -29,7 +34,7 @@ const consumer = join(workspace, 'consumer');
 try {
     createPackedConsumer(root, packages, RUNTIME_DEPENDENCIES, consumer, join(workspace, 'tarballs'));
 
-    const demo = join(consumer, 'demo', 'src');
+    const demo = join(consumer, 'src');
     mkdirSync(demo, { recursive: true });
     for (const file of readdirSync(join(root, 'app/demo/src'))) {
         copyFileSync(join(root, 'app/demo/src', file), join(demo, file));
@@ -38,8 +43,8 @@ try {
 
     console.log('\ndemo check: the demo mounts and runs on published packages');
     execFileSync(
-        'bun',
-        ['run', resolve(import.meta.dirname, '../../../script/publish-check/demo-browser-check.ts')],
+        tsx,
+        [resolve(import.meta.dirname, '../../../script/publish-check/demo-browser-check.ts')],
         {
             cwd: consumer,
             stdio: 'inherit',

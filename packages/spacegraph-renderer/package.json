@@ -20,7 +20,7 @@
     ],
     "scripts": {
         "typecheck": "tsc --noEmit",
-        "test": "bun test"
+        "test": "vitest run"
     },
     "dependencies": {
         "@spacegraphjs/renderer": "workspace:*",

@@ -184,7 +184,7 @@
         "test:boundaries": "vitest run test/boundaries.test.ts",
         "test:demo-errors": "playwright test test/e2e/demo-errors.spec.ts --reporter=list",
         "test:exports": "vitest run test/package-exports.test.ts",
-        "test:kernel": "bun test packages/kernel/src",
+        "test:kernel": "pnpm --filter @spacegraphjs/kernel test",
         "test:atlas": "playwright test --config playwright.demo.config.ts test/e2e/interaction-atlas.spec.ts --reporter=list",
         "test:demo-atlas": "playwright test --config playwright.demo.config.ts test/e2e/demo-atlas.spec.ts --reporter=list",
         "test:inner-layout": "playwright test --config playwright.demo.config.ts test/e2e/inner-layout.spec.ts --reporter=list",

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { addEdge, addNode, foldKernelOps } from './domain';
 import { Kernel } from './kernel';
 import type { KernelOp } from './session';

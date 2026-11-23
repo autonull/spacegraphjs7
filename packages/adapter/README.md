@@ -66,7 +66,7 @@ const renderModel = adapter.build(model, { level: 'fine', positions });
 ## Conformance
 
 `adapterConformance(adapter, fixture)` returns the cases every adapter must pass. The suite is
-runner-agnostic — it returns `{ name, check }` pairs, so a host can run it under Vitest, Bun, or
+runner-agnostic — it returns `{ name, check }` pairs, so a host can run it under Vitest or
 Jest:
 
 ```ts

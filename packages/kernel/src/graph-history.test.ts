@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect } from 'vitest';
 import { SessionKernel } from './session';
 import type { KernelOp } from './session';
 import { createGraphHistory } from './graph-history';

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { WorkflowEventMapper, type WorkflowEvent } from './mapping';
 import { fixtureEvents, fixtureOps, foldWorkflowOps } from './fixture';
 import {

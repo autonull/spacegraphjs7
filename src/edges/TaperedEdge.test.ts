@@ -5,7 +5,7 @@ import type { EdgeSpec } from '../types';
 import { TaperedEdge } from './TaperedEdge';
 
 beforeAll(() => {
-    // The base Edge constructor reads window dimensions for LineMaterial resolution; Bun has no DOM.
+    // The base Edge constructor reads window dimensions for LineMaterial resolution; the bare test environment has no DOM.
     Object.assign(globalThis, { window: { innerWidth: 800, innerHeight: 600 } });
 });
 

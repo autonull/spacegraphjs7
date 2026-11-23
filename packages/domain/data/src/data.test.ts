@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { DataEventMapper, type DataEvent } from './mapping';
 import { fixtureEvents, fixtureOps, foldDataOps } from './fixture';
 import { EDGE_KINDS, DATA_KINDS, buildDataView, dataDomain, roleOf } from './vocabulary';

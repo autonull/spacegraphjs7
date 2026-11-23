@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { runConformance } from '../conformance';
 import { buildExampleKernel } from './fixture';
 import { query } from '../query';

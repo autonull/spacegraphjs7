@@ -132,7 +132,7 @@ Install with `pnpm add spacegraphjs three`. Three.js is a required peer. Optiona
 
 Run `pnpm run dev:demo` and open `/` for the complete demo: a capability gallery, 44 programmatic demos at `/showcase.html`, and every standalone feature page. `pnpm run dev` serves the engine demos.
 
-The OpenCode host demo (`bun run graph:dev`, the real shell against a canonical fixture with no model provider) and the component-test harness are indexed next to it in `docs/spacegraph/demos.md` of the OpenCode fork.
+The OpenCode host demo (`pnpm run graph:dev`, the real shell against a canonical fixture with no model provider) and the component-test harness are indexed next to it in `docs/spacegraph/demos.md` of the OpenCode fork.
 
 ### Most-used calls
 

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { buildA11ySupport } from './a11y';
 import { Kernel } from './kernel';
 

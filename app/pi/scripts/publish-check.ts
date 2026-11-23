@@ -7,6 +7,7 @@ import { join, resolve } from 'node:path';
 import { createPackedConsumer, RUNTIME_DEPENDENCIES } from '../../../script/publish-check/pack.js';
 
 const root = resolve(import.meta.dirname, '../../..');
+const tsx = resolve(root, 'node_modules/.bin/tsx');
 const packages = [
     { name: 'spacegraphjs', dir: root },
     { name: '@spacegraphjs/agent', dir: join(root, 'packages/domain/agent') },
@@ -26,7 +27,7 @@ try {
     copyFileSync(join(import.meta.dirname, 'publish-check/consumer.ts'), join(consumer, 'check.ts'));
 
     console.log('\npi publish check: the packed agent runs without Pi');
-    execFileSync('bun', ['run', 'check.ts'], { cwd: consumer, stdio: 'inherit' });
+    execFileSync(tsx, ['check.ts'], { cwd: consumer, stdio: 'inherit' });
 
     console.log('pi publish check passed');
 } finally {

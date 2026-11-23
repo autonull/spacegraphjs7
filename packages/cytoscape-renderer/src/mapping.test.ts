@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { RENDER_THEME, node, edge } from '../../renderer/test/fixtures';
 import { cytoscapeStyle, edgeElement, nodeElement, normalizeTheme, statusColor } from './mapping';
 

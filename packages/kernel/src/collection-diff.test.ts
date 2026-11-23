@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { describe, expect, it } from 'vitest';
 import { diffCollectionById, stableSerialize } from './collection-diff';
 
 type Item = { readonly id: string; readonly value?: unknown };

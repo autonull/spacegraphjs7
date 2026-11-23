@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { FilesystemEventMapper, type FilesystemEvent } from './mapping';
 import { fixtureEvents, fixtureOps, foldFilesystemOps } from './fixture';
 import {

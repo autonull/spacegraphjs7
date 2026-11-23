@@ -21,7 +21,7 @@
     "scripts": {
         "build": "vite build",
         "typecheck": "tsc --noEmit",
-        "test": "bun test",
+        "test": "vitest run --passWithNoTests",
         "lint": "eslint src --ext .ts,.tsx"
     },
     "peerDependencies": {
