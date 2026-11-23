@@ -2,12 +2,39 @@ import { expect, type Page } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { DEMOS } from '../../app/demo/src/registry.js';
 
 // Shared capture layer for the unified demo/test atlases. A "shot" is data; every surface exposes
 // a window API and the same boot/configure/verify/capture pipeline drives it.
 
 export const OUT = process.env.SG_ATLAS_DIR ?? resolve('docs/screenshots/atlas');
 export const VIEWPORT = { width: 1440, height: 900 };
+
+/** Known console noise, by gate strictness: basic checks, screenshot gates, full atlas. */
+export const EXPECTED_ERRORS = {
+    basic: ['WebSocket connection', 'ERR_CONNECTION_REFUSED'],
+    screenshots: [
+        'WebSocket connection',
+        'ERR_CONNECTION_REFUSED',
+        'Outdated Optimize Dep',
+        'Failed to load resource: the server responded with a status of 400',
+        'Failed to load resource: the server responded with a status of 403',
+    ],
+    atlas: [
+        'favicon',
+        'WebSocket connection',
+        'ERR_CONNECTION_REFUSED',
+        'Outdated Optimize Dep',
+        'Failed to load resource: the server responded with a status of 400',
+        'Failed to load resource: the server responded with a status of 403',
+    ],
+} as const;
+
+export const isExpectedError = (message: string, patterns: readonly string[]): boolean =>
+    patterns.some((pattern) => message.includes(pattern));
+
+export const htmlDemos = DEMOS.filter((entry) => entry.kind === 'html');
+export const htmlDemoIds = htmlDemos.map((entry) => entry.id);
 
 export interface Explorer {
     axes(): string[];

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
-import { DEMOS, demoPath } from '../../app/demo/src/registry.js';
+import { demoPath } from '../../app/demo/src/registry.js';
+import { EXPECTED_ERRORS, htmlDemoIds, isExpectedError } from './atlas-kit.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -12,14 +13,6 @@ if (!fs.existsSync(screenshotDir)) {
     fs.mkdirSync(screenshotDir, { recursive: true });
 }
 
-const EXPECTED_ERROR_PATTERNS = [
-    'WebSocket connection',
-    'ERR_CONNECTION_REFUSED',
-    'Outdated Optimize Dep',
-    'Failed to load resource: the server responded with a status of 400',
-    'Failed to load resource: the server responded with a status of 403',
-];
-
 // Demos with naturally small screenshots (minimal content)
 const SMALL_SCREENSHOT_DEMOS = new Set([
     'empty',
@@ -27,12 +20,6 @@ const SMALL_SCREENSHOT_DEMOS = new Set([
     'single-node',
     'inter-graph-edges',
 ]);
-
-function isExpectedError(msg: string): boolean {
-    return EXPECTED_ERROR_PATTERNS.some((pattern) => msg.includes(pattern));
-}
-
-const htmlDemos = DEMOS.filter((entry) => entry.kind === 'html').map((entry) => entry.id);
 
 // A screenshot should show what a demo is for. The delta demo starts at its smallest state so the
 // spec can compare positions; the captured frame shows the layer switch mid-flight instead.
@@ -46,17 +33,20 @@ const setups: Record<string, (page: Page) => Promise<void>> = {
 };
 
 test.describe('Demo Screenshots & Rendering Verification', () => {
-    htmlDemos.forEach((demo) => {
+    htmlDemoIds.forEach((demo) => {
         test(`screenshot: ${demo} - renders and has content`, async ({ page }) => {
             const errors: string[] = [];
 
             page.on('console', (msg) => {
-                if (msg.type() === 'error' && !isExpectedError(msg.text())) {
+                if (
+                    msg.type() === 'error' &&
+                    !isExpectedError(msg.text(), EXPECTED_ERRORS.screenshots)
+                ) {
                     errors.push(`[CONSOLE] ${msg.text()}`);
                 }
             });
             page.on('pageerror', (error) => {
-                if (!isExpectedError(error.message)) {
+                if (!isExpectedError(error.message, EXPECTED_ERRORS.screenshots)) {
                     errors.push(`[PAGE ERROR] ${error.message}`);
                 }
             });

@@ -1,27 +1,20 @@
 import { expect, test } from '@playwright/test';
-import { DEMOS, demoPath } from '../../app/demo/src/registry.js';
-
-const EXPECTED_ERROR_PATTERNS = ['WebSocket connection', 'ERR_CONNECTION_REFUSED'];
-
-function isExpectedError(msg: string): boolean {
-    return EXPECTED_ERROR_PATTERNS.some((pattern) => msg.includes(pattern));
-}
-
-const htmlDemos = DEMOS.filter((entry) => entry.kind === 'html').map((entry) => entry.id);
+import { demoPath } from '../../app/demo/src/registry.js';
+import { EXPECTED_ERRORS, htmlDemoIds, isExpectedError } from './atlas-kit.js';
 
 test.describe('Demo Console Error Detection', () => {
-    htmlDemos.forEach((demo) => {
+    htmlDemoIds.forEach((demo) => {
         test(`HTML demo: ${demo} - should have no console errors`, async ({ page }) => {
             const errors: string[] = [];
 
             page.on('console', (msg) => {
-                if (msg.type() === 'error' && !isExpectedError(msg.text())) {
+                if (msg.type() === 'error' && !isExpectedError(msg.text(), EXPECTED_ERRORS.basic)) {
                     errors.push(msg.text());
                 }
             });
 
             page.on('pageerror', (error) => {
-                if (!isExpectedError(error.message)) {
+                if (!isExpectedError(error.message, EXPECTED_ERRORS.basic)) {
                     errors.push(error.message);
                 }
             });

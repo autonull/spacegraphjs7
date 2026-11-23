@@ -16,6 +16,29 @@ const settledBoot = async (page: Page): Promise<void> => {
         .toBe(true);
 };
 
+const VIEWPORT = { width: 1600, height: 1000 };
+
+const openShot = async (
+    page: Page,
+    query: string,
+    viewport?: { width: number; height: number },
+): Promise<void> => {
+    if (viewport) await page.setViewportSize(viewport);
+    await page.goto(`/?${query}`);
+    await page.waitForFunction(() => (window as any).__pi?.ready === true);
+    await page.waitForFunction(() => (window as any).__pi?.shotReady?.() === true);
+};
+
+const openSettledShot = async (
+    page: Page,
+    query: string,
+    viewport?: { width: number; height: number },
+): Promise<void> => {
+    await openShot(page, query, viewport);
+    await page.evaluate(() => (window as any).__pi.pause(true));
+    await page.evaluate(() => (window as any).__pi.settle());
+};
+
 const assertScene = async (page: Page): Promise<void> => {
     const vision = createVisionAssert(page);
     const record = await vision.record();
@@ -35,12 +58,7 @@ test.describe('Pi flagship vision atlas', () => {
                 const shot = SHOTS.find(
                     (entry) => entry.id === `fit-${aspect}-${octave < 0 ? 'far' : octave > 0 ? 'near' : 'mid'}`,
                 )!;
-                await page.setViewportSize(shot.viewport!);
-                await page.goto(`/?shot=${shot.id}`);
-                await page.waitForFunction(() => (window as any).__pi?.ready === true);
-                await page.waitForFunction(() => (window as any).__pi?.shotReady?.() === true);
-                await page.evaluate(() => (window as any).__pi.pause(true));
-                await page.evaluate(() => (window as any).__pi.settle());
+                await openSettledShot(page, `shot=${shot.id}`, shot.viewport!);
                 await assertScene(page);
             }
         }
@@ -52,12 +70,7 @@ test.describe('Pi flagship vision atlas', () => {
         page.on('pageerror', (error) => errors.push(error.message));
         for (const id of ['fit-wide-mid', 'fit-wide-near', 'fit-narrow-mid']) {
             const shot = SHOTS.find((entry) => entry.id === id)!;
-            await page.setViewportSize(shot.viewport!);
-            await page.goto(`/?shot=${id}&ui=scale-aware`);
-            await page.waitForFunction(() => (window as any).__pi?.ready === true);
-            await page.waitForFunction(() => (window as any).__pi.shotReady?.() === true);
-            await page.evaluate(() => (window as any).__pi.pause(true));
-            await page.evaluate(() => (window as any).__pi.settle());
+            await openSettledShot(page, `shot=${id}&ui=scale-aware`, shot.viewport!);
             await assertScene(page);
         }
         expect(errors).toEqual([]);
@@ -77,11 +90,7 @@ test.describe('Pi flagship vision atlas', () => {
                     await page.setViewportSize(shot.viewport!);
                     for (const variant of ['dark', 'light'] as const) {
                         const policy = variant === 'light' ? `&policy=${encodeURIComponent(light)}` : '';
-                        await page.goto(`/?shot=${shot.id}&graphLayout=${mode}${policy}`);
-                        await page.waitForFunction(() => (window as any).__pi?.ready === true);
-                        await page.waitForFunction(() => (window as any).__pi?.shotReady?.() === true);
-                        await page.evaluate(() => (window as any).__pi.pause(true));
-                        await page.evaluate(() => (window as any).__pi.settle());
+                        await openSettledShot(page, `shot=${shot.id}&graphLayout=${mode}${policy}`);
                         await assertScene(page);
                     }
                 }
@@ -93,12 +102,7 @@ test.describe('Pi flagship vision atlas', () => {
     test('graph arrangements pass the vision gates under reduced motion', async ({ page }) => {
         await page.emulateMedia({ reducedMotion: 'reduce' });
         for (const mode of GRAPH_LAYOUTS) {
-            await page.setViewportSize({ width: 1600, height: 1000 });
-            await page.goto(`/?shot=fit-wide-mid&graphLayout=${mode}`);
-            await page.waitForFunction(() => (window as any).__pi?.ready === true);
-            await page.waitForFunction(() => (window as any).__pi?.shotReady?.() === true);
-            await page.evaluate(() => (window as any).__pi.pause(true));
-            await page.evaluate(() => (window as any).__pi.settle());
+            await openSettledShot(page, `shot=fit-wide-mid&graphLayout=${mode}`, VIEWPORT);
             await assertScene(page);
         }
     });
@@ -106,10 +110,7 @@ test.describe('Pi flagship vision atlas', () => {
     test('intermediate frames of a graph morph stay legible', async ({ page }) => {
         const errors: string[] = [];
         page.on('pageerror', (error) => errors.push(error.message));
-        await page.setViewportSize({ width: 1600, height: 1000 });
-        await page.goto('/?shot=fit-wide-mid&graphLayout=timeline&graphMorph=1');
-        await page.waitForFunction(() => (window as any).__pi?.ready === true);
-        await page.waitForFunction(() => (window as any).__pi?.shotReady?.() === true);
+        await openShot(page, 'shot=fit-wide-mid&graphLayout=timeline&graphMorph=1', VIEWPORT);
         await page.evaluate(() => (window as any).__pi.pause(true));
         await page.evaluate(() => (window as any).__pi.setGraphLayout('lanes'));
         expect(await page.evaluate(() => (window as any).__pi.simulation().settled)).toBe(false);
@@ -125,10 +126,7 @@ test.describe('Pi flagship vision atlas', () => {
     test('bounded recursion keeps intermediate frames legible on re-entry', async ({ page }) => {
         const errors: string[] = [];
         page.on('pageerror', (error) => errors.push(error.message));
-        await page.setViewportSize({ width: 1600, height: 1000 });
-        await page.goto('/?shot=recursion');
-        await page.waitForFunction(() => (window as any).__pi?.ready === true);
-        await page.waitForFunction(() => (window as any).__pi?.shotReady?.() === true);
+        await openShot(page, 'shot=recursion', VIEWPORT);
         const chips = page.locator('#focus-lens .focus-chip');
         const count = await chips.count();
         expect(count).toBeGreaterThan(0);
@@ -158,10 +156,7 @@ test.describe('Pi flagship vision atlas', () => {
             for (const aspect of ['wide', 'narrow'] as const) {
                 const label = octave < 0 ? 'far' : octave > 0 ? 'near' : 'mid';
                 const shot = SHOTS.find((entry) => entry.id === `fit-${aspect}-${label}`)!;
-                await page.setViewportSize(shot.viewport!);
-                await page.goto(`/?shot=${shot.id}&preset=dense-type`);
-                await page.waitForFunction(() => (window as any).__pi?.ready === true);
-                await page.waitForFunction(() => (window as any).__pi?.shotReady?.() === true);
+                await openShot(page, `shot=${shot.id}&preset=dense-type`, shot.viewport!);
                 expect(
                     await page.evaluate(() => document.documentElement.dataset.density),
                 ).toBe('dense');
