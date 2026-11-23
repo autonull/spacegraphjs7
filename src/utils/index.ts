@@ -70,7 +70,7 @@ export { MAX_NODE_SIZE, MIN_NODE_SIZE, nodeScreenSize, NodeResizer } from './nod
 // Node parent
 export { parentIdOf } from './nodeParent';
 // Math utilities (from math.ts) - excluding constants which come from core
-export { clamp, clamp01, lerp, safeClone, seededRandom } from './math';
+export { clamp, clamp01, lerp, safeClone, seededRandom, seededRandom31 } from './math';
 export {
     gridPoint,
     gridPoints,

@@ -1,4 +1,5 @@
 import type { SpaceGraph } from '../../SpaceGraph';
+import { calculateDistance, calculateMidpoint } from '../../utils/GestureManager';
 import type { Finger, Fingering } from '../Fingering';
 
 /**
@@ -34,8 +35,8 @@ export class PinchZoomFingering implements Fingering {
 
     startMultiTouch(finger1: Finger, finger2: Finger): boolean {
         if (!this.sg?.cameraControls) return false;
-        this.lastDistance = this._distance(finger1, finger2);
-        this.lastMid = this._midpoint(finger1, finger2);
+        this.lastDistance = calculateDistance(finger1.position, finger2.position);
+        this.lastMid = calculateMidpoint(finger1.position, finger2.position);
         this.active = true;
         return true;
     }
@@ -43,13 +44,13 @@ export class PinchZoomFingering implements Fingering {
     updateMultiTouch(finger1: Finger, finger2: Finger): boolean {
         if (!this.active) return false;
 
-        const distance = this._distance(finger1, finger2);
+        const distance = calculateDistance(finger1.position, finger2.position);
         if (this.lastDistance > 0 && distance > 0) {
             this.sg.cameraControls.zoom(this.lastDistance / distance);
         }
         this.lastDistance = distance;
 
-        const mid = this._midpoint(finger1, finger2);
+        const mid = calculateMidpoint(finger1.position, finger2.position);
         this.sg.cameraControls.pan(mid.x - this.lastMid.x, mid.y - this.lastMid.y);
         this.lastMid = mid;
 
@@ -58,13 +59,5 @@ export class PinchZoomFingering implements Fingering {
 
     stopMultiTouch(): void {
         this.active = false;
-    }
-
-    private _distance(f1: Finger, f2: Finger): number {
-        return Math.hypot(f1.position.x - f2.position.x, f1.position.y - f2.position.y);
-    }
-
-    private _midpoint(f1: Finger, f2: Finger): { x: number; y: number } {
-        return { x: (f1.position.x + f2.position.x) / 2, y: (f1.position.y + f2.position.y) / 2 };
     }
 }

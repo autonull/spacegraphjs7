@@ -15,7 +15,6 @@ export interface FocusableNode extends Node {
 
 export class FocusManager {
     readonly sg: SpaceGraph;
-    private focusStack: FocusableNode[] = [];
     private focusedNode: FocusableNode | null = null;
 
     constructor(sg: SpaceGraph) {
@@ -38,7 +37,6 @@ export class FocusManager {
 
         this.focusedNode = node;
         node.focus();
-        this.focusStack.push(node);
 
         this.sg.events.emit('focus:changed', { node, focused: true });
         logger.debug(`Focused node: ${node.id}`);
@@ -75,7 +73,6 @@ export class FocusManager {
 
     dispose(): void {
         this.blur();
-        this.focusStack = [];
     }
 
     getFocusableNodes(): FocusableNode[] {

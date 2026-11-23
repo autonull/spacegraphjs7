@@ -130,7 +130,11 @@ export class ForceCore {
         if (!nodes.length) return new Map();
 
         const forces = new Map<string, { x: number; y: number; z: number }>();
-        for (const node of nodes) forces.set(node.id, { x: 0, y: 0, z: 0 });
+        const nodeById = new Map<string, P>();
+        for (const node of nodes) {
+            forces.set(node.id, { x: 0, y: 0, z: 0 });
+            if (!nodeById.has(node.id)) nodeById.set(node.id, node);
+        }
 
         // Precompute radii (used as mass for Barnes-Hut)
         const radii = new Map<string, number>();
@@ -195,7 +199,7 @@ export class ForceCore {
         for (const node of nodes) {
             const force = forces.get(node.id)!;
             for (const link of getLinks(node)) {
-                const target = nodes.find(n => n.id === link);
+                const target = nodeById.get(link);
                 if (!target) continue;
 
                 const dx = target.position.x - node.position.x;

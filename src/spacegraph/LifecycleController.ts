@@ -25,6 +25,7 @@ import type { SpaceGraphEvents } from '../types';
 export class LifecycleController {
     #initialized = false;
     #disposed = false;
+    #defaultsRegistered = false;
 
     constructor(readonly sg: SpaceGraph) {}
 
@@ -51,6 +52,8 @@ export class LifecycleController {
     }
 
     #registerDefaults(): void {
+        if (this.#defaultsRegistered) return;
+        this.#defaultsRegistered = true;
         const registerPlugins = (plugins: [PluginCtor, string][]) => {
             for (const [cls, name] of plugins) this.sg.pluginManager.register(name, new cls());
         };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appendTo, requireElement, seededRandom } from 'spacegraphjs/utils';
+import { appendTo, requireElement, seededRandom, seededRandom31 } from 'spacegraphjs/utils';
 
 describe('seededRandom', () => {
     const draw = (random: () => number): number[] => [random(), random(), random()];
@@ -11,6 +11,17 @@ describe('seededRandom', () => {
 
     it('draws numbers in the unit interval', () => {
         expect(draw(seededRandom(41)).every((value) => value >= 0 && value < 1)).toBe(true);
+    });
+});
+
+describe('seededRandom31', () => {
+    it('keeps the graph generators historical sequence', () => {
+        const random = seededRandom31(41);
+        expect([random(), random(), random()]).toEqual([
+            0.06844326018748957,
+            0.9992315028790532,
+            0.1978328228918057,
+        ]);
     });
 });
 

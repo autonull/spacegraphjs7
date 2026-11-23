@@ -5,7 +5,6 @@ import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EventEmitter } from '../core/EventEmitter';
-import { hasMethod } from '../utils/record';
 
 export { hasMethod } from '../utils/record';
 
@@ -56,10 +55,6 @@ export abstract class BaseSystemPlugin implements Plugin {
 
     import?(_data: unknown): void {}
 
-    protected subscribe(handle: SubscriptionHandle): void {
-        this.subscriptions.push(handle);
-    }
-
     protected isPinned(node: Node): boolean {
         return node.isPinned?.() ?? node.data?.pinned === true;
     }
@@ -68,10 +63,6 @@ export abstract class BaseSystemPlugin implements Plugin {
         return (
             (node.isPinned?.() ?? node.data?.pinned === true) || node.data?.physicsStatic === true
         );
-    }
-
-    protected hasPluginMethod<T>(plugin: unknown, method: keyof T): boolean {
-        return hasMethod(plugin, method as string);
     }
 
     protected on(eventName: string, callback: (...args: any[]) => void): void {
