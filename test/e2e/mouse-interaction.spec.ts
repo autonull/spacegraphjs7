@@ -127,7 +127,6 @@ test.describe('The mouse contract', () => {
         const before = await page.locator('#node-html-control-center .node-content').innerHTML();
 
         await page.evaluate(() => {
-            const node = window._sg.graph.nodes.get('control-center');
             window._sg.graph.updateNode('control-center', { label: 'Renamed' });
         });
 

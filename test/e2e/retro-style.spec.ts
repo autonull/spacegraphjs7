@@ -113,7 +113,6 @@ test.describe('SpaceGraphJ reference styles', () => {
         );
 
         const before = await page.evaluate(() => {
-            const demo = (window as any).__retroDemo as RetroApi;
             const box = document.querySelector('.html-node-container')?.getBoundingClientRect();
             return box ? { width: box.width, height: box.height } : { width: 0, height: 0 };
         });

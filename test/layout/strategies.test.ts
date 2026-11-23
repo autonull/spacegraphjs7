@@ -24,8 +24,8 @@ const CONFIG: LayoutConfig<TestNode, TestEdge> = {
     laneOfFn: (node) => (node.kind === 'chip' ? 'top' : 'bottom'),
     depthMap: { root: 0, turn: 1, work: 2 },
     turnIdFn: (node) => node.turnID,
-    ownerTurnFn: (model, node) => (node.kind === 'file' ? ownerTurn(model, node) : undefined),
-    parentOfFn: (model, node) => {
+    ownerTurnFn: (_model, node) => (node.kind === 'file' ? ownerTurn(_model, node) : undefined),
+    parentOfFn: (_model, node) => {
         if (node.kind === 'turn') return 'root';
         if (node.kind === 'work') return node.turnID;
         return undefined;

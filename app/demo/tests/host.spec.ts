@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { mkdirSync } from 'fs';
 import { resolve } from 'path';
 import { boot, noErrors } from '../../../test/e2e/atlas-kit.js';

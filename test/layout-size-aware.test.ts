@@ -287,7 +287,7 @@ const testCases: LayoutTestCase[] = [
 describe('size-aware layout conformance', () => {
     for (const tc of testCases) {
         it(`${tc.name} runs without error and produces distinct positions`, async () => {
-            const { sg, graph, pluginManager } = makeHost();
+            const { graph, pluginManager } = makeHost();
             const layout = tc.createLayout({});
             tc.setupGraph(graph);
 
@@ -313,7 +313,7 @@ describe('size-aware layout conformance', () => {
 
         it(`${tc.name} produces different positions when node sizes change (size-aware)`, async () => {
             // Run with original sizes
-            const { sg: sg1, graph: graph1, pluginManager: pm1 } = makeHost();
+            const { graph: graph1, pluginManager: pm1 } = makeHost();
             const layout1 = tc.createLayout({});
             tc.setupGraph(graph1);
             pm1.register(tc.name, layout1);
@@ -322,7 +322,7 @@ describe('size-aware layout conformance', () => {
             const pos1 = getPositions(graph1);
 
             // Run with doubled sizes
-            const { sg: sg2, graph: graph2, pluginManager: pm2 } = makeHost();
+            const { graph: graph2, pluginManager: pm2 } = makeHost();
             const layout2 = tc.createLayout({});
             // Modify setup to use larger sizes
             const originalSetup = tc.setupGraph;

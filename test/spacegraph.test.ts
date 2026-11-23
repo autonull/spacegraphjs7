@@ -200,31 +200,6 @@ function makeSpaceGraph() {
         }),
     };
 
-    // Minimal graphController for mock
-    const graphController = {
-        loadSpec: SpaceGraph.prototype.loadSpec,
-        update: SpaceGraph.prototype.update,
-        export: SpaceGraph.prototype.export,
-        import: SpaceGraph.prototype.import,
-        getNode: SpaceGraph.prototype.getNode,
-        getEdge: SpaceGraph.prototype.getEdge,
-        hasNode: SpaceGraph.prototype.hasNode,
-        hasEdge: SpaceGraph.prototype.hasEdge,
-        clear: SpaceGraph.prototype.clear,
-        addNode: SpaceGraph.prototype.addNode,
-        addEdge: SpaceGraph.prototype.addEdge,
-        removeNode: SpaceGraph.prototype.removeNode,
-        removeEdge: SpaceGraph.prototype.removeEdge,
-        setPositions: SpaceGraph.prototype.setPositions,
-        pinAll: SpaceGraph.prototype.pinAll,
-        layout: SpaceGraph.prototype.layout,
-        layoutOnce: SpaceGraph.prototype.layoutOnce,
-        get projection() {
-            return sg.renderer?.projection;
-        },
-        setProjection: SpaceGraph.prototype.setProjection,
-    };
-
     // Minimal depthController for mock
     const depthController = {
         get depth() {
