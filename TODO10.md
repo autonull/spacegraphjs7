@@ -123,12 +123,32 @@ XR/sound/haptics; a second flagship; default promotion while TODO9 verdicts are 
 
 ---
 
-## 6. Progress
+## 6. Progress (2026-11-23)
 
 | Phase | Landed (file:line) | Commands | Gate | Non-goal honored |
 | ----- | ------------------ | -------- | ---- | ---------------- |
-| 0     | —                  | —        | —    | —                |
-| 1     | —                  | —        | —    | —                |
-| 2     | —                  | —        | —    | —                |
-| 3     | —                  | —        | —    | —                |
-| 4     | —                  | —        | —    | —                |
+| 0 | E1 `test/e2e/demo-atlas.spec.ts:100` (one page per standalone HTML demo); B1 `app/pi/src/fixture.ts:108`, `app/pi/src/host.ts:351`; B2 `app/pi/scripts/baseline.ts:34`, `app/pi/src/graph-layout.ts:202`, `docs/screenshots/graph-baseline.json`; A1 `app/pi/src/chrome.ts:6`, `app/pi/tests/shell.spec.ts:52` | `pnpm --filter pi check:fast`; `pnpm --filter pi exec playwright test --config playwright.config.ts tests/shell.spec.ts tests/graph-layout.spec.ts --workers=1`; `SG_DEMO_ATLAS_FILTER=layout pnpm run test:demo-atlas`; `pnpm run test:demo-atlas` | Pi unit 179/179; targeted chrome 2/2; short repro 4/4 (one-world passes with 8 preceding frames); full demo-atlas 4/4 (one-world passes in the 42-frame HTML loop) | No renderer change: gate isolates WebGL contexts per page. No default flip. `#proof-line`, `#settings-menu > div`, `#attention` hooks unchanged. |
+| 1 | A2 `app/pi/src/ui/presets.ts:129`, `app/pi/src/host.ts:3086`; B3 `app/pi/src/graph-layout.ts:99`, `app/pi/src/shots.ts:~290`; B4 `app/pi/src/host.ts:2246`, `app/pi/tests/graph-layout.spec.ts:34`; A3 `app/pi/src/ui/presets.ts:156`, `app/pi/index.html:~55` | `pnpm --filter pi check:fast`; `pnpm --filter pi exec playwright test --config playwright.config.ts tests/shell.spec.ts tests/graph-layout.spec.ts tests/ui-presets.spec.ts --workers=1`; `pnpm --filter pi shot chapters,chapters-wide,ui-menus,ui-statusline`; `pnpm --filter pi shots:compare && pnpm --filter pi compare:ui` | Pi unit 180/180; E2E 33/33; 4 new named shots captured; 14 compare pairs captured | Three opt-ins only (`statusline`, `chapters-wide`, `menus`). Pending stubs in `review.json` and the two `comparison.json` files; no default flipped. |
+| 2 | C1 `src/experiments/shot.ts:6`, `src/experiments/catalog.ts:15`, `app/pi/src/catalog.ts:1`, `app/demo/second-host.ts:36`, `app/demo/tests/second-host.test.ts:27` | `pnpm run build:lib`; `pnpm check`; `pnpm --filter demo test` | Root typecheck green; demo unit 39/39 | Host vocabulary stays in Pi/demo; library seam reads only `id`, `label`, `href`. No second position authority or renderer branch. |
+| 3 | C2 `app/demo/html/core/scenario.html`, `app/demo/src/registry.ts:30`, `app/demo/tests/scenario.spec.ts`; C3 `packages/create-spacegraph/templates/spine.ts:~75`, `packages/create-spacegraph/domain.js:393`; C4 `app/demo/tests/scenario-compare.spec.ts:20`, `docs/screenshots/scenario/comparison.json` | `pnpm run generate:registry`; `pnpm --filter demo exec playwright test --config playwright.config.ts tests/scenario.spec.ts tests/scenario-compare.spec.ts --workers=1`; spine template in a temp generated-host layout (3/3) | Demo E2E 3/3 + pair recapture 1/1; registry now 3 hosts / 42 HTML / 45 modules | Scenario lab uses fixture positions or `chapterPacking` through one model seam. Generated app declares scenes as data. Pair is regenerable and gitignored; no default flip. |
+| 4 | E2 `test/hardening.test.ts:76`; E3 `docs/api-compatibility-review.md` | `pnpm exec tsc --noEmit -p tsconfig.json`; `pnpm test` | Root tsc green; root vitest 1042/1042 | E2 asserts the documented cache contract without changing `Node`. E3 removes no export; aliases stay until the next minor. |
+
+Final gates: root `pnpm check`, `pnpm exec tsc --noEmit -p tsconfig.json`, `pnpm test` (1042); Pi `check:fast` (180), E2E `shell`/`graph-layout`/`ui-presets` (33) and `browser`/`readable` (19); full `test:demo-atlas` (4); Pi 4 named shots + 14 compare pairs; demo scenario E2E (3) and proof pair (1). All green in one final pass. No flaky retry was used to turn a red gate green.
+
+---
+
+## 7. Remaining work
+
+1. **D1 (external, blocking promotion).** TODO9 human verdicts and the study pilot are still open.
+   Record them in `docs/screenshots/review.json`, the relevant `*/comparison.json` files and raw
+   study notes. No default may flip until ADR 0008 is satisfied.
+2. **Human verdicts for the six new pending pairs** (`chapters-wide`, `ui-menus`, `ui-statusline`,
+   `ui-preset-menus`, `ui-preset-statusline`, `scenario-workflow-chapters`). The pairs are captured
+   and regenerable; only the logged decision is missing.
+3. **C4 follow-up (optional).** If the demo scenario lab is published, add the workflow/filesystem/data
+   packages to `script/publish-check.ts` pack list and re-run `pnpm run test:publish`.
+4. **E3 follow-up (next minor).** Add `@deprecated` pointers to the aliases in
+   `docs/api-compatibility-review.md` when the next minor opens; do not remove them earlier.
+5. No identified code defect remains from this plan. The one-world crash is a gate-resource limit,
+   fixed in the harness by per-demo page isolation; if it reappears with one page per demo, open a
+   renderer-focused plan rather than retrying this gate.

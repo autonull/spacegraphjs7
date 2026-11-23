@@ -11,7 +11,15 @@ import {
 } from '@spacegraphjs/agent';
 import { DEFAULT_THEME } from '@spacegraphjs/renderer';
 import { CAPABILITIES, capabilityContext, runCapability } from '../src/capabilities';
-import { fixtureID, fixtureKernel, fixtureOps, richFixtureKernel, richFixtureOps } from '../src/fixture';
+import {
+    chaptersFixtureKernel,
+    fixtureID,
+    fixtureKernel,
+    fixtureOps,
+    richFixtureKernel,
+    richFixtureOps,
+} from '../src/fixture';
+import { innerTree } from '../src/inner';
 
 const kernel = fixtureKernel();
 const view = agentDomain.build(kernel);
@@ -64,6 +72,16 @@ describe('canonical fixture', () => {
         expect(richFixtureOps().some((op) => op.op === 'add-edge' && op.edge.kind === 'inferred-cause')).toBe(false);
         expect(rich.nodes.some((node) => node.kind === 'approval')).toBe(true);
         expect(rich.nodes.some((node) => node.kind === 'error')).toBe(true);
+    });
+
+    it('gives the chapters shot two work chips per late turn card', () => {
+        const chapters = agentDomain.build(chaptersFixtureKernel());
+        for (const turn of ['x3', 'x4']) {
+            const chips = innerTree(fixtureID('local', turn), chapters.nodes, chapters.edges, 2, 8).filter(
+                (chip) => chip.kind !== 'run',
+            );
+            expect(chips.length).toBeGreaterThanOrEqual(2);
+        }
     });
 
     it('publishes each question as a deterministic capability', () => {

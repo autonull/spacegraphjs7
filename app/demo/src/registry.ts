@@ -27,6 +27,7 @@ const hosts: readonly Omit<DemoEntry, 'kind'>[] = [
 
 const pages: readonly Omit<DemoEntry, 'kind'>[] = [
     { id: 'contract', category: 'core', path: 'html/core/contract.html' },
+    { id: 'scenario', category: 'core', path: 'html/core/scenario.html' },
     {
         id: 'complex-navigation',
         category: 'interaction',

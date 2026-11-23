@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SpaceGraphJS — scenario lab</title>
+        <style>
+            :root {
+                color-scheme: dark;
+                font-family: system-ui, sans-serif;
+                background: #0c0d12;
+                color: #e7e9f0;
+            }
+            * { box-sizing: border-box; }
+            body { margin: 0; height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+            header { display: flex; gap: 12px; align-items: center; padding: 10px 14px; border-bottom: 1px solid #2a2d3a; }
+            header h1 { font-size: 15px; margin: 0 12px 0 0; }
+            header a { color: #7fd1d5; text-decoration: none; }
+            header a[aria-current='true'] { color: #fff; border-bottom: 2px solid #7fd1d5; }
+            #canvas { position: relative; width: 100%; height: 100%; min-height: 0; }
+            footer { position: absolute; inset-block-end: 8px; inset-inline-start: 14px; font-size: 12px; color: #9ca3b8; }
+        </style>
+    </head>
+    <body data-preset="">
+        <header id="controls">
+            <h1>scenario lab</h1>
+        </header>
+        <main><div id="canvas"></div></main>
+        <footer id="status">loading…</footer>
+        <script type="module">
+            import { DEFAULT_THEME } from '@spacegraphjs/renderer';
+            import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
+            import { chapterPacking } from 'spacegraphjs/layout';
+            import { buildWorldFixture } from '../../src/world-fixture';
+
+            const params = new URLSearchParams(location.search);
+            const fixture = buildWorldFixture();
+            const domains = fixture.domains.map((domain) => domain.id);
+            const domainID = domains.includes(params.get('domain')) ? params.get('domain') : 'workflow';
+            const layouts = ['grid', 'chapters'];
+            const layout = layouts.includes(params.get('layout')) ? params.get('layout') : 'grid';
+            const presets = ['', 'quiet', 'emphasis'];
+            const preset = presets.includes(params.get('preset')) ? params.get('preset') : '';
+            document.body.dataset.preset = preset;
+
+            const domain = fixture.domains.find((entry) => entry.id === domainID);
+            const ids = domain.view.nodes.map((node) => node.id);
+            const positions =
+                layout === 'chapters'
+                    ? chapterPacking(ids, { card: [260, 120], viewport: { width: 1440, height: 900 } })
+                    : domain.positions;
+
+            const renderModel = {
+                nodes: domain.view.nodes.map((node) => {
+                    const point = positions.get(node.id) ?? { x: 0, y: 0, z: 0 };
+                    const data = { domain: domainID, layout, preset, sourceId: node.id };
+                    return {
+                        id: node.id,
+                        kind: node.kind,
+                        label: node.label,
+                        status: node.status || 'neutral',
+                        position: [point.x, point.y, point.z],
+                        size: [220, 84, 80],
+                        data,
+                    };
+                }),
+                edges: domain.view.edges.map((edge) => ({
+                    id: edge.id,
+                    source: edge.source,
+                    target: edge.target,
+                    kind: edge.kind || 'related',
+                    directed: true,
+                })),
+            };
+
+            const renderer = new SpaceGraphRenderer();
+            await renderer.mount(document.querySelector('#canvas'), {
+                theme: DEFAULT_THEME,
+                projection: '2d',
+                global: true,
+            });
+            renderer.setModel(renderModel);
+            renderer.fit();
+
+            const link = (group, value, label) => {
+                const next = new URLSearchParams(params);
+                next.set(group, value);
+                const anchor = document.createElement('a');
+                anchor.href = `?${next}`;
+                anchor.textContent = label;
+                anchor.setAttribute('aria-current', String(String(params.get(group) ?? (group === 'domain' ? domainID : group === 'layout' ? layout : preset)) === value));
+                document.querySelector('#controls').append(anchor);
+            };
+            for (const id of domains) link('domain', id, id);
+            for (const id of layouts) link('layout', id, id);
+            for (const id of presets) link('preset', id, id || 'base');
+
+            document.querySelector('#status').textContent =
+                `${domainID} · ${layout} · ${preset || 'base'} · ${renderModel.nodes.length} nodes · 1 position source`;
+            globalThis.__scenario = {
+                domain: domainID,
+                layout,
+                preset,
+                domains,
+                layouts,
+                nodes: ids,
+                positions: () => ids.map((id) => [id, positions.get(id)]),
+                cameraCenter: () => renderer.getViewport().center,
+            };
+        </script>
+    </body>
+</html>

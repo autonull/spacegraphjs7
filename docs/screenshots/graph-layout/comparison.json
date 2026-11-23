@@ -21,9 +21,23 @@
       "status": "experiment; default not flipped",
       "incumbent": "freeform (18 scattered cards, turn card plus turn lane, long cross-turn diagonals)",
       "variant": "chapters (?graphLayout=chapters or g): one card per turn, children as internal chips, compact 2-column grid",
-      "data": "docs/screenshots/graph-baseline.json",
+      "data": "docs/screenshots/graph-baseline.json — chapters measured from the packed card layout (CHAPTER_CARD 360x200, 1600x900 viewport); all other modes remain solver-position metrics",
+      "metrics": {
+        "incumbent": { "width": 2521.8, "height": 1171.95, "ratio": 0.465, "meanEdgeLength": 469.13, "overlaps": 0 },
+        "variant": { "width": 416, "height": 496, "ratio": 1.192, "meanEdgeLength": 411.08, "overlaps": 0 }
+      },
       "images": "incumbent: docs/screenshots/pi-agent-in-action.png, docs/screenshots/pi-agent-timeline-rows.png; variant: docs/screenshots/pi-agent-chapters.png",
-      "effect": "Turn-lane and turn-card duplication removed; five subgraph cards carry the same 18 source nodes, inter-chapter edges are short, and the failure reads inside its turn. No claim about task success or time.",
+      "effect": "Turn-lane and turn-card duplication removed; five packed cards carry the work of the 18 source nodes as internal chips, the grid is compact and overlap-free, and the failure reads inside its turn. No claim about task success or time.",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
+      "id": "chapters-wide",
+      "status": "experiment; default not flipped",
+      "incumbent": "chapters (?graphLayout=chapters) — two packed columns, 1600x900 viewport",
+      "variant": "chapters-wide (?graphLayout=chapters&graphColumns=4, 2400x1000 viewport)",
+      "data": "src/layout/chapters.ts — columns are capped by the opt-in value and the viewport",
+      "effect": "A wider canvas fills additional chapter columns without moving the library's default two-column cap. No claim about task success or time.",
+      "images": "regenerable pair: docs/screenshots/pi-agent-chapters.png (incumbent), docs/screenshots/pi-agent-chapters-wide.png (variant) via pnpm --filter pi shots:all",
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {

@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { decodePolicyVector } from 'spacegraphjs/policy';
 import type { VisionLoopAnalyzers, VisionReport } from 'spacegraphjs/vision';
@@ -22,6 +24,23 @@ const analyzers = (): VisionLoopAnalyzers => ({
 });
 
 describe('second reference host', () => {
+    it('uses the promoted shot and catalog seams with its own vocabulary', async () => {
+        const host = new SecondHost();
+        expect(host.shot('workflow-chapters')?.data.domain).toBe('workflow');
+        expect(host.shot('missing')).toBeUndefined();
+        expect(host.catalog().map((entry) => entry.href)).toEqual([
+            'scenario.html?shot=workflow-chapters',
+            'scenario.html?shot=data-grid',
+        ]);
+        const libraryPath = [
+            resolve(process.cwd(), 'src/experiments/shot.ts'),
+            resolve(process.cwd(), '../../src/experiments/shot.ts'),
+        ].find(existsSync)!;
+        const library = readFileSync(libraryPath, 'utf8');
+        expect(library).not.toContain('pi:local:');
+        expect(library).not.toContain('turn');
+    });
+
     it('drives camera verbs through the promoted handler and reports the rest unsupported', () => {
         const host = new SecondHost();
         host.setFlight([10, 20, 30]);

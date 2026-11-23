@@ -76,7 +76,7 @@ import {
 } from './annotations';
 import { CAPABILITIES, capabilityContext, runCapability, type PiHostState } from './capabilities';
 import { buildCatalog, mountCatalog, type Catalog } from './catalog';
-import { FIXTURE_ID, fixtureKernel, richFixtureKernel } from './fixture';
+import { FIXTURE_ID, fixtureFor, fixtureID, fixtureKernel } from './fixture';
 import { foldKernelOps } from './ops';
 import {
     decayActivity,
@@ -172,7 +172,7 @@ import {
     type StateFrame,
 } from './shell';
 import { SHORTCUT_HELP } from './help';
-import { ChromeController } from './chrome';
+import { ChromeController, installPulldowns } from './chrome';
 import { button, el, ensureChild, pruneChildren } from './dom';
 import { FocusLens } from './focus-lens';
 import {
@@ -269,6 +269,7 @@ export class PiHost {
     #levelMode: LevelMode = 'auto';
     #arrangement: Arrangement = 'side';
     #graphLayout: GraphLayoutMode = 'freeform';
+    #graphColumns?: number;
     #graphLayoutAligned = false;
     #ribbonCorridor = false;
     #graphMorph = false;
@@ -348,10 +349,16 @@ export class PiHost {
                 ? new URLSearchParams()
                 : new URLSearchParams(location.search);
         const shot = shotById(params.get('shot'));
-        const scenario = params.get('scenario') ?? shot?.scenario;
-        if (scenario === 'rich') this.#kernel = richFixtureKernel();
+        const fixture = fixtureFor(
+            params.get('shot'),
+            params.get('scenario') ?? shot?.scenario ?? null,
+        );
+        if (fixture) this.#kernel = fixture;
         const requestedLayout = params.get('graphLayout');
         if (isGraphLayoutMode(requestedLayout)) this.#graphLayout = requestedLayout;
+        const requestedColumns = Number(params.get('graphColumns'));
+        if (Number.isInteger(requestedColumns) && requestedColumns >= 1)
+            this.#graphColumns = requestedColumns;
         this.#graphLayoutAligned = params.get('graphAligned') === '1';
         this.#ribbonCorridor = params.get('ribbonCorridor') === '1';
         this.#graphMorph = params.get('graphMorph') === '1';
@@ -501,6 +508,11 @@ export class PiHost {
         this.setContinuity(Boolean(applied?.flags?.continuity));
         this.setFieldTargets(Boolean(applied?.flags?.fieldTargets));
         if (applied?.chrome === 'readable') this.toggleRail(false);
+        if (applied?.chrome !== 'menus') {
+            document.body.dataset.menusOpen = 'false';
+            el('menus-toggle').setAttribute('aria-expanded', 'false');
+        }
+        this.renderStatusline();
         return applied;
     }
 
@@ -835,7 +847,7 @@ export class PiHost {
         const layout = computeGraphLayout(this.#view, this.#graphLayout, this.#graphLayoutPositions, {
             width: canvas.clientWidth || 1600,
             height: canvas.clientHeight || 900,
-        }, this.#cardScale);
+        }, this.#cardScale, this.#graphColumns);
         this.#graphLayoutPositions = layout?.positions;
         this.simulation.setLayoutTargets(layoutTargets(layout, this.#qualifiedByNode));
         this.simulation.setSpecs(scopes.specs, {
@@ -1392,6 +1404,8 @@ export class PiHost {
         if (shot.surface) this.setSurface(shot.surface);
         if (shot.arrangement) this.setArrangement(shot.arrangement);
         if (shot.graphLayout && isGraphLayoutMode(shot.graphLayout)) this.setGraphLayout(shot.graphLayout);
+        if (shot.graphColumns !== undefined && shot.graphColumns >= 1)
+            this.#graphColumns = Math.floor(shot.graphColumns);
         if (shot.ui) this.applyUIPreset(shot.ui);
         if (shot.collapsed !== undefined && this.#transcriptCollapsed !== shot.collapsed)
             this.toggleTranscript();
@@ -2229,6 +2243,26 @@ export class PiHost {
             instruments: () => document.querySelectorAll('[data-instrument-for]').length,
             evidence: () => this.#evidence,
             ops: () => this.#kernel.nodes.length,
+            appendTurn: () => {
+                const id = fixtureID('local', `streamed-${this.#kernel.nodes.length}`);
+                const unitId = id.slice(id.lastIndexOf(':') + 1);
+                const node: KernelOp = {
+                    op: 'add-node',
+                    node: {
+                        id,
+                        kind: 'unit',
+                        label: `Turn ${unitId}`,
+                        data: { unitId, role: 'unit', status: 'complete' },
+                    },
+                };
+                const edge: KernelOp = {
+                    op: 'add-edge',
+                    edge: { id: `${id}:contains`, kind: 'contains', source: fixtureID('local', 'run'), target: id },
+                };
+                this.consume(node);
+                this.consume(edge);
+                return id;
+            },
             loadFixture: () => {
                 this.#kernel = fixtureKernel();
                 this.refresh();
@@ -2593,6 +2627,7 @@ export class PiHost {
     };
 
     private bindControls(): void {
+        installPulldowns();
         document.body.dataset.catalog ??= 'closed';
         document.body.dataset.rail ??= 'open';
         el('catalog-toggle').addEventListener('click', () => this.toggleCatalog());
@@ -2620,6 +2655,12 @@ export class PiHost {
             if (button?.dataset.railPanel) this.openRailPanel(button.dataset.railPanel);
         });
         el('command-open').addEventListener('click', () => this.#commandSurface?.open('palette'));
+        const menus = el<HTMLButtonElement>('menus-toggle');
+        menus.addEventListener('click', () => {
+            const open = document.body.dataset.menusOpen !== 'true';
+            document.body.dataset.menusOpen = String(open);
+            menus.setAttribute('aria-expanded', String(open));
+        });
         el('focus-primary').addEventListener('click', () => this.focusPrimary());
         const diagnostics = el<HTMLButtonElement>('diagnostics-toggle');
         diagnostics.setAttribute('aria-pressed', String(this.#diagnostics));
@@ -3042,8 +3083,17 @@ export class PiHost {
         hud.title = detail;
         hud.dataset.graphLayout = this.#graphLayout;
         hud.dataset.graphFlags = `${Number(this.#graphLayoutAligned)}${Number(this.#ribbonCorridor)}`;
+        this.renderStatusline();
         el('play-energy').textContent =
             `energy ${this.playSession.energy.toFixed(3)} · ${this.playSession.preset ?? 'at rest'}`;
+    }
+
+    private renderStatusline(): void {
+        if (document.body.dataset.uiStatusline !== 'true') return;
+        el('status-event').textContent = this.#evidence[0] ?? 'no events';
+        el('status-counters').textContent =
+            `${this.#view.nodes.length} nodes · ${this.#view.edges.length} edges`;
+        el('status-view').textContent = `${this.#surface}/${this.#arrangement} · ${this.#graphLayout}`;
     }
 
     private syncDepthSelect(): void {

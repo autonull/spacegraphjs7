@@ -102,6 +102,7 @@ const chapterLayout = (
     previous?: ReadonlyMap<string, Position>,
     viewport?: ErgonomicsViewport,
     cardScale = 1,
+    columns?: number,
 ): GraphLayout => {
     const turns = new Set(view.turns ?? []);
     const chapters = [
@@ -115,7 +116,7 @@ const chapterLayout = (
     ];
     const positions = chapterPacking(
         chapters.map((node) => node.id),
-        { card, previous, viewport },
+        { card, previous, viewport, columns },
     );
     return {
         positions,
@@ -152,9 +153,10 @@ export function computeGraphLayout(
     previous?: ReadonlyMap<string, Position>,
     viewport: ErgonomicsViewport = { width: 1600, height: 900 },
     cardScale = 1,
+    columns?: number,
 ): GraphLayout | undefined {
     if (mode === 'freeform') return undefined;
-    if (mode === 'chapters') return chapterLayout(view, previous, viewport, cardScale);
+    if (mode === 'chapters') return chapterLayout(view, previous, viewport, cardScale, columns);
     if (mode === 'ergonomic') return ergonomicGraphLayout(view, viewport);
     const rows = mode === 'timeline-rows';
     return Strategies.layoutGraph(layoutModel(view), layoutConfig(view), {
@@ -199,14 +201,15 @@ export interface GraphShape {
     readonly overlaps: number;
 }
 
-const overlap = (a: Position, b: Position): boolean =>
-    Math.abs(a.x - b.x) < CARD[0] && Math.abs(a.y - b.y) < CARD[1];
+const overlap = (a: Position, b: Position, card: readonly [number, number]): boolean =>
+    Math.abs(a.x - b.x) < card[0] && Math.abs(a.y - b.y) < card[1];
 
 /** Measure graph shape from solved positions, never from visual memory. */
 export function graphShape(
     view: AgentView,
     positions: ReadonlyMap<string, Position>,
     crossScope: (edge: Edge) => boolean = () => false,
+    card: readonly [number, number] = CARD,
 ): GraphShape {
     const placed = view.nodes.flatMap((node) => {
         const position = positions.get(node.id);
@@ -228,7 +231,7 @@ export function graphShape(
         if (edge.kind !== 'contains') return false;
         const parent = positions.get(edge.source);
         const child = positions.get(edge.target);
-        return parent && child ? overlap(parent, child) : false;
+        return parent && child ? overlap(parent, child, card) : false;
     }).length;
     return {
         nodes: placed.length,

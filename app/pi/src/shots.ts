@@ -1,5 +1,10 @@
+import { findShotByID } from 'spacegraphjs/experiments';
 import type { PolicyVector } from './policy';
 import { FIT_OCTAVES } from './policy/adaptive-fit';
+
+/** Pi keeps its one-argument adapter; the lookup itself is host-neutral. */
+export const shotById = (id: string | null | undefined): Shot | undefined =>
+    findShotByID(SHOTS, id);
 
 export type ShotSurface = 'log' | 'map' | 'hybrid';
 export type ShotArrangement = 'stacked' | 'side' | 'floating';
@@ -20,6 +25,8 @@ export interface Shot {
     readonly arrangement?: ShotArrangement;
     /** Opt-in graph arrangement applied before capture. */
     readonly graphLayout?: string;
+    /** Opt-in cap on packed chapter columns; the viewport still caps it further. */
+    readonly graphColumns?: number;
     readonly collapsed?: boolean;
     /** A quiet frame gives the canvas the full width; graph shots use it, chrome shots keep the rail. */
     readonly rail?: boolean;
@@ -86,6 +93,8 @@ export const SHOTS: readonly Shot[] = [
     uiShot('scale-aware', 'UI · Scale-aware packing', 'Does packing toward measured coverage fill the mid canvas without losing legibility?'),
     uiShot('continuity', 'UI · Continuous grammar', 'Do collar, core, sheath and one accent make a run read as one strand?'),
     uiShot('field-targets', 'UI · Solved scope fields', 'Do scope frames anchored to solved targets read as one run while cards settle?'),
+    uiShot('menus', 'UI · Menus chrome', 'Do grouped controls in a menu beat a permanent command bar?'),
+    uiShot('statusline', 'UI · Status line', 'Do four labelled status sections beat one attention line?'),
     uiShot('light-shell', 'UI · Light view', 'Does the light view need the shell themed too?'),
     {
         id: 'cockpit',
@@ -276,6 +285,21 @@ export const SHOTS: readonly Shot[] = [
         padding: 40,
     },
     {
+        id: 'chapters-wide',
+        file: 'pi-agent-chapters-wide.png',
+        title: 'Chapters · wide columns',
+        question: 'Does a viewport-derived wider chapter grid keep every turn card legible?',
+        scenario: 'rich',
+        preset: 'aurora',
+        rail: false,
+        surface: 'map',
+        graphLayout: 'chapters',
+        graphColumns: 4,
+        viewport: { width: 2400, height: 1000 },
+        fit: true,
+        padding: 40,
+    },
+    {
         id: 'ergonomic',
         file: 'pi-agent-ergonomic.png',
         title: 'Ergonomic packing',
@@ -318,6 +342,3 @@ export const SHOTS: readonly Shot[] = [
         panel: true,
     },
 ];
-
-export const shotById = (id: string | null | undefined): Shot | undefined =>
-    id ? SHOTS.find((shot) => shot.id === id) : undefined;

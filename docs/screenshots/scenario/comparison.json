@@ -1,0 +1,18 @@
+{
+  "recorded": "2026-11-23",
+  "rule": "ADR 0008 — a default visual change needs incumbent/variant evidence and a logged human decision",
+  "decisions": [
+    {
+      "id": "scenario-workflow-chapters",
+      "status": "experiment; default not flipped",
+      "incumbent": "workflow scenario with fixture grid positions (?domain=workflow&layout=grid)",
+      "variant": "workflow scenario with the generic chapter grid (?domain=workflow&layout=chapters)",
+      "data": "src/layout/chapters.ts — one position authority; the host applies the result through its model",
+      "gates": ["browser", "screenshots"],
+      "incumbentImage": "docs/screenshots/scenario-workflow-chapters/incumbent.png",
+      "variantImage": "docs/screenshots/scenario-workflow-chapters/variant.png",
+      "images": "regenerable pair captured by pnpm --filter demo test:e2e scenario-compare.spec.ts",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    }
+  ]
+}

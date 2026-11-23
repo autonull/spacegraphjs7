@@ -89,19 +89,21 @@ async function attempt<T>(work: () => Promise<T>): Promise<{ value?: T; error?: 
 }
 
 test.describe('full-scope demo atlas', () => {
-    test('captures every standalone HTML demo', async ({ page }) => {
+    test('captures every standalone HTML demo', async ({ context }) => {
         test.setTimeout(TIMEOUT);
         mkdirSync(resolve(OUT, 'html'), { recursive: true });
-        const errors = tracker(page);
         const entries: ReportEntry[] = [];
         for (const { id } of htmlDemos.filter((entry) => selected(entry.id))) {
             const started = Date.now();
-            errors.clear();
+            // One page per demo releases each WebGL context; a single long-lived page exhausts the
+            // browser's live-context budget near the end of the full HTML sequence.
+            const demoPage = await context.newPage();
+            const errors = tracker(demoPage);
             const result = await attempt(async () => {
-                await boot(page, demoPath(id));
+                await boot(demoPage, demoPath(id));
                 return {
-                    title: await heading(page),
-                    description: `${categoryOf(id)} · ${demoPath(id)} — ${await page.title()}`,
+                    title: await heading(demoPage),
+                    description: `${categoryOf(id)} · ${demoPath(id)} — ${await demoPage.title()}`,
                 };
             });
             const failure = result.error ? [result.error] : [];
@@ -115,9 +117,10 @@ test.describe('full-scope demo atlas', () => {
                         ms: Date.now() - started,
                     },
                     [...failure, ...errors.errors()],
-                    page,
+                    demoPage,
                 ),
             );
+            await demoPage.close();
         }
         const group: ReportGroup = {
             id: 'html',

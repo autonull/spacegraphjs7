@@ -2,7 +2,7 @@
 import type { GraphLayoutMode } from '../graph-layout';
 import type { PolicyLayer, PolicyVector } from '../policy';
 
-export type UIChrome = 'full' | 'compact' | 'minimal' | 'readable';
+export type UIChrome = 'full' | 'compact' | 'minimal' | 'readable' | 'menus';
 
 export interface UIPresetFlags {
     readonly graphLayout?: GraphLayoutMode;
@@ -11,6 +11,7 @@ export interface UIPresetFlags {
     readonly graphMorph?: boolean;
     readonly continuity?: boolean;
     readonly fieldTargets?: boolean;
+    readonly statusline?: boolean;
     readonly collapseTranscript?: boolean;
 }
 
@@ -125,6 +126,13 @@ export const UI_PRESETS: readonly UIPreset[] = [
         { flags: { fieldTargets: true }, gates: ['grammar', 'vision', 'screenshots'] },
     ),
     preset(
+        'statusline',
+        'Status line',
+        'Do four labelled status sections make the strip easier to scan than one attention line?',
+        {},
+        { flags: { statusline: true }, gates: ['shell', 'vision', 'screenshots'] },
+    ),
+    preset(
         'light-shell',
         'Light view',
         'Does the light view need the shell themed too?',
@@ -143,6 +151,13 @@ export const UI_PRESETS: readonly UIPreset[] = [
         'Does animated graph transition aid orientation or cost time?',
         {},
         { flags: { graphMorph: true }, gates: ['graph-layout', 'motion', 'screenshots'] },
+    ),
+    preset(
+        'menus',
+        'Menus chrome',
+        'Do grouped controls in a menu beat a permanently visible command bar?',
+        {},
+        { chrome: 'menus', gates: ['shell', 'vision', 'screenshots'] },
     ),
     preset(
         'failure-first',
@@ -193,6 +208,9 @@ export function applyUIPreset(
         if (flags.collapseTranscript !== undefined)
             target.setTranscriptCollapsed(flags.collapseTranscript);
     }
-    if (typeof document !== 'undefined') document.body.dataset.uiChrome = found.chrome ?? 'full';
+    if (typeof document !== 'undefined') {
+        document.body.dataset.uiChrome = found.chrome ?? 'full';
+        document.body.dataset.uiStatusline = String(found.flags?.statusline === true);
+    }
     return found;
 }

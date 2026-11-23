@@ -1,12 +1,8 @@
+import { catalogEntries, type CatalogEntry } from 'spacegraphjs/experiments';
 import { POLICY_EXPERIMENTS, POLICY_PRESETS, sampleExperiment, type PolicySchema } from './policy';
 import { STUDY_TASKS } from './study';
 
-export interface CatalogEntry {
-    readonly id: string;
-    readonly label: string;
-    readonly href: string;
-    readonly title: string;
-}
+export type { CatalogEntry };
 
 export interface CatalogExperiment {
     readonly id: string;
@@ -23,29 +19,33 @@ export interface Catalog {
 
 /** Presets and sampled cells are launchable alternatives; the question is shown, never a recommendation. */
 export const buildCatalog = (schema: PolicySchema): Catalog => ({
-    presets: POLICY_PRESETS.map((preset) => ({
-        id: preset.id,
-        label: preset.title,
-        href: `?preset=${encodeURIComponent(preset.id)}`,
-        title: preset.question,
-    })),
+    presets: catalogEntries(
+        POLICY_PRESETS.map((preset) => ({
+            id: preset.id,
+            label: preset.title,
+            title: preset.question,
+        })),
+        (id) => `?preset=${encodeURIComponent(id)}`,
+    ),
     experiments: POLICY_EXPERIMENTS.map((experiment) => ({
         id: experiment.id,
         title: experiment.title,
         rule: experiment.decisionRule,
-        cells: sampleExperiment(schema, experiment).cells.map((cell) => ({
-            id: cell.id,
-            label: cell.id,
-            href: `?policy=${encodeURIComponent(cell.policy)}`,
-            title: `Launch ${experiment.id}: ${cell.id}`,
-        })),
+        cells: catalogEntries(
+            sampleExperiment(schema, experiment).cells.map((cell) => ({
+                id: cell.id,
+                label: cell.id,
+                policy: cell.policy,
+            })),
+            (_id, cell) => `?policy=${encodeURIComponent(cell.policy)}`,
+            (id) => `Launch ${experiment.id}: ${id}`,
+        ),
     })),
-    questions: STUDY_TASKS.map((task) => ({
-        id: task.id,
-        label: task.question,
-        href: `#question-${task.id}`,
-        title: `Open the evidence for ${task.id}`,
-    })),
+    questions: catalogEntries(
+        STUDY_TASKS.map((task) => ({ id: task.id, label: task.question })),
+        (id) => `#question-${id}`,
+        (id) => `Open the evidence for ${id}`,
+    ),
 });
 
 const link = (entry: CatalogEntry, dataKey: 'preset' | 'cell' | 'question'): HTMLAnchorElement => {

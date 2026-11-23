@@ -1,6 +1,8 @@
 // `spacegraphjs/experiments` — pure cartesian capture, neutral metrics, inert templates and honest
 // reporting. No renderer, capture gate or host protocol dependency (P5).
 
+export { findShotByID, type ShotRef } from './shot';
+export { catalogEntries, type CatalogEntry, type CatalogSource } from './catalog';
 export {
     axisValues,
     cartesianMatrix,

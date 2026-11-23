@@ -1,9 +1,11 @@
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { AgentView } from '@spacegraphjs/agent';
 import { agentDomain } from '@spacegraphjs/agent';
 import { occupancySpacingFactor, ScopeSimulation, type Position } from 'spacegraphjs/layout';
 import { nodeSize } from '../src/adapter';
 import {
+    CHAPTER_CARD,
     computeGraphLayout,
     graphShape,
     GRAPH_LAYOUTS,
@@ -25,7 +27,20 @@ import { SHOTS } from '../src/shots';
 import { agentScopes } from '../src/scopes';
 
 const LAYOUT = { seed: 7, gap: 160, depthStep: 64, nodePadding: 20 } as const;
+const BASELINE_VIEWPORT = { width: 1600, height: 900 } as const;
 type Scenario = 'canonical' | 'rich';
+
+/** The chapters view renders one card per turn, so its baseline measures packed cards, not source nodes. */
+const chapterCards = (view: AgentView): AgentView => {
+    const ids = new Set(
+        view.nodes.filter((node) => node.kind === 'run' || node.kind === 'unit').map((node) => node.id),
+    );
+    return {
+        ...view,
+        nodes: view.nodes.filter((node) => ids.has(node.id)),
+        edges: view.edges.filter((edge) => ids.has(edge.source) && ids.has(edge.target)),
+    };
+};
 
 /** Solve the positions the host would feed the simulation for one graph view and scenario. */
 const solve = (
@@ -66,6 +81,12 @@ export function measure(
     const results: Record<string, ReturnType<typeof graphShape>> = {};
 
     for (const mode of GRAPH_LAYOUTS) {
+        if (mode === 'chapters') {
+            const view = chapterCards(baseline.view);
+            const packed = computeGraphLayout(view, mode, undefined, BASELINE_VIEWPORT)!;
+            results[mode] = graphShape(view, packed.positions, () => false, CHAPTER_CARD);
+            continue;
+        }
         const { view, positions } = mode === 'freeform' ? baseline : solve(mode, scenario);
         results[mode] = graphShape(view, positions, (edge) => {
             const from = scopeOfNode.get(edge.source);
@@ -148,7 +169,11 @@ export function presenceVariant(target = 0.12): PresenceComparison {
 }
 
 if (process.argv[1]?.endsWith('baseline.ts')) {
-    if (process.argv.includes('--presence-variant')) {
+    if (process.argv.includes('--graph')) {
+        const file = resolve(import.meta.dirname, '../../../docs/screenshots/graph-baseline.json');
+        writeFileSync(file, `${JSON.stringify(measure(), null, 2)}\n`);
+        console.log(`wrote ${file}`);
+    } else if (process.argv.includes('--presence-variant')) {
         const report = presenceVariant();
         const file = resolve(
             import.meta.dirname,

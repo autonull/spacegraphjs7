@@ -31,6 +31,25 @@ test.describe('graph arrangements', () => {
         expect(await page.evaluate(() => (window as any).__pi.graphShape().nodes)).toBeGreaterThan(0);
     });
 
+    test('an appended turn keeps existing chapter card centres', async ({ page }) => {
+        await boot(page, '?scenario=rich&graphLayout=chapters');
+        const ids = ['pi:local:1', 'pi:local:2', 'pi:local:x3', 'pi:local:x4', 'pi:local:x6'];
+        const centres = () =>
+            page.evaluate(
+                (list) => list.map((id) => (window as any).__pi.positionOf(id)),
+                ids,
+            );
+        await page.evaluate(() => (window as any).__pi.settle());
+        const before = await centres();
+        const added = await page.evaluate(() => (window as any).__pi.appendTurn());
+        expect(added).toContain('streamed-');
+        await page.evaluate(() => (window as any).__pi.settle());
+        expect(await centres()).toEqual(before);
+        expect(
+            await page.evaluate((id) => Boolean((window as any).__pi.positionOf(id)), added),
+        ).toBe(true);
+    });
+
     test('palette commands and keys select graph views without a URL', async ({ page }) => {
         await boot(page);
         await page.locator('#command-open').click();

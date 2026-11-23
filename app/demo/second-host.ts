@@ -2,6 +2,7 @@
 // one workspace — camera verbs, one-authority play/reconcile, a legibility-gated rung and an opt-in
 // vision loop. The page owns rendering; this host owns state and behavior.
 
+import { catalogEntries, findShotByID } from 'spacegraphjs/experiments';
 import { chapterPacking, type Position } from 'spacegraphjs/layout';
 import { innerTree, type InnerSourceEdge, type InnerSourceNode } from 'spacegraphjs/inspect';
 import { TouchRecognizer, type TouchGesture, type TouchPoint } from 'spacegraphjs/input';
@@ -31,6 +32,23 @@ import {
     type PlaySettings,
     type PlaySimulation,
 } from 'spacegraphjs/world';
+
+const SECOND_SHOTS = [
+    {
+        id: 'workflow-chapters',
+        file: 'scenario-workflow-chapters.png',
+        title: 'Workflow chapters',
+        question: 'Does the chapter grid read for workflow steps?',
+        data: { domain: 'workflow', layout: 'chapters' },
+    },
+    {
+        id: 'data-grid',
+        file: 'scenario-data-grid.png',
+        title: 'Data grid',
+        question: 'Does the grid read for data records?',
+        data: { domain: 'data', layout: 'grid' },
+    },
+] as const;
 
 const DEMO_SCHEMA: PolicySchema = {
     version: 1,
@@ -192,6 +210,23 @@ export class SecondHost {
         previous?: ReadonlyMap<string, Position>,
     ): ReadonlyMap<string, Position> {
         return chapterPacking(ids, { card: [360, 200], viewport, previous });
+    }
+
+    /** Named views use this host's domain/layout words; the library only reads `id`. */
+    shot(id: string | null | undefined) {
+        return findShotByID(SECOND_SHOTS, id);
+    }
+
+    /** Catalog links use this host's query grammar, not Pi's preset/policy grammar. */
+    catalog() {
+        return catalogEntries(
+            SECOND_SHOTS.map((shot) => ({
+                id: shot.id,
+                label: `${shot.data.domain} · ${shot.data.layout}`,
+            })),
+            (id) => `scenario.html?shot=${encodeURIComponent(id)}`,
+            (_id, item) => `Open the ${item.label} scenario`,
+        );
     }
 
     /** Bounded local topology with this host's own containment vocabulary. */

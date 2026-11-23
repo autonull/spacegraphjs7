@@ -1,5 +1,49 @@
 import { el } from './dom';
 
+const PULLDOWNS = ['proof-menu', 'settings-menu'] as const;
+
+/** Layer ARIA and keyboard dismissal over native details without changing the shell's hooks. */
+export function installPulldowns(): void {
+    const menus = PULLDOWNS.flatMap((id) => {
+        const menu = document.getElementById(id);
+        if (!(menu instanceof HTMLDetailsElement)) return [];
+        const summary = menu.querySelector<HTMLElement>(':scope > summary');
+        if (!summary) return [];
+        summary.setAttribute('aria-haspopup', 'true');
+        summary.setAttribute('aria-expanded', String(menu.open));
+        menu.addEventListener('toggle', () =>
+            summary.setAttribute('aria-expanded', String(menu.open)),
+        );
+        menu.addEventListener('keydown', (event) => {
+            if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+            const focusable = [...menu.querySelectorAll<HTMLElement>('button, select, a[href]')];
+            const step = event.key === 'ArrowDown' ? 1 : -1;
+            const index = focusable.indexOf(document.activeElement as HTMLElement);
+            event.preventDefault();
+            if (index < 0) {
+                focusable[step > 0 ? 0 : focusable.length - 1]?.focus();
+                return;
+            }
+            focusable[(index + step + focusable.length) % focusable.length]?.focus();
+        });
+        return [{ menu, summary }];
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        const open = menus.find((entry) => entry.menu.open);
+        if (!open) return;
+        event.preventDefault();
+        open.menu.open = false;
+        open.summary.focus();
+    });
+    document.addEventListener('pointerdown', (event) => {
+        for (const { menu } of menus) {
+            if (menu.open && !menu.contains(event.target as Node)) menu.open = false;
+        }
+    });
+}
+
 /** Host facts the shell chrome reads and the effects its navigation actions trigger. */
 export interface ChromeHost {
     surface(): string;

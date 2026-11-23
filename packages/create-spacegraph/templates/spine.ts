@@ -69,6 +69,42 @@ export const PRESETS: readonly Preset[] = [
 
 export const preset = (id: string): Vector | undefined => PRESETS.find((entry) => entry.id === id)?.vector;
 
+export interface Scene {
+    readonly id: string;
+    readonly file: string;
+    readonly domain: string;
+    readonly layout: string;
+    readonly preset?: string;
+    readonly vector: Vector;
+    readonly title: string;
+    readonly question: string;
+}
+
+/** A scenario is data: the host reads it once and applies it through its existing seams. */
+export const SCENARIOS: readonly Scene[] = [
+    {
+        id: 'agent-grid',
+        file: 'scenario-agent-grid.png',
+        domain: 'agent',
+        layout: 'grid',
+        vector: {},
+        title: 'Agent grid',
+        question: 'Does the default grid read for an ordered run?',
+    },
+    {
+        id: 'agent-chapters',
+        file: 'scenario-agent-chapters.png',
+        domain: 'agent',
+        layout: 'chapters',
+        vector: { minimap: false },
+        title: 'Agent chapters',
+        question: 'Does the chapter grid read for the same run?',
+    },
+];
+
+export const scene = (id: string | null | undefined): Scene | undefined =>
+    id ? SCENARIOS.find((entry) => entry.id === id) : undefined;
+
 const PREFIX = 'p1.';
 
 export const encode = (values: Vector): string => {

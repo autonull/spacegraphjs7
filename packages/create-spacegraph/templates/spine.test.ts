@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { PRESETS, Recorder, decode, defaults, encode, preset, resolve } from '../src/spine';
+import { PRESETS, SCENARIOS, Recorder, decode, defaults, encode, preset, resolve, scene } from '../src/spine';
 
 describe('generated experiment spine', () => {
     it('resolves knobs with provenance and fixed precedence', () => {
@@ -23,5 +23,12 @@ describe('generated experiment spine', () => {
         expect(recorder.replay()).toEqual({ surfaceOpen: 1, answer: 1 });
         expect(PRESETS.length).toBeGreaterThan(1);
         expect(preset('quiet')?.minimap).toBe(false);
+    });
+
+    it('declares scenarios as data with a lookup', () => {
+        expect(SCENARIOS.length).toBeGreaterThan(1);
+        expect(scene('agent-chapters')?.layout).toBe('chapters');
+        expect(scene('missing')).toBeUndefined();
+        for (const entry of SCENARIOS) expect(entry.file).toMatch(/^scenario-.*\.png$/);
     });
 });

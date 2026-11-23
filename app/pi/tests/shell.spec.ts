@@ -49,6 +49,33 @@ test.describe('the one-surface shell', () => {
         expect(errors).toEqual([]);
     });
 
+    test('pulldowns report expanded state and close on Escape', async ({ page }) => {
+        const errors = await boot(page);
+        const proof = page.locator('#proof-menu');
+        const proofSummary = page.locator('#proof-line');
+        await expect(proofSummary).toHaveAttribute('aria-haspopup', 'true');
+        await expect(proofSummary).toHaveAttribute('aria-expanded', 'false');
+
+        await proofSummary.focus();
+        await page.keyboard.press('Enter');
+        await expect(proof).toHaveAttribute('open', '');
+        await expect(proofSummary).toHaveAttribute('aria-expanded', 'true');
+        await page.keyboard.press('Escape');
+        await expect(proof).not.toHaveAttribute('open', '');
+        await expect(proofSummary).toBeFocused();
+        await expect(proofSummary).toHaveAttribute('aria-expanded', 'false');
+
+        const settings = page.locator('#settings-menu');
+        await page.locator('#settings-menu summary').focus();
+        await page.keyboard.press('Enter');
+        await expect(settings).toHaveAttribute('open', '');
+        await page.keyboard.press('ArrowDown');
+        await expect(page.locator('#settings-menu #follow-mode')).toBeFocused();
+        await page.keyboard.press('Escape');
+        await expect(settings).not.toHaveAttribute('open', '');
+        expect(errors).toEqual([]);
+    });
+
     test('the command bar stays on one row at narrow widths', async ({ page }) => {
         const errors = await boot(page);
         await page.setViewportSize({ width: 900, height: 1000 });

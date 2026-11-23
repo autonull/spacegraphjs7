@@ -30,13 +30,13 @@
     "overlaps": 0
   },
   "chapters": {
-    "nodes": 18,
-    "edges": 18,
-    "width": 2421.7970962504032,
-    "height": 1171.9544045561252,
-    "ratio": 0.4839193202315039,
-    "meanEdgeLength": 577.9550824988215,
-    "crossScopeDiagonals": 2,
+    "nodes": 5,
+    "edges": 4,
+    "width": 416,
+    "height": 496,
+    "ratio": 1.1923076923076923,
+    "meanEdgeLength": 411.07848694132247,
+    "crossScopeDiagonals": 0,
     "overlaps": 0
   },
   "ergonomic": {

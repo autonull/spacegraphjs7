@@ -58,6 +58,41 @@
             body[data-ui-chrome='minimal'] #rail {
                 display: none;
             }
+            /* Menus chrome experiment: one toggle reveals the same controls as an overlay. */
+            #menus-toggle {
+                display: none;
+            }
+            body[data-ui-chrome='menus'] #command-bar {
+                position: relative;
+            }
+            body[data-ui-chrome='menus'] #menus-toggle {
+                display: inline-flex;
+            }
+            body[data-ui-chrome='menus'] #surface-buttons,
+            body[data-ui-chrome='menus'] #depth-mode,
+            body[data-ui-chrome='menus'] #focus-primary {
+                display: none;
+            }
+            body[data-ui-chrome='menus'][data-menus-open='true'] #surface-buttons,
+            body[data-ui-chrome='menus'][data-menus-open='true'] #depth-mode,
+            body[data-ui-chrome='menus'][data-menus-open='true'] #focus-primary {
+                position: absolute;
+                z-index: 6;
+                inset-block-start: calc(100% + 2px);
+                inset-inline-start: 0;
+                display: inline-flex;
+                align-items: center;
+                gap: var(--sg-spacing-hair);
+                padding: var(--sg-spacing-xs);
+                background: var(--sg-colors-popover);
+                border: 1px solid var(--sg-colors-border);
+            }
+            body[data-ui-chrome='menus'][data-menus-open='true'] #depth-mode {
+                inset-block-start: calc(100% + 46px);
+            }
+            body[data-ui-chrome='menus'][data-menus-open='true'] #focus-primary {
+                inset-block-start: calc(100% + 86px);
+            }
             /* Continuity experiment: one causal accent for border, port, dot and focus ring. */
             body[data-ui-grammar='continuity'] {
                 --grammar-accent: var(--view-causal, var(--sg-colors-accent));
@@ -233,6 +268,25 @@
             #status-strip #attention {
                 margin-inline-start: 0;
                 font-size: var(--sg-font-sizes-sm);
+            }
+            #status-strip [data-role='status-event'],
+            #status-strip [data-role='status-counters'],
+            #status-strip [data-role='status-view'] {
+                display: none;
+                font-size: var(--sg-font-sizes-sm);
+                white-space: nowrap;
+            }
+            body[data-ui-statusline='true'] #status-strip [data-role='status-event'],
+            body[data-ui-statusline='true'] #status-strip [data-role='status-counters'],
+            body[data-ui-statusline='true'] #status-strip [data-role='status-view'] {
+                display: inline-flex;
+                gap: var(--sg-spacing-hair);
+            }
+            body[data-ui-statusline='true'] #status-strip [data-role='status-event']::before,
+            body[data-ui-statusline='true'] #status-strip [data-role='status-counters']::before,
+            body[data-ui-statusline='true'] #status-strip [data-role='status-view']::before {
+                color: var(--sg-colors-muted-foreground);
+                content: attr(data-role);
             }
             #status-strip #evidence {
                 display: flex;
@@ -2110,6 +2164,9 @@
             >
                 / commands
             </button>
+            <button type="button" id="menus-toggle" aria-expanded="false" aria-label="Toggle controls menu">
+                <span class="jargon-label">menus</span><span class="plain-label">Menus</span>
+            </button>
             <div id="surface-buttons">
                 <button type="button" id="surface-log" title="log — transcript surface">
                     <span class="jargon-label">log</span><span class="plain-label">Transcript</span>
@@ -2368,6 +2425,9 @@
         <footer>
             <div id="status-strip">
                 <span id="attention" data-role="attention">no failures</span>
+                <span id="status-event" data-role="status-event" aria-label="Latest event">no events</span>
+                <span id="status-counters" data-role="status-counters" aria-label="Graph counters"></span>
+                <span id="status-view" data-role="status-view" aria-label="Current view"></span>
                 <ul id="evidence"></ul>
             </div>
             <form id="prompt-form">

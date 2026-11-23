@@ -72,6 +72,24 @@ describe('L1.14 per-node LOD', () => {
         const after = node.getScreenPixelSize({ width: 800, height: 600 });
         expect(after).toBeCloseTo(before * 2, 4);
     });
+
+    it('keeps cached bounds authoritative until the frame advances after a move', () => {
+        const frame = Node.lodFrame;
+        try {
+            Node.lodFrame = frame + 1;
+            const node = makeNode('a');
+            const ctx = makeContext(new THREE.Vector3(0, 0, 100));
+            ctx.cameraFrustum = new THREE.Frustum(new THREE.Plane(new THREE.Vector3(1, 0, 0), 0));
+            node.updatePosition(100, 0, 0);
+            expect(node.isVisible(ctx)).toBe(true);
+            node.updatePosition(-100, 0, 0);
+            expect(node.isVisible(ctx)).toBe(true);
+            Node.lodFrame++;
+            expect(node.isVisible(ctx)).toBe(false);
+        } finally {
+            Node.lodFrame = frame;
+        }
+    });
 });
 
 describe('L1.6 container-scoped keyboard', () => {

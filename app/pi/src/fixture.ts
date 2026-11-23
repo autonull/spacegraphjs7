@@ -103,3 +103,28 @@ export const richFixtureOps = (): KernelOp[] => [
 ];
 
 export const richFixtureKernel = (): Kernel => foldKernelOps([...localOps(), ...richFixtureOps()]);
+
+/** The chapters shot gives Turn 3/4 contained work so every chapter card carries real chips. */
+export const chaptersFixtureOps = (): KernelOp[] => [
+    ...richFixtureOps(),
+    ...([
+        ['x3', 'grep', 'auth.ts'],
+        ['x4', 'edit', 'patch.diff'],
+    ] as const).flatMap(([unit, tool, artifact]) => [
+        richEdge(`contains-${unit}-${tool}`, 'contains', unit, tool),
+        richEdge(`contains-${unit}-${artifact}`, 'contains', unit, artifact),
+    ]),
+];
+
+export const chaptersFixtureKernel = (): Kernel =>
+    foldKernelOps([...localOps(), ...chaptersFixtureOps()]);
+
+export const fixtureFor = (
+    shotID: string | null,
+    scenario: string | null,
+): Kernel | undefined =>
+    shotID === 'chapters'
+        ? chaptersFixtureKernel()
+        : scenario === 'rich'
+          ? richFixtureKernel()
+          : undefined;

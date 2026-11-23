@@ -393,10 +393,17 @@ aside{padding:16px;overflow:auto}#transcript{white-space:pre-wrap;font-size:13px
 files['host/src/main.ts'] = `import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { DEFAULT_THEME } from '@spacegraphjs/renderer';
 import { build{{Name}}View, fixtureOps, foldOps, {{kind}}Domain } from '@spacegraphjs/{{name}}';
-import { Recorder, decode, encode, mountPanel, preset, resolve, type Vector } from './spine';
+import { SCENARIOS, Recorder, decode, encode, mountPanel, preset, resolve, scene, type Vector } from './spine';
 
 const kernel = foldOps(fixtureOps());
 const view = {{kind}}Domain.build(kernel);
+const params = new URLSearchParams(location.search);
+const activeScene = scene(params.get('shot'));
+const layout = params.get('layout') ?? activeScene?.layout ?? 'grid';
+const position = (index: number): [number, number, number] =>
+    layout === 'chapters'
+        ? [(index % 2) * 420, Math.floor(index / 2) * 220, 0]
+        : [index * 220, 0, 0];
 const renderer = await SpaceGraphRenderer.mount(document.getElementById('canvas')!, {
     theme: DEFAULT_THEME,
     projection: '3d',
@@ -404,14 +411,13 @@ const renderer = await SpaceGraphRenderer.mount(document.getElementById('canvas'
 renderer.setModel({
     nodes: view.nodes.map((node, index) => ({
         id: node.id, kind: node.kind, label: node.label,
-        position: [index * 220, 0, 0] as [number, number, number],
+        position: position(index),
     })),
     edges: view.edges.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target, kind: edge.kind })),
 });
 
-const params = new URLSearchParams(location.search);
-const presetID = params.get('preset');
-const presetLayer = (presetID && preset(presetID)) || {};
+const presetID = params.get('preset') ?? activeScene?.preset;
+const presetLayer = { ...((presetID && preset(presetID)) || {}), ...(activeScene?.vector ?? {}) };
 const encoded = params.get('policy');
 const urlLayer = (encoded && decode(encoded)) || {};
 let panelLayer: Vector = {};
@@ -444,6 +450,9 @@ for (const button of document.querySelectorAll<HTMLButtonElement>('[data-set-sur
 apply();
 Object.assign(window, { __{{name}}: {
     surface: () => String(current.values.surface),
+    scenario: () => activeScene?.id ?? null,
+    layout: () => layout,
+    shots: () => SCENARIOS.map((entry) => entry.id),
     nodes: () => view.nodes.length,
     policy: () => current,
     permalink: () => encode(current.values),

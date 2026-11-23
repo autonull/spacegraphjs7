@@ -94,6 +94,18 @@
   "chapters": {
     "note": "Opt-in chapters experiment: one card per turn (plus Run), with each turn's work rendered as internal chips and the failure chip tinted by severity. No separate turn lane/card duplication, short inter-chapter edges and a compact two-column grid. Freeform, timeline and every other view stay reachable; no default flipped. Incumbent: pi-agent-in-action.png / pi-agent-timeline-rows.png; variant: docs/screenshots/pi-agent-chapters.png. Human verdict pending in docs/screenshots/graph-layout/comparison.json (chapters-subgraphs)."
   },
+  "scenario-workflow-chapters": {
+    "note": "Two-domain proof pair: the second host applies the generic chapter grid to the workflow domain through one position source, with no renderer branch or host vocabulary in the library. Incumbent/variant pair: docs/screenshots/scenario-workflow-chapters/{incumbent,variant}.png. Human verdict pending in docs/screenshots/scenario/comparison.json."
+  },
+  "ui-menus": {
+    "note": "Opt-in chrome experiment (?ui=menus): the existing command-bar controls stay mounted under their original ids and move into a toggled overlay. No shipped default changed. Incumbent/variant pair: docs/screenshots/ui-presets/menus/{incumbent,variant}.png. Human verdict pending in docs/screenshots/ui-presets/comparison.json (ui-preset-menus)."
+  },
+  "ui-statusline": {
+    "note": "Opt-in status strip (?ui=statusline): attention keeps its text and attributes, with sibling event, counters and view sections. No shipped default changed. Incumbent/variant pair: docs/screenshots/ui-presets/statusline/{incumbent,variant}.png. Human verdict pending in docs/screenshots/ui-presets/comparison.json (ui-preset-statusline)."
+  },
+  "chapters-wide": {
+    "note": "Opt-in viewport-derived chapter columns (?graphLayout=chapters&graphColumns=4) on a 2400x1000 canvas. The library default stays two columns; no renderer branch or contract field. Pair: pi-agent-chapters.png / pi-agent-chapters-wide.png. Human verdict pending in docs/screenshots/graph-layout/comparison.json (chapters-wide)."
+  },
   "ui-field-targets": {
     "note": "Traceability shot for the opt-in solved-target scope fields: frames come from the solver's world bounds through a general renderer projection seam, not from animated node screen positions. The incumbent path is unchanged and no default flipped. Incumbent/variant pair: docs/screenshots/ui-presets/field-targets/{incumbent,variant}.png. Human verdict pending in docs/screenshots/ui-presets/comparison.json (ui-preset-field-targets)."
   },

@@ -96,6 +96,23 @@ describe('graph layouts', () => {
         for (const member of members) expect(member.y).toBeCloseTo(band, 5);
     });
 
+    it('derives chapter columns from the viewport under an opt-in cap', () => {
+        const view = richView();
+        const columnsOf = (width: number) => {
+            const layout = computeGraphLayout(
+                view,
+                'chapters',
+                undefined,
+                { width, height: 900 },
+                1,
+                4,
+            )!;
+            return new Set([...layout.positions.values()].map((point) => point.x)).size;
+        };
+        expect(columnsOf(600)).toBe(1);
+        expect(columnsOf(2400)).toBe(4);
+    });
+
     it('maps solved positions onto qualified simulation ids', () => {
         const view = richView();
         const scopes = agentScopes(view, { packed: true });
