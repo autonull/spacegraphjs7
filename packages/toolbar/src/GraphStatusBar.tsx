@@ -1,6 +1,7 @@
 import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import { Show, type JSX } from 'solid-js';
+import { GraphIconButton } from './GraphIconButton';
 
 export type GraphStatusBarProps = {
     /** The i18n instance for translations. */
@@ -144,24 +145,5 @@ export const GraphStatusBar = (props: GraphStatusBarProps): JSX.Element => {
                 />
             </div>
         </Show>
-    );
-};
-
-const GraphIconButton = (props: {
-    label: string;
-    icon: string;
-    onClick: () => void;
-    Icon?: IconComponent;
-}): JSX.Element => {
-    const renderIcon = createIconRenderer(props.Icon);
-    return (
-        <button
-            type="button"
-            class="flex h-6 w-6 items-center justify-center rounded-sm text-text-base hover:bg-surface-base-hover"
-            aria-label={props.label}
-            onClick={props.onClick}
-        >
-            {renderIcon({ name: props.icon, size: 'small' })}
-        </button>
     );
 };

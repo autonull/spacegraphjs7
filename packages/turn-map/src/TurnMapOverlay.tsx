@@ -7,7 +7,7 @@ import type {
     RendererFactory,
     CardTemplate,
 } from '@spacegraphjs/shared';
-import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared';
+import { GraphIconButton, type IconComponent } from '@spacegraphjs/shared';
 import { createMemo, createSignal, onCleanup, onMount, Show, type JSX } from 'solid-js';
 import { ScopedOverlay } from '@spacegraphjs/overlays';
 import { nodeByID } from '@spacegraphjs/shared';
@@ -222,22 +222,3 @@ export const TurnMapOverlay = (props: TurnMapOverlayProps): JSX.Element => {
 function createGraphTheme(): RenderTheme {
     return {} as RenderTheme;
 }
-
-const GraphIconButton = (props: {
-    label: string;
-    icon: string;
-    onClick: () => void;
-    Icon?: IconComponent;
-}): JSX.Element => {
-    const renderIcon = createIconRenderer(props.Icon);
-    return (
-        <button
-            type="button"
-            class="flex h-6 w-6 items-center justify-center rounded-sm text-text-base hover:bg-surface-base-hover"
-            aria-label={props.label}
-            onClick={props.onClick}
-        >
-            {renderIcon({ name: props.icon, size: 'small' })}
-        </button>
-    );
-};

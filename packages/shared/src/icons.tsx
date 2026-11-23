@@ -89,3 +89,44 @@ export function createIconRenderer(hostIcon?: IconComponent): IconComponent {
         return <div class={className} style={style} innerHTML={html} />;
     };
 }
+
+export interface GraphIconButtonProps {
+    /** The button's accessible name; also its tooltip. */
+    label: string;
+    /** The icon's name in the icon catalogue. */
+    icon: string;
+    onClick: () => void;
+    /** A toggle's state; absent for a plain button. */
+    pressed?: boolean;
+    disabled?: boolean;
+    /** The button's test contract, so a test can find it without its copy. */
+    slot?: string;
+    /** Custom icon renderer. */
+    Icon?: IconComponent;
+}
+
+/** A ghost icon button: the icon is the affordance, the label names it. */
+export function GraphIconButton(props: GraphIconButtonProps): JSX.Element {
+    const renderIcon = props.Icon ?? createIconRenderer();
+
+    return (
+        <button
+            type="button"
+            class={`flex h-6 w-6 items-center justify-center rounded-sm transition-colors ${
+                props.disabled
+                    ? 'opacity-50 cursor-not-allowed'
+                    : props.pressed
+                      ? 'bg-primary-weaker text-primary-base'
+                      : 'text-text-base hover:bg-surface-base-hover'
+            }`}
+            aria-label={props.label}
+            title={props.label}
+            disabled={props.disabled}
+            on:click={props.onClick}
+            data-slot={props.slot}
+            aria-pressed={props.pressed}
+        >
+            {renderIcon({ name: props.icon, size: 'small' })}
+        </button>
+    );
+}

@@ -8,7 +8,7 @@ import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/ico
 import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { RendererCapabilities, GraphArrangement, GraphSide } from '@spacegraphjs/shared/types';
-import { MenuOption, type MenuOptionProps } from './MenuOption';
+import { menuOption } from './MenuOption';
 import { ToolbarMenu } from './ToolbarMenu';
 import { GRAPH_ARRANGEMENTS, VOCABULARY_KEYS } from '@spacegraphjs/shared/types';
 
@@ -35,14 +35,10 @@ export function GraphDrawControl(props: GraphDrawControlProps): JSX.Element {
     const renderIcon = Icon ?? createIconRenderer();
     const PopoverComponent = Popover ?? createPopoverRenderer();
 
-    const option = (input: MenuOptionProps) => (
-        <MenuOption {...input} ariaLabel={input.ariaLabel ?? input.label} />
-    );
-
     return (
         <>
             <Show when={rest.capabilities?.cardFacing && rest.onToggleBillboard}>
-                {option({
+                {menuOption({
                     label: i18n.t(
                         rest.billboard ? 'ui.toolbar.billboard' : 'ui.toolbar.billboardOff',
                     ),
@@ -54,7 +50,7 @@ export function GraphDrawControl(props: GraphDrawControlProps): JSX.Element {
                 })}
             </Show>
             <Show when={rest.onDetailFramingChange}>
-                {option({
+                {menuOption({
                     label: i18n.t(
                         rest.detailFraming === 'card'
                             ? 'ui.toolbar.frameNode'
@@ -71,7 +67,7 @@ export function GraphDrawControl(props: GraphDrawControlProps): JSX.Element {
                 })}
             </Show>
             <Show when={rest.onToggleFiles}>
-                {option({
+                {menuOption({
                     label: i18n.t('ui.toolbar.files'),
                     onClick: () => rest.onToggleFiles?.(),
                     pressed: rest.files,
@@ -80,7 +76,7 @@ export function GraphDrawControl(props: GraphDrawControlProps): JSX.Element {
                 })}
             </Show>
             <Show when={rest.onOpenEqualizer}>
-                {option({
+                {menuOption({
                     label: i18n.t('ui.toolbar.equalizer'),
                     onClick: () => rest.onOpenEqualizer?.(),
                     slot: 'graph-equalizer-option',
@@ -92,7 +88,7 @@ export function GraphDrawControl(props: GraphDrawControlProps): JSX.Element {
                         {i18n.t('ui.toolbar.arrangement')}
                     </div>
                     {GRAPH_ARRANGEMENTS.map((arrangement) =>
-                        option({
+                        menuOption({
                             label: i18n.t(VOCABULARY_KEYS.arrangement[arrangement]),
                             onClick: () => rest.onArrangementChange?.(arrangement),
                             pressed: rest.arrangement === arrangement,
@@ -101,7 +97,7 @@ export function GraphDrawControl(props: GraphDrawControlProps): JSX.Element {
                         }),
                     )}
                     <Show when={rest.onArrangementSideChange && rest.arrangement !== 'floating'}>
-                        {option({
+                        {menuOption({
                             label: i18n.t(VOCABULARY_KEYS.side[rest.arrangementSide ?? 'start']),
                             onClick: () =>
                                 rest.onArrangementSideChange?.(

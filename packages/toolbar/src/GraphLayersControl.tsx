@@ -15,7 +15,7 @@ import type {
     ZoomLevel,
     DepthMode,
 } from '@spacegraphjs/shared/types';
-import { MenuOption, type MenuOptionProps } from './MenuOption';
+import { menuOption, type MenuOptionProps } from './MenuOption';
 import { ToolbarMenu } from './ToolbarMenu';
 import {
     DEPTH_MODES,
@@ -27,6 +27,9 @@ import {
     PROFILE_PRESETS,
     VOCABULARY_KEYS,
 } from '@spacegraphjs/shared/types';
+
+const LAYER_OPTION_CLASS =
+    'flex w-full items-center gap-2 rounded-sm px-2 py-1 text-12-regular text-text-base hover:bg-surface-base-hover disabled:opacity-50';
 
 export interface GraphLayersControlProps {
     capabilities?: RendererCapabilities;
@@ -126,13 +129,7 @@ export function GraphLayersControl(props: GraphLayersControlProps): JSX.Element 
                   renderer: rest.renderer ?? '',
               });
 
-    const option = (input: MenuOptionProps) => (
-        <MenuOption
-            {...input}
-            ariaLabel={input.ariaLabel ?? input.label}
-            class="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-12-regular text-text-base hover:bg-surface-base-hover disabled:opacity-50"
-        />
-    );
+    const option = (input: MenuOptionProps) => menuOption(input, LAYER_OPTION_CLASS);
 
     const levelControl = () => (
         <Show when={rest.onLevel}>

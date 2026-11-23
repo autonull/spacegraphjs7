@@ -8,8 +8,8 @@ export type { I18n } from './i18n';
 export { noopI18n, passthroughI18n } from './i18n';
 
 // Icons
-export type { IconProps, IconComponent } from './icons';
-export { defaultIconSVGs, createIconRenderer } from './icons';
+export type { IconProps, IconComponent, GraphIconButtonProps } from './icons';
+export { defaultIconSVGs, createIconRenderer, GraphIconButton } from './icons';
 
 // Popover
 export type { PopoverProps, PopoverComponent } from './popover';

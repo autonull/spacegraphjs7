@@ -40,3 +40,11 @@ export function MenuOption(props: MenuOptionProps): JSX.Element {
         </button>
     );
 }
+
+/** A menu row whose accessible name falls back to its label. */
+export const menuOption = (input: MenuOptionProps, className?: string): JSX.Element =>
+    MenuOption({
+        ...input,
+        class: className ?? input.class,
+        ariaLabel: input.ariaLabel ?? input.label,
+    });

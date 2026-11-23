@@ -8,7 +8,7 @@ import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/ico
 import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { DetailMode, GraphViewData } from '@spacegraphjs/shared/types';
-import { MenuOption, type MenuOptionProps } from './MenuOption';
+import { menuOption } from './MenuOption';
 import { ToolbarMenu } from './ToolbarMenu';
 import { DETAIL_MODES, VOCABULARY_KEYS } from '@spacegraphjs/shared/types';
 import { GraphIconButton } from './GraphIconButton';
@@ -44,10 +44,6 @@ export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
     const renderIcon = Icon ?? createIconRenderer();
     const PopoverComponent = Popover ?? createPopoverRenderer();
 
-    const option = (input: MenuOptionProps) => (
-        <MenuOption {...input} ariaLabel={input.ariaLabel ?? input.label} />
-    );
-
     return (
         <>
             <Show
@@ -80,7 +76,7 @@ export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
                         {i18n.t('ui.toolbar.detailMode')}
                     </div>
                     {DETAIL_MODES.map((mode) =>
-                        option({
+                        menuOption({
                             label: i18n.t(VOCABULARY_KEYS.detailMode[mode]),
                             onClick: () => rest.onDetailModeChange?.(mode),
                             pressed: rest.detailMode === mode,
@@ -91,7 +87,7 @@ export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
                 </div>
             </Show>
             <Show when={rest.onTogglePeek}>
-                {option({
+                {menuOption({
                     label: i18n.t('ui.toolbar.peek'),
                     onClick: () => rest.onTogglePeek?.(),
                     pressed: rest.peek,
@@ -100,7 +96,7 @@ export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
                 })}
             </Show>
             <Show when={rest.onFollowLogChange}>
-                {option({
+                {menuOption({
                     label: rest.followLog
                         ? i18n.t('ui.toolbar.followLog')
                         : i18n.t('ui.toolbar.followLogOff'),
@@ -112,10 +108,8 @@ export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
                 })}
             </Show>
             <Show when={rest.onToggleFocus}>
-                {option({
-                    label: rest.focus
-                        ? i18n.t('ui.toolbar.focus')
-                        : i18n.t('ui.toolbar.focusOff'),
+                {menuOption({
+                    label: rest.focus ? i18n.t('ui.toolbar.focus') : i18n.t('ui.toolbar.focusOff'),
                     onClick: () => rest.onToggleFocus?.(),
                     pressed: rest.focus,
                     slot: 'graph-focus-option',
