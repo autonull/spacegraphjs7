@@ -1,49 +1,44 @@
 import { TAU } from '../utils/math';
+import { gridPoints, polarPoint, ringPoints } from '../utils/points';
 // builder/patterns.ts - Pre-built graph patterns
 import { GraphBuilder } from './graph';
 
 const Patterns = {
     circle(count: number, radius = 100, labelPrefix = 'Node'): GraphBuilder {
         const builder = new GraphBuilder();
-        const step = TAU / count;
-        for (let i = 0; i < count; i++) {
-            const angle = i * step;
+        ringPoints(count, radius).forEach(([x, , z], i) => {
             builder
                 .node(`node-${i}`)
                 .type('ShapeNode')
                 .label(`${labelPrefix} ${i}`)
-                .position(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+                .position(x, 0, z);
             if (i > 0)
                 builder.addEdge({ id: `edge-${i}`, source: `node-${i - 1}`, target: `node-${i}` });
-        }
+        });
         builder.connect(`node-${count - 1}`, 'node-0');
         return builder;
     },
 
     grid(rows: number, cols: number, spacing = 100): GraphBuilder {
         const builder = new GraphBuilder();
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-                const id = `node-${row}-${col}`;
-                builder
-                    .node(id)
-                    .type('ShapeNode')
-                    .label(`${row},${col}`)
-                    .position(col * spacing, 0, row * spacing);
-                if (col > 0)
-                    builder.addEdge({
-                        id: `h-${row}-${col}`,
-                        source: `node-${row}-${col - 1}`,
-                        target: id,
-                    });
-                if (row > 0)
-                    builder.addEdge({
-                        id: `v-${row}-${col}`,
-                        source: `node-${row - 1}-${col}`,
-                        target: id,
-                    });
-            }
-        }
+        gridPoints(rows, cols, spacing).forEach(([x, , z], i) => {
+            const row = Math.floor(i / cols);
+            const col = i % cols;
+            const id = `node-${row}-${col}`;
+            builder.node(id).type('ShapeNode').label(`${row},${col}`).position(x, 0, z);
+            if (col > 0)
+                builder.addEdge({
+                    id: `h-${row}-${col}`,
+                    source: `node-${row}-${col - 1}`,
+                    target: id,
+                });
+            if (row > 0)
+                builder.addEdge({
+                    id: `v-${row}-${col}`,
+                    source: `node-${row - 1}-${col}`,
+                    target: id,
+                });
+        });
         return builder;
     },
 
@@ -94,17 +89,11 @@ const Patterns = {
 
     star(spokes: number, radius = 100): GraphBuilder {
         const builder = new GraphBuilder();
-        const step = TAU / spokes;
         builder.node('center').type('ShapeNode').label('Center').position(0, 0, 0);
-        for (let i = 0; i < spokes; i++) {
-            const angle = i * step;
-            builder
-                .node(`spoke-${i}`)
-                .type('ShapeNode')
-                .label(`Spoke ${i}`)
-                .position(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+        ringPoints(spokes, radius).forEach(([x, , z], i) => {
+            builder.node(`spoke-${i}`).type('ShapeNode').label(`Spoke ${i}`).position(x, 0, z);
             builder.addEdge({ id: `edge-${i}`, source: 'center', target: `spoke-${i}` });
-        }
+        });
         return builder;
     },
 
@@ -167,15 +156,9 @@ const Patterns = {
 
     spiral(turns: number, pointsPerTurn = 10, spacing = 50): GraphBuilder {
         const builder = new GraphBuilder();
-        const totalPoints = turns * pointsPerTurn;
-        for (let i = 0; i < totalPoints; i++) {
-            const angle = (i / pointsPerTurn) * TAU;
-            const radius = i * (spacing / pointsPerTurn);
-            builder
-                .node(`node-${i}`)
-                .type('ShapeNode')
-                .label(`Node ${i}`)
-                .position(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+        for (let i = 0; i < turns * pointsPerTurn; i++) {
+            const [x, , z] = polarPoint((i / pointsPerTurn) * TAU, i * (spacing / pointsPerTurn));
+            builder.node(`node-${i}`).type('ShapeNode').label(`Node ${i}`).position(x, 0, z);
         }
         return builder;
     },
@@ -295,18 +278,12 @@ const Patterns = {
         const n = 5;
         const outerR = 100,
             innerR = 50;
-        for (let i = 0; i < n; i++) {
-            const angle = (i / n) * TAU - TAU / 4;
-            builder
-                .node(`outer-${i}`)
-                .position(Math.cos(angle) * outerR, 0, Math.sin(angle) * outerR);
-        }
-        for (let i = 0; i < n; i++) {
-            const angle = (i / n) * TAU + TAU / 10 - TAU / 4;
-            builder
-                .node(`inner-${i}`)
-                .position(Math.cos(angle) * innerR, 0, Math.sin(angle) * innerR);
-        }
+        ringPoints(n, outerR, { phase: -TAU / 4 }).forEach(([x, , z], i) =>
+            builder.node(`outer-${i}`).position(x, 0, z),
+        );
+        ringPoints(n, innerR, { phase: TAU / 10 - TAU / 4 }).forEach(([x, , z], i) =>
+            builder.node(`inner-${i}`).position(x, 0, z),
+        );
         for (let i = 0; i < n; i++) builder.connect(`outer-${i}`, `outer-${(i + 1) % n}`);
         for (let i = 0; i < n; i++) builder.connect(`inner-${i}`, `inner-${(i + 2) % n}`);
         for (let i = 0; i < n; i++) builder.connect(`outer-${i}`, `inner-${i}`);

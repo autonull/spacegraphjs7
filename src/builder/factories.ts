@@ -1,6 +1,7 @@
 import type { SpaceGraph } from '../SpaceGraph';
 // builder/factories.ts - Factory functions for nodes, edges, widgets
 import type { EdgeSpec, NodeSpec } from '../types';
+import { gridPoints, ringPoints } from '../utils/points';
 import { GraphBuilder } from './graph';
 import { NodeBuilder } from './node';
 
@@ -268,16 +269,10 @@ export const Batch = Object.freeze({
         startX = 0,
         startY = 0,
     ): Array<{ id: string; position: [number, number, number] }> {
-        const nodes: Array<{ id: string; position: [number, number, number] }> = [];
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                nodes.push({
-                    id: `node-${r}-${c}`,
-                    position: [startX + c * spacing, startY + r * spacing, 0],
-                });
-            }
-        }
-        return nodes;
+        return gridPoints(rows, cols, spacing, [startX, startY], 'xy').map((position, i) => ({
+            id: `node-${Math.floor(i / cols)}-${i % cols}`,
+            position,
+        }));
     },
     createRing(
         count: number,
@@ -285,18 +280,8 @@ export const Batch = Object.freeze({
         centerX = 0,
         centerY = 0,
     ): Array<{ id: string; position: [number, number, number] }> {
-        const nodes: Array<{ id: string; position: [number, number, number] }> = [];
-        for (let i = 0; i < count; i++) {
-            const angle = (i / count) * Math.PI * 2;
-            nodes.push({
-                id: `ring-${i}`,
-                position: [
-                    centerX + Math.cos(angle) * radius,
-                    centerY + Math.sin(angle) * radius,
-                    0,
-                ],
-            });
-        }
-        return nodes;
+        return ringPoints(count, radius, { plane: 'xy', center: [centerX, centerY] }).map(
+            (position, i) => ({ id: `ring-${i}`, position }),
+        );
     },
 });

@@ -5,6 +5,12 @@
 // Every result is deterministic for a given tree, seed and previous state. No renderer is involved.
 
 import { appendTo } from '../utils/collection';
+import {
+    boundsFromExtents,
+    transformBounds,
+    unionBounds,
+    type CenterBounds,
+} from './bounds';
 import { computeIncremental, interpolatedPositions, type IncrementalLayout } from './incremental';
 import type { PlacementItem, Position } from './placement';
 import {
@@ -106,12 +112,7 @@ const DEFAULT_HEIGHT = 64;
 
 const zero = (): Position => ({ x: 0, y: 0, z: 0 });
 
-const emptyBounds = (): ScopeBounds => ({
-    min: zero(),
-    max: zero(),
-    center: zero(),
-    size: [0, 0, 0],
-});
+const emptyBounds = (): CenterBounds => boundsFromExtents(0, 0, 0, 0, 0, 0);
 
 const hashPath = (path: string): number => {
     let hash = 2166136261;
@@ -119,7 +120,10 @@ const hashPath = (path: string): number => {
     return hash >>> 0;
 };
 
-const boundsOf = (items: readonly SolverItem[], positions: ReadonlyMap<string, Position>): ScopeBounds => {
+const itemsBounds = (
+    items: readonly SolverItem[],
+    positions: ReadonlyMap<string, Position>,
+): CenterBounds => {
     let minX = Infinity, minY = Infinity, minZ = Infinity;
     let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
 
@@ -136,44 +140,7 @@ const boundsOf = (items: readonly SolverItem[], positions: ReadonlyMap<string, P
         minZ = Math.min(minZ, z);
         maxZ = Math.max(maxZ, z);
     }
-    if (minX === Infinity) return emptyBounds();
-
-    return {
-        min: { x: minX, y: minY, z: minZ },
-        max: { x: maxX, y: maxY, z: maxZ },
-        center: { x: (minX + maxX) / 2, y: (minY + maxY) / 2, z: (minZ + maxZ) / 2 },
-        size: [maxX - minX, maxY - minY, maxZ - minZ],
-    };
-};
-
-const scaleBounds = (bounds: ScopeBounds, origin: Position, scale: number): ScopeBounds => ({
-    min: {
-        x: origin.x + bounds.min.x * scale,
-        y: origin.y + bounds.min.y * scale,
-        z: origin.z + bounds.min.z * scale,
-    },
-    max: {
-        x: origin.x + bounds.max.x * scale,
-        y: origin.y + bounds.max.y * scale,
-        z: origin.z + bounds.max.z * scale,
-    },
-    center: {
-        x: origin.x + bounds.center.x * scale,
-        y: origin.y + bounds.center.y * scale,
-        z: origin.z + bounds.center.z * scale,
-    },
-    size: [bounds.size[0] * scale, bounds.size[1] * scale, bounds.size[2] * scale],
-});
-
-const unionBounds = (a: ScopeBounds, b: ScopeBounds): ScopeBounds => {
-    const min = { x: Math.min(a.min.x, b.min.x), y: Math.min(a.min.y, b.min.y), z: Math.min(a.min.z, b.min.z) };
-    const max = { x: Math.max(a.max.x, b.max.x), y: Math.max(a.max.y, b.max.y), z: Math.max(a.max.z, b.max.z) };
-    return {
-        min,
-        max,
-        center: { x: (min.x + max.x) / 2, y: (min.y + max.y) / 2, z: (min.z + max.z) / 2 },
-        size: [max.x - min.x, max.y - min.y, max.z - min.z],
-    };
+    return minX === Infinity ? emptyBounds() : boundsFromExtents(minX, minY, minZ, maxX, maxY, maxZ);
 };
 
 interface ScopeLayoutState {
@@ -283,7 +250,7 @@ function solveScopes(state: ScopeLayoutState, entry: ScopeEntry): void {
         state.locals.set(qualified, position);
     }
     state.localsByPath.set(entry.path, local);
-    state.boundsByPath.set(entry.path, boundsOf(items, local));
+    state.boundsByPath.set(entry.path, itemsBounds(items, local));
 }
 
 function placeFrames(state: ScopeLayoutState, entry: ScopeEntry, parent?: ScopeFrame): void {
@@ -308,7 +275,7 @@ function placeFrames(state: ScopeLayoutState, entry: ScopeEntry, parent?: ScopeF
         depth: entry.depth,
         origin,
         scale,
-        bounds: scaleBounds(state.boundsByPath.get(entry.path)!, origin, scale),
+        bounds: transformBounds(state.boundsByPath.get(entry.path)!, origin, scale),
         active: state.options.active ? state.options.active.has(entry.path) : true,
     };
     state.frames.set(entry.path, frame);

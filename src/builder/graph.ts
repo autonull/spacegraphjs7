@@ -1,7 +1,7 @@
 import type { SpaceGraph } from '../SpaceGraph';
 // builder/graph.ts - Graph spec builder
 import type { EdgeSpec, GraphSpec, NodeSpec, SpaceGraphOptions } from '../types';
-import { TAU } from '../utils/math';
+import { gridPoint, ringPoint } from '../utils/points';
 import { EdgeBuilder } from './edge';
 import { NodeBuilder } from './node';
 
@@ -139,21 +139,13 @@ export class GraphBuilder {
     }
 
     gridLayout(cols: number, spacing = 100): this {
-        this.#nodes.forEach((node, i) => {
-            const row = Math.floor(i / cols);
-            const col = i % cols;
-            node.position = [col * spacing, 0, row * spacing];
-        });
+        this.#nodes.forEach((node, i) => (node.position = gridPoint(i, cols, spacing)));
         return this;
     }
 
     circularLayout(radius = 100): this {
         const count = this.#nodes.length;
-        const step = TAU / count;
-        this.#nodes.forEach((node, i) => {
-            const angle = i * step;
-            node.position = [Math.cos(angle) * radius, 0, Math.sin(angle) * radius];
-        });
+        this.#nodes.forEach((node, i) => (node.position = ringPoint(i, count, radius)));
         return this;
     }
 

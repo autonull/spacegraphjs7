@@ -4,6 +4,7 @@
 //
 // No renderer, clock or DOM is involved. The host drives `advance(seconds)` and reads `view()`.
 
+import { boundsFromExtents } from './bounds';
 import type { Position } from './placement';
 import { resolveScopeRef, scopeOf, type ScopeSpec, type ScopeTree } from './scope';
 import {
@@ -78,12 +79,7 @@ function withTargets(layout: ScopeLayout, targets: ReadonlyMap<string, Position>
         maxY = Math.max(maxY, position.y);
     }
     const bounds: ScopeBounds = Number.isFinite(minX)
-        ? {
-              min: { x: minX, y: minY, z: 0 },
-              max: { x: maxX, y: maxY, z: 0 },
-              center: { x: (minX + maxX) / 2, y: (minY + maxY) / 2, z: 0 },
-              size: [maxX - minX, maxY - minY, 0],
-          }
+        ? boundsFromExtents(minX, minY, 0, maxX, maxY, 0)
         : layout.bounds;
     return { ...layout, positions, bounds };
 }

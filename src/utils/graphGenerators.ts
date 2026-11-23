@@ -1,4 +1,5 @@
 import type { NodeSpec } from '../types';
+import { gridPoint, polarPoint } from './points';
 
 export interface GraphGeneratorOptions {
     nodeCount?: number;
@@ -66,11 +67,7 @@ export const smallWorld = (
     const nodes: NodeSpec[] = Array.from({ length: nodeCount }, (_, i) => ({
         id: `node-${i}`,
         type: 'shape',
-        position: [
-            Math.cos((2 * Math.PI * i) / nodeCount) * radius * 50,
-            Math.sin((2 * Math.PI * i) / nodeCount) * radius * 50,
-            0,
-        ],
+        position: polarPoint((2 * Math.PI * i) / nodeCount, radius * 50, 'xy'),
     }));
     const edges: Array<{ source: string; target: string }> = [];
     for (let i = 0; i < nodeCount; i++)
@@ -95,7 +92,7 @@ export const lattice2D = (
     for (let y = 0; y < rows; y++)
         for (let x = 0; x < cols; x++) {
             const id = `node-${x}-${y}`;
-            nodes.push({ id, type: 'shape', position: [x * spacing, y * spacing, 0] });
+            nodes.push({ id, type: 'shape', position: gridPoint(y * cols + x, cols, spacing, [0, 0], 'xy') });
             if (x > 0) edges.push({ source: `node-${x - 1}-${y}`, target: id });
             if (y > 0) edges.push({ source: `node-${x}-${y - 1}`, target: id });
         }
