@@ -1,4 +1,3 @@
-import type { SpaceGraph } from '../../SpaceGraph';
 import { FpsMeter } from '../../utils/FpsMeter';
 import { HUDDOMFactory } from './HUDDOMFactory';
 import { HUDElement, type HUDElementSpec } from './HUDElement';

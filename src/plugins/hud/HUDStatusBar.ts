@@ -1,4 +1,3 @@
-import type { SpaceGraph } from '../../SpaceGraph';
 import { HUDDOMFactory } from './HUDDOMFactory';
 import { HUDElement, type HUDElementSpec } from './HUDElement';
 import { HUD_STYLES, HUD_ZINDEX } from './HUDStyles';

@@ -116,7 +116,7 @@ function ribbonLayout<Node extends RepresentationNode>(
         }
     });
 
-    return { positions, clusters: new Map(), bounds: boundsOfMap(positions), strategy: 'lanes' };
+    return summaryLayout(positions);
 }
 
 /**
@@ -173,7 +173,7 @@ function matrixLayout<Node extends RepresentationNode>(
         }
     }
 
-    return { positions, clusters: new Map(), bounds: boundsOfMap(positions), strategy: 'lanes' };
+    return summaryLayout(positions);
 }
 
 /** The labelled columns of a matrix, for axis generation. */
@@ -209,7 +209,7 @@ function logLayout<Node extends RepresentationNode>(
         cursor += rowGap;
     }
 
-    return { positions, clusters: new Map(), bounds: boundsOfMap(positions), strategy: 'lanes' };
+    return summaryLayout(positions);
 }
 
 /** The log layout rows: same as summary rows but exposed for axis labels. */
