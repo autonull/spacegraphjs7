@@ -32,39 +32,35 @@ export class InteractionRaycaster {
         return this.mouse.clone();
     }
 
-    /**
-     * The node under the pointer. Every surface answers a ray with its own `hitTest`, so the pick
-     * follows the node's own shape instead of a second, looser rule kept beside it.
-     */
-    raycastNode(): { node: Node; point: Vector3 } | null {
+    /** The closest surface that answers the ray, using each surface's own hit rule. */
+    private closestHit<T>(
+        surfaces: Iterable<T>,
+        hitTest: (surface: T) => { point: Vector3; distance: number } | null,
+    ): { surface: T; point: Vector3 } | null {
         this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-
-        let closest: { node: Node; point: Vector3; distance: number } | null = null;
-
-        for (const node of this.sg.graph.nodes.values()) {
-            const hit = node.hitTest(this.raycaster);
-            if (!hit) continue;
-            if (closest && hit.distance >= closest.distance) continue;
-            closest = { node, point: hit.point, distance: hit.distance };
+        let closest: { surface: T; point: Vector3; distance: number } | null = null;
+        for (const surface of surfaces) {
+            const hit = hitTest(surface);
+            if (!hit || (closest && hit.distance >= closest.distance)) continue;
+            closest = { surface, point: hit.point, distance: hit.distance };
         }
+        return closest && { surface: closest.surface, point: closest.point };
+    }
 
-        return closest ? { node: closest.node, point: closest.point } : null;
+    /** The node under the pointer. */
+    raycastNode(): { node: Node; point: Vector3 } | null {
+        const hit = this.closestHit(this.sg.graph.nodes.values(), (node) =>
+            node.hitTest(this.raycaster),
+        );
+        return hit && { node: hit.surface, point: hit.point };
     }
 
     /** The edge under the pointer, by the same rule the nodes answer with. */
     raycastEdge(): { edge: Edge; point: Vector3 } | null {
-        this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-
-        let closest: { edge: Edge; point: Vector3; distance: number } | null = null;
-
-        for (const edge of this.sg.graph.edges.values()) {
-            const hit = edge.hitTest(this.raycaster);
-            if (!hit) continue;
-            if (closest && hit.distance >= closest.distance) continue;
-            closest = { edge, point: hit.point, distance: hit.distance };
-        }
-
-        return closest ? { edge: closest.edge, point: closest.point } : null;
+        const hit = this.closestHit(this.sg.graph.edges.values(), (edge) =>
+            edge.hitTest(this.raycaster),
+        );
+        return hit && { edge: hit.surface, point: hit.point };
     }
 
     raycastPlane(plane: Plane): Vector3 | null {

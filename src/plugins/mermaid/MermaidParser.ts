@@ -156,8 +156,26 @@ function mapStyle(style?: string): EdgeStyle {
     return (style && EDGE_STYLES[style]) || 'solid';
 }
 
+function result(
+    format: DiagramFormat,
+    nodes: Iterable<DiagramNode>,
+    edges: DiagramEdge[],
+    clusters: Iterable<DiagramCluster>,
+    suggestedLayout: string,
+    metadata?: Record<string, unknown>,
+): DiagramParseResult {
+    return {
+        nodes: [...nodes],
+        edges,
+        clusters: [...clusters],
+        format,
+        suggestedLayout,
+        ...(metadata && { metadata }),
+    };
+}
+
 function emptyResult(format: DiagramFormat): DiagramParseResult {
-    return { nodes: [], edges: [], clusters: [], format, suggestedLayout: 'hierarchical' };
+    return result(format, [], [], [], 'hierarchical');
 }
 
 export class MermaidParser {
@@ -400,13 +418,13 @@ export class DOTParser {
             }
         }
 
-        return {
-            nodes: Array.from(nodes.values()),
+        return result(
+            'dot',
+            nodes.values(),
             edges,
-            clusters: Array.from(clusters.values()),
-            format: 'dot',
-            suggestedLayout: isDirected ? 'hierarchical' : 'force',
-        };
+            clusters.values(),
+            isDirected ? 'hierarchical' : 'force',
+        );
     }
 
     private parseAttributes(attrString: string): Record<string, string> {
@@ -517,13 +535,7 @@ export class GraphMLParser {
             }
         });
 
-        return {
-            nodes: Array.from(nodes.values()),
-            edges,
-            clusters: Array.from(clusters.values()),
-            format: 'graphml',
-            suggestedLayout: 'hierarchical',
-        };
+        return result('graphml', nodes.values(), edges, clusters.values(), 'hierarchical');
     }
 }
 
@@ -565,15 +577,14 @@ export class JSONDiagramParser {
                 }),
             );
 
-            return {
+            return result(
+                'json',
                 nodes,
                 edges,
                 clusters,
-                format: 'json',
-                suggestedLayout:
-                    data.suggestedLayout || (data.directed !== false ? 'hierarchical' : 'force'),
-                metadata: data.metadata,
-            };
+                data.suggestedLayout || (data.directed !== false ? 'hierarchical' : 'force'),
+                data.metadata,
+            );
         } catch {
             return emptyResult('json');
         }
