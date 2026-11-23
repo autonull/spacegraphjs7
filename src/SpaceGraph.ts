@@ -191,25 +191,25 @@ export class SpaceGraph {
         duration = 1.5,
         ids?: readonly string[],
         options?: { minScale?: number; insets?: FitInsets },
-    ): this {
+    ): SpaceGraph {
         return this.cameraController.fitView(padding, duration, ids, options);
     }
-    focusNode(id: string, _padding = 100, duration = 1): this {
+    focusNode(id: string, _padding = 100, duration = 1): SpaceGraph {
         return this.cameraController.focusNode(id, _padding, duration);
     }
-    center(x: number, y: number, z = 0): this {
+    center(x: number, y: number, z = 0): SpaceGraph {
         return this.cameraController.center(x, y, z);
     }
-    resetCamera(): this {
+    resetCamera(): SpaceGraph {
         return this.cameraController.resetCamera();
     }
-    setCamera(position: [number, number, number], target?: [number, number, number]): this {
+    setCamera(position: [number, number, number], target?: [number, number, number]): SpaceGraph {
         return this.cameraController.setCamera(position, target);
     }
-    setOrbitEnabled(enabled: boolean): this {
+    setOrbitEnabled(enabled: boolean): SpaceGraph {
         return this.cameraController.setOrbitEnabled(enabled);
     }
-    setPolar(phi: number, theta: number, duration = 0): this {
+    setPolar(phi: number, theta: number, duration = 0): SpaceGraph {
         return this.cameraController.setPolar(phi, theta, duration);
     }
 
@@ -220,13 +220,13 @@ export class SpaceGraph {
     requestFrame(): void {
         this.animationController.requestFrame();
     }
-    render(): this {
+    render(): SpaceGraph {
         return this.animationController.render();
     }
     pause(): void {
         this.animationController.pause();
     }
-    resume(): this {
+    resume(): SpaceGraph {
         return this.animationController.resume();
     }
 
@@ -333,7 +333,7 @@ export class SpaceGraph {
     get projection(): Projection {
         return this.renderer.projection;
     }
-    setProjection(projection: Projection): this {
+    setProjection(projection: Projection): SpaceGraph {
         return this.depthController.setProjection(projection);
     }
 
@@ -341,16 +341,16 @@ export class SpaceGraph {
     get depth(): DepthMode {
         return this.depthController.depth;
     }
-    setDepth(depth: DepthMode): this {
+    setDepth(depth: DepthMode): SpaceGraph {
         return this.depthController.setDepth(depth);
     }
     get cardFacing(): CardFacing {
         return this.depthController.cardFacing;
     }
-    setCardFacing(facing: CardFacing): this {
+    setCardFacing(facing: CardFacing): SpaceGraph {
         return this.depthController.setCardFacing(facing);
     }
-    applySceneFade(): this {
+    applySceneFade(): SpaceGraph {
         return this.depthController.applySceneFade();
     }
 

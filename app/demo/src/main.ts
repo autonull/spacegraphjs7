@@ -17,7 +17,7 @@ import type { DepthMode } from 'spacegraphjs/depth';
 import { Navigation } from 'spacegraphjs/navigation';
 import { ScopedOverlay, extractSubgraph, renderCodeDiff } from 'spacegraphjs/overlays';
 import { computeFocusOverlay, type FocusOverlay } from '@spacegraphjs/overlays';
-import { elementGetter, round } from './dom';
+import { elementGetter, renderTrail as paintTrail, round } from './dom';
 import { CAPABILITIES, type Capability } from './gallery';
 import { DemoHost } from './host';
 import { HOST_VIEWS, searchableFields, type HostView } from './model';
@@ -78,30 +78,10 @@ function select(ids: readonly string[]) {
     renderer?.setSelection(ids);
 }
 
-function renderTrail() {
-    const trail = host.controller.trail;
-    const nav = el('trail');
-
-    const back = document.createElement('button');
-    back.type = 'button';
-    back.className = 'trail-back';
-    back.textContent = 'Back';
-    back.disabled = !trail.canGoBack;
-    back.dataset.role = 'trail-back';
-    back.addEventListener('click', () => host.controller.back());
-
-    const crumbs = trail.entries.map((entry) => {
-        const crumb = document.createElement('button');
-        crumb.type = 'button';
-        crumb.className = 'crumb';
-        crumb.textContent = entry.label ?? entry.id;
-        crumb.dataset.id = entry.id;
-        if (trail.current?.id === entry.id) crumb.setAttribute('aria-current', 'true');
-        crumb.addEventListener('click', () => select([entry.id]));
-        return crumb;
-    });
-
-    nav.replaceChildren(back, ...crumbs);
+function renderTrail(): void {
+    paintTrail(el('trail'), host.controller.trail, () => host.controller.back(), (id) =>
+        select([id]),
+    );
 }
 
 function viewportOf() {

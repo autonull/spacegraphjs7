@@ -2023,7 +2023,7 @@ export class PiHost {
             return knob.type === 'enum'
                 ? knob.options.map(set)
                 : knob.type === 'boolean'
-                  ? [set(!Boolean(this.#resolved.values[knob.id]))]
+                  ? [set(!this.#resolved.values[knob.id])]
                   : [set(knob.default), set(knob.min), set(knob.max)];
         });
         const focus = this.#revealed || this.#controller.selection[0] || '';

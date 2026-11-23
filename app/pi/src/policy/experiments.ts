@@ -1,14 +1,11 @@
-import type { PolicyExperiment, PolicySchema, PolicyVector } from 'spacegraphjs/policy';
-import { decodePolicyVector } from './resolve';
+import type { PolicyExperiment } from 'spacegraphjs/policy';
 export {
+    cellFromPolicy,
     sampleExperiment,
     type PolicyExperiment,
     type ExperimentCell,
     type SampledExperiment,
 } from 'spacegraphjs/policy';
-
-export const cellFromPolicy = (schema: PolicySchema, policy: string): PolicyVector | undefined =>
-    decodePolicyVector(schema, policy) ?? undefined;
 
 export const POLICY_EXPERIMENTS: readonly PolicyExperiment[] = [
     {

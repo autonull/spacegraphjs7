@@ -21,7 +21,7 @@ import { AccessibilityLayer } from 'spacegraphjs/a11y';
 import { GraphController } from 'spacegraphjs/control';
 import { LaneLayout } from 'spacegraphjs/layout';
 import { activityHostFixture } from './activity-host';
-import { elementGetter } from './src/dom';
+import { elementGetter, renderTrail as paintTrail } from './src/dom';
 
 type RendererID = 'spacegraph' | 'cytoscape' | 'svg';
 type ThemeName = 'dark' | 'light';
@@ -473,28 +473,7 @@ function renderBand(): void {
 }
 
 function renderTrail(): void {
-    const trail = controller.trail;
-    const nav = el('trail');
-    const back = document.createElement('button');
-    back.type = 'button';
-    back.textContent = 'Back';
-    back.className = 'trail-back';
-    back.disabled = !trail.canGoBack;
-    back.dataset.role = 'trail-back';
-    back.addEventListener('click', () => controller.back());
-
-    const crumbs = trail.entries.map((entry) => {
-        const crumb = document.createElement('button');
-        crumb.type = 'button';
-        crumb.className = 'crumb';
-        crumb.textContent = entry.label ?? entry.id;
-        crumb.dataset.id = entry.id;
-        if (trail.current?.id === entry.id) crumb.setAttribute('aria-current', 'true');
-        crumb.addEventListener('click', () => select([entry.id]));
-        return crumb;
-    });
-
-    nav.replaceChildren(back, ...crumbs);
+    paintTrail(el('trail'), controller.trail, () => controller.back(), (id) => select([id]));
 }
 
 function renderDetail(): void {

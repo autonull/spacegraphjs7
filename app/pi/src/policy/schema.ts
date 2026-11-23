@@ -2,7 +2,6 @@
 import type {
     BooleanKnob,
     EnumKnob,
-    KnobValue,
     NumberKnob,
     PolicySchema,
 } from 'spacegraphjs/policy';

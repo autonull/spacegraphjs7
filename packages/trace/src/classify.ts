@@ -6,14 +6,12 @@ import type {
     TraceModel,
     TraceNode,
     TraceOverlay,
-    TraceTraversal,
-    TraceVocabulary,
 } from './types';
 
 function traceAnswerIds(config: TraceConfig, kind: TraceKind, from: string): Set<string> {
     const { model, traversal, vocabulary } = config;
     const { incoming, outgoing, ancestors, forwardChain, downstreamChain, sequenceIndex } = traversal;
-    const { provenanceEdgeKinds, downstreamEdgeKinds } = vocabulary;
+    const { provenanceEdgeKinds } = vocabulary;
 
     switch (kind) {
         case 'why': {

@@ -24,6 +24,21 @@ describe('reviewer annotations', () => {
         expect(store.list).toEqual([{ id: 'restored', target: 'b', body: 'from link' }]);
     });
 
+    it('does not reuse an id after a note is removed', () => {
+        const store = new NoteStore();
+        const first = store.add('a', 'first');
+        store.add('a', 'second');
+        store.remove(first.id);
+        const third = store.add('a', 'third');
+        expect(third.id).not.toBe(first.id);
+        expect(store.forTarget('a').map((note) => note.body)).toEqual(['second', 'third']);
+    });
+
+    it('resumes id numbering above restored notes', () => {
+        const store = new NoteStore([{ id: 'note:a:4', target: 'a', body: 'restored' }]);
+        expect(store.add('a', 'fresh').id).toBe('note:a:5');
+    });
+
     it('pins notes on render nodes without mutating the model', () => {
         const notes = [
             { id: 'n1', target: 'b', body: 'one' },

@@ -14,6 +14,7 @@ export type PinnedNote = {
 
 export class NoteStore {
     readonly #notes = new Map<string, PinnedNote>();
+    #nextID = 1;
 
     constructor(initial: readonly PinnedNote[] = []) {
         this.replaceAll(initial);
@@ -24,7 +25,7 @@ export class NoteStore {
     }
 
     add(target: string, body: string): PinnedNote {
-        const note = { id: `note:${target}:${this.#notes.size + 1}`, target, body };
+        const note = { id: `note:${target}:${this.#nextID++}`, target, body };
         this.#notes.set(note.id, note);
         return note;
     }
@@ -36,6 +37,11 @@ export class NoteStore {
     replaceAll(notes: readonly PinnedNote[]): void {
         this.#notes.clear();
         for (const note of notes) this.#notes.set(note.id, note);
+        const highest = notes.reduce(
+            (max, note) => Math.max(max, Number(note.id.split(':').at(-1)) || 0),
+            0,
+        );
+        this.#nextID = highest + 1;
     }
 
     forTarget(target: string): readonly PinnedNote[] {
@@ -117,15 +123,5 @@ export const createAnnotationWidgets = (
         slots: ['pinned'],
         representationOf: () => 'detail',
     });
-    return {
-        layer,
-        refresh(nodes) {
-            layer.sync(nodes);
-            const byID = new Map(nodes.map((node) => [node.id, node]));
-            for (const mounted of layer.mounted()) {
-                const node = byID.get(mounted.nodeId);
-                if (node) mounted.handle.update?.({ node, slot: mounted.slot });
-            }
-        },
-    };
+    return { layer, refresh: (nodes) => layer.refresh(nodes) };
 };

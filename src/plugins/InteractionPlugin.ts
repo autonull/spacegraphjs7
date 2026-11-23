@@ -364,7 +364,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
                 break;
 
             case ' ':
-                if (!isEditingText) {
+                if (!isEditableTarget(document.activeElement)) {
                     e.preventDefault();
                     const hoveredNode = this.hoverManager.getHoveredNode();
                     if (hoveredNode) {

@@ -66,26 +66,14 @@ export function computeFollowFrame(options: ComputeFollowFrameOptions): CameraMo
     if (!position) return null;
 
     switch (followMode) {
-        case 'turn': {
-            // Frame at turn boundary - only if we have multiple new nodes that form a turn
-            // For now, treat same as 'node' but without focus highlight
+        case 'turn':
+        case 'node':
             return {
                 nodeId: newestNode.id,
                 applyFocusHighlight: false,
                 focusHighlightDuration: 0,
                 dampingMs,
             };
-        }
-
-        case 'node': {
-            // Frame the newest node
-            return {
-                nodeId: newestNode.id,
-                applyFocusHighlight: false,
-                focusHighlightDuration: 0,
-                dampingMs,
-            };
-        }
 
         case 'node+focus': {
             // Frame the newest node AND apply neighborhood focus highlight

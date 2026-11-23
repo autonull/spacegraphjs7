@@ -1,4 +1,5 @@
 import { Navigation } from '@spacegraphjs/shared';
+import type { MinimapOptions, MinimapProjection } from '@spacegraphjs/shared';
 
 export type {
     MinimapBounds,
@@ -9,4 +10,4 @@ export type {
     MinimapViewport,
 } from '@spacegraphjs/shared';
 
-export const project = Navigation.project;
+export const project: (options: MinimapOptions) => MinimapProjection = Navigation.project;

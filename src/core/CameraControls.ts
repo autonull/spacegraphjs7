@@ -291,7 +291,7 @@ export class CameraControls {
             flight.phi = null;
             flight.theta = null;
             flight.zoom = null;
-            this.sg?.events?.emit('camera:fly:end');
+            this.sg?.events?.emit('camera:fly:end', {});
         }
     }
 

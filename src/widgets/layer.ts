@@ -89,6 +89,16 @@ export class WidgetLayer {
         this.options.onSize?.(node.id, size);
     }
 
+    /** Sync the desired set, then push current nodes into handles that survived the sync. */
+    refresh(nodes: readonly RenderNode[]): void {
+        this.sync(nodes);
+        const byID = new Map(nodes.map((node) => [node.id, node]));
+        for (const mounted of this.mounted()) {
+            const node = byID.get(mounted.nodeId);
+            if (node) mounted.handle.update?.({ node, slot: mounted.slot });
+        }
+    }
+
     /** Project scene fog onto mounted DOM widgets; handles without `setOpacity` are untouched. */
     setDepthFade(distance: number, density: number): void {
         const opacity = depthFade(distance, density);

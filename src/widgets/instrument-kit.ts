@@ -158,15 +158,5 @@ export const createInstrumentKit = (
         slots: ['attached'],
         representationOf: () => 'detail',
     });
-    return {
-        layer,
-        refresh(nodes) {
-            layer.sync(nodes);
-            const byID = new Map(nodes.map((node) => [node.id, node]));
-            for (const mounted of layer.mounted()) {
-                const node = byID.get(mounted.nodeId);
-                if (node) mounted.handle.update?.({ node, slot: mounted.slot });
-            }
-        },
-    };
+    return { layer, refresh: (nodes) => layer.refresh(nodes) };
 };

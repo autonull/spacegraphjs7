@@ -2,7 +2,7 @@
 // Graph topology analysis for hierarchy detection
 
 import type { HeuristicsConfig } from '..';
-import { clamp as clampValue } from '../../utils/math';
+import { clamp } from '../../utils/math';
 import type { HierarchyResult, VisionContext } from '../types';
 
 /**
@@ -170,6 +170,6 @@ export class HierarchyAnalyzer {
             score -= Math.min(20, extraEdges * 2);
         }
 
-        return clampValue(score, 0, 100);
+        return clamp(score, 0, 100);
     }
 }

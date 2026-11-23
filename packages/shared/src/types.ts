@@ -51,16 +51,9 @@ export interface GraphViewData {
 import type {
     Projection,
     DepthMode,
-    NodeStatus,
     RenderNode,
-    RenderEdge,
     RenderModel,
-    RenderModelPatch,
     RenderTheme,
-    RendererCapabilities,
-    RendererViewport,
-    FitInsets,
-    FitOptions,
 } from '@spacegraphjs/renderer';
 
 /** Re-exported renderer contract types for convenience. */
