@@ -83,7 +83,8 @@ export function sessionOutline(model: GraphViewData): OutlineTurn[] {
     if (!model.turns || model.turns.length === 0) return [];
 
     const turnNumbers = new Map(model.turns.map((id, index) => [id, index + 1]));
-    const turnMap = new Map(model.turns.map((id) => [id, model.nodes.find((n) => n.id === id)]));
+    const nodesByID = new Map(model.nodes.map((node) => [node.id, node]));
+    const turnMap = new Map(model.turns.map((id) => [id, nodesByID.get(id)]));
     const children = new Map<string, string[]>();
 
     for (const edge of model.edges) {
@@ -99,7 +100,7 @@ export function sessionOutline(model: GraphViewData): OutlineTurn[] {
         const turnLabel = turnNode?.label ?? `Turn ${turnNumbers.get(turnID)}`;
         const turnChildren = children.get(turnID) ?? [];
         const phases = turnChildren
-            .map((id) => model.nodes.find((n) => n.id === id))
+            .map((id) => nodesByID.get(id))
             .filter((node): node is GraphNode => !!node && node.kind === 'phase')
             .map((phase) => ({
                 id: phase.id,

@@ -68,6 +68,17 @@ export function agentScopes(
         return current;
     };
 
+    const bySafeID = new Map<string, (typeof view.nodes)[number]>();
+    const firstUnitByID = new Map<string, (typeof view.nodes)[number]>();
+    for (const node of view.nodes) {
+        const safeID = safe(node.id);
+        if (!bySafeID.has(safeID)) bySafeID.set(safeID, node);
+        if (node.kind === 'unit') {
+            const unit = unitOf(node);
+            if (!firstUnitByID.has(unit)) firstUnitByID.set(unit, node);
+        }
+    }
+
     const scopeOfNode = new Map<string, string>();
     const scopeIds = new Set<string>(['run']);
     for (const node of view.nodes) {
@@ -91,7 +102,7 @@ export function agentScopes(
     for (const id of scopeIds) {
         if (id === 'run') continue;
         const owner = id.startsWith('delegate-') ? id.slice('delegate-'.length) : undefined;
-        const parentNode = owner ? [...nodes.values()].find((node) => safe(node.id) === owner) : undefined;
+        const parentNode = owner ? bySafeID.get(owner) : undefined;
         parentOfScope.set(id, parentNode ? (scopeOfNode.get(parentNode.id) ?? 'run') : 'run');
     }
 
@@ -136,13 +147,13 @@ export function agentScopes(
     for (const id of scopeIds) {
         if (id.startsWith('unit-')) {
             const unit = id.slice('unit-'.length);
-            const node = view.nodes.find((candidate) => candidate.kind === 'unit' && unitOf(candidate) === unit);
+            const node = firstUnitByID.get(unit);
             if (node && scopeOfNode.get(node.id) === parentOfScope.get(id)) portalOf.set(node.id, id);
             continue;
         }
         if (!id.startsWith('delegate-')) continue;
         const owner = id.slice('delegate-'.length);
-        const node = [...nodes.values()].find((candidate) => safe(candidate.id) === owner);
+        const node = bySafeID.get(owner);
         if (node && scopeOfNode.get(node.id) === parentOfScope.get(id)) portalOf.set(node.id, id);
     }
     for (const [scope, list] of content) {
