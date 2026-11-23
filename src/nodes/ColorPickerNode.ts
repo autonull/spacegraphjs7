@@ -56,11 +56,7 @@ export class ColorPickerNode extends HtmlNode {
         this.hexInput.type = 'text';
         this.hexInput.value = color.toUpperCase();
         Object.assign(this.hexInput.style, {
-            width: '100%',
-            backgroundColor: '#1a1a2e',
-            color: '#fff',
-            border: '1px solid #444',
-            borderRadius: '4px',
+            ...HtmlNode.CONTROL_INPUT_STYLE,
             padding: '6px',
             fontFamily: 'monospace',
         });

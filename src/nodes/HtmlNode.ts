@@ -31,6 +31,14 @@ export class HtmlNode extends BaseContentNode {
         gap: '8px',
         padding: '12px',
     } as const;
+    /** The dark input shared by the text and select controls. */
+    protected static readonly CONTROL_INPUT_STYLE = {
+        width: '100%',
+        backgroundColor: '#1a1a2e',
+        color: '#fff',
+        border: '1px solid #444',
+        borderRadius: '4px',
+    } as const;
     public readonly isHtmlNode = true;
     public size = { width: 160, height: 70 };
     public billboard = false;

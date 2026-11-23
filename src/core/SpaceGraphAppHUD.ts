@@ -10,6 +10,12 @@ const BORDER_GLASS = '1px solid rgba(255,255,255,0.1)';
 const BORDER_SUBTLE = 'rgba(255,255,255,0.1)';
 const BG_GLASS = 'rgba(255,255,255,0.05)';
 const BG_HOVER = 'rgba(255,255,255,0.1)';
+const BUTTON_BASE = {
+    border: 'none',
+    borderRadius: '99px',
+    color: 'white',
+    cursor: 'pointer',
+} as const;
 
 /** The glass a host's chrome sits on: the theme's surface, blurred, with a hairline edge. */
 function glassPanel(theme: any): Partial<CSSStyleDeclaration> {
@@ -85,13 +91,10 @@ export function renderToolbar(app: SpaceGraphApp, theme: any) {
     const fitBtn = DOMUtils.createElement('button', {
         textContent: 'Fit View',
         style: {
+            ...BUTTON_BASE,
             background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
-            border: 'none',
             padding: '8px 16px',
-            borderRadius: '99px',
-            color: 'white',
             fontWeight: '600',
-            cursor: 'pointer',
         },
     });
     fitBtn.onclick = () => app.sg.fitView(200);
@@ -152,14 +155,12 @@ function createModeToggle(app: SpaceGraphApp, theme: any): HTMLElement {
         const btn = DOMUtils.createElement('button', {
             textContent: labels[i],
             style: {
+                ...BUTTON_BASE,
                 background: 'transparent',
-                border: 'none',
                 padding: '6px 16px',
-                borderRadius: '99px',
                 color: SECONDARY_TEXT_COLOR,
                 fontWeight: 'bold',
                 fontSize: '12px',
-                cursor: 'pointer',
                 transition: 'all 0.2s ease',
             },
         });
@@ -194,14 +195,11 @@ function createZoomControls(app: SpaceGraphApp, theme: any): HTMLElement {
         const btn = DOMUtils.createElement('button', {
             textContent: label,
             style: {
+                ...BUTTON_BASE,
                 background: 'transparent',
-                border: 'none',
                 padding: '6px 12px',
-                borderRadius: '99px',
-                color: 'white',
                 fontWeight: 'bold',
                 fontSize: '16px',
-                cursor: 'pointer',
             },
         });
         btn.onmouseenter = () => (btn.style.background = BG_HOVER);

@@ -61,11 +61,7 @@ export class DropdownNode extends HtmlNode {
 
         this.selectElement = DOMUtils.createElement('select') as HTMLSelectElement;
         Object.assign(this.selectElement.style, {
-            width: '100%',
-            backgroundColor: '#1a1a2e',
-            color: '#fff',
-            border: '1px solid #444',
-            borderRadius: '4px',
+            ...HtmlNode.CONTROL_INPUT_STYLE,
             padding: '8px',
             fontSize: '14px',
             cursor: 'pointer',
