@@ -51,7 +51,7 @@ describe('shared popover', () => {
 describe('shared css utilities', () => {
     it('concatenates class names', () => {
         expect(cx('a', 'b')).toBe('a b');
-        expect(cx('a', false && 'b')).toBe('a');
+        expect(cx('a', false)).toBe('a');
         expect(cx({ a: true, b: false })).toBe('a');
     });
 
@@ -95,7 +95,7 @@ describe('shared hooks', () => {
     });
 
     it('debounces values', () => {
-        let currentValue = 0;
+        const currentValue = 0;
         const debounced = useDebounce(() => currentValue, 50);
         expect(typeof debounced).toBe('function');
         expect(debounced()).toBe(0);

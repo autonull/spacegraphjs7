@@ -81,7 +81,6 @@ export class SecondHost {
     #flightTo: CameraPoint | undefined;
     #tracePath: readonly CameraPoint[] = [];
     #settled = true;
-    #instant = false;
     #energy = 0;
     #policyLayers: PolicyLayers = {};
 
@@ -89,7 +88,6 @@ export class SecondHost {
         const host = this;
         const simulation: PlaySimulation = {
             setInstant: (value) => {
-                host.#instant = value;
                 if (value) host.#settled = true;
             },
             settle: () => {

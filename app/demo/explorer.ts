@@ -326,7 +326,7 @@ const leftGraph = new InlineGraph(element('left-graph'));
 const rightGraph = new InlineGraph(element('right-graph'));
 
 let left = ConfigState.fromSearch(space, location.hash);
-let right = randomize(space, seededRandom(41));
+const right = randomize(space, seededRandom(41));
 let compare = false;
 let previousRungs: ReadonlyMap<string, string> = new Map();
 let playback: RepresentationPlayback | undefined;

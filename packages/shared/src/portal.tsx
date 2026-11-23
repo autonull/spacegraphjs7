@@ -32,14 +32,8 @@ export function Portal(props: PortalProps): JSX.Element {
 
     onMount(() => {
         mounted = true;
-        let targetContainer: HTMLElement | null = null;
-        if (typeof container === 'function') {
-            targetContainer = container();
-        } else if (container) {
-            targetContainer = container;
-        } else {
-            targetContainer = document.body;
-        }
+        const targetContainer =
+            typeof container === 'function' ? container() : (container ?? document.body);
         if (!targetContainer) return;
 
         portalRoot = document.createElement('div');

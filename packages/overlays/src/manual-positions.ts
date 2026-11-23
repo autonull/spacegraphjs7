@@ -6,7 +6,7 @@ export interface ManualPositions {
     sizes: Record<string, [number, number]>;
 }
 
-export interface ManualPositionsSnapshot extends ManualPositions {}
+export type ManualPositionsSnapshot = ManualPositions;
 
 export interface ManualPositionsState extends ManualPositions {
     history: ManualPositionsSnapshot[];

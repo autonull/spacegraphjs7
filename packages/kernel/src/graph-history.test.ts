@@ -224,7 +224,7 @@ describe('GraphHistory', () => {
 
     describe('setSession', () => {
         it('replaces the underlying session kernel', () => {
-            let session = createSessionWithNodes(3);
+            const session = createSessionWithNodes(3);
             const history = createGraphHistory(session, 10);
 
             history.capture();

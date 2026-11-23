@@ -18,7 +18,7 @@ export interface AxisDescriptor<V extends ConfigValue = ConfigValue> {
 }
 
 /** A registry contribution to a capability manifest. */
-export interface ManifestEntry extends AxisDescriptor {}
+export type ManifestEntry = AxisDescriptor;
 
 /** Every option a consumer can discover, independent of who owns the registry. */
 export interface Manifest {
