@@ -313,6 +313,19 @@ export type GraphRenderer = {
 export type RendererCapability =
     Projection | 'domNodes' | 'edgeLabels' | 'clusterNodes' | 'minimap' | 'widgets';
 
+/** Generic membership gate for an optional capability descriptor list. */
+export function supportsList<T extends string>(list: readonly T[] | undefined, value: T): boolean {
+    return list?.includes(value) ?? false;
+}
+
+/** Filters candidates down to the values a renderer advertises. */
+export function supportedValues<T extends string>(
+    list: readonly T[] | undefined,
+    candidates: readonly T[],
+): readonly T[] {
+    return candidates.filter((value) => supportsList(list, value));
+}
+
 /** Single predicate for capability-gated UI (L1.28). Unknown capabilities are never assumed. */
 export function supports(
     capabilities: RendererCapabilities,
@@ -321,7 +334,7 @@ export function supports(
     switch (capability) {
         case '2d':
         case '3d':
-            return capabilities.projections.includes(capability);
+            return supportsList(capabilities.projections, capability);
         case 'widgets':
             return Boolean(capabilities.widgetSlots?.length);
         default:
@@ -331,7 +344,7 @@ export function supports(
 
 /** Whether a renderer can honour a depth treatment; hosts gate the depth chooser on this. */
 export function supportsDepth(capabilities: RendererCapabilities, depth: DepthMode): boolean {
-    return capabilities.depths.includes(depth);
+    return supportsList(capabilities.depths, depth);
 }
 
 /** Whether a renderer can drive an emphasis channel; unknown channels are never assumed. */
@@ -339,22 +352,22 @@ export function supportsEmphasis(
     capabilities: RendererCapabilities,
     channel: EmphasisChannel,
 ): boolean {
-    return capabilities.emphasis?.includes(channel) ?? false;
+    return supportsList(capabilities.emphasis, channel);
 }
 
 /** Whether a renderer can drive a camera motion verb; unknown verbs are never assumed. */
 export function supportsMotionVerb(capabilities: RendererCapabilities, verb: string): boolean {
-    return capabilities.motionVerbs?.includes(verb) ?? false;
+    return supportsList(capabilities.motionVerbs, verb);
 }
 
 /** Whether a renderer can honour a scene feature; unknown features are never assumed. */
 export function supportsSceneFeature(capabilities: RendererCapabilities, feature: string): boolean {
-    return capabilities.sceneFeatures?.includes(feature) ?? false;
+    return supportsList(capabilities.sceneFeatures, feature);
 }
 
 /** Whether a renderer can drive a sensory seam; unknown seams are never assumed. */
 export function supportsSensorySeam(capabilities: RendererCapabilities, seam: string): boolean {
-    return capabilities.sensorySeams?.includes(seam) ?? false;
+    return supportsList(capabilities.sensorySeams, seam);
 }
 
 /**
