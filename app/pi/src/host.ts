@@ -175,6 +175,7 @@ import { SHORTCUT_HELP } from './help';
 import { ChromeController } from './chrome';
 import { button, el } from './dom';
 import { FocusLens } from './focus-lens';
+import { mountFirstRunHint, renderOverview, renderProofLine, renderTurnMap } from './index-views';
 import { drawMinimap } from './minimap';
 import { configureVision, VisionController } from './vision-controller';
 import { TranscriptView } from './transcript';
@@ -3052,24 +3053,11 @@ export class PiHost {
     }
 
     private renderOverview(): void {
-        el('overview').replaceChildren(
-            ...this.#specs.map((spec) =>
-                button(`${spec.id} · ${spec.nodes.length}`, () => {
-                    const first =
-                        spec.nodes[0] &&
-                        this.#view.nodes.find((node) => node.id === spec.nodes[0].id);
-                    if (first) this.reveal(first.id);
-                }),
-            ),
-        );
+        renderOverview(this.#specs, this.#view, (id) => this.reveal(id));
     }
 
     private renderTurnMap(): void {
-        el('turn-map').replaceChildren(
-            ...(this.#view.turns ?? []).map((id, index) =>
-                button(`turn ${index + 1}`, () => this.reveal(id), { title: id }),
-            ),
-        );
+        renderTurnMap(this.#view, (id) => this.reveal(id));
     }
 
     private renderTrail(): void {
@@ -3124,41 +3112,11 @@ export class PiHost {
 
     /** One visible proof line; the full catalogue stays one click away. */
     private renderProofLine(): void {
-        const line = document.getElementById('proof-line');
-        if (!(line instanceof HTMLButtonElement)) return;
-        const { presets, experiments } = this.#catalog;
-        const detail = document.createElement('span');
-        detail.className = 'proof-detail';
-        detail.textContent = ` · ${presets.length} presets · ${experiments.length} experiments`;
-        const jargon = document.createElement('span');
-        jargon.className = 'jargon-label';
-        jargon.textContent = 'proof';
-        const plain = document.createElement('span');
-        plain.className = 'plain-label';
-        plain.textContent = 'Evidence';
-        line.replaceChildren(jargon, plain, detail);
-        line.title = 'proof — open the evidence catalog of presets, experiments and comparisons';
+        renderProofLine(this.#catalog);
     }
 
     private mountFirstRunHint(): void {
-        const hint = document.getElementById('first-run-hint');
-        if (!(hint instanceof HTMLElement)) return;
-        if (typeof location !== 'undefined' && new URLSearchParams(location.search).has('shot')) {
-            hint.remove();
-            return;
-        }
-        const key = 'spacegraph:first-run-hint';
-        if (localStorage.getItem(key) === 'seen') {
-            hint.remove();
-            return;
-        }
-        hint.hidden = false;
-        const dismiss = (): void => {
-            localStorage.setItem(key, 'seen');
-            hint.remove();
-            this.recordEvent('hint:dismiss', {});
-        };
-        hint.querySelector('button')?.addEventListener('click', dismiss);
+        mountFirstRunHint((kind) => this.recordEvent(kind));
     }
 
     private renderMinimap(): void {
