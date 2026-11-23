@@ -3,6 +3,7 @@ import { supportsList, supportedValues, type RendererCapabilities } from '@space
 
 const capabilities = (overrides: Partial<RendererCapabilities> = {}): RendererCapabilities => ({
     projections: ['2d'],
+    depths: [],
     domNodes: true,
     maxDomNodes: 40,
     edgeLabels: true,

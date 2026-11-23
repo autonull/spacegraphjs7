@@ -16,6 +16,7 @@ const layout = (): ScopeLayout => ({
             id: 'run/unit-1',
             depth: 1,
             origin: { x: 0, y: 0, z: 0 },
+            scale: 1,
             bounds: bounds(-100, 50, 100, -50),
             active: true,
         }],
