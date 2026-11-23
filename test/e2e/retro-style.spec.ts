@@ -1,8 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { bootShowcase, settle } from './atlas-kit.js';
+import { bootShowcase, settle, sha256 } from './atlas-kit.js';
 import { renderAtlasReport, type ReportEntry } from './atlas-report.js';
 
 // SpaceGraphJ reference-style captures: crimson graph ribbons and a compound widget dashboard that
@@ -43,8 +42,8 @@ test.describe('SpaceGraphJ reference styles', () => {
         ) => {
             await settle(page);
             const frame = await page.locator('#app').screenshot();
-            const sha256 = createHash('sha256').update(frame).digest('hex');
-            hashes.set(id, sha256);
+            const digest = sha256(frame);
+            hashes.set(id, digest);
             writeFileSync(resolve(OUT, `${id}.png`), frame);
             entries.push({
                 id,

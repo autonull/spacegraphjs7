@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { CATEGORIES, DEMOS, demoEntry, demoPath } from '../../app/demo/src/registry.js';
-import { EXPECTED_ERRORS, htmlDemos, isExpectedError, settle } from './atlas-kit.js';
+import { EXPECTED_ERRORS, htmlDemos, isExpectedError, settle, VIEWPORT } from './atlas-kit.js';
 import { renderAtlasReport, type ReportEntry, type ReportGroup } from './atlas-report.js';
 
 // Full-scope demo atlas. Discovery comes from the demo registry (one source of truth for the
@@ -11,7 +11,6 @@ import { renderAtlasReport, type ReportEntry, type ReportGroup } from './atlas-r
 
 const OUT = process.env.SG_DEMO_ATLAS_DIR ?? resolve('docs/screenshots/demo-atlas');
 const FILTER = process.env.SG_DEMO_ATLAS_FILTER ?? '';
-const VIEWPORT = { width: 1440, height: 900 };
 const TIMEOUT = 600_000;
 
 const showcaseDemos = DEMOS.filter((entry) => entry.kind === 'module');

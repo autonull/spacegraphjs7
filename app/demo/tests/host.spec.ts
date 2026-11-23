@@ -1,31 +1,16 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync } from 'fs';
 import { resolve } from 'path';
+import { boot, noErrors } from '../../../test/e2e/atlas-kit.js';
 
 // T6.12 — the demo host: a plain-TypeScript app that mounts the library's contract and its three
 // renderers, and runs every generic module against a model of its own. Served by app/demo's own
 // vite (`root: app/demo`), so the page is `/`.
-    process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${process.env.SG_DEMO_PORT ?? 5173}`;
 const SHOT_DIR = process.env.DEMO_SHOTS ?? resolve(process.cwd(), '../docs/spacegraph/screenshots');
-
-async function boot(page: Page) {
-    const errors: string[] = [];
-    page.on('pageerror', (error) => errors.push(error.message));
-    page.on('console', (message) => {
-        if (message.type() === 'error') errors.push(message.text());
-    });
-    await page.goto('/');
-    await page.waitForFunction(() => (window as any).__ready === true);
-    await page.evaluate(() => document.fonts.ready);
-    return errors;
-}
-
-const noErrors = (errors: string[]) =>
-    expect(errors.filter((error) => !error.includes('favicon'))).toEqual([]);
 
 test.describe('the demo host (T6.12)', () => {
     test('mounts the renderer and lists every capability', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/', { viewport: false });
         const capabilities = await page.evaluate(() => (window as any).__demo.capabilities());
 
         await expect(page.locator('[data-renderer="spacegraph"]')).toBeVisible();
@@ -39,7 +24,7 @@ test.describe('the demo host (T6.12)', () => {
     });
 
     test('runs every capability and reports what it produced', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/', { viewport: false });
 
         const capabilities = await page.evaluate(() => (window as any).__demo.capabilities());
         expect(capabilities.length).toBeGreaterThan(0);
@@ -57,7 +42,7 @@ test.describe('the demo host (T6.12)', () => {
     });
 
     test('switches renderers over the same model', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/', { viewport: false });
 
         await page.locator('#renderer-cytoscape').click();
         await expect(page.locator('#stage')).toHaveAttribute('data-renderer', 'cytoscape');
@@ -75,7 +60,7 @@ test.describe('the demo host (T6.12)', () => {
     });
 
     test('opens the scoped overlay and closes it with Escape', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/', { viewport: false });
 
         await page.locator('[data-capability="overlay"]').click();
         await expect(page.locator('#overlay')).toBeVisible();
@@ -89,7 +74,7 @@ test.describe('the demo host (T6.12)', () => {
     });
 
     test('shows the code diff as text, never as markup', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/', { viewport: false });
 
         await page.locator('[data-capability="diff"]').click();
         await expect(page.locator('#diff')).toBeVisible();
@@ -101,7 +86,7 @@ test.describe('the demo host (T6.12)', () => {
     });
 
     test('searches the host model and selects a node', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/', { viewport: false });
 
         await page.locator('#search').fill('vitest');
         await expect(page.locator('#results .result')).toHaveCount(2);
@@ -116,7 +101,7 @@ test.describe('the demo host (T6.12)', () => {
     });
 
     test('draws the overview of the pipeline in the minimap', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/', { viewport: false });
         const dots = page.locator('#minimap .dot');
 
         const before = await dots.count();
@@ -132,7 +117,7 @@ test.describe('the demo host (T6.12)', () => {
     });
 
     test('draws the same pipeline as a tree and as a force simulation', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/', { viewport: false });
 
         await page.locator('[data-capability="placements"]').click();
 
@@ -151,7 +136,7 @@ test.describe('the demo host (T6.12)', () => {
     test('keeps the framed content clear of the minimap drawn over the canvas', async ({
         page,
     }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/', { viewport: false });
 
         // The camera flies to a new frame over 1.5s, so the frame is measured once it has settled.
         await page.setViewportSize({ width: 1440, height: 900 });
@@ -182,7 +167,7 @@ test.describe('the demo host (T6.12)', () => {
     });
 
     test('captures the gallery for the review packet', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/', { viewport: false });
 
         // The camera flies to a new frame over 1.5s, so a capture taken sooner catches it mid-flight.
         const SETTLED = 1_500;

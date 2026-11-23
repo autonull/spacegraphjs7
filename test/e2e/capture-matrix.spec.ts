@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { boot, legibility, sha256 } from './atlas-kit.js';
 
 // P5.1 — cartesian visual evidence. The explorer is the only surface where every declared axis is
 // switchable, so the matrix capture drives it cell by cell. Each cell is one picture, the sample
@@ -15,18 +15,6 @@ const FRAME = '#left-graph';
 // signature collision across LOD rungs is a defect.
 const VISIBLE_AXES = new Set(['lod']);
 
-async function boot(page: Page) {
-    const errors: string[] = [];
-    page.on('pageerror', (error) => errors.push(error.message));
-    page.on('console', (message) => {
-        if (message.type() === 'error' && !message.text().includes('favicon')) errors.push(message.text());
-    });
-    await page.goto('/explorer.html');
-    await page.waitForFunction(() => (window as any).__ready === true);
-    await page.evaluate(() => document.fonts.ready);
-    return errors;
-}
-
 async function applyCell(page: Page, values: Readonly<Record<string, string>>) {
     await page.evaluate((record) => {
         for (const [axis, value] of Object.entries(record)) (window as any).__explorer.set(axis, value);
@@ -38,7 +26,7 @@ async function applyCell(page: Page, values: Readonly<Record<string, string>>) {
 
 test.describe('cartesian capture matrix (P5.1)', () => {
     test('captures every sampled cell with distinct, legible frames', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/explorer.html', { viewport: false });
         const matrix = await page.evaluate(() => (window as any).__explorer.matrix());
         expect(matrix.cells.length).toBeGreaterThan(1);
         expect(matrix.sampled).toBe(matrix.cells.length);
@@ -60,20 +48,12 @@ test.describe('cartesian capture matrix (P5.1)', () => {
             expect(nodes[0], cell.id).toBeGreaterThan(0);
             await expect(page.locator(`${FRAME} svg`)).toBeVisible();
 
-            const legibility = await page.evaluate((selector) => {
-                const shapes = [...document.querySelectorAll<SVGElement>(
-                    `${selector} svg circle, ${selector} svg rect, ${selector} svg text`,
-                )].filter((shape) => shape.getClientRects().length > 0);
-                const texts = shapes.filter((shape) => shape.tagName === 'text');
-                const sizes = texts.map((text) => Number.parseFloat(getComputedStyle(text).fontSize));
-                return {
-                    shapes: shapes.length,
-                    texts: texts.length,
-                    minSize: sizes.length ? Math.min(...sizes) : 0,
-                };
-            }, FRAME);
-            expect(legibility.shapes, cell.id).toBeGreaterThan(0);
-            if (legibility.texts > 0) expect(legibility.minSize, cell.id).toBeGreaterThanOrEqual(9);
+            const legibilityResult = await legibility(
+                page,
+                `${FRAME} svg circle, ${FRAME} svg rect, ${FRAME} svg text`,
+            );
+            expect(legibilityResult.shapes, cell.id).toBeGreaterThan(0);
+            if (legibilityResult.texts > 0) expect(legibilityResult.minSize, cell.id).toBeGreaterThanOrEqual(9);
 
             const frame = await page.locator(FRAME).screenshot();
             expect(frame.length, cell.id).toBeGreaterThan(0);
@@ -96,7 +76,7 @@ test.describe('cartesian capture matrix (P5.1)', () => {
             frames.push({ id: cell.id, values: { ...cell.values }, signature });
 
             if (CAPTURE_DIR) {
-                const tag = createHash('sha256').update(signature).digest('hex').slice(0, 10);
+                const tag = sha256(signature).slice(0, 10);
                 writeFileSync(resolve(CAPTURE_DIR, `${String(index).padStart(2, '0')}-${tag}.png`), frame);
             }
         }

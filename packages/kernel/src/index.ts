@@ -24,3 +24,4 @@ export * from './domain';
 export type { GraphFacets, FacetCounts } from './types';
 export * from './example/fixture';
 export * from './sub-layout';
+export * from './collection-diff';

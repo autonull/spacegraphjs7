@@ -23,7 +23,8 @@
         "test": "vitest run"
     },
     "dependencies": {
-        "@spacegraphjs/renderer": "workspace:*"
+        "@spacegraphjs/renderer": "workspace:*",
+        "@spacegraphjs/kernel": "workspace:*"
     },
     "license": "MIT"
 }

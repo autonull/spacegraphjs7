@@ -1,5 +1,5 @@
 import type { GraphViewData, GraphNode, GraphFacets, FacetCounts } from '@spacegraphjs/shared';
-import { defaultSearchText } from './search';
+import { defaultSearchText } from './search-text';
 
 export type { GraphFacets, FacetCounts };
 
@@ -56,6 +56,14 @@ export interface FacetAccessors {
     /** P2.1: Check if a node is costly (top 10% by tokens). */
     isCostlyNode?: (node: GraphNode) => boolean;
 }
+
+/** Default accessors for shared GraphViewData nodes. */
+export const defaultFacetAccessors: FacetAccessors = {
+    kind: (node) => node.kind,
+    status: (node) => node.status,
+    domain: (node) => node.data?.domain as string | undefined,
+    rootId: (model) => model.nodes[0]?.id ?? '',
+};
 
 /** Options for applying facets. */
 export interface ApplyFacetsOptions {

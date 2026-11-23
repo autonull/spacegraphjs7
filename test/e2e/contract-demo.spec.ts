@@ -1,24 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync } from 'fs';
 import { resolve } from 'path';
+import { boot, noErrors } from './atlas-kit.js';
 
 // L1.29 — the non-OpenCode reference demo. Served by the repo vite (`root: demo`), so the page is
 // `/html/core/contract.html`; run `pnpm run dev:demo` first (or set SG_DEMO_URL to a running server).
-    process.env.PLAYWRIGHT_BASE_URL || process.env.SG_DEMO_URL || 'http://localhost:5173';
 const SHOT_DIR =
     process.env.CONTRACT_DEMO_SHOTS ?? resolve(process.cwd(), '../docs/spacegraph/screenshots');
-
-async function boot(page: Page) {
-    const errors: string[] = [];
-    page.on('pageerror', (error) => errors.push(error.message));
-    page.on('console', (message) => {
-        if (message.type() === 'error') errors.push(message.text());
-    });
-    await page.goto('/html/core/contract.html');
-    await page.waitForFunction(() => (window as any).__ready === true);
-    await page.evaluate(() => document.fonts.ready);
-    return errors;
-}
 
 async function waitForRenderer(page: Page, id: string) {
     await page.waitForFunction(
@@ -27,12 +15,9 @@ async function waitForRenderer(page: Page, id: string) {
     );
 }
 
-const noErrors = (errors: string[]) =>
-    expect(errors.filter((error) => !error.includes('favicon'))).toEqual([]);
-
 test.describe('renderer contract demo (L1.29)', () => {
     test('renders one activity model through the SpaceGraph adapter', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/html/core/contract.html', { viewport: false });
 
         await expect(page.locator('[data-renderer="spacegraph"]')).toBeVisible();
         await expect(page.locator('#canvas canvas').first()).toBeVisible({ timeout: 10_000 });
@@ -45,7 +30,7 @@ test.describe('renderer contract demo (L1.29)', () => {
     });
 
     test('switches renderers, gates 3D, and exports static SVG', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/html/core/contract.html', { viewport: false });
 
         await page.locator('#renderer-cytoscape').click();
         await waitForRenderer(page, 'cytoscape');
@@ -75,7 +60,7 @@ test.describe('renderer contract demo (L1.29)', () => {
     test('traverses the accessibility mirror, follows connections, and walks the trail', async ({
         page,
     }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/html/core/contract.html', { viewport: false });
 
         // The hidden list is ordered and roving: root -> plan -> grep.
         await page.locator('#a11y li[data-id="root"]').focus();
@@ -115,7 +100,7 @@ test.describe('renderer contract demo (L1.29)', () => {
     });
 
     test('renders the demo fixture and honours RTL markup', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/html/core/contract.html', { viewport: false });
 
         await page.locator('#scene-host').click();
         await expect(page.locator('#detail h2')).toHaveText('Refactor billing');
@@ -136,7 +121,7 @@ test.describe('renderer contract demo (L1.29)', () => {
     });
 
     test('captures the light and dark theme states', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/html/core/contract.html', { viewport: false });
         await page.setViewportSize({ width: 1440, height: 900 });
         await page.locator('#fit').click();
         await page.waitForTimeout(800);

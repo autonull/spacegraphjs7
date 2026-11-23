@@ -1,29 +1,12 @@
 import type { JSX } from 'solid-js';
+import type { GraphNode, GraphViewData } from '@spacegraphjs/shared';
+
+export type { GraphNode, GraphEdge, GraphViewData } from '@spacegraphjs/shared';
 
 export interface Provenance {
     source: string;
     asOf?: number;
     confidence?: 'explicit' | 'structural' | 'inferred';
-}
-
-export interface GraphEdge {
-    from: string;
-    to: string;
-    kind?: string;
-}
-
-export interface GraphNode {
-    id: string;
-    label: string;
-    kind?: string;
-    summary?: string;
-    provenance?: Provenance;
-    data?: Record<string, unknown>;
-}
-
-export interface GraphViewData {
-    nodes: GraphNode[];
-    edges: GraphEdge[];
 }
 
 export type InspectorProps = {

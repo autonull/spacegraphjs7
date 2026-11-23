@@ -409,6 +409,9 @@ importers:
 
   packages/adapter:
     dependencies:
+      '@spacegraphjs/kernel':
+        specifier: workspace:*
+        version: link:../kernel
       '@spacegraphjs/renderer':
         specifier: workspace:*
         version: link:../renderer
@@ -683,6 +686,10 @@ importers:
         version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@26.1.0(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/inspector:
+    dependencies:
+      '@spacegraphjs/shared':
+        specifier: workspace:*
+        version: link:../shared
     devDependencies:
       jsdom:
         specifier: ^30.0.1

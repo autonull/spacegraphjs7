@@ -33,6 +33,28 @@ export const EXPECTED_ERRORS = {
 export const isExpectedError = (message: string, patterns: readonly string[]): boolean =>
     patterns.some((pattern) => message.includes(pattern));
 
+/** SHA-256 of a screenshot buffer or a string signature. */
+export const sha256 = (data: Buffer | string): string =>
+    createHash('sha256').update(data).digest('hex');
+
+/** Visible SVG text metrics for a frame; callers keep their own selectors and gates. */
+export const legibility = (page: Page, selector: string) =>
+    page.evaluate((query) => {
+        const shapes = [
+            ...document.querySelectorAll<SVGElement>(query),
+        ].filter((shape) => shape.getClientRects().length > 0);
+        const texts = shapes.filter((shape) => shape.tagName === 'text');
+        const sizes = texts.map((text) => Number.parseFloat(getComputedStyle(text).fontSize));
+        return {
+            shapes: shapes.length,
+            texts: texts.length,
+            minSize: sizes.length ? Math.min(...sizes) : 0,
+        };
+    }, selector);
+
+export const noErrors = (errors: string[]): void =>
+    expect(errors.filter((error) => !error.includes('favicon'))).toEqual([]);
+
 export const htmlDemos = DEMOS.filter((entry) => entry.kind === 'html');
 export const htmlDemoIds = htmlDemos.map((entry) => entry.id);
 
@@ -178,19 +200,12 @@ export async function snapshot(page: Page, shot: Shot) {
 
     const locator = locatorFor(page, shot);
     await expect(locator.locator('svg').first()).toBeVisible();
-    const legibility = await page.evaluate(() => {
-        const shapes = [
-            ...document.querySelectorAll<SVGElement>(
-                '#left-graph svg circle, #left-graph svg rect, #left-graph svg polygon, #left-graph svg text',
-            ),
-        ].filter((shape) => shape.getClientRects().length > 0);
-        const sizes = shapes
-            .filter((shape) => shape.tagName === 'text')
-            .map((text) => Number.parseFloat(getComputedStyle(text).fontSize));
-        return { shapes: shapes.length, minText: sizes.length ? Math.min(...sizes) : 0 };
-    });
-    expect(legibility.shapes, `${shot.id}: visible shapes`).toBeGreaterThan(0);
-    if (legibility.minText) expect(legibility.minText, shot.id).toBeGreaterThanOrEqual(9);
+    const { shapes, minSize } = await legibility(
+        page,
+        '#left-graph svg circle, #left-graph svg rect, #left-graph svg polygon, #left-graph svg text',
+    );
+    expect(shapes, `${shot.id}: visible shapes`).toBeGreaterThan(0);
+    if (minSize) expect(minSize, shot.id).toBeGreaterThanOrEqual(9);
 
     const [config, effective, nodes, hash, depth, salience, widgets, motion, camera, diff] =
         await Promise.all([
@@ -226,7 +241,7 @@ export async function snapshot(page: Page, shot: Shot) {
     return {
         state,
         frame,
-        sha256: createHash('sha256').update(frame).digest('hex'),
+        sha256: sha256(frame),
         bytes: frame.length,
     };
 }
@@ -252,14 +267,18 @@ export async function bootShowcase(page: Page, demo: string, api: string): Promi
     return errors;
 }
 
-export async function boot(page: Page, path = '/explorer.html') {
+export async function boot(
+    page: Page,
+    path = '/explorer.html',
+    options: { viewport?: boolean } = {},
+) {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('console', (message) => {
         if (message.type() === 'error' && !message.text().includes('favicon'))
             errors.push(message.text());
     });
-    await page.setViewportSize(VIEWPORT);
+    if (options.viewport !== false) await page.setViewportSize(VIEWPORT);
     await page.goto(path);
     await page.waitForFunction(() => (window as { __ready?: boolean }).__ready === true);
     await page.evaluate(() => document.fonts.ready);

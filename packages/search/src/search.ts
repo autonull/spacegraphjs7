@@ -1,10 +1,12 @@
 import type { GraphViewData, GraphNode, GraphFacets, FacetCounts } from '@spacegraphjs/shared';
+import { defaultFacetAccessors, facetCounts as facetCountsWithAccessors } from './facets';
+import { defaultSearchText } from './search-text';
+
+export { defaultSearchText } from './search-text';
+export type { SearchTextFn } from './search-text';
 
 /** Search function signature for custom ranking. */
 export type SearchFn = (model: GraphViewData, query: string) => GraphNode[];
-
-/** Default search text extractor - can be customized by host. */
-export type SearchTextFn = (node: GraphNode) => string[];
 
 /**
  * Generic search that delegates to a search function.
@@ -40,20 +42,6 @@ export function searchBy(
 
     return results.map(({ node }) => node);
 }
-
-/**
- * Default search text extractor.
- * Extracts searchable text from a node: label, summary, and data fields.
- */
-export const defaultSearchText: SearchTextFn = (node: GraphNode) =>
-    [
-        node.label,
-        node.summary,
-        node.data?.name as string | undefined,
-        node.data?.path as string | undefined,
-        node.data?.command as string | undefined,
-        node.data?.input ? JSON.stringify(node.data.input) : undefined,
-    ].filter((value): value is string => !!value);
 
 /**
  * Default rank function for session-like graphs.
@@ -124,51 +112,15 @@ export function sessionOutline(model: GraphViewData): OutlineTurn[] {
 }
 
 /**
- * Computes facet counts for display in filter UI.
- * Returns counts of kept vs total for each facet value.
+ * @deprecated Use `facetCounts` from `@spacegraphjs/search` with accessors and known value lists.
  */
 export function facetCounts(model: GraphViewData, facets: GraphFacets): FacetCounts {
-    const kept = new Set<string>();
-
-    for (const node of model.nodes) {
-        const kindMatch = facets.kinds.size === 0 || facets.kinds.has(node.kind);
-        const statusMatch = facets.statuses.size === 0 || facets.statuses.has(node.status);
-        const domainMatch =
-            facets.domains.size === 0 ||
-            (node.data?.domain ? facets.domains.has(node.data.domain as string) : false);
-
-        if (kindMatch && statusMatch && domainMatch) {
-            kept.add(node.id);
-        }
-    }
-
-    const countValues = (
-        values: readonly string[],
-        getValue: (node: GraphNode) => string | undefined,
-    ) => {
-        const totals = new Map<string, number>();
-        const keptCounts = new Map<string, number>();
-
-        for (const node of model.nodes) {
-            const value = getValue(node);
-            if (!value) continue;
-            totals.set(value, (totals.get(value) ?? 0) + 1);
-            if (kept.has(node.id)) keptCounts.set(value, (keptCounts.get(value) ?? 0) + 1);
-        }
-
-        return values.map((value) => ({
-            value,
-            kept: keptCounts.get(value) ?? 0,
-            total: totals.get(value) ?? 0,
-        }));
-    };
-
-    return {
-        kinds: countValues(Array.from(facets.kinds), (n) => n.kind),
-        statuses: countValues(Array.from(facets.statuses), (n) => n.status),
-        domains: countValues(
-            Array.from(facets.domains),
-            (n) => n.data?.domain as string | undefined,
-        ),
-    };
+    return facetCountsWithAccessors(
+        model,
+        { ...facets, query: facets.query ?? '' },
+        defaultFacetAccessors,
+        Array.from(facets.kinds),
+        Array.from(facets.statuses),
+        Array.from(facets.domains),
+    );
 }

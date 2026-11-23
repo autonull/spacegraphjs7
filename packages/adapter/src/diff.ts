@@ -1,3 +1,4 @@
+import { diffCollectionById } from '@spacegraphjs/kernel';
 import type { RenderModel, RenderNode, RenderEdge, RenderModelPatch } from '@spacegraphjs/renderer';
 
 /** The fingerprint of a node: every field a renderer redraws, including host data and emphasis. */
@@ -43,50 +44,18 @@ function edgeFingerprint(edge: RenderEdge): string {
  * incremental updates.
  */
 export function diffRenderModels(previous: RenderModel, next: RenderModel): RenderModelPatch {
-    const before = new Map(previous.nodes.map((node) => [node.id, fingerprint(node)]));
-    const after = new Map(next.nodes.map((node) => [node.id, fingerprint(node)]));
-
-    const addedNodes: RenderNode[] = [];
-    const changedNodes: RenderNode[] = [];
-
-    for (const node of next.nodes) {
-        const beforeFingerprint = before.get(node.id);
-
-        if (beforeFingerprint === undefined) addedNodes.push(node);
-        else if (beforeFingerprint !== fingerprint(node)) changedNodes.push(node);
-    }
-
-    const removedNodeIds: string[] = [];
-
-    for (const id of before.keys()) if (!after.has(id)) removedNodeIds.push(id);
-
-    const beforeEdges = new Map(previous.edges.map((edge) => [edge.id, edgeFingerprint(edge)]));
-    const afterEdges = new Map(next.edges.map((edge) => [edge.id, edgeFingerprint(edge)]));
-
-    const addedEdges: RenderEdge[] = [];
-    const changedEdges: RenderEdge[] = [];
-
-    for (const edge of next.edges) {
-        const beforeFingerprint = beforeEdges.get(edge.id);
-
-        if (beforeFingerprint === undefined) addedEdges.push(edge);
-        else if (beforeFingerprint !== edgeFingerprint(edge)) changedEdges.push(edge);
-    }
-
-    const removedEdgeIds: string[] = [];
-
-    for (const id of beforeEdges.keys()) if (!afterEdges.has(id)) removedEdgeIds.push(id);
-
+    const nodes = diffCollectionById(previous.nodes, next.nodes, fingerprint);
+    const edges = diffCollectionById(previous.edges, next.edges, edgeFingerprint);
     return {
         nodes: {
-            added: addedNodes,
-            removed: removedNodeIds,
-            changed: changedNodes,
+            added: nodes.added,
+            removed: nodes.removed.map((node) => node.id),
+            changed: nodes.changed.map((change) => change.after),
         },
         edges: {
-            added: addedEdges,
-            removed: removedEdgeIds,
-            changed: changedEdges,
+            added: edges.added,
+            removed: edges.removed.map((edge) => edge.id),
+            changed: edges.changed.map((change) => change.after),
         },
     };
 }

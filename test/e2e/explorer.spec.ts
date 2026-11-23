@@ -1,19 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
+import { boot, noErrors } from './atlas-kit.js';
 
 // P0.3 — the config explorer. Served by `root: demo`, so the page is `/explorer.html`; run
 // `pnpm run dev:demo` first. The page owns a window API so the same state can be driven by a test.
-
-async function boot(page: Page) {
-    const errors: string[] = [];
-    page.on('pageerror', (error) => errors.push(error.message));
-    page.on('console', (message) => {
-        if (message.type() === 'error') errors.push(message.text());
-    });
-    await page.goto('/explorer.html');
-    await page.waitForFunction(() => (window as any).__ready === true);
-    await page.evaluate(() => document.fonts.ready);
-    return errors;
-}
 
 const api = <T>(page: Page, call: string, ...args: unknown[]) =>
     page.evaluate(({ call, args }) => (window as any).__explorer[call](...args) as T, {
@@ -21,12 +10,9 @@ const api = <T>(page: Page, call: string, ...args: unknown[]) =>
         args,
     });
 
-const noErrors = (errors: string[]) =>
-    expect(errors.filter((error) => !error.includes('favicon'))).toEqual([]);
-
 test.describe('configuration explorer (P0.3)', () => {
     test('lists every declared axis and renders the contract fixture', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/explorer.html', { viewport: false });
         const axes = await api<string[]>(page, 'axes');
 
         expect(axes).toContain('projection');
@@ -41,7 +27,7 @@ test.describe('configuration explorer (P0.3)', () => {
     });
 
     test('switches the live representation with the lod axis', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await page.locator('[data-axis="lod"][data-value="dot"]').click();
         await expect(page.locator('#left-graph svg circle').first()).toBeVisible();
         expect(await page.locator('#left-graph svg circle').count()).toBe(
@@ -53,7 +39,7 @@ test.describe('configuration explorer (P0.3)', () => {
     });
 
     test('drives heterogeneous node shapes from the shape axis', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/explorer.html', { viewport: false });
         await api(page, 'set', 'shape', 'by-kind');
         const shapes = await page.$$eval('#left-graph [data-visual-shape]', (nodes) => [
             ...new Set(nodes.map((node) => (node as HTMLElement).dataset.visualShape!)),
@@ -66,7 +52,7 @@ test.describe('configuration explorer (P0.3)', () => {
     });
 
     test('plays a stable-id representation swap and captures a parity frame', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await api(page, 'set', 'lod', 'dot');
         const before = await page.$$eval('#left-graph [data-node-id]', (groups) =>
             groups.map((group) => (group as HTMLElement).dataset.nodeId),
@@ -104,7 +90,7 @@ test.describe('configuration explorer (P0.3)', () => {
     });
 
     test('reduced motion collapses the swap to its final frame', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await api(page, 'set', 'lod', 'dot');
         await api(page, 'set', 'motion', 'reduced');
         await api(page, 'set', 'lod', 'detail');
@@ -121,7 +107,7 @@ test.describe('configuration explorer (P0.3)', () => {
     });
 
     test('switches the edge rung through the edgeLod axis', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await page.locator('[data-axis="edgeLod"][data-value="arrow"]').click();
         const arrows = await page.locator('#left-graph svg line[stroke-dasharray]').count();
 
@@ -131,7 +117,7 @@ test.describe('configuration explorer (P0.3)', () => {
     });
 
     test('drives the demo host over the same model', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         const contractNodes = (await api<number[]>(page, 'nodes'))[0];
         await api(page, 'set', 'source', 'demo');
 
@@ -142,7 +128,7 @@ test.describe('configuration explorer (P0.3)', () => {
     });
 
     test('round-trips the full state through the URL hash', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await api(page, 'set', 'lod', 'glyph');
         await api(page, 'set', 'depth', 'orbit');
         const hash = await api<string>(page, 'hash');
@@ -154,7 +140,7 @@ test.describe('configuration explorer (P0.3)', () => {
     });
 
     test('compares two states and labels presets as examples', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await expect(
             page.locator('fieldset').filter({ has: page.locator('#presets') }),
         ).toContainText('Examples, not defaults');
@@ -169,7 +155,7 @@ test.describe('configuration explorer (P0.3)', () => {
     });
 
     test('randomize and reset stay within the declared values', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await api(page, 'randomize');
         const randomized = await api<Record<string, string>>(page, 'config');
         expect(Object.keys(randomized).length).toBeGreaterThan(5);
@@ -180,7 +166,7 @@ test.describe('configuration explorer (P0.3)', () => {
 
 test.describe('salience and emphasis (P2)', () => {
     test('composes weighted signals and explains a selected node', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await api(page, 'set', 'salience', 'combined');
         const values = await api<Record<string, number>>(page, 'salience');
         expect(Object.values(values).some((value) => value > 0)).toBe(true);
@@ -200,7 +186,7 @@ test.describe('salience and emphasis (P2)', () => {
     });
 
     test('two hosts produce different deterministic salience maps', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await api(page, 'set', 'salience', 'combined');
         const contract = await api<Record<string, number>>(page, 'salience');
         expect(await api<Record<string, number>>(page, 'salience')).toEqual(contract);
@@ -212,7 +198,7 @@ test.describe('salience and emphasis (P2)', () => {
     });
 
     test('zero signals stay uniform and unsupported channels do not map', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await api(page, 'set', 'salience', 'none');
         const uniform = await api<Record<string, number>>(page, 'salience');
         expect(Object.values(uniform).every((value) => value === 0)).toBe(true);
@@ -235,7 +221,7 @@ test.describe('salience and emphasis (P2)', () => {
     });
 
     test('the size channel changes a node width from the salience score', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await api(page, 'set', 'salience', 'none');
         const width = () =>
             page.locator('#left-graph [data-node-id] rect').first().getAttribute('width');
@@ -250,7 +236,7 @@ test.describe('widget registry (P3)', () => {
     test('lists host registrations and attaches on an enabled, preferred slot', async ({
         page,
     }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/explorer.html', { viewport: false });
         await expect(page.locator('#widgets')).toContainText('summary');
         await expect(page.locator('#widgets')).toContainText('composer');
 
@@ -273,7 +259,7 @@ test.describe('widget registry (P3)', () => {
     test('max widgets attaches a different registration per slot and representation', async ({
         page,
     }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await api(page, 'set', 'lod', 'detail');
         await api(page, 'set', 'widgets', 'max');
         const mounted = await api<string[]>(page, 'widgets');
@@ -282,7 +268,7 @@ test.describe('widget registry (P3)', () => {
     });
 
     test('projects scene fog onto attached widget opacity', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await api(page, 'set', 'lod', 'widget');
         await api(page, 'set', 'widgets', 'attached');
         await api(page, 'set', 'depth', 'flat');
@@ -295,7 +281,7 @@ test.describe('widget registry (P3)', () => {
 
 test.describe('motion, depth and world (P4)', () => {
     test('declares every P4 axis and composes an optional scene policy', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/explorer.html', { viewport: false });
         const axes = await api<string[]>(page, 'axes');
         for (const axis of ['motionVerb', 'cameraVerb', 'depthAxis', 'sceneFeature', 'sensory'])
             expect(axes).toContain(axis);
@@ -315,7 +301,7 @@ test.describe('motion, depth and world (P4)', () => {
     });
 
     test('sequences a host camera verb and samples a host depth axis', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await api(page, 'set', 'cameraVerb', 'orbit');
         const camera = await api<{ command?: { verb: string }; calls: string[] }>(page, 'camera');
         expect(camera.command?.verb).toBe('orbit');
@@ -327,7 +313,7 @@ test.describe('motion, depth and world (P4)', () => {
     });
 
     test('plays a named motion verb with stable-id frames', async ({ page }) => {
-        await boot(page);
+        await boot(page, '/explorer.html', { viewport: false });
         await api(page, 'set', 'motionVerb', 'arrive');
         const motion = await api<{ frames: number; active: string[]; done: boolean }>(
             page,
@@ -339,7 +325,7 @@ test.describe('motion, depth and world (P4)', () => {
 
 test.describe('experimentation (P5)', () => {
     test('samples a deterministic matrix and exports the full configuration', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '/explorer.html', { viewport: false });
         const matrix = await api<{
             axes: string[];
             sampled: number;

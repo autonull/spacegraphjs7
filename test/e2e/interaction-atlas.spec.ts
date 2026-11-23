@@ -1,5 +1,4 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
@@ -11,6 +10,7 @@ import {
     captureAll,
     configure,
     settle,
+    sha256,
     writeManifest,
     type Shot,
 } from './atlas-kit.js';
@@ -233,9 +233,7 @@ test.describe('interaction atlas (screenshot harness)', () => {
         await call(page, 'reset');
         await apply(page, BASE);
         await settle(page);
-        const baseHash = createHash('sha256')
-            .update(await page.locator('#left-graph').screenshot())
-            .digest('hex');
+        const baseHash = sha256(await page.locator('#left-graph').screenshot());
         const cells: {
             axis: string;
             value: string;
@@ -254,14 +252,14 @@ test.describe('interaction atlas (screenshot harness)', () => {
                     value,
                 );
                 const frame = await page.locator('#left-graph').screenshot();
-                const sha256 = createHash('sha256').update(frame).digest('hex');
+                const frameHash = sha256(frame);
                 writeFileSync(resolve(dir, `${axis}=${value}.png`), frame);
                 cells.push({
                     axis,
                     value,
                     file: `${axis}=${value}.png`,
-                    sha256,
-                    noOp: sha256 === baseHash,
+                    sha256: frameHash,
+                    noOp: frameHash === baseHash,
                 });
             }
         }

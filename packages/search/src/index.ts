@@ -28,6 +28,7 @@ export {
     keepOnly,
     composeScopes,
     facetCounts,
+    defaultFacetAccessors,
     facetsToQuery,
     facetsFromQuery,
     hasFacets,
