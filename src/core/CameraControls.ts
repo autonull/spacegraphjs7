@@ -2,17 +2,10 @@
 // Pure camera state machine - all input handled via Fingering
 
 import gsap from 'gsap';
-import {
-    Camera,
-    MathUtils,
-    OrthographicCamera,
-    PerspectiveCamera,
-    Spherical,
-    Vector3,
-} from 'three';
+import { Camera, OrthographicCamera, PerspectiveCamera, Spherical, Vector3 } from 'three';
 import type { KeyboardScope } from '../types';
 import { fitOrthoFrustum, visibleWorldExtent } from '../utils/CameraUtils';
-import { clamp } from '../utils/math';
+import { clamp, lerp } from '../utils/math';
 import type { Surface } from './Surface';
 
 // The flight curve. gsap's `power2.out` is the cubic-out curve the camera has always used.
@@ -284,15 +277,13 @@ export class CameraControls {
         this.sg?.events?.emit('camera:fly:progress', t);
 
         if (flight.target) this.target.lerpVectors(flight.fromTarget, flight.target, eased);
-        if (flight.radius)
-            this.spherical.radius = flight.fromRadius + (flight.radius - flight.fromRadius) * eased;
-        if (flight.phi !== null)
-            this.spherical.phi = flight.fromPhi + (flight.phi - flight.fromPhi) * eased;
+        if (flight.radius) this.spherical.radius = lerp(flight.fromRadius, flight.radius, eased);
+        if (flight.phi !== null) this.spherical.phi = lerp(flight.fromPhi, flight.phi, eased);
         if (flight.theta !== null)
-            this.spherical.theta = flight.fromTheta + (flight.theta - flight.fromTheta) * eased;
+            this.spherical.theta = lerp(flight.fromTheta, flight.theta, eased);
         if (flight.zoom !== null) {
             const ortho = this.camera as OrthographicCamera;
-            ortho.zoom = flight.fromZoom + (flight.zoom - flight.fromZoom) * eased;
+            ortho.zoom = lerp(flight.fromZoom, flight.zoom, eased);
             ortho.updateProjectionMatrix();
         }
 
@@ -403,7 +394,7 @@ export class CameraControls {
         const min = Math.max(MIN_ORTHO_ZOOM, range?.min ?? MIN_ORTHO_ZOOM);
         const max = Math.min(MAX_ORTHO_ZOOM, range?.max ?? MAX_ORTHO_ZOOM);
 
-        return MathUtils.clamp(zoom, min, max);
+        return clamp(zoom, min, max);
     }
 
     canZoomOut(): boolean {

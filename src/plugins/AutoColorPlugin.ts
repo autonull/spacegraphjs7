@@ -1,7 +1,3 @@
-import type { SpaceGraphEvents } from '../types';
-import type { Graph } from '../core/Graph';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { EventEmitter } from '../core/EventEmitter';
 import { getCompliantColor } from '../utils/color';
 import { createLogger } from '../utils/logger';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
@@ -12,8 +8,7 @@ export class AutoColorPlugin extends BaseSystemPlugin {
     readonly id = 'auto-color';
     readonly name = 'Auto Color';
 
-    init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
-        super.init(sg, graph, events);
+    protected onInit(): void {
         logger.info('Initialized %s v%s', this.name, this.version);
     }
 

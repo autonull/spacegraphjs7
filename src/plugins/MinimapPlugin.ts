@@ -1,8 +1,4 @@
 import { Box3, OrthographicCamera, PerspectiveCamera, Vector3 } from 'three';
-import type { SpaceGraphEvents } from '../types';
-import type { Graph } from '../core/Graph';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { EventEmitter } from '../core/EventEmitter';
 import { DOMUtils } from '../utils/DOMUtils';
 import { visibleWorldExtent } from '../utils/CameraUtils';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
@@ -46,8 +42,7 @@ export class MinimapPlugin extends BaseSystemPlugin {
     private readonly indicatorColor = 'rgba(139, 92, 246, 0.8)';
     private readonly borderColor = 'rgba(255, 255, 255, 0.1)';
 
-    init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
-        super.init(sg, graph, events);
+    protected onInit(): void {
         this.halfSize = this.settings.zoom;
         this._buildCamera();
 

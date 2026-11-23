@@ -1,14 +1,10 @@
 import { Vector2, Vector3 } from 'three';
-import type { SpaceGraphEvents } from '../types';
 import { FingeringPriority } from '../core/constants';
-import type { Graph } from '../core/Graph';
 import type { Edge } from '../edges/Edge';
 import { PinchZoomFingering, ResizeFingering, WidgetFingering } from '../input/fingerings';
 import type { PickResult } from '../input/interfaces/Tangible';
 import type { Node } from '../nodes/Node';
-import type { SpaceGraph } from '../SpaceGraph';
 import type { InteractionInputConfig } from '../types';
-import type { EventEmitter } from '../core/EventEmitter';
 import { focusNodeCamera, focusRadiusOf } from '../utils/CameraUtils';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 import { ConnectionHandler } from './interaction/ConnectionHandler';
@@ -62,16 +58,15 @@ export class InteractionPlugin extends BaseSystemPlugin {
         }
     }
 
-    init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
-        super.init(sg, graph, events);
-        this.raycaster = new InteractionRaycaster(sg);
+    protected onInit(): void {
+        this.raycaster = new InteractionRaycaster(this.sg);
         this.cursorManager = new CursorManager();
-        this.hoverManager = new HoverManager(sg);
-        this.selectionManager = new SelectionManager(sg);
-        this.dragHandler = new DragHandler(sg, this.raycaster);
-        this.connectionHandler = new ConnectionHandler(sg, this.raycaster);
-        this.keyboardShortcuts = new KeyboardShortcuts(sg);
-        this.focusManager = new FocusManager(sg);
+        this.hoverManager = new HoverManager(this.sg);
+        this.selectionManager = new SelectionManager(this.sg);
+        this.dragHandler = new DragHandler(this.sg, this.raycaster);
+        this.connectionHandler = new ConnectionHandler(this.sg, this.raycaster);
+        this.keyboardShortcuts = new KeyboardShortcuts(this.sg);
+        this.focusManager = new FocusManager(this.sg);
 
         this.cursorManager.setContainer(this.sg.renderer.renderer.domElement);
         this.keyboardShortcuts.setSelectionChangeHandler((_selection) => {

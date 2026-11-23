@@ -1,8 +1,4 @@
 import { Vector3 } from 'three';
-import type { SpaceGraphEvents } from '../types';
-import type { Graph } from '../core/Graph';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { EventEmitter } from '../core/EventEmitter';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 
 const ERGONOMICS_CONFIG = {
@@ -112,8 +108,7 @@ export class ErgonomicsPlugin extends BaseSystemPlugin {
     private activeSessions: Map<string, InteractionSession> = new Map();
     private cameraSession: CameraSession | null = null;
 
-    init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
-        super.init(sg, graph, events);
+    protected onInit(): void {
         this._applyConfig();
         this._listenToInteractions();
     }

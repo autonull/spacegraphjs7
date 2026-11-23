@@ -1,6 +1,4 @@
-import type { Graph } from '../../core/Graph';
 import { accumulateBounds } from '../../layout/bounds';
-import type { SpaceGraph } from '../../SpaceGraph';
 import { parseColor } from '../../utils/color';
 import { BaseSystemPlugin } from '../BaseSystemPlugin';
 import { MERMAID_HUD_STYLES } from './MermaidStyles';
@@ -93,8 +91,7 @@ export class MermaidPlugin extends BaseSystemPlugin {
         return MERMAID_HUD_STYLES;
     }
 
-    init(sg: SpaceGraph, graph: Graph, events: any): void {
-        super.init(sg, graph, events);
+    protected onInit(): void {
         this.initializeLayouts();
         if (this.options.showHud !== false) {
             this.createHUD();

@@ -149,6 +149,16 @@ export class GraphBuilder {
         return this;
     }
 
+    private mapPositions(
+        transform: (p: [number, number, number]) => [number, number, number],
+    ): this {
+        for (const node of this.#nodes) {
+            const [x = 0, y = 0, z = 0] = node.position ?? [];
+            node.position = transform([x, y, z]);
+        }
+        return this;
+    }
+
     centerNodes(): this {
         if (this.#nodes.length === 0) return this;
         let minX = Number.POSITIVE_INFINITY,
@@ -164,47 +174,23 @@ export class GraphBuilder {
         }
         const cx = (minX + maxX) / 2,
             cy = (minY + maxY) / 2;
-        for (const node of this.#nodes) {
-            node.position = [
-                (node.position?.[0] ?? 0) - cx,
-                (node.position?.[1] ?? 0) - cy,
-                node.position?.[2] ?? 0,
-            ];
-        }
-        return this;
+        return this.mapPositions(([x, y, z]) => [x - cx, y - cy, z]);
     }
 
     scalePositions(scale: number): this {
-        for (const node of this.#nodes) {
-            node.position = [
-                (node.position?.[0] ?? 0) * scale,
-                (node.position?.[1] ?? 0) * scale,
-                (node.position?.[2] ?? 0) * scale,
-            ];
-        }
-        return this;
+        return this.mapPositions(([x, y, z]) => [x * scale, y * scale, z * scale]);
     }
 
     translateNodes(dx: number, dy: number, dz = 0): this {
-        for (const node of this.#nodes) {
-            node.position = [
-                (node.position?.[0] ?? 0) + dx,
-                (node.position?.[1] ?? 0) + dy,
-                (node.position?.[2] ?? 0) + dz,
-            ];
-        }
-        return this;
+        return this.mapPositions(([x, y, z]) => [x + dx, y + dy, z + dz]);
     }
 
     randomizePositions(spread = 100): this {
-        for (const node of this.#nodes) {
-            node.position = [
-                (node.position?.[0] ?? 0) + (Math.random() - 0.5) * spread,
-                (node.position?.[1] ?? 0) + (Math.random() - 0.5) * spread,
-                (node.position?.[2] ?? 0) + (Math.random() - 0.5) * spread,
-            ];
-        }
-        return this;
+        return this.mapPositions(([x, y, z]) => [
+            x + (Math.random() - 0.5) * spread,
+            y + (Math.random() - 0.5) * spread,
+            z + (Math.random() - 0.5) * spread,
+        ]);
     }
 
     colorNodes(color: string | number): this {
@@ -268,27 +254,9 @@ export class GraphBuilder {
     }
 
     mirrorNodes(axis: 'x' | 'y' | 'z' = 'x'): this {
-        for (const node of this.#nodes) {
-            if (axis === 'x')
-                node.position = [
-                    -(node.position?.[0] ?? 0),
-                    node.position?.[1] ?? 0,
-                    node.position?.[2] ?? 0,
-                ];
-            else if (axis === 'y')
-                node.position = [
-                    node.position?.[0] ?? 0,
-                    -(node.position?.[1] ?? 0),
-                    node.position?.[2] ?? 0,
-                ];
-            else
-                node.position = [
-                    node.position?.[0] ?? 0,
-                    node.position?.[1] ?? 0,
-                    -(node.position?.[2] ?? 0),
-                ];
-        }
-        return this;
+        return this.mapPositions(([x, y, z]) =>
+            axis === 'x' ? [-x, y, z] : axis === 'y' ? [x, -y, z] : [x, y, -z],
+        );
     }
 
     reverseEdges(): this {

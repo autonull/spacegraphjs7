@@ -1,6 +1,7 @@
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('EventEmitter');
+const NO_HANDLERS: ReadonlySet<(event: any) => void> = new Set();
 
 export interface Disposable {
     dispose(): void;
@@ -30,7 +31,7 @@ export class EventEmitter<T extends Record<string, any> = any> {
         if (options?.batch) {
             this.emitBatched(event, data);
         } else {
-            this.invokeHandlers(this.handlers.get(event) ?? new Set(), data);
+            this.invokeHandlers(this.handlers.get(event) ?? NO_HANDLERS, data);
         }
     }
 
@@ -50,7 +51,7 @@ export class EventEmitter<T extends Record<string, any> = any> {
         event: K,
         data: Omit<T[K], 'timestamp'> & { timestamp?: number },
     ): void {
-        this.invokeHandlers(this.handlers.get(event) ?? new Set(), {
+        this.invokeHandlers(this.handlers.get(event) ?? NO_HANDLERS, {
             ...data,
             timestamp: Date.now(),
         });
@@ -83,7 +84,7 @@ export class EventEmitter<T extends Record<string, any> = any> {
     }
 
     // Helper to safely invoke handlers
-    private invokeHandlers(handlers: Set<(event: any) => void>, data: any): void {
+    private invokeHandlers(handlers: ReadonlySet<(event: any) => void>, data: any): void {
         for (const h of handlers) {
             try {
                 h(data);

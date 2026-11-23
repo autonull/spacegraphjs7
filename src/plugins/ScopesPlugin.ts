@@ -3,11 +3,7 @@
 // can each be turned on independently. It writes positions into the existing graph, so renderers,
 // adapters and the contract stay untouched.
 
-import type { EventEmitter } from '../core/EventEmitter';
-import type { Graph } from '../core/Graph';
 import type { Node } from '../nodes/Node';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { SpaceGraphEvents } from '../types';
 import type { VisionReport } from '../vision/types';
 import {
     ScopeSimulation,
@@ -94,8 +90,7 @@ export class ScopesPlugin extends BaseSystemPlugin {
         return this.#specs;
     }
 
-    init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
-        super.init(sg, graph, events);
+    protected onInit(): void {
         this.setSpecs(this.#specs);
         if (this.options.simulation?.instant === undefined) {
             this.#simulation.setInstant(this.sg.reducedMotion);
@@ -146,12 +141,16 @@ export class ScopesPlugin extends BaseSystemPlugin {
 
     #input(): ScopePolicyInput {
         const explicit = this.options.signals?.() ?? {};
-        const band = explicit.band ?? (this.options.followZoom ? this.#bandOf(this.sg.zoom) : undefined);
+        const band =
+            explicit.band ?? (this.options.followZoom ? this.#bandOf(this.sg.zoom) : undefined);
         const selected = this.sg.selection?.list[0];
         const focus =
             explicit.focus ??
-            (this.options.followFocus && selected ? this.#qualifiedByNode.get(selected) : undefined);
-        const vision = explicit.vision ?? (this.options.followVision ? this.#lastVision : undefined);
+            (this.options.followFocus && selected
+                ? this.#qualifiedByNode.get(selected)
+                : undefined);
+        const vision =
+            explicit.vision ?? (this.options.followVision ? this.#lastVision : undefined);
         return { band, focus, vision };
     }
 

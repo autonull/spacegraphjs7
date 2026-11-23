@@ -15,8 +15,7 @@ export class VisionOverlayPlugin extends DOMOverlayPlugin {
     private lastReport: VisionReport | null = null;
     private modelsLoaded = false;
 
-    init(): void | Promise<void> {
-        super.init(this.sg, this.graph, this.events);
+    protected onInit(): void {
         this.updateDOM();
         setTimeout(() => this.startPolling(), 1000);
     }

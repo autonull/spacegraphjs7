@@ -1,7 +1,3 @@
-import type { SpaceGraphEvents } from '../types';
-import type { Graph } from '../core/Graph';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { EventEmitter } from '../core/EventEmitter';
 import { createLogger } from '../utils/logger';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 import type { ForceLayout } from './layouts/ForceLayout';
@@ -19,8 +15,7 @@ export class AutoLayoutPlugin extends BaseSystemPlugin {
     readonly id = 'auto-layout';
     readonly name = 'Auto Layout';
 
-    init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
-        super.init(sg, graph, events);
+    protected onInit(): void {
         logger.debug(`Initialized ${this.name} v${this.version}`);
     }
 

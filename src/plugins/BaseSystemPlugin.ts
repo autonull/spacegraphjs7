@@ -31,7 +31,10 @@ export abstract class BaseSystemPlugin implements Plugin {
         this.sg = sg;
         this.graph = graph;
         this.events = events;
+        this.onInit?.();
     }
+
+    protected onInit?(): void {}
 
     onPreRender?(_delta: number): void {}
 
