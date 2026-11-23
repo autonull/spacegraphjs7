@@ -1,4 +1,4 @@
-import { TAU } from '../utils/math';
+import { TAU } from '../core/constants';
 import { gridPoints, polarPoint, ringPoints } from '../utils/points';
 // builder/patterns.ts - Pre-built graph patterns
 import { GraphBuilder } from './graph';

@@ -1,5 +1,5 @@
 import { Vector3 } from 'three';
-import { DEFAULT_NODE_BOUNDS, declaredNodeBounds, type NodeBounds } from '../../layout/node-bounds';
+import { resolveNodeBounds, type NodeBounds } from '../../layout/node-bounds';
 import type { Node } from '../../nodes/Node';
 import { appendTo } from '../../utils/collection';
 import { BaseLayout, type LayoutOptions } from './BaseLayout';
@@ -12,9 +12,9 @@ type BoundsCarrier = {
 
 /** Declared bounds, then a Node's own resolution, then the documented default. */
 const getNodeBounds = (node: BoundsCarrier): NodeBounds =>
-    declaredNodeBounds(node) ??
-    (typeof node.getLayoutBounds === 'function' ? node.getLayoutBounds() : undefined) ??
-    { ...DEFAULT_NODE_BOUNDS };
+    resolveNodeBounds(node, () =>
+        typeof node.getLayoutBounds === 'function' ? node.getLayoutBounds() : undefined,
+    );
 
 export interface HierarchicalLayoutOptions extends LayoutOptions {
     rootId: string;

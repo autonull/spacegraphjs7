@@ -1,6 +1,5 @@
-// math.ts - Modern ES2022+ math and utility functions
-// Type-safe, performant, and deduplicated
-export { DEG2RAD, EPSILON, PI, RAD2DEG, TAU } from '../core/constants';
+// Dependency-free math primitives shared by hosts, core and tests.
+// Constants live in core/constants; importing them here would make every consumer depend on core.
 
 // ============= Math Functions =============
 export const clamp = (v: number, min: number, max: number): number =>

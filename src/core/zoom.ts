@@ -2,6 +2,8 @@
 // A normalized zoom is 0..1 where 1 is closest. The raw value is perspective distance (larger is
 // farther) or orthographic zoom (larger is closer); `closerIsLarger` selects the mapping.
 
+import { clamp } from '../utils/math';
+
 export interface ZoomRange {
     min: number;
     max: number;
@@ -24,7 +26,7 @@ export function denormalizeZoom(value: number, { min, max, closerIsLarger }: Zoo
     const lo = Math.min(min, max);
     const hi = Math.max(min, max);
     const t = closerIsLarger ? value : 1 - value;
-    return logLerp(lo, hi, Math.min(1, Math.max(0, t)));
+    return logLerp(lo, hi, clamp(t, 0, 1));
 }
 
-export { clamp } from '../utils/math';
+export { clamp };

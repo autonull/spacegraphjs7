@@ -1,6 +1,7 @@
 // P3.2. Widget size is measured by the host, then clamped by a host budget. Desired size reaches
 // layout only when the sizing policy allows it, so a widget never reframes the map uninvited.
 
+import { clamp } from '../utils/math';
 import type { WidgetSize } from './registry';
 
 export const OVERFLOW_STRATEGIES = ['clip', 'dot', 'summary', 'virtualized'] as const;
@@ -23,8 +24,8 @@ export function resolveWidgetSize(
     desired: WidgetSize,
     policy: WidgetSizingPolicy = {},
 ): ResolvedWidgetSize {
-    const width = Math.max(1, Math.min(desired.width, policy.max?.width ?? Infinity));
-    const height = Math.max(1, Math.min(desired.height, policy.max?.height ?? Infinity));
+    const width = clamp(desired.width, 1, policy.max?.width ?? Infinity);
+    const height = clamp(desired.height, 1, policy.max?.height ?? Infinity);
     const clamped = width !== desired.width || height !== desired.height;
     return {
         size: { width, height },

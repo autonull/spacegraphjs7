@@ -1,5 +1,6 @@
 import { ForceCore, type ForceCoreConfig } from '../../layout/force-core';
 import type { Node } from '../../nodes/Node';
+import { appendTo } from '../../utils/collection';
 import { BaseLayout, type LayoutConfig } from './BaseLayout';
 
 export interface ForceLayoutConfig extends LayoutConfig {
@@ -93,10 +94,17 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
         // Recreate core with merged config to pick up runtime overrides
         this.#core = new ForceCore(this.#coreConfig(config));
 
+        // One pass over the edges serves every simulation step; scanning them per node per step is O(N·E).
+        const links = new Map<string, string[]>();
+        for (const edge of this.graph.getEdges()) {
+            appendTo(links, edge.source.id, edge.target.id);
+            if (edge.source.id !== edge.target.id) appendTo(links, edge.target.id, edge.source.id);
+        }
+
         // Run the simulation using ForceCore
         this.#core.run(
             nodes,
-            (node) => this.#getEdgeLinks(node),
+            (node) => links.get(node.id) ?? [],
             (node) => this.collisionRadius(node, this.nodePadding(config)),
             (node) => this.isPinned(node),
             (node, z) => {
@@ -109,16 +117,6 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
             if (this.isPinned(node)) continue;
             this.syncPosition(node);
         }
-    }
-
-    /** Get edge links for a node (source or target). */
-    #getEdgeLinks(node: Node): readonly string[] {
-        const links: string[] = [];
-        for (const edge of this.graph.getEdges()) {
-            if (edge.source.id === node.id) links.push(edge.target.id);
-            else if (edge.target.id === node.id) links.push(edge.source.id);
-        }
-        return links;
     }
 
     protected defaultConfig(): ForceLayoutConfig {

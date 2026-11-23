@@ -1,5 +1,7 @@
 /** Host-owned policy catalogs: typed knobs, one serializable vector, and boundary coercion. */
 
+import { clamp } from '../utils/math';
+
 export type KnobValue = number | string | boolean;
 
 interface KnobBase<T extends KnobValue> {
@@ -53,7 +55,7 @@ export const coerceValue = (knob: PolicyKnob, value: unknown): KnobValue | undef
         const parsed =
             typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
         if (!Number.isFinite(parsed)) return undefined;
-        return Math.min(knob.max, Math.max(knob.min, parsed));
+        return clamp(parsed, knob.min, knob.max);
     }
     return typeof value === 'string' && knob.options.includes(value) ? value : undefined;
 };

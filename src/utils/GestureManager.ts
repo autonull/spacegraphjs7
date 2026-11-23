@@ -1,3 +1,5 @@
+import { clamp } from './math';
+
 export interface Point {
     x: number;
     y: number;
@@ -24,7 +26,7 @@ export function calculatePinchZoom(
     maxRadius = 5000,
 ): number {
     const zoomDelta = (currentDistance - previousDistance) * (currentRadius * zoomSpeedFactor);
-    return Math.max(minRadius, Math.min(maxRadius, currentRadius - zoomDelta));
+    return clamp(currentRadius - zoomDelta, minRadius, maxRadius);
 }
 
 export function calculatePan(

@@ -1,6 +1,8 @@
 // Host-composed representation ladder. The library decides only the legibility gate; hosts own
 // budgets, markup and when to ask for a rung. Pure and dependency-free.
 
+import { clamp } from '../utils/math';
+
 export type RepresentationRung = 'overview' | 'execution' | 'detail';
 
 export interface RepresentationInput {
@@ -52,8 +54,7 @@ export const representationWeights = (
     blend = 0.1,
 ): RepresentationWeights => {
     const width = Math.max(0.001, blend);
-    const ramp = (distance: number): number =>
-        Math.min(1, Math.max(0, (distance + width) / (2 * width)));
+    const ramp = (distance: number): number => clamp((distance + width) / (2 * width), 0, 1);
     const rung = representationRung(input, thresholds);
     if (rung === 'overview') {
         const t = ramp(input.activity - thresholds.promoteAt);

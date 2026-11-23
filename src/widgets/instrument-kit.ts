@@ -2,6 +2,7 @@
 // became the second consumer. The renderer still never interprets the data: hosts own every value.
 
 import type { RenderNode } from '@spacegraphjs/renderer';
+import { clamp } from '../utils/math';
 import { WidgetLayer } from './layer';
 import { WidgetRegistry, type WidgetDescriptor, type WidgetHandle } from './registry';
 
@@ -52,7 +53,7 @@ const RENDERERS: Record<InstrumentID, InstrumentRenderer> = {
             .slice(-32)
             .map(
                 (value, index, all) =>
-                    `${(index / Math.max(1, all.length - 1)) * 100},${20 - Math.min(20, Math.max(0, value * 20))}`,
+                    `${(index / Math.max(1, all.length - 1)) * 100},${20 - clamp(value * 20, 0, 20)}`,
             )
             .join(' ');
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -67,7 +68,7 @@ const RENDERERS: Record<InstrumentID, InstrumentRenderer> = {
         element.replaceChildren(svg);
     },
     meter(element, data) {
-        const percent = Math.round(Math.min(1, Math.max(0, data.value ?? 0)) * 100);
+        const percent = Math.round(clamp(data.value ?? 0, 0, 1) * 100);
         const meter = document.createElement('span');
         meter.className = 'instrument-meter';
         meter.setAttribute('role', 'meter');

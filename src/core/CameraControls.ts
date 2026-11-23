@@ -461,7 +461,7 @@ export class CameraControls {
 
     // Point the camera at a polar (from +Y) and azimuth angle, animating when a duration is given.
     setPolar(phi: number, theta: number, duration = 0): void {
-        const targetPhi = Math.max(0.01, Math.min(Math.PI - 0.01, phi));
+        const targetPhi = clamp(phi, 0.01, Math.PI - 0.01);
         if (duration <= 0) {
             this.spherical.phi = targetPhi;
             this.spherical.theta = theta;

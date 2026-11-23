@@ -5,6 +5,7 @@
 // Every result is deterministic for a given tree, seed and previous state. No renderer is involved.
 
 import { appendTo } from '../utils/collection';
+import { clamp } from '../utils/math';
 import {
     boundsFromExtents,
     transformBounds,
@@ -310,7 +311,7 @@ function collectScopeEdges(state: ScopeLayoutState, entry: ScopeEntry): void {
 /** Scale-aware packing: sparse coverage tightens collision slack toward the target, floored at half. */
 export const occupancySpacingFactor = (occupancy?: number, target?: number): number => {
     if (!occupancy || !target || target <= 0) return 1;
-    return Math.min(1, Math.max(0.5, occupancy / target));
+    return clamp(occupancy / target, 0.5, 1);
 };
 
 function makeSolver(

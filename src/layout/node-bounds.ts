@@ -28,3 +28,11 @@ export function declaredNodeBounds(node: {
     if (size && typeof size.width === 'number' && typeof size.height === 'number')
         return { width: size.width, height: size.height, depth: 1 };
 }
+
+/** Declared bounds, then a render-dependent measurement, then the documented default. */
+export function resolveNodeBounds(
+    node: { data?: unknown; size?: unknown },
+    measure?: () => NodeBounds | undefined,
+): NodeBounds {
+    return declaredNodeBounds(node) ?? measure?.() ?? { ...DEFAULT_NODE_BOUNDS };
+}

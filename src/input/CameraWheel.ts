@@ -1,4 +1,5 @@
 import type { CameraControls } from '../core';
+import { clamp } from '../utils/math';
 import { clientToNdc } from '../utils/projection';
 import type { WheelEventData } from './InputManager';
 
@@ -11,7 +12,7 @@ const MAX_PIXELS_PER_EVENT = 400;
 /** The wheel's delta in pixels, whatever unit the browser reported. */
 function wheelPixels(deltaY: number, deltaMode: number): number {
     const pixels = deltaMode === 1 ? deltaY * 16 : deltaMode === 2 ? deltaY * 400 : deltaY;
-    return Math.max(-MAX_PIXELS_PER_EVENT, Math.min(MAX_PIXELS_PER_EVENT, pixels));
+    return clamp(pixels, -MAX_PIXELS_PER_EVENT, MAX_PIXELS_PER_EVENT);
 }
 
 /**

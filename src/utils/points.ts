@@ -1,4 +1,4 @@
-import { TAU } from './math';
+import { TAU } from '../core/constants';
 
 export type Point3 = [number, number, number];
 export type PointPlane = 'xz' | 'xy';

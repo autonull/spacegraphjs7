@@ -1,6 +1,7 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import { clamp } from '../utils/math';
 import { HtmlNode } from './HtmlNode';
 
 export class ProgressBarNode extends HtmlNode {
@@ -79,7 +80,7 @@ export class ProgressBarNode extends HtmlNode {
     }
 
     private _setProgress(value: number): void {
-        this.progressValue = Math.max(0, Math.min(100, value));
+        this.progressValue = clamp(value, 0, 100);
         if (this.progressFill) {
             this.progressFill.style.width = `${this.progressValue}%`;
         }

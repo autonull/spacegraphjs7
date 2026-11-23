@@ -15,7 +15,7 @@ import { safeClone } from '../utils/math';
 import type { ControlState } from '../plugins/interaction/ControlStateBorder';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { AnimationProps, NodeData, NodeSpec } from '../types';
-import { DEFAULT_NODE_BOUNDS, declaredNodeBounds, type NodeBounds } from '../layout/node-bounds';
+import { resolveNodeBounds, type NodeBounds } from '../layout/node-bounds';
 
 export interface VisibilityContext {
     cameraFrustum: THREE.Frustum;
@@ -121,27 +121,19 @@ export abstract class Node extends Surface {
      * Priority: data.width/height → class size (HtmlNode) → bounds3D fallback → documented defaults (200×100)
      */
     getLayoutBounds(): NodeBounds {
-        // Priorities 1 and 2: declared data or class size
-        const declared = declaredNodeBounds(this);
-        if (declared) return declared;
-
-        // Priority 3: bounds3D fallback (render-dependent, expensive)
-        // Only try if object is a proper Three.js Object3D
-        const obj = this.object as THREE.Object3D | undefined;
-        if (obj && typeof obj.traverse === 'function') {
+        return resolveNodeBounds(this, () => {
+            const obj = this.object as THREE.Object3D | undefined;
+            if (!obj || typeof obj.traverse !== 'function') return undefined;
             try {
                 const box = this.bounds3D;
                 const size = box.max.clone().sub(box.min);
-                if (size.x > 0 && size.y > 0) {
+                if (size.x > 0 && size.y > 0)
                     return { width: size.x, height: size.y, depth: size.z || 1 };
-                }
             } catch {
-                // bounds3D may fail if object not ready
+                // bounds3D may fail if the object is not ready
             }
-        }
-
-        // Priority 4: documented defaults
-        return { ...DEFAULT_NODE_BOUNDS };
+            return undefined;
+        });
     }
 
     private static _parseVector3(
