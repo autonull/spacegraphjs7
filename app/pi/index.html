@@ -143,7 +143,8 @@
                 display: flex;
                 align-items: center;
                 gap: var(--sg-spacing-sm);
-                flex-wrap: wrap;
+                flex-wrap: nowrap;
+                min-width: 0;
             }
             h1 {
                 font-size: var(--sg-font-sizes-xl);
@@ -217,6 +218,29 @@
             }
             footer {
                 grid-column: 1 / -1;
+                display: flex;
+                align-items: center;
+                gap: var(--sg-spacing-sm);
+                min-width: 0;
+            }
+            #status-strip {
+                display: flex;
+                align-items: center;
+                gap: var(--sg-spacing-sm);
+                flex: 1;
+                min-width: 0;
+            }
+            #status-strip #attention {
+                margin-inline-start: 0;
+                font-size: var(--sg-font-sizes-sm);
+            }
+            #status-strip #evidence {
+                display: flex;
+                gap: var(--sg-spacing-sm);
+                margin: 0;
+                min-height: 0;
+                overflow: hidden;
+                white-space: nowrap;
             }
             #gallery,
             #catalog,
@@ -319,11 +343,11 @@
                 display: inline-flex;
                 align-items: center;
                 gap: var(--sg-spacing-xs);
-                margin-inline-start: auto;
+                flex: 0 0 auto;
                 padding: var(--sg-spacing-hair) var(--sg-spacing-sm);
                 border: 1px solid var(--sg-colors-border);
                 color: var(--sg-colors-muted-foreground);
-                font-size: var(--sg-font-sizes-lg);
+                font-size: var(--sg-font-sizes-sm);
                 font-weight: 600;
                 font-variant-numeric: tabular-nums;
                 white-space: nowrap;
@@ -1898,7 +1922,14 @@
                 background: var(--sg-colors-accent);
                 border-color: var(--sg-colors-accent);
             }
+            #proof-menu {
+                position: relative;
+                margin-inline-start: auto;
+            }
             .proof-line {
+                display: inline-flex;
+                align-items: center;
+                gap: var(--sg-spacing-xs);
                 border: 1px solid var(--sg-colors-border);
                 border-radius: 3px;
                 background: transparent;
@@ -1906,6 +1937,35 @@
                 padding: var(--sg-spacing-xs) var(--sg-spacing-sm);
                 font-size: var(--sg-font-sizes-xs);
                 cursor: pointer;
+                list-style: none;
+            }
+            #proof-line::-webkit-details-marker {
+                display: none;
+            }
+            #proof-menu[open] > div {
+                position: absolute;
+                top: 100%;
+                inset-inline-end: 0;
+                z-index: 30;
+                display: grid;
+                gap: var(--sg-spacing-xs);
+                min-width: 180px;
+                padding: var(--sg-spacing-sm);
+                border: 1px solid var(--sg-colors-border);
+                background: var(--sg-colors-popover);
+            }
+            #proof-menu[open] > div button {
+                text-align: start;
+                padding: var(--sg-spacing-xs);
+                border: 1px solid transparent;
+                background: transparent;
+                color: var(--sg-colors-foreground);
+                font: inherit;
+                cursor: pointer;
+            }
+            #proof-menu[open] > div button:hover,
+            #proof-menu[open] > div button:focus-visible {
+                border-color: var(--sg-colors-border);
             }
             .first-run-hint {
                 position: absolute;
@@ -2072,15 +2132,20 @@
             <button type="button" id="focus-primary" title="focus — center the selected node">
                 <span class="jargon-label">focus</span><span class="plain-label">Focus mode</span>
             </button>
-            <span id="attention" data-role="attention">no failures</span>
-            <button
-                type="button"
-                id="proof-line"
-                class="proof-line"
-                title="Open the catalogue of presets, experiments and recorded comparisons"
-            >
-                proof
-            </button>
+            <details id="proof-menu">
+                <summary
+                    id="proof-line"
+                    class="proof-line"
+                    title="Open the catalogue of presets, experiments and recorded comparisons"
+                >
+                    proof
+                </summary>
+                <div>
+                    <button type="button" data-proof-group="presets">presets</button>
+                    <button type="button" data-proof-group="experiments">experiments</button>
+                    <button type="button" data-proof-group="questions">comparisons</button>
+                </div>
+            </details>
             <details id="settings-menu">
                 <summary aria-label="Settings and navigation controls">
                     <span class="jargon-label">settings</span><span class="plain-label">Settings</span>
@@ -2301,6 +2366,10 @@
             </details>
         </section>
         <footer>
+            <div id="status-strip">
+                <span id="attention" data-role="attention">no failures</span>
+                <ul id="evidence"></ul>
+            </div>
             <form id="prompt-form">
                 <input
                     id="prompt-input"
@@ -2315,7 +2384,6 @@
                 </select>
                 <button type="submit">Send</button>
             </form>
-            <ul id="evidence"></ul>
         </footer>
         <script type="module" src="./src/client.ts"></script>
     </body>

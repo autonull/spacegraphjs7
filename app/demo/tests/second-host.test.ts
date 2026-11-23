@@ -72,6 +72,21 @@ describe('second reference host', () => {
         expect(host.moves.some((move) => move.startsWith('flyTo:'))).toBe(true);
     });
 
+    it('packs chapters for another domain and preserves placed cards', () => {
+        const host = new SecondHost();
+        const first = host.chapterGrid(['run', 'a', 'b']);
+        expect(first.get('run')).toEqual({ x: 0, y: 0, z: 0 });
+        expect(first.get('a')).toEqual({ x: 416, y: 0, z: 0 });
+
+        const appended = host.chapterGrid(['run', 'a', 'b', 'c'], undefined, first);
+        expect(appended.get('a')).toEqual(first.get('a'));
+        expect(appended.get('b')).toEqual(first.get('b'));
+        expect(appended.get('c')).toEqual({ x: 416, y: 248, z: 0 });
+
+        const narrow = host.chapterGrid(['run', 'a', 'b'], { width: 600, height: 900 });
+        expect(narrow.get('a')).toEqual({ x: 0, y: 248, z: 0 });
+    });
+
     it('builds a bounded local topology through the promoted inspector', () => {
         const host = new SecondHost();
         const nodes = [

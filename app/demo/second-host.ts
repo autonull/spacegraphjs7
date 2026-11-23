@@ -2,6 +2,7 @@
 // one workspace — camera verbs, one-authority play/reconcile, a legibility-gated rung and an opt-in
 // vision loop. The page owns rendering; this host owns state and behavior.
 
+import { chapterPacking, type Position } from 'spacegraphjs/layout';
 import { innerTree, type InnerSourceEdge, type InnerSourceNode } from 'spacegraphjs/inspect';
 import { TouchRecognizer, type TouchGesture, type TouchPoint } from 'spacegraphjs/input';
 import {
@@ -182,6 +183,15 @@ export class SecondHost {
 
     addEnergy(value: number): void {
         this.#energy += value;
+    }
+
+    /** Chapter grid for any domain's ordered ids; Pi's turn vocabulary is not required. */
+    chapterGrid(
+        ids: readonly string[],
+        viewport: { readonly width: number; readonly height: number } = { width: 1600, height: 900 },
+        previous?: ReadonlyMap<string, Position>,
+    ): ReadonlyMap<string, Position> {
+        return chapterPacking(ids, { card: [360, 200], viewport, previous });
     }
 
     /** Bounded local topology with this host's own containment vocabulary. */

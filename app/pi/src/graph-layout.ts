@@ -1,5 +1,6 @@
 import type { AgentView } from '@spacegraphjs/agent';
 import {
+    chapterPacking,
     solveErgonomicLayout,
     Strategies,
     type ErgonomicsViewport,
@@ -96,30 +97,30 @@ export function layoutModel(view: AgentView): LayoutModel<Node, Edge> {
 }
 
 /** One card per turn, packed as a compact grid so short edges and large labels share the canvas. */
-const chapterLayout = (view: AgentView): GraphLayout => {
+const chapterLayout = (
+    view: AgentView,
+    previous?: ReadonlyMap<string, Position>,
+    viewport?: ErgonomicsViewport,
+    cardScale = 1,
+): GraphLayout => {
     const turns = new Set(view.turns ?? []);
     const chapters = [
         ...view.nodes.filter((node) => node.kind === 'run'),
         ...(view.turns ?? []).flatMap((id) => view.nodes.filter((node) => node.id === id)),
         ...view.nodes.filter((node) => node.kind === 'unit' && !turns.has(node.id)),
     ];
-    const columns = 2;
-    const gapX = 56;
-    const gapY = 48;
-    const positions = new Map<string, Position>(
-        chapters.map((node, index) => [
-            node.id,
-            {
-                x: (index % columns) * (CHAPTER_CARD[0] + gapX),
-                y: Math.floor(index / columns) * (CHAPTER_CARD[1] + gapY),
-                z: 0,
-            },
-        ]),
+    const card: readonly [number, number] = [
+        CHAPTER_CARD[0] * cardScale,
+        CHAPTER_CARD[1] * cardScale,
+    ];
+    const positions = chapterPacking(
+        chapters.map((node) => node.id),
+        { card, previous, viewport },
     );
     return {
         positions,
         clusters: new Map(),
-        bounds: boundsOf(positions, CHAPTER_CARD),
+        bounds: boundsOf(positions, card),
         strategy: 'chapters',
     };
 };
@@ -150,9 +151,10 @@ export function computeGraphLayout(
     mode: GraphLayoutMode,
     previous?: ReadonlyMap<string, Position>,
     viewport: ErgonomicsViewport = { width: 1600, height: 900 },
+    cardScale = 1,
 ): GraphLayout | undefined {
     if (mode === 'freeform') return undefined;
-    if (mode === 'chapters') return chapterLayout(view);
+    if (mode === 'chapters') return chapterLayout(view, previous, viewport, cardScale);
     if (mode === 'ergonomic') return ergonomicGraphLayout(view, viewport);
     const rows = mode === 'timeline-rows';
     return Strategies.layoutGraph(layoutModel(view), layoutConfig(view), {

@@ -835,7 +835,7 @@ export class PiHost {
         const layout = computeGraphLayout(this.#view, this.#graphLayout, this.#graphLayoutPositions, {
             width: canvas.clientWidth || 1600,
             height: canvas.clientHeight || 900,
-        });
+        }, this.#cardScale);
         this.#graphLayoutPositions = layout?.positions;
         this.simulation.setLayoutTargets(layoutTargets(layout, this.#qualifiedByNode));
         this.simulation.setSpecs(scopes.specs, {
@@ -905,7 +905,7 @@ export class PiHost {
             model.nodes = model.nodes.filter((node) => kept.has(node.id));
             model.edges = model.edges.filter((edge) => kept.has(edge.source) && kept.has(edge.target));
             for (const node of model.nodes) {
-                const chips = innerTree(node.id, windowed.view.nodes, windowed.view.edges, 1, 8);
+                const chips = innerTree(node.id, windowed.view.nodes, windowed.view.edges, 2, 8);
                 chapterChips.set(
                     node.id,
                     chips.filter((chip) => chip.kind !== 'run'),
@@ -2602,6 +2602,18 @@ export class PiHost {
             this.run(link.dataset.question);
         });
         el('proof-line').addEventListener('click', () => this.toggleCatalog(true));
+        for (const button of document.querySelectorAll<HTMLButtonElement>('#proof-menu button[data-proof-group]')) {
+            button.addEventListener('click', () => {
+                const section = document.querySelector<HTMLElement>(
+                    `#catalog [data-group="${button.dataset.proofGroup}"]`,
+                );
+                this.toggleCatalog(true);
+                const card = section?.querySelector('details');
+                if (card) card.open = true;
+                el<HTMLDetailsElement>('proof-menu').open = false;
+                section?.scrollIntoView({ block: 'nearest' });
+            });
+        }
         el('rail-toggle').addEventListener('click', () => this.toggleRail());
         el('rail-strip').addEventListener('click', (event) => {
             const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-rail-panel]');

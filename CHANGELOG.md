@@ -7,6 +7,8 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Added
 
+- **Chapter packing (general library):** `chapterPacking(ids, { card, gap?, columns?, viewport?, previous? })` packs a small set of host-defined chapter cards, caps columns to the viewport and preserves cells from `previous` when new ids stream in. Pi's chapters view uses it; `app/demo/second-host.ts` proves the same helper with non-agent ids.
+- **Pi single-row chrome:** the proof affordance is now a pulldown that groups presets, experiments and recorded comparisons, and the attention readout moved from the top bar into a bottom status strip beside the evidence line. All control ids and data attributes stay unchanged.
 - **Ergonomic layout heuristics (general library):** `solveErgonomicLayout()` packs any graph into a
   measured, surface-fitted grid using aspect-matched column selection, proximity ordering and bounded
   swap refinement. It returns positions plus occupancy, edge-length, aspect-fit and overlap scores,

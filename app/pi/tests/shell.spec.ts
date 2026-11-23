@@ -33,6 +33,22 @@ test.describe('the one-surface shell', () => {
         await expect(page.locator('#settings-menu #catalog-toggle')).toBeVisible();
     });
 
+    test('the proof menu groups catalogue entries and attention sits in the status strip', async ({
+        page,
+    }) => {
+        const errors = await boot(page);
+        await expect(page.locator('#command-bar > #proof-menu')).toBeVisible();
+        await expect(page.locator('#status-strip > #attention')).toBeVisible();
+
+        await page.locator('#proof-line').click();
+        await expect(page.locator('#proof-menu > div')).toBeVisible();
+        await page.locator('#proof-menu [data-proof-group="experiments"]').click();
+        await expect(page.locator('body')).toHaveAttribute('data-catalog', 'open');
+        await expect(page.locator('#catalog [data-group="experiments"] > details').first()).toBeVisible();
+        await expect(page.locator('#proof-menu')).not.toHaveAttribute('open', '');
+        expect(errors).toEqual([]);
+    });
+
     test('the command bar stays on one row at narrow widths', async ({ page }) => {
         const errors = await boot(page);
         await page.setViewportSize({ width: 900, height: 1000 });

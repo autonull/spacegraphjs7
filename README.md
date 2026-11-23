@@ -350,6 +350,8 @@ Two placement modes matter:
 
 `solveErgonomicLayout(nodes, edges, viewport, options?)` is the general, host-agnostic packing heuristic. It picks the column count whose grid aspect matches the surface, orders nodes by a bounded Cuthill–McKee-style tie heuristic, refines slots by swap passes that lower squared edge length, and returns solved positions plus measured `occupancy`, `meanEdgeLength`, `aspectFit`, `overlaps` and a `labelFloorMet` flag. No DOM, renderer, host vocabulary or hidden policy: supply node sizes, edges and a viewport, then compare candidates by score. `chooseColumns`, `orderByProximity` and `refineBySwaps` are exported separately for hosts that own their own solver.
 
+`chapterPacking(ids, { card, gap?, columns?, viewport?, previous? })` is the small-grid sibling: it packs a handful of chapter cards, caps the column count to the viewport, and keeps cards already placed in `previous` in their cells so a streamed chapter does not reshuffle the view. The ids are plain strings — no domain vocabulary or renderer is involved. `app/pi` uses it for turn subgraphs; `app/demo/second-host.ts` uses the same helper with non-agent ids. That is the pattern for taking a flagship behavior into another domain: promote the placement rule into `spacegraphjs/layout`, keep the vocabulary in the host, and prove it with a second consumer.
+
 Hosts can always own placement directly with `setPositions(...)`, `pinAll(...)`, and `layoutOnce(...)`. Request a named layout explicitly when data arrives.
 
 ---

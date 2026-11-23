@@ -41,7 +41,7 @@ export function renderTurnMap(view: GraphViewData, reveal: (id: string) => void)
 /** One visible proof line; the full catalogue stays one click away. */
 export function renderProofLine(catalog: Catalog): void {
     const line = document.getElementById('proof-line');
-    if (!(line instanceof HTMLButtonElement)) return;
+    if (!(line instanceof HTMLElement)) return;
     const { presets, experiments } = catalog;
     const detail = document.createElement('span');
     detail.className = 'proof-detail';

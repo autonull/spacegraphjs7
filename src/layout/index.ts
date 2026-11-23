@@ -6,6 +6,7 @@ export {
     type LaneLayoutPosition,
 } from './LaneLayout';
 export { GridPlacement, type GridConfig, type GridMeta } from './grid';
+export { chapterPacking, type ChapterPackingOptions } from './chapters';
 export { contentBounds, declaredEmpty } from './fit';
 export { TreePlacement, type TreeConfig, type TreeMeta } from './tree';
 export * from './field-projection';
