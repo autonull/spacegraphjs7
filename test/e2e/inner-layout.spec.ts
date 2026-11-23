@@ -1,14 +1,13 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { settle } from './atlas-kit.js';
+import { bootShowcase, settle } from './atlas-kit.js';
 import { renderAtlasReport, type ReportEntry } from './atlas-report.js';
 
 // Inner-node layouts through a subgraph container. The demo owns the geometry; this spec drives
 // its mode control, verifies the child positions change shape, and captures one frame per mode.
 
 const OUT = process.env.SG_INNER_LAYOUT_DIR ?? resolve('docs/screenshots/inner-layout');
-const VIEWPORT = { width: 1440, height: 900 };
 
 type Position = { id: string; x: number; y: number };
 
@@ -31,31 +30,9 @@ function signature(positions: Position[]) {
     };
 }
 
-async function boot(page: Page) {
-    const errors: string[] = [];
-    page.on('pageerror', (error) => errors.push(error.message));
-    page.on('console', (message) => {
-        if (message.type() === 'error' && !message.text().includes('favicon'))
-            errors.push(message.text());
-    });
-    await page.setViewportSize(VIEWPORT);
-    await page.goto('/showcase.html?demo=inner-layout');
-    await page.waitForFunction(
-        () => (window as { __DEMO_READY?: boolean }).__DEMO_READY === true,
-        undefined,
-        { timeout: 15_000 },
-    );
-    await page.waitForFunction(() => Boolean((window as any).__innerLayoutDemo), undefined, {
-        timeout: 10_000,
-    });
-    await page.evaluate(() => document.fonts.ready);
-    await settle(page);
-    return errors;
-}
-
 test.describe('inner-node layouts via subgraphs', () => {
     test('switches grid, column and row layouts inside one container node', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await bootShowcase(page, 'inner-layout', '__innerLayoutDemo');
         mkdirSync(OUT, { recursive: true });
         const modes = await page.evaluate(
             () => (window as any).__innerLayoutDemo.modes() as string[],

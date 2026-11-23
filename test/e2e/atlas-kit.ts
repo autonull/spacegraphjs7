@@ -231,6 +231,27 @@ export async function snapshot(page: Page, shot: Shot) {
     };
 }
 
+/** Boots a showcase demo and its runtime api, returning collected page errors. */
+export async function bootShowcase(page: Page, demo: string, api: string): Promise<string[]> {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('console', (message) => {
+        if (message.type() === 'error' && !message.text().includes('favicon'))
+            errors.push(message.text());
+    });
+    await page.setViewportSize(VIEWPORT);
+    await page.goto(`/showcase.html?demo=${demo}`);
+    await page.waitForFunction(
+        () => (window as { __DEMO_READY?: boolean }).__DEMO_READY === true,
+        undefined,
+        { timeout: 15_000 },
+    );
+    await page.waitForFunction((name) => Boolean((window as any)[name]), api, { timeout: 10_000 });
+    await page.evaluate(() => document.fonts.ready);
+    await settle(page);
+    return errors;
+}
+
 export async function boot(page: Page, path = '/explorer.html') {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));

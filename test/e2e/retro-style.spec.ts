@@ -1,15 +1,14 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { settle } from './atlas-kit.js';
+import { bootShowcase, settle } from './atlas-kit.js';
 import { renderAtlasReport, type ReportEntry } from './atlas-report.js';
 
 // SpaceGraphJ reference-style captures: crimson graph ribbons and a compound widget dashboard that
 // is laid out as a subgraph and zoomed as one unit. Frames land in docs/screenshots/retro-style/.
 
 const OUT = process.env.SG_RETRO_DIR ?? resolve('docs/screenshots/retro-style');
-const VIEWPORT = { width: 1440, height: 900 };
 
 type Position = { id: string; x: number; y: number };
 type RetroApi = {
@@ -27,33 +26,11 @@ type RetroApi = {
     container(): { x: number; y: number; width: number; height: number };
 };
 
-async function boot(page: Page) {
-    const errors: string[] = [];
-    page.on('pageerror', (error) => errors.push(error.message));
-    page.on('console', (message) => {
-        if (message.type() === 'error' && !message.text().includes('favicon'))
-            errors.push(message.text());
-    });
-    await page.setViewportSize(VIEWPORT);
-    await page.goto('/showcase.html?demo=spacegraphj-retro');
-    await page.waitForFunction(
-        () => (window as { __DEMO_READY?: boolean }).__DEMO_READY === true,
-        undefined,
-        { timeout: 15_000 },
-    );
-    await page.waitForFunction(() => Boolean((window as any).__retroDemo), undefined, {
-        timeout: 10_000,
-    });
-    await page.evaluate(() => document.fonts.ready);
-    await settle(page);
-    return errors;
-}
-
 test.describe('SpaceGraphJ reference styles', () => {
     test('captures the crimson graph and the zoomable compound widget subgraph', async ({
         page,
     }) => {
-        const errors = await boot(page);
+        const errors = await bootShowcase(page, 'spacegraphj-retro', '__retroDemo');
         mkdirSync(OUT, { recursive: true });
         const entries: ReportEntry[] = [];
         const hashes = new Map<string, string>();
