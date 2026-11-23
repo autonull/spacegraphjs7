@@ -324,8 +324,8 @@ function makeSolver(
     const nodePadding =
         (options.nodePadding ?? 20) * occupancySpacingFactor(options.occupancy, options.targetOccupancy);
     if (strategy === 'grid') {
-        const tallest = Math.max(80, ...items.map((item) => item.height));
-        const widest = Math.max(80, ...items.map((item) => item.width));
+        const tallest = Math.max(80, ...items.map((item) => item.height ?? 0));
+        const widest = Math.max(80, ...items.map((item) => item.width ?? 0));
         return new GridPlacement({
             step: Math.max(gap, widest * 0.2),
             lanePitch: Math.max(tallest * 1.5, 140) + nodePadding + gap,

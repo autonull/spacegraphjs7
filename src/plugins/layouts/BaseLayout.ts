@@ -52,7 +52,7 @@ export abstract class BaseLayout<
         return this.config;
     }
 
-    protected nodePadding(config: Options): number {
+    protected nodePadding(config: Partial<Options>): number {
         return config.nodePadding ?? DEFAULT_NODE_PADDING;
     }
 
