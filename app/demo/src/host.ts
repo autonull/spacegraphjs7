@@ -19,6 +19,7 @@ import {
     LAYOUT_CONFIG,
     OUTCOME_COLUMNS,
     OUTCOME_INDEX,
+    summaryConfig,
     STAGE_LABELS,
     TREE_COLUMNS,
     type BuildEdge,
@@ -27,17 +28,6 @@ import {
     type BuildNode,
     type HostView,
 } from './model';
-
-function summaryConfig() {
-    return {
-        nodeSizeFn: (node: BuildNode) => node.size,
-        cellSize: [200, 64] as const,
-        rowKeyFn: (node: BuildNode) => node.stage,
-        rowOrderFn: (nodes: readonly BuildNode[]) => [...nodes],
-        columnKeyFn: (node: BuildNode) => OUTCOME_INDEX[node.outcome],
-        levelFilter: (node: BuildNode) => node.kind !== 'stage',
-    };
-}
 
 /** The changed files of the last finished stage, as a host would report them. */
 function stageDiffs(): readonly CodeDiff[] {

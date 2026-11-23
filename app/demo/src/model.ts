@@ -119,6 +119,18 @@ export const OUTCOME_COLUMNS: Readonly<Record<number, string>> = {
     3: 'retried',
 };
 
+export const summaryConfig = <Extra extends Record<string, unknown> = Record<string, never>>(
+    extra?: Extra,
+) => ({
+    nodeSizeFn: (node: BuildNode) => node.size,
+    cellSize: [200, 64] as const,
+    rowKeyFn: (node: BuildNode) => node.stage,
+    rowOrderFn: (nodes: readonly BuildNode[]) => [...nodes],
+    columnKeyFn: (node: BuildNode) => OUTCOME_INDEX[node.outcome],
+    levelFilter: (node: BuildNode) => node.kind !== 'stage',
+    ...extra,
+});
+
 const CARD: readonly [number, number] = [200, 64];
 const BADGE: readonly [number, number] = [200, 44];
 

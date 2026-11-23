@@ -54,6 +54,7 @@ import {
     OUTCOME_COLUMNS,
     OUTCOME_INDEX,
     searchableFields,
+    summaryConfig,
     type BuildAdapter,
     type BuildLevel,
     type BuildModel,
@@ -236,18 +237,6 @@ export interface Capability {
 const SEARCH_QUERY = 'vitest';
 const SCOPE_ROOT = 'stage:verify';
 
-function summaryConfig() {
-    return {
-        nodeSizeFn: (node: BuildNode) => node.size,
-        cellSize: [200, 64] as const,
-        rowKeyFn: (node: BuildNode) => node.stage,
-        rowOrderFn: (nodes: readonly BuildNode[]) => [...nodes],
-        columnKeyFn: (node: BuildNode) => OUTCOME_INDEX[node.outcome],
-        levelFilter: (node: BuildNode) => node.kind !== 'stage',
-        categoryMap: OUTCOME_COLUMNS,
-    };
-}
-
 /** The size of a layout's content, in the units the renderer draws. */
 function extent(layout: GraphLayout): string {
     const width = layout.bounds.max.x - layout.bounds.min.x;
@@ -380,7 +369,7 @@ export const CAPABILITIES: readonly Capability[] = [
         summary: 'A ribbon of the stages and a matrix of the outcomes.',
         view: 'ribbon',
         run: (context) => {
-            const config = summaryConfig();
+            const config = summaryConfig({ categoryMap: OUTCOME_COLUMNS });
             const model = { nodes: context.model.nodes, rows: context.model.turns };
             const rows = Representations.summaryRows(model, config);
             const ribbon = Representations.ribbonLayout(model, config);

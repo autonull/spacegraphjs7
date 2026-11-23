@@ -3,7 +3,7 @@
 
 import type { AdapterEdge, AdapterNode } from '@spacegraphjs/adapter';
 import { AgentEventMapper, agentDomain } from '@spacegraphjs/agent';
-import { Kernel, type Edge as KernelEdge, type Node as KernelNode } from '@spacegraphjs/kernel';
+import { foldKernelOps } from '@spacegraphjs/kernel';
 import {
     fixtureOps as dataOps,
     foldDataOps,
@@ -35,30 +35,6 @@ export interface WorldFixture {
     readonly links: readonly CrossTraceLink[];
     readonly nodesByDomain: Readonly<Record<string, readonly string[]>>;
 }
-
-interface FoldOp {
-    readonly op: string;
-    readonly node?: KernelNode;
-    readonly edge?: KernelEdge;
-    readonly id?: string;
-}
-
-const fold = (ops: readonly FoldOp[]): Kernel => {
-    const nodes = new Map<string, KernelNode>();
-    const edges = new Map<string, KernelEdge>();
-    for (const op of ops) {
-        if (op.op === 'add-node' && op.node) nodes.set(op.node.id, op.node);
-        else if (op.op === 'add-edge' && op.edge) edges.set(op.edge.id, op.edge);
-        else if (op.op === 'remove-node' && op.id) nodes.delete(op.id);
-        else if (op.op === 'remove-edge' && op.id) edges.delete(op.id);
-    }
-    return new Kernel({
-        nodes: [...nodes.values()],
-        edges: [...edges.values()],
-        hyperedges: [],
-        version: ops.length,
-    });
-};
 
 const agentEvents = [
     { type: 'run-start', runId: 'r', at: 1 },
@@ -123,9 +99,9 @@ const describe = (id: string, view: WorldFixtureDomain['view']): WorldHostDomain
 export const buildWorldFixture = (): WorldFixture => {
     const agentMapper = new AgentEventMapper('agent');
     const agentView = agentDomain.build(
-        fold(agentEvents.flatMap((event) => agentMapper.map(event))),
+        foldKernelOps(agentEvents.flatMap((event) => agentMapper.map(event))),
     );
-    const workflowView = workflowDomain.build(fold(workflowOps()));
+    const workflowView = workflowDomain.build(foldKernelOps(workflowOps()));
     const filesystemView = filesystemDomain.build(foldFilesystemOps(filesystemOps()));
     const dataView = dataDomain.build(foldDataOps(dataOps()));
 

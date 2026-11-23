@@ -740,11 +740,7 @@ export class PiHost {
                 mountedPanel = mountPolicyPanel(el('policy-panel'), POLICY_SCHEMA, this.#resolved, {
                     onChange: (id, value) => this.setKnob(id, value),
                     onReset: (ids) => this.resetKnobs(ids),
-                    onCopy: () => {
-                        void navigator.clipboard
-                            ?.writeText(this.permalink())
-                            .catch(() => undefined);
-                    },
+                    onCopy: () => this.copyText(this.permalink()),
                 });
                 return {
                     element: mountedPanel.element,
@@ -1817,6 +1813,15 @@ export class PiHost {
         return encodePermalink(state);
     }
 
+    private copyText(text: string): void {
+        void navigator.clipboard?.writeText(text).catch(() => undefined);
+    }
+
+    private shareView(): void {
+        location.hash = this.permalink().slice(1);
+        this.copyText(location.href);
+    }
+
     applyPermalink(hash: string): boolean {
         const state = decodePermalink(hash);
         if (!state) return false;
@@ -2113,10 +2118,7 @@ export class PiHost {
                 id: 'ui.share',
                 label: 'Share exact view',
                 group: 'interface',
-                run: () => {
-                    location.hash = this.permalink().slice(1);
-                    void navigator.clipboard?.writeText(location.href).catch(() => undefined);
-                },
+                run: () => this.shareView(),
             },
         ];
         const lab: readonly Command[] = [
@@ -2961,10 +2963,7 @@ export class PiHost {
                 ?.getAttribute('data-minimap-node');
             if (id) this.reveal(id);
         });
-        el('permalink-copy').addEventListener('click', () => {
-            location.hash = this.permalink().slice(1);
-            void navigator.clipboard?.writeText(location.href).catch(() => undefined);
-        });
+        el('permalink-copy').addEventListener('click', () => this.shareView());
         const canvas = el('canvas');
         canvas.tabIndex = 0;
         canvas.addEventListener('keydown', (event) => this.onKey(event));
