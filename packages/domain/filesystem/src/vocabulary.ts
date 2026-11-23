@@ -67,16 +67,18 @@ export function buildFileSystemView(kernel: Kernel): FileSystemView {
     const activeChange = [...kernel.nodes]
         .reverse()
         .find((node) => roleOf(node) === 'change' && dataString(node, 'status') === 'active')?.id;
+    const fileByID = new Map(
+        kernel.nodes.flatMap((node) => {
+            const fileID = dataString(node, 'fileId');
+            return roleOf(node) === 'file' && fileID ? [[fileID, node.id] as const] : [];
+        }),
+    );
     const changeByFile = new Map<string, string>();
     for (const node of kernel.nodes) {
         if (roleOf(node) !== 'change') continue;
         const fileID = dataString(node, 'fileId');
         if (!fileID || changeByFile.has(fileID)) continue;
-        const fileNode = kernel.nodes.find(
-            (candidate) =>
-                roleOf(candidate) === 'file' && dataString(candidate, 'fileId') === fileID,
-        );
-        changeByFile.set(fileNode?.id ?? fileID, node.id);
+        changeByFile.set(fileByID.get(fileID) ?? fileID, node.id);
     }
 
     return {

@@ -30,21 +30,22 @@ export type WorkflowRetry = {
 };
 
 export const retryChains = (view: WorkflowView): readonly WorkflowRetry[] => {
+    const targetBySource = new Map<string, string>();
+    for (const edge of view.edges) {
+        if (edge.kind === 'retries' && !targetBySource.has(edge.source)) {
+            targetBySource.set(edge.source, edge.target);
+        }
+    }
     return view.nodes
         .filter((node) => roleOf(node) === 'retry')
-        .map((node) => {
-            const target = view.edges.find(
-                (edge) => edge.kind === 'retries' && edge.source === node.id,
-            );
-            return {
-                id: node.id,
-                label: node.label,
-                reason: dataString(node, 'reason'),
-                stepID: dataString(node, 'stepId'),
-                runID: dataString(node, 'runId'),
-                targetID: target?.target,
-            };
-        });
+        .map((node) => ({
+            id: node.id,
+            label: node.label,
+            reason: dataString(node, 'reason'),
+            stepID: dataString(node, 'stepId'),
+            runID: dataString(node, 'runId'),
+            targetID: targetBySource.get(node.id),
+        }));
 };
 
 /** Steps that must precede a step through explicit ordering edges. */
@@ -73,12 +74,16 @@ export const subworkflowContributions = (
     subworkflowID: string,
 ): readonly string[] => {
     const nodes = new Map(view.nodes.map((node) => [node.id, node]));
+    const parentByChild = new Map<string, string>();
+    for (const edge of view.edges) {
+        if (edge.kind === 'contains' && !parentByChild.has(edge.target)) {
+            parentByChild.set(edge.target, edge.source);
+        }
+    }
     const owningStep = (writerID: string): string | undefined => {
         let current = writerID;
         while (true) {
-            const parent = view.edges.find(
-                (edge) => edge.kind === 'contains' && edge.target === current,
-            )?.source;
+            const parent = parentByChild.get(current);
             if (!parent) return undefined;
             if (roleOf(nodes.get(parent) ?? { kind: '' }) === 'step') return parent;
             current = parent;
