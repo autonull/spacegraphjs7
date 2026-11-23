@@ -176,7 +176,10 @@ import {
     type StateFrame,
 } from './shell';
 import { SHORTCUT_HELP } from './help';
+import { ChromeController } from './chrome';
+import { button, el } from './dom';
 import { configureVision, VisionController } from './vision-controller';
+import { TranscriptView } from './transcript';
 
 export type Arrangement = 'stacked' | 'side' | 'floating';
 export type Surface = 'log' | 'map' | 'hybrid';
@@ -203,24 +206,7 @@ const STATUS_GLYPH: Readonly<Record<string, string>> = {
 };
 const stateGlyph = (status: string): string => STATUS_GLYPH[status] ?? '·';
 
-export const el = <T extends HTMLElement>(id: string): T => requireElement<T>(id, 'pi app');
-
-type ButtonOptions = { className?: string; title?: string; dataset?: Record<string, string> };
-
-function button(
-    label: string,
-    onClick: () => void,
-    options: ButtonOptions = {},
-): HTMLButtonElement {
-    const element = document.createElement('button');
-    element.type = 'button';
-    element.textContent = label;
-    if (options.className) element.className = options.className;
-    if (options.title) element.title = options.title;
-    for (const [key, value] of Object.entries(options.dataset ?? {})) element.dataset[key] = value;
-    element.addEventListener('click', onClick);
-    return element;
-}
+export { el } from './dom';
 
 function downloadBlob(blob: Blob, filename: string): void {
     const url = URL.createObjectURL(blob);
@@ -314,7 +300,8 @@ export class PiHost {
     #transcriptCollapsed = false;
     #transcriptWidth = 320;
     #transcriptHeight = 200;
-    #expandedMessages = new Set<string>();
+    readonly chrome: ChromeController;
+    readonly transcript: TranscriptView;
     #initialFitDone = false;
     #initialFitTimer?: ReturnType<typeof setTimeout>;
     #policyPanel?: ReturnType<typeof mountPolicyPanel>;
@@ -442,6 +429,18 @@ export class PiHost {
             setPolicy: (input) => this.simulation.setPolicy(input),
             syncClock: () => this.syncClock(),
             paint: () => this.paint(),
+        });
+        this.transcript = new TranscriptView({
+            view: () => this.#view,
+            revealed: () => this.#revealed,
+            reveal: (id) => this.reveal(id),
+            record: (kind, meta) => this.recordEvent(kind, meta),
+            align: () => this.alignTranscript(),
+        });
+        this.chrome = new ChromeController({
+            surface: () => this.#surface,
+            resize: () => this.renderer.resize(),
+            record: (kind, meta) => this.recordEvent(kind, meta),
         });
     }
 
@@ -3023,73 +3022,31 @@ export class PiHost {
     }
 
     toggleCatalog(open?: boolean): boolean {
-        const next = open ?? document.body.dataset.catalog !== 'open';
-        document.body.dataset.catalog = next ? 'open' : 'closed';
-        const panel = document.getElementById('catalog-panel');
-        if (panel instanceof HTMLDetailsElement) panel.open = next;
-        this.renderer.resize();
-        this.recordEvent('catalog:toggle', { open: next });
-        return next;
+        return this.chrome.toggleCatalog(open);
     }
 
     toggleRail(open?: boolean): boolean {
-        const next = open ?? document.body.dataset.rail !== 'closed';
-        document.body.dataset.rail = next ? 'open' : 'closed';
-        this.renderer.resize();
-        this.recordEvent('rail:toggle', { open: next });
-        return next;
+        return this.chrome.toggleRail(open);
     }
 
-    /** The one navigation drawer stays closed at boot; every secondary index reopens through it. */
     primaryIndex(): 'transcript' | 'graph' {
-        return this.#surface === 'map' ? 'graph' : 'transcript';
+        return this.chrome.primaryIndex();
     }
 
     openNavigate(): boolean {
-        this.toggleRail(true);
-        const drawer = el<HTMLDetailsElement>('rail-navigate');
-        drawer.open = true;
-        drawer.querySelector<HTMLElement>('summary')?.focus();
-        this.recordEvent('navigate:open', { index: 'drawer' });
-        return true;
+        return this.chrome.openNavigate();
     }
 
     openIndex(id: string): boolean {
-        this.openNavigate();
-        const target = el(id);
-        target.scrollIntoView({ block: 'nearest' });
-        target.querySelector<HTMLElement>('button, [tabindex]')?.focus();
-        this.recordEvent('navigate:open', { index: id });
-        return true;
+        return this.chrome.openIndex(id);
     }
 
-    /** One panel at a time in the readable rail; the strip keeps all four one click away. */
     openRailPanel(id: string): boolean {
-        this.toggleRail(true);
-        for (const group of document.querySelectorAll<HTMLDetailsElement>('#rail > details')) group.open = false;
-        const target = document.getElementById(id);
-        if (!(target instanceof HTMLDetailsElement)) return false;
-        target.open = true;
-        target.scrollIntoView({ block: 'nearest' });
-        target.querySelector<HTMLElement>('summary')?.focus();
-        for (const button of document.querySelectorAll<HTMLButtonElement>('#rail-strip button'))
-            button.setAttribute('aria-pressed', String(button.dataset.railPanel === id));
-        this.recordEvent('rail:open', { panel: id });
-        return true;
+        return this.chrome.openRailPanel(id);
     }
 
-    /** The gallery and Reference entry points share one canonical question list in the catalog. */
     openQuestions(): boolean {
-        this.toggleCatalog(true);
-        const panel = el<HTMLDetailsElement>('catalog-panel');
-        panel.open = true;
-        const group = document.querySelector<HTMLElement>('#catalog [data-group="questions"]');
-        if (!group) return false;
-        for (const card of group.querySelectorAll<HTMLDetailsElement>('.catalog-card')) card.open = true;
-        group.querySelector<HTMLAnchorElement>('[data-question]')?.focus();
-        group.scrollIntoView({ block: 'nearest' });
-        this.recordEvent('catalog:questions', {});
-        return true;
+        return this.chrome.openQuestions();
     }
 
     toggleTranscript(): void {
@@ -3200,98 +3157,11 @@ export class PiHost {
     }
 
     private renderTranscript(): void {
-        const messages = this.#view.nodes.filter((node) =>
-            ['message', 'tool', 'read-tool', 'artifact', 'file', 'approval', 'error'].includes(
-                node.kind,
-            ),
-        );
-        const byID = new Map(this.#view.nodes.map((node) => [node.id, node]));
-        const rows = messages.map((node) => {
-            const expanded = this.#expandedMessages.has(node.id);
-            const row = document.createElement('div');
-            row.className = 'spine-row';
-            row.dataset.expanded = String(expanded);
-            row.dataset.kind = node.kind;
-            const fullLabel = String(node.data?.fullLabel ?? node.label);
-            const text = String(node.data?.text ?? node.summary ?? '');
-            const head = document.createElement('div');
-            head.className = 'spine-head';
-            head.append(
-                button(
-                    `${fullLabel}: ${text}`,
-                    () => this.reveal(node.id),
-                    {
-                        className: 'transcript-row',
-                        dataset: { node: node.id, revealed: String(node.id === this.#revealed) },
-                    },
-                ),
-                button(expanded ? '▾' : '▸', () => this.toggleMessage(node.id), {
-                    className: 'spine-expand',
-                    title: expanded ? 'Collapse detail' : 'Expand detail',
-                }),
-            );
-            const links = this.#view.edges
-                .filter((edge) => edge.source === node.id || edge.target === node.id)
-                .slice(0, 3)
-                .map((edge) => {
-                    const outgoing = edge.source === node.id;
-                    const neighbor = outgoing ? edge.target : edge.source;
-                    const relation = String(edge.data?.relation ?? edge.kind);
-                    return `${outgoing ? '→' : '←'} ${relation} ${byID.get(neighbor)?.label ?? neighbor}`;
-                });
-            const detail = document.createElement('div');
-            detail.className = 'transcript-detail';
-            detail.textContent = [`${node.kind} · ${node.status}`, ...links].join(' · ');
-            row.append(head, detail);
-            return row;
-        });
-        el('transcript-list').replaceChildren(...rows);
-        this.renderTranscriptOverview(messages.map((node) => node.id));
-        this.alignTranscript();
-    }
-
-    private toggleMessage(id: string): void {
-        if (this.#expandedMessages.has(id)) this.#expandedMessages.delete(id);
-        else this.#expandedMessages.add(id);
-        this.recordEvent('transcript:expand', {
-            node: id,
-            expanded: this.#expandedMessages.has(id),
-        });
-        this.renderTranscript();
-    }
-
-    private renderTranscriptOverview(ids: readonly string[]): void {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 16 200');
-        svg.setAttribute('preserveAspectRatio', 'none');
-        svg.setAttribute('aria-hidden', 'true');
-        const view = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        view.setAttribute('x', '2');
-        view.setAttribute('width', '12');
-        view.setAttribute('data-transcript-view', '');
-        svg.append(view);
-        for (const [index, id] of ids.entries()) {
-            const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            dot.setAttribute('cx', '8');
-            dot.setAttribute('cy', String(((index + 0.5) / Math.max(ids.length, 1)) * 200));
-            dot.setAttribute('r', '2.4');
-            dot.setAttribute('data-transcript-node', id);
-            svg.append(dot);
-        }
-        el('transcript-overview').replaceChildren(svg);
-        this.updateTranscriptOverview();
+        this.transcript.render();
     }
 
     private updateTranscriptOverview(): void {
-        const pane = el('transcript');
-        const view =
-            el('transcript-overview').querySelector<SVGRectElement>('[data-transcript-view]');
-        if (!view) return;
-        const fraction = pane.clientHeight / Math.max(pane.scrollHeight, 1);
-        const height = Math.max(12, 200 * fraction);
-        const max = Math.max(pane.scrollHeight - pane.clientHeight, 1);
-        view.setAttribute('height', String(height));
-        view.setAttribute('y', String((pane.scrollTop / max) * (200 - height)));
+        this.transcript.updateOverview();
     }
 
     private renderOverview(): void {
