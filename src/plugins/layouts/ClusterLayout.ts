@@ -16,7 +16,6 @@ export interface ClusterLayoutOptions extends LayoutOptions {
 export class ClusterLayout extends BaseLayout<ClusterLayoutOptions> {
     readonly id = 'cluster-layout';
     readonly name = 'Cluster Layout';
-    readonly version = '1.0.0';
 
     protected place(nodes: Node[], config: ClusterLayoutOptions): void {
         const clusters = new Map<string, Node[]>();

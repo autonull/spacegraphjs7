@@ -11,7 +11,6 @@ const logger = createLogger('AutoColorPlugin');
 export class AutoColorPlugin extends BaseSystemPlugin {
     readonly id = 'auto-color';
     readonly name = 'Auto Color';
-    readonly version = '1.0.0';
 
     init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
         super.init(sg, graph, events);

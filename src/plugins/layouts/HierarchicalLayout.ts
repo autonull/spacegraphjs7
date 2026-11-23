@@ -31,7 +31,6 @@ export interface HierarchicalLayoutOptions extends LayoutOptions {
 export class HierarchicalLayout extends BaseLayout<HierarchicalLayoutOptions> {
     readonly id = 'hierarchical-layout';
     readonly name = 'Hierarchical Layout';
-    readonly version = '1.0.0';
 
     /** The hierarchy reads the whole graph; it leaves the pinned nodes where they are. */
     protected override readonly ownsEveryNode = true;

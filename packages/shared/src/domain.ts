@@ -27,6 +27,51 @@ export const facetRoleOf = (
     node: { readonly data?: Readonly<Record<string, unknown>> },
 ): string | undefined => dataString(node, 'role') ?? dataString(node, 'kind');
 
+/** The vocabulary-specific parts of a domain's facet and trace contract. */
+export type DomainFacetSpec = {
+    readonly rootKind: string;
+    readonly failedToolKind: string;
+    readonly fileWriteKind: string;
+    readonly fileWriteDataKey: string;
+    readonly subagentRole: string;
+    readonly subagentKind?: string;
+    readonly edgeKinds: {
+        readonly provenance: readonly string[];
+        readonly read: readonly string[];
+        readonly downstream: readonly string[];
+    };
+};
+
+type FacetNode = {
+    readonly kind: string;
+    readonly status?: string;
+    readonly data?: Readonly<Record<string, unknown>>;
+};
+
+/** Builds the generic accessors and vocabulary sets a domain plugs into search and trace. */
+export const createDomainFacets = (spec: DomainFacetSpec) => ({
+    accessors: {
+        kind: (node: FacetNode): string => node.kind,
+        status: (node: FacetNode): string => node.status ?? '',
+        rootId: (model: { readonly nodes: readonly { readonly id: string; readonly kind: string }[] }): string =>
+            model.nodes.find((node) => node.kind === spec.rootKind)?.id ?? model.nodes[0]?.id ?? '',
+        isFailedTool: (node: FacetNode): boolean =>
+            node.kind === spec.failedToolKind && node.status === 'failed',
+        isFileWrite: (node: FacetNode): boolean =>
+            node.kind === spec.fileWriteKind && typeof node.data?.[spec.fileWriteDataKey] === 'string',
+        isSubagentCall: (node: FacetNode): boolean =>
+            (spec.subagentKind === undefined || node.kind === spec.subagentKind) &&
+            facetRoleOf(node) === spec.subagentRole,
+        isError: (node: FacetNode): boolean => node.status === 'failed' || node.kind === 'failure',
+        isRetry: (node: FacetNode): boolean => node.kind === 'retry',
+    },
+    vocabulary: {
+        provenanceEdgeKinds: new Set(spec.edgeKinds.provenance),
+        readEdgeKinds: new Set(spec.edgeKinds.read),
+        downstreamEdgeKinds: new Set(spec.edgeKinds.downstream),
+    },
+});
+
 export type ViewNodeSource = {
     readonly id: string;
     readonly kind: string;

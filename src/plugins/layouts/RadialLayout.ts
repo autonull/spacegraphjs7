@@ -16,7 +16,6 @@ export interface RadialLayoutOptions extends LayoutOptions {
 export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
     readonly id = 'radial-layout';
     readonly name = 'Radial Layout';
-    readonly version = '1.0.0';
 
     /** The radial tree owns every node: it places the pinned ones too. */
     protected override readonly ownsEveryNode = true;

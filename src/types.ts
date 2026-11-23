@@ -1,14 +1,2 @@
-// Re-export all types from the types folder
+// Re-export all types from the types folder (including the renderer contract)
 export * from './types/index';
-
-// Re-export renderer types for convenience
-export type {
-    CardFacing,
-    DepthMode,
-    FitInsets,
-    FitOptions,
-    RenderEdge,
-    RenderModel,
-    RenderNode,
-    RenderTheme,
-} from '@spacegraphjs/renderer';

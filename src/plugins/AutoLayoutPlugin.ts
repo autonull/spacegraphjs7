@@ -18,7 +18,6 @@ interface VisionIssue {
 export class AutoLayoutPlugin extends BaseSystemPlugin {
     readonly id = 'auto-layout';
     readonly name = 'Auto Layout';
-    readonly version = '1.0.0';
 
     init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
         super.init(sg, graph, events);

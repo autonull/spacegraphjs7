@@ -36,6 +36,8 @@ interface PositionTween {
     onComplete?: () => void;
 }
 
+type BooleanDataFlag = 'fixed' | 'pinned' | 'selectable' | 'draggable';
+
 export abstract class Node extends Surface {
     /** Whether a move may be tweened; hosts that drive their own frame loop turn this off. */
     private static get canAnimate(): boolean {
@@ -267,6 +269,25 @@ export abstract class Node extends Surface {
         this.sg?.events.emit('node:dataChanged', { node: this, property, value, ...extra });
     }
 
+    private applySpecVector(target: THREE.Vector3, incoming: [number, number, number] | undefined): boolean {
+        if (incoming === undefined) return false;
+        target.fromArray(incoming);
+        return true;
+    }
+
+    private commitSpecChanges(changes: Partial<NodeSpec>): void {
+        if (
+            !changes.label &&
+            !changes.data &&
+            !changes.position &&
+            !changes.rotation &&
+            !changes.scale
+        )
+            return;
+        this.emit('node:updated', { node: this, changes, timestamp: Date.now() });
+        this.requestFrame();
+    }
+
     updateSpec(updates: Partial<NodeSpec>): this {
         const changes: Partial<NodeSpec> = {};
 
@@ -283,32 +304,11 @@ export abstract class Node extends Surface {
             }
         }
 
-        if (updates.position !== undefined) {
-            this.position.fromArray(updates.position);
-            changes.position = updates.position;
-        }
+        if (this.applySpecVector(this.position, updates.position)) changes.position = updates.position;
+        if (this.applySpecVector(this.rotation, updates.rotation)) changes.rotation = updates.rotation;
+        if (this.applySpecVector(this.scale, updates.scale)) changes.scale = updates.scale;
 
-        if (updates.rotation !== undefined) {
-            this.rotation.fromArray(updates.rotation);
-            changes.rotation = updates.rotation;
-        }
-
-        if (updates.scale !== undefined) {
-            this.scale.fromArray(updates.scale);
-            changes.scale = updates.scale;
-        }
-
-        if (
-            changes.label ||
-            changes.data ||
-            changes.position ||
-            changes.rotation ||
-            changes.scale
-        ) {
-            this.emit('node:updated', { node: this, changes, timestamp: Date.now() });
-            this.requestFrame();
-        }
-
+        this.commitSpecChanges(changes);
         return this;
     }
 
@@ -331,20 +331,24 @@ export abstract class Node extends Surface {
         return this;
     }
 
+    /** Writes the Surface flag, optionally mirroring it onto the Object3D. */
+    private setVisibleFlag(visible: boolean, withObject = false): this {
+        this.visible = visible;
+        if (withObject) (this.object as { visible: boolean }).visible = visible;
+        return this;
+    }
+
     // Ergonomic visibility controls
     show(): this {
-        this.visible = true;
-        return this;
+        return this.setVisibleFlag(true);
     }
 
     hide(): this {
-        this.visible = false;
-        return this;
+        return this.setVisibleFlag(false);
     }
 
     toggleVisible(): this {
-        this.visible = !this.visible;
-        return this;
+        return this.setVisibleFlag(!this.visible);
     }
 
     // Ergonomic style shortcuts
@@ -379,10 +383,22 @@ export abstract class Node extends Surface {
         );
     }
 
-    moveTo(target: THREE.Vector3, animate = true, duration = 0.5): this {
+    /** Shared move path: snap when animation is off or unavailable, otherwise tween. */
+    private movePosition(target: THREE.Vector3, animate: boolean, duration: number, delay?: number): this {
         if (!animate || !Node.canAnimate) return this.snapTo(target);
-        this.tweenPosition({ x: target.x, y: target.y, z: target.z, duration, ease: 'power2.out' });
+        this.tweenPosition({
+            x: target.x,
+            y: target.y,
+            z: target.z,
+            duration,
+            ease: 'power2.out',
+            ...(delay === undefined ? {} : { delay }),
+        });
         return this;
+    }
+
+    moveTo(target: THREE.Vector3, animate = true, duration = 0.5): this {
+        return this.movePosition(target, animate, duration);
     }
 
     centerAt(x: number, y: number, z = 0): this {
@@ -580,20 +596,15 @@ export abstract class Node extends Surface {
     }
 
     toggle(): this {
-        this.visible = !this.visible;
-        return this;
+        return this.setVisibleFlag(!this.visible);
     }
 
     enable(): this {
-        this.visible = true;
-        (this.object as { visible: boolean }).visible = true;
-        return this;
+        return this.setVisibleFlag(true, true);
     }
 
     disable(): this {
-        this.visible = false;
-        (this.object as { visible: boolean }).visible = false;
-        return this;
+        return this.setVisibleFlag(false, true);
     }
 
     setSize(width: number, height: number, depth = 1): this {
@@ -650,40 +661,47 @@ export abstract class Node extends Surface {
         return target.copy(this.position);
     }
 
-    setFixed(fixed = true): this {
-        this.data.fixed = fixed;
+    private setDataFlag(flag: BooleanDataFlag, value: boolean): this {
+        this.data[flag] = value;
         return this;
+    }
+
+    /** Opt-in flags read `=== true`; opt-out flags read `!== false`. */
+    private readDataFlag(flag: BooleanDataFlag, absentIsTrue: boolean): boolean {
+        const value = this.data[flag];
+        return absentIsTrue ? value !== false : value === true;
+    }
+
+    setFixed(fixed = true): this {
+        return this.setDataFlag('fixed', fixed);
     }
 
     isFixed(): boolean {
-        return this.data.fixed === true;
+        return this.readDataFlag('fixed', false);
     }
 
     setPinned(pinned = true): this {
-        this.data.pinned = pinned;
-        return this;
+        return this.setDataFlag('pinned', pinned);
     }
 
     isPinned(): boolean {
-        return this.data.pinned === true;
+        return this.readDataFlag('pinned', false);
     }
 
     setSelectable(selectable = true): this {
-        this.data.selectable = selectable;
-        return this;
+        return this.setDataFlag('selectable', selectable);
     }
 
     isSelectable(): boolean {
-        return this.data.selectable !== false;
+        return this.readDataFlag('selectable', true);
     }
 
     setDraggable(draggable = true): this {
-        this.data.draggable = draggable;
-        return this;
+        return this.setDataFlag('draggable', draggable);
     }
 
     isDraggableFlag(): boolean {
-        return this.data.draggable !== false;
+        return this.readDataFlag('draggable', true);
     }
 
     /** Normalize tags from array or comma-separated string to a clean array. */
@@ -752,16 +770,7 @@ export abstract class Node extends Surface {
             delay = 0,
         }: { animate?: boolean; duration?: number; delay?: number } = {},
     ): this {
-        if (!animate || !Node.canAnimate) return this.snapTo(target);
-        this.tweenPosition({
-            x: target.x,
-            y: target.y,
-            z: target.z,
-            duration,
-            ease: 'power2.out',
-            delay,
-        });
-        return this;
+        return this.movePosition(target, animate, duration, delay);
     }
 
     toJSON(): NodeSpec {

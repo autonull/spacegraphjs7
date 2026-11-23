@@ -27,7 +27,6 @@ import { BaseSystemPlugin } from './BaseSystemPlugin';
 export class MinimapPlugin extends BaseSystemPlugin {
     readonly id = 'minimap';
     readonly name = 'Minimap';
-    readonly version = '1.0.0';
     public settings = {
         position: 'bottom-right' as 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left',
         size: 160,

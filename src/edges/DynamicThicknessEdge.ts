@@ -1,13 +1,8 @@
-import { MathPool, withPooledVectors } from '../core';
 import * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
-import { dataColor } from '../utils/color';
-import { ribbonWidth } from '../utils/ribbon';
-import { ThreeDisposer } from '../utils';
-import { directionBetween, midpoint } from '../utils/vector';
-import { Edge } from './Edge';
+import { MeshEdge } from './MeshEdge';
 
 /**
  * DynamicThicknessEdge — A tube-based edge whose visual thickness reflects a
@@ -21,10 +16,10 @@ import { Edge } from './Edge';
  *   color     : hex color (default 0x3b82f6)
  *   segments  : tube radial segments (default 6)
  */
-export class DynamicThicknessEdge extends Edge {
+export class DynamicThicknessEdge extends MeshEdge {
     static readonly typeName: string = 'DynamicThicknessEdge';
+    readonly mesh!: THREE.Mesh;
     readonly cylinder!: THREE.Mesh;
-    readonly _initialized: boolean = false;
 
     constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
@@ -39,37 +34,14 @@ export class DynamicThicknessEdge extends Edge {
             color: (spec.data?.color as number) ?? 0x3b82f6,
         });
 
-        this.cylinder = new THREE.Mesh(geometry, material);
-        this.cylinder.userData = { edgeId: this.id, type: 'edge-cylinder' };
-        this.sg?.renderer.scene.add(this.cylinder);
-        this._initialized = true;
+        this.mesh = this.cylinder = new THREE.Mesh(geometry, material);
+        this.mesh.userData = { edgeId: this.id, type: 'edge-cylinder' };
+        this.sg?.renderer.scene.add(this.mesh);
+        this.initialized = true;
     }
 
-    update(): void {
-        if (!this._initialized) return;
-        super.update();
-        const pool = MathPool.getInstance();
-        const { source, target, data } = this;
-        const radius = ribbonWidth(data);
-
-        withPooledVectors(pool, 2, (dir, midPoint) => {
-            const length = directionBetween(source.position, target.position, dir).length();
-            midpoint(source.position, target.position, midPoint);
-            this.cylinder.position.copy(midPoint);
-            this.cylinder.lookAt(target.position);
-            this.cylinder.scale.set(radius, radius, length);
-        });
-    }
-
-    updateSpec(updates: Partial<EdgeSpec>): this {
-        super.updateSpec(updates);
-        const color = dataColor(updates.data?.color);
-        if (color) (this.cylinder.material as THREE.MeshBasicMaterial).color.set(color);
-        return this;
-    }
-
-    dispose(): void {
-        ThreeDisposer.disposeAndDetach(this.cylinder);
-        super.dispose();
+    protected place(_direction: THREE.Vector3, target: THREE.Vector3, width: number, length: number): void {
+        this.cylinder.lookAt(target);
+        this.cylinder.scale.set(width, width, length);
     }
 }

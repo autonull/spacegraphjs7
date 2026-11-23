@@ -31,7 +31,6 @@ const DEFAULT_ACTIONS: HoverAction[] = [
 export class HoverMetaWidget extends BaseSystemPlugin {
     readonly id = 'hover-meta-widget';
     readonly name = 'Hover Meta Widget';
-    readonly version = '1.0.0';
 
     opts: Required<HoverMetaWidgetOptions>;
     overlay: HTMLElement;

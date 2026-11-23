@@ -49,7 +49,6 @@ const DEFAULT_CONFIG: FractalZoomConfig = {
 export class FractalZoomPlugin extends BaseSystemPlugin {
     readonly id = 'fractal-zoom';
     readonly name = 'Fractal Zoom';
-    readonly version = '1.0.0';
 
     private config: FractalZoomConfig;
     private currentLevel = 0;

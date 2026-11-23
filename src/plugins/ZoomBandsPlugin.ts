@@ -18,7 +18,6 @@ const DEFAULT_BANDS: ZoomBand[] = [
 export class ZoomBandsPlugin extends BaseSystemPlugin {
     readonly id = 'zoom-bands';
     readonly name = 'Zoom Bands';
-    readonly version = '1.0.0';
 
     readonly bands: ZoomBands;
 

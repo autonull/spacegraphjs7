@@ -4,17 +4,8 @@ import type { Vector3, Raycaster } from 'three';
 import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
-import type {
-    CardFacing,
-    DepthMode,
-    FitInsets,
-    FitOptions,
-    RenderEdge,
-    RenderModel,
-    RenderNode,
-    RenderTheme,
-} from '@spacegraphjs/renderer';
 
+export type { Edge, Node, SpaceGraph };
 export type {
     CardFacing,
     DepthMode,
@@ -24,8 +15,7 @@ export type {
     RenderModel,
     RenderNode,
     RenderTheme,
-};
-export type { Edge, Node, SpaceGraph };
+} from '@spacegraphjs/renderer';
 
 // Orthographic is the legibility baseline for 2D hosts; perspective stays the 3D experiment.
 export type Projection = 'perspective' | 'orthographic';

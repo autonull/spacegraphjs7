@@ -13,7 +13,6 @@ export interface HistoryPluginOptions {
 export class HistoryPlugin extends BaseSystemPlugin {
     readonly id = 'history';
     readonly name = 'History Stack';
-    readonly version = '1.0.0';
 
     private pastStack: GraphSpec[] = [];
     private futureStack: GraphSpec[] = [];

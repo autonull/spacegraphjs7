@@ -11,15 +11,3 @@ export * from './plugin';
 export * from './factory';
 export * from './layout';
 export * from './logger';
-
-// Re-export renderer types for convenience
-export type {
-    CardFacing,
-    DepthMode,
-    FitInsets,
-    FitOptions,
-    RenderEdge,
-    RenderModel,
-    RenderNode,
-    RenderTheme,
-} from '@spacegraphjs/renderer';

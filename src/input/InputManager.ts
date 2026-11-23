@@ -288,6 +288,21 @@ export class InputManager {
 
     private routeFingeringEvent(event: InputEvent): void {
         const data = event.data as PointerEventData;
+        const finger = this.fingerFrom(event, data);
+        switch (event.type) {
+            case 'pointerdown':
+                this.startFingering(finger, event, data);
+                break;
+            case 'pointermove':
+                this.updateFingering(finger);
+                break;
+            case 'pointerup':
+                this.endFingering(finger, event, data);
+                break;
+        }
+    }
+
+    private fingerFrom(event: InputEvent, data: PointerEventData): Finger {
         const target = data.target;
         const ndc =
             target instanceof Element
@@ -296,80 +311,70 @@ export class InputManager {
                       x: (data.x / window.innerWidth) * 2 - 1,
                       y: -(data.y / window.innerHeight) * 2 + 1,
                   };
-
-        const finger: Finger = {
+        return {
             pointerId: (event.originalEvent as PointerEvent)?.pointerId ?? 0,
             position: { x: data.x, y: data.y },
             ndc,
             buttons: data.buttons ?? 0,
-            state:
-                event.type === 'pointerdown' ? 'down' : event.type === 'pointerup' ? 'up' : 'move',
-            target: data.target,
+            state: event.type === 'pointerdown' ? 'down' : event.type === 'pointerup' ? 'up' : 'move',
+            target,
             worldRay: this.computeWorldRay(ndc),
         };
+    }
 
-        switch (event.type) {
-            case 'pointerdown': {
-                this.fingerManager.setFinger(finger.pointerId, finger);
-                const pointer = event.originalEvent as PointerEvent | undefined;
-                if (pointer?.isTrusted !== false && data.target instanceof Element) {
-                    data.target.setPointerCapture?.(finger.pointerId);
-                }
+    private startFingering(finger: Finger, event: InputEvent, data: PointerEventData): void {
+        this.fingerManager.setFinger(finger.pointerId, finger);
+        const pointer = event.originalEvent as PointerEvent | undefined;
+        if (pointer?.isTrusted !== false && data.target instanceof Element)
+            data.target.setPointerCapture?.(finger.pointerId);
 
-                const fingers = [...this.fingerManager.fingers.values()];
-                if (!this.multiFingering && fingers.length >= 2) {
-                    for (const { fingering } of this.fingerings) {
-                        if (fingering.startMultiTouch?.(fingers[0], fingers[1])) {
-                            this.multiFingering = fingering;
-                            this.fingerManager.end(fingers[0]);
-                            event.consumed = true;
-                            return;
-                        }
-                    }
+        const fingers = [...this.fingerManager.fingers.values()];
+        if (!this.multiFingering && fingers.length >= 2) {
+            for (const { fingering } of this.fingerings) {
+                if (fingering.startMultiTouch?.(fingers[0], fingers[1])) {
+                    this.multiFingering = fingering;
+                    this.fingerManager.end(fingers[0]);
+                    event.consumed = true;
+                    return;
                 }
-
-                for (const { fingering } of this.fingerings) {
-                    if (this.fingerManager.test(fingering, finger)) {
-                        if (fingering.claimsGesture ?? true) event.consumed = true;
-                        return;
-                    }
-                }
-                break;
-            }
-            case 'pointermove': {
-                const existing = this.fingerManager.getFinger(finger.pointerId);
-                if (!existing) break;
-                Object.assign(existing, {
-                    position: finger.position,
-                    ndc: finger.ndc,
-                    buttons: finger.buttons,
-                    worldRay: finger.worldRay,
-                });
-                if (this.multiFingering) {
-                    const fingers = [...this.fingerManager.fingers.values()];
-                    if (fingers.length >= 2)
-                        this.multiFingering.updateMultiTouch?.(fingers[0], fingers[1]);
-                } else {
-                    this.fingerManager.update(existing);
-                }
-                break;
-            }
-            case 'pointerup': {
-                const existing = this.fingerManager.getFinger(finger.pointerId);
-                if (!existing) break;
-                const pointer = event.originalEvent as PointerEvent | undefined;
-                if (pointer?.isTrusted !== false && data.target instanceof Element) {
-                    data.target.releasePointerCapture?.(finger.pointerId);
-                }
-                if (this.multiFingering) {
-                    this.multiFingering.stopMultiTouch?.();
-                    this.multiFingering = null;
-                }
-                this.fingerManager.end(existing);
-                this.fingerManager.deleteFinger(finger.pointerId);
-                break;
             }
         }
+
+        for (const { fingering } of this.fingerings) {
+            if (this.fingerManager.test(fingering, finger)) {
+                if (fingering.claimsGesture ?? true) event.consumed = true;
+                return;
+            }
+        }
+    }
+
+    private updateFingering(finger: Finger): void {
+        const existing = this.fingerManager.getFinger(finger.pointerId);
+        if (!existing) return;
+        Object.assign(existing, {
+            position: finger.position,
+            ndc: finger.ndc,
+            buttons: finger.buttons,
+            worldRay: finger.worldRay,
+        });
+        if (this.multiFingering) {
+            const fingers = [...this.fingerManager.fingers.values()];
+            if (fingers.length >= 2) this.multiFingering.updateMultiTouch?.(fingers[0], fingers[1]);
+        } else this.fingerManager.update(existing);
+    }
+
+    private endFingering(finger: Finger, event: InputEvent, data: PointerEventData): void {
+        const existing = this.fingerManager.getFinger(finger.pointerId);
+        if (!existing) return;
+        const pointer = event.originalEvent as PointerEvent | undefined;
+        if (pointer?.isTrusted !== false && data.target instanceof Element)
+            data.target.releasePointerCapture?.(finger.pointerId);
+        if (this.multiFingering) {
+            this.multiFingering.stopMultiTouch?.();
+            this.multiFingering = null;
+        }
+        this.fingerManager.end(existing);
+        this.fingerManager.deleteFinger(finger.pointerId);
     }
 }
 

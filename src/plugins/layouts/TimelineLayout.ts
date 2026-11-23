@@ -18,7 +18,6 @@ export interface TimelineLayoutOptions extends LayoutOptions {
 export class TimelineLayout extends BaseLayout<TimelineLayoutOptions> {
     readonly id = 'timeline-layout';
     readonly name = 'Timeline Layout';
-    readonly version = '1.0.0';
 
     protected place(nodes: Node[], config: TimelineLayoutOptions): void {
         const timeline = nodes

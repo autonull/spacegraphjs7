@@ -51,7 +51,6 @@ export interface ForceLayoutConfig extends LayoutConfig {
 export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
     readonly id = 'force-layout';
     readonly name = 'Force Directed';
-    readonly version = '1.0.0';
 
     #core: ForceCore;
     #velocities = new Map<string, Vector3>();

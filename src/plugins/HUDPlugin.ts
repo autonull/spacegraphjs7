@@ -19,7 +19,6 @@ export type { AlertOptions, HUDElementOptions };
 export class HUDPlugin extends BaseSystemPlugin {
     readonly id = 'hud';
     readonly name = 'Heads Up Display';
-    readonly version = '1.0.0';
 
     private container: HTMLElement | null = null;
     private statusBar: HUDStatusBar | null = null;

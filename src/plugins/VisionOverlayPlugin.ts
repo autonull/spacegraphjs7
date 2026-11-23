@@ -8,7 +8,6 @@ const logger = createLogger('VisionOverlay');
 export class VisionOverlayPlugin extends DOMOverlayPlugin {
     readonly id = 'vision-overlay';
     readonly name = 'Vision Overlay';
-    readonly version = '1.0.0';
     public settings = {
         enabled: true,
         pollingRate: 3000,

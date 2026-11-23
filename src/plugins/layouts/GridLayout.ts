@@ -17,7 +17,6 @@ export interface GridLayoutOptions extends LayoutOptions {
 export class GridLayout extends BaseLayout<GridLayoutOptions> {
     readonly id = 'grid-layout';
     readonly name = 'Grid Layout';
-    readonly version = '1.0.0';
 
     protected place(nodes: Node[], config: GridLayoutOptions): void {
         const cols = config.columns > 0 ? config.columns : Math.ceil(Math.sqrt(nodes.length));

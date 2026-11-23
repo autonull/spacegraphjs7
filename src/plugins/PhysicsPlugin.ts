@@ -17,7 +17,6 @@ import { BaseSystemPlugin } from './BaseSystemPlugin';
 export class PhysicsPlugin extends BaseSystemPlugin {
     readonly id = 'physics';
     readonly name = 'Physics Plugin';
-    readonly version = '1.0.0';
     public settings = {
         enabled: false,
         gravity: -9.8,

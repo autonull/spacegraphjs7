@@ -14,7 +14,6 @@ export interface GeoLayoutOptions extends LayoutOptions {
 export class GeoLayout extends BaseLayout<GeoLayoutOptions> {
     readonly id = 'geo-layout';
     readonly name = 'Geospatial Layout';
-    readonly version = '1.0.0';
 
     protected place(nodes: Node[], config: GeoLayoutOptions): void {
         const target = new Vector3();

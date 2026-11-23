@@ -50,7 +50,6 @@ const POSITION_STYLES = {
 export class ZoomUIPlugin extends BaseSystemPlugin {
     readonly id = 'zoom-ui';
     readonly name = 'Zoom UI';
-    readonly version = '1.0.0';
 
     private config: ZoomUIConfig;
     private levelIndicator: HTMLElement | null = null;

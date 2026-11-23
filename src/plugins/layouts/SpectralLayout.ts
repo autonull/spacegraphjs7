@@ -24,7 +24,6 @@ export interface SpectralLayoutOptions extends LayoutOptions {
 export class SpectralLayout extends BaseLayout<SpectralLayoutOptions> {
     readonly id = 'spectral-layout';
     readonly name = 'Spectral Layout';
-    readonly version = '1.0.0';
 
     /**
      * Apply spectral layout using power iteration to compute eigenvectors.

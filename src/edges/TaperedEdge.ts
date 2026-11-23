@@ -1,13 +1,8 @@
 import * as THREE from 'three';
-import { MathPool, withPooledVectors } from '../core/pooling/ObjectPool';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
-import { dataColor } from '../utils/color';
-import { ribbonWidth } from '../utils/ribbon';
-import { ThreeDisposer } from '../utils';
-import { directionBetween, midpoint } from '../utils/vector';
-import { Edge } from './Edge';
+import { MeshEdge } from './MeshEdge';
 
 /**
  * TaperedEdge — a flat tapered polygon whose broad end sits at the source and narrows toward the
@@ -22,14 +17,13 @@ import { Edge } from './Edge';
  *   color     : hex color (default 0x3b82f6)
  *   segments  : accepted for ribbon-data compatibility; unused by the flat polygon
  */
-export class TaperedEdge extends Edge {
+export class TaperedEdge extends MeshEdge {
     static readonly typeName: string = 'TaperedEdge';
 
     /** Narrow-end width as a fraction of the broad source end. */
     private static readonly TAPER_RATIO = 0.14;
 
     readonly mesh!: THREE.Mesh;
-    readonly _initialized: boolean = false;
 
     constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
@@ -75,35 +69,12 @@ export class TaperedEdge extends Edge {
         this.mesh = new THREE.Mesh(geometry, material);
         this.mesh.userData = { edgeId: this.id, type: 'edge-taper' };
         this.sg?.renderer.scene.add(this.mesh);
-        this._initialized = true;
+        this.initialized = true;
     }
 
-    update(): void {
-        if (!this._initialized) return;
-        super.update();
-        const pool = MathPool.getInstance();
-        const { source, target, data } = this;
-        const width = ribbonWidth(data);
-
-        withPooledVectors(pool, 2, (dir, midPoint) => {
-            const length = directionBetween(source.position, target.position, dir).length();
-            midpoint(source.position, target.position, midPoint);
-            this.mesh.position.copy(midPoint);
-            // Align local +Y with the source→target direction so the broad end stays at the source.
-            this.mesh.rotation.z = -Math.atan2(dir.x, dir.y);
-            this.mesh.scale.set(width, length, 1);
-        });
-    }
-
-    updateSpec(updates: Partial<EdgeSpec>): this {
-        super.updateSpec(updates);
-        const color = dataColor(updates.data?.color);
-        if (color) (this.mesh.material as THREE.MeshBasicMaterial).color.set(color);
-        return this;
-    }
-
-    dispose(): void {
-        ThreeDisposer.disposeAndDetach(this.mesh);
-        super.dispose();
+    protected place(direction: THREE.Vector3, _target: THREE.Vector3, width: number, length: number): void {
+        // Align local +Y with the source→target direction so the broad end stays at the source.
+        this.mesh.rotation.z = -Math.atan2(direction.x, direction.y);
+        this.mesh.scale.set(width, length, 1);
     }
 }

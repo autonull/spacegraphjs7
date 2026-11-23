@@ -19,7 +19,6 @@ export interface LODPluginOptions {
 export class LODPlugin extends BaseSystemPlugin {
     readonly id = 'lod';
     readonly name = 'Level of Detail';
-    readonly version = '1.0.0';
 
     private readonly maxDistance: number;
     private readonly transitionRange: number;

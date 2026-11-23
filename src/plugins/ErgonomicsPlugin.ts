@@ -90,7 +90,6 @@ export interface ErgonomicsConfig {
 export class ErgonomicsPlugin extends BaseSystemPlugin {
     readonly id = 'ergonomics';
     readonly name = 'Ergonomics';
-    readonly version = '1.0.0';
 
     public config: ErgonomicsConfig = {
         targetNodeSizePx: 40,

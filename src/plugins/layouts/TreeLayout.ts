@@ -15,7 +15,6 @@ export interface TreeLayoutOptions extends LayoutOptions {
 export class TreeLayout extends BaseLayout<TreeLayoutOptions> {
     readonly id = 'tree-layout';
     readonly name = 'Tree Layout';
-    readonly version = '1.0.0';
 
     /** The tree owns every node: it places the pinned ones too. */
     protected override readonly ownsEveryNode = true;

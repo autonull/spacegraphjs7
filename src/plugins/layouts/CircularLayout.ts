@@ -16,7 +16,6 @@ export interface CircularLayoutOptions extends LayoutOptions {
 export class CircularLayout extends BaseLayout<CircularLayoutOptions> {
     readonly id = 'circular-layout';
     readonly name = 'Circular Layout';
-    readonly version = '1.0.0';
 
     protected place(nodes: Node[], config: CircularLayoutOptions): void {
         const padding = config.nodePadding ?? 20;

@@ -28,7 +28,7 @@ export function createLoggerPrefix(name: string): string {
 export abstract class BaseSystemPlugin implements Plugin {
     abstract readonly id: string;
     abstract readonly name: string;
-    abstract readonly version: string;
+    readonly version: string = '1.0.0';
 
     protected sg!: SpaceGraph;
     protected graph!: Graph;

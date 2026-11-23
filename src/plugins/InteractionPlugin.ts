@@ -25,7 +25,6 @@ const CLICK_MOVE_THRESHOLD = 5;
 export class InteractionPlugin extends BaseSystemPlugin {
     readonly id = 'interaction';
     readonly name = 'Interaction Controls';
-    readonly version = '1.0.0';
 
     private raycaster!: InteractionRaycaster;
     private cursorManager!: CursorManager;

@@ -1,21 +1,19 @@
 import type { FacetAccessors } from '@spacegraphjs/search';
+import { createDomainFacets } from '@spacegraphjs/shared/domain';
 import type { TraceVocabulary } from '@spacegraphjs/trace';
-import { facetRoleOf } from '@spacegraphjs/shared/domain';
 
-export const filesystemFacetAccessors: FacetAccessors = {
-    kind: (node) => node.kind,
-    status: (node) => node.status ?? '',
-    rootId: (model) =>
-        model.nodes.find((node) => node.kind === 'commit')?.id ?? model.nodes[0]?.id ?? '',
-    isFailedTool: (node) => node.kind === 'change' && node.status === 'failed',
-    isFileWrite: (node) => node.kind === 'change' && typeof node.data?.path === 'string',
-    isSubagentCall: (node) => facetRoleOf(node) === 'retry',
-    isError: (node) => node.status === 'failed' || node.kind === 'failure',
-    isRetry: (node) => node.kind === 'retry',
-};
+const { accessors, vocabulary } = createDomainFacets({
+    rootKind: 'commit',
+    failedToolKind: 'change',
+    fileWriteKind: 'change',
+    fileWriteDataKey: 'path',
+    subagentRole: 'retry',
+    edgeKinds: {
+        provenance: ['writes', 'produces'],
+        read: ['contains', 'depends'],
+        downstream: ['orders', 'writes', 'produces', 'depends'],
+    },
+});
 
-export const filesystemTraceVocabulary: TraceVocabulary = {
-    provenanceEdgeKinds: new Set(['writes', 'produces']),
-    readEdgeKinds: new Set(['contains', 'depends']),
-    downstreamEdgeKinds: new Set(['orders', 'writes', 'produces', 'depends']),
-};
+export const filesystemFacetAccessors: FacetAccessors = accessors;
+export const filesystemTraceVocabulary: TraceVocabulary = vocabulary;

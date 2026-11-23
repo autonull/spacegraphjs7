@@ -69,7 +69,6 @@ const signalKey = (input: ScopePolicyInput): string =>
 export class ScopesPlugin extends BaseSystemPlugin {
     readonly id = 'scopes';
     readonly name = 'Scopes';
-    readonly version = '1.0.0';
 
     readonly #simulation: ScopeSimulation;
     #specs: readonly ScopeSpec[];
