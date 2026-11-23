@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { createMockNode, createMockModel } from './test-fixtures';
 import type { GraphViewData, GraphNode, GraphFacets } from '@spacegraphjs/shared';
 import {
     applyFacets,
@@ -10,29 +11,6 @@ import {
     hasFacets,
     type FacetAccessors,
 } from './facets';
-
-function createMockNode(overrides: Partial<GraphNode> = {}): GraphNode {
-    return {
-        id: 'test-node',
-        label: 'Test Node',
-        kind: 'message',
-        status: 'completed',
-        summary: 'Test summary',
-        data: {},
-        interactive: true,
-        ...overrides,
-    };
-}
-
-function createMockModel(overrides: Partial<GraphViewData> = {}): GraphViewData {
-    return {
-        nodes: [],
-        edges: [],
-        facets: { query: '', kinds: new Set(), statuses: new Set(), domains: new Set() },
-        turns: [],
-        ...overrides,
-    };
-}
 
 const knownKinds = ['session', 'turn', 'message', 'tool', 'file', 'error'] as const;
 const knownStatuses = ['pending', 'running', 'completed', 'failed', 'interrupted'] as const;

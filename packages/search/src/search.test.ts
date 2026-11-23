@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { createMockNode, createMockModel } from './test-fixtures';
 import type { GraphViewData, GraphNode, GraphFacets } from '@spacegraphjs/shared';
 import {
     search,
@@ -17,29 +18,6 @@ import {
     nextNavigationTarget,
     NAVIGATION_MNEMONICS,
 } from './navigation';
-
-function createMockNode(overrides: Partial<GraphNode> = {}): GraphNode {
-    return {
-        id: 'test-node',
-        label: 'Test Node',
-        kind: 'message',
-        status: 'completed',
-        summary: 'Test summary',
-        data: {},
-        interactive: true,
-        ...overrides,
-    };
-}
-
-function createMockModel(overrides: Partial<GraphViewData> = {}): GraphViewData {
-    return {
-        nodes: [],
-        edges: [],
-        facets: { kinds: new Set(), statuses: new Set(), domains: new Set() },
-        turns: [],
-        ...overrides,
-    };
-}
 
 describe('search', () => {
     it('delegates to provided search function', () => {

@@ -14,7 +14,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, rmSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { createPackedConsumer } from './publish-check/pack.js';
+import { createPackedConsumer, RUNTIME_DEPENDENCIES } from './publish-check/pack.js';
 
 const root = resolve(import.meta.dirname, '..');
 const packages = [
@@ -28,26 +28,12 @@ const packages = [
 
 // The packages' runtime dependencies are not part of the tarball; the consumer resolves them from the
 // library's install so the check needs no network.
-const runtimeDependencies = [
-    'three',
-    'cytoscape',
-    'gsap',
-    'mitt',
-    'onnxruntime-web',
-    'three-mesh-bvh',
-    'chart.js',
-    'katex',
-    'marked',
-    '@monaco-editor/loader',
-    'jsdom',
-];
-
 const workspace = mkdtempSync(join(tmpdir(), 'spacegraph-publish-'));
 const consumer = join(workspace, 'consumer');
 const tarballs = join(workspace, 'tarballs');
 
 try {
-    createPackedConsumer(root, packages, runtimeDependencies, consumer, tarballs);
+    createPackedConsumer(root, packages, RUNTIME_DEPENDENCIES, consumer, tarballs);
 
     writeFileSync(
         join(consumer, 'check.ts'),

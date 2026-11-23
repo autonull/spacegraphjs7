@@ -5,6 +5,21 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
+export const RUNTIME_DEPENDENCIES = [
+    'solid-js',
+    'three',
+    'cytoscape',
+    'gsap',
+    'mitt',
+    'onnxruntime-web',
+    'three-mesh-bvh',
+    'chart.js',
+    'katex',
+    'marked',
+    '@monaco-editor/loader',
+    'jsdom',
+] as const;
+
 export interface PackageRef {
     readonly name: string;
     readonly dir: string;

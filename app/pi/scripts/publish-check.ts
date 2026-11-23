@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { copyFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { createPackedConsumer } from '../../../script/publish-check/pack.js';
+import { createPackedConsumer, RUNTIME_DEPENDENCIES } from '../../../script/publish-check/pack.js';
 
 const root = resolve(import.meta.dirname, '../../..');
 const packages = [
@@ -18,26 +18,11 @@ const packages = [
     { name: '@spacegraphjs/trace', dir: join(root, 'packages/trace') },
 ];
 
-const runtimeDependencies = [
-    'solid-js',
-    'three',
-    'cytoscape',
-    'gsap',
-    'mitt',
-    'onnxruntime-web',
-    'three-mesh-bvh',
-    'chart.js',
-    'katex',
-    'marked',
-    '@monaco-editor/loader',
-    'jsdom',
-];
-
 const workspace = mkdtempSync(join(tmpdir(), 'spacegraph-pi-consumer-'));
 const consumer = join(workspace, 'consumer');
 
 try {
-    createPackedConsumer(root, packages, runtimeDependencies, consumer, join(workspace, 'tarballs'));
+    createPackedConsumer(root, packages, RUNTIME_DEPENDENCIES, consumer, join(workspace, 'tarballs'));
     copyFileSync(join(import.meta.dirname, 'publish-check/consumer.ts'), join(consumer, 'check.ts'));
 
     console.log('\npi publish check: the packed agent runs without Pi');

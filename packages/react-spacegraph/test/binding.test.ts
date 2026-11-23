@@ -1,85 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, createElement, StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import type { GraphRenderer, RenderModel, RenderTheme } from '@spacegraphjs/renderer';
+import { MODEL, THEME, fakeRenderer } from '../../renderer/test/fixtures';
+import type { RenderModel } from '@spacegraphjs/renderer';
 import { GraphView } from '../src';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-
-const MODEL: RenderModel = {
-    nodes: [
-        { id: 'root', kind: 'session', label: 'Session', position: [0, 0, 0] },
-        { id: 'read', kind: 'call', label: 'read', position: [1, 0, 0] },
-    ],
-    edges: [{ id: 'e1', source: 'root', target: 'read', kind: 'part-of' }],
-};
-
-const THEME: RenderTheme = {
-    background: '#000',
-    surface: '#111',
-    surfaceMuted: '#222',
-    text: '#fff',
-    textMuted: '#888',
-    border: '#333',
-    accent: '#0af',
-    success: '#0f0',
-    warning: '#ff0',
-    error: '#f00',
-    edge: '#666',
-    edgeMuted: '#444',
-    selection: '#0af',
-    focus: '#0af',
-    fontFamily: 'sans-serif',
-    fontSize: 12,
-};
-
-type Handler = (payload: unknown) => void;
-
-function fakeRenderer() {
-    const listeners = new Map<string, Set<Handler>>();
-    const calls = {
-        mounted: 0,
-        models: [] as RenderModel[],
-        disposed: 0,
-        selection: [] as (readonly string[])[],
-    };
-    const renderer = {
-        capabilities: {
-            projections: ['2d', '3d'],
-            domNodes: true,
-            maxDomNodes: 40,
-            edgeLabels: true,
-            clusterNodes: true,
-            minimap: false,
-            maxRecommendedNodes: 300,
-        },
-        async mount() {
-            calls.mounted += 1;
-        },
-        setModel(model: RenderModel) {
-            calls.models.push(model);
-        },
-        setTheme() {},
-        setProjection() {},
-        setSelection(ids: readonly string[]) {
-            calls.selection.push(ids);
-        },
-        setViewport() {},
-        fit() {},
-        focus() {},
-        resize() {},
-        on(event: string, handler: Handler) {
-            const set = listeners.get(event) ?? new Set<Handler>();
-            set.add(handler);
-            listeners.set(event, set);
-            return () => set.delete(handler);
-        },
-        dispose() {
-            calls.disposed += 1;
-        },
-    };
-    return { renderer: renderer as unknown as GraphRenderer, calls };
-}
 
 const flush = async () => {
     await act(async () => {

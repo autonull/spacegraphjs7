@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { RENDER_THEME } from '../packages/renderer/test/fixtures';
 import {
     supports,
     supportsDepth,
@@ -68,7 +69,7 @@ describe.each(adapters)('renderer contract: $name', ({ create }) => {
         const renderer = create();
         expect(() => {
             renderer.setModel({ nodes: [], edges: [] });
-            renderer.setTheme({ ...theme });
+            renderer.setTheme({ ...RENDER_THEME });
             renderer.setProjection('2d');
             renderer.setDepth('depth-stack');
             renderer.setSelection(['a']);
@@ -138,25 +139,6 @@ describe('capability differences are declared, not assumed', () => {
         }
     });
 });
-
-const theme = {
-    background: '#101014',
-    surface: '#1b1b22',
-    surfaceMuted: '#2a2a33',
-    text: '#f5f5f7',
-    textMuted: '#a0a0aa',
-    border: '#3a3a44',
-    accent: '#3b82f6',
-    success: '#22c55e',
-    warning: '#f59e0b',
-    error: '#ef4444',
-    edge: '#6b7280',
-    edgeMuted: '#4b5563',
-    selection: '#60a5fa',
-    focus: '#93c5fd',
-    fontFamily: 'ui-sans-serif',
-    fontSize: 13,
-};
 
 describe('demo fixture (P8.6)', () => {
     const model = activityHostFixture();

@@ -1,41 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import type { RenderEdge, RenderNode, RenderTheme } from '@spacegraphjs/renderer';
+import { RENDER_THEME, node, edge } from '../../renderer/test/fixtures';
 import { edgeSpec, nodeSpec, parseColor, spaceGraphTheme, statusColor } from './mapping';
-
-const theme: RenderTheme = {
-    background: '#101014',
-    surface: '#1b1b22',
-    surfaceMuted: '#2a2a33',
-    text: '#f5f5f7',
-    textMuted: '#a0a0aa',
-    border: '#3a3a44',
-    accent: '#3b82f6',
-    success: '#22c55e',
-    warning: '#f59e0b',
-    error: '#ef4444',
-    edge: '#6b7280',
-    edgeMuted: '#4b5563',
-    selection: '#60a5fa',
-    focus: '#93c5fd',
-    fontFamily: 'ui-sans-serif',
-    fontSize: 13,
-};
-
-const node = (over: Partial<RenderNode> = {}): RenderNode => ({
-    id: 'n1',
-    kind: 'tool',
-    label: 'read',
-    position: [10, 20, 30],
-    ...over,
-});
-
-const edge = (over: Partial<RenderEdge> = {}): RenderEdge => ({
-    id: 'e1',
-    source: 'a',
-    target: 'b',
-    kind: 'reads',
-    ...over,
-});
 
 describe('parseColor', () => {
     test('reads 3, 6, and 8 digit hex', () => {
@@ -54,17 +19,17 @@ describe('parseColor', () => {
 
 describe('statusColor', () => {
     test('maps statuses to themed colors', () => {
-        expect(statusColor('success', theme)).toBe(0x22c55e);
-        expect(statusColor('error', theme)).toBe(0xef4444);
-        expect(statusColor('warning', theme)).toBe(0xf59e0b);
-        expect(statusColor('running', theme)).toBe(0x3b82f6);
-        expect(statusColor(undefined, theme)).toBe(0x2a2a33);
+        expect(statusColor('success', RENDER_THEME)).toBe(0x22c55e);
+        expect(statusColor('error', RENDER_THEME)).toBe(0xef4444);
+        expect(statusColor('warning', RENDER_THEME)).toBe(0xf59e0b);
+        expect(statusColor('running', RENDER_THEME)).toBe(0x3b82f6);
+        expect(statusColor(undefined, RENDER_THEME)).toBe(0x2a2a33);
     });
 });
 
 describe('nodeSpec', () => {
     test('renders html cards as HtmlNode with the host markup and no evaluation', () => {
-        const spec = nodeSpec(node({ html: '<b>hi</b>', shape: 'card', size: [200, 80] }), theme);
+        const spec = nodeSpec(node({ html: '<b>hi</b>', shape: 'card', size: [200, 80] }), RENDER_THEME);
         expect(spec.type).toBe('HtmlNode');
         expect(spec.position).toEqual([10, 20, 30]);
         expect(spec.data).toMatchObject({
@@ -77,7 +42,7 @@ describe('nodeSpec', () => {
 
     test('wraps host markup in a directional container for RTL (P8.9)', () => {
         const spec = nodeSpec(node({ html: '<b>مرحبا</b>', shape: 'card' }), {
-            ...theme,
+            ...RENDER_THEME,
             direction: 'rtl',
         });
         expect(spec.data.html).toContain('dir="rtl"');
@@ -85,13 +50,13 @@ describe('nodeSpec', () => {
     });
 
     test('renders other shapes as ShapeNode with a status color', () => {
-        const spec = nodeSpec(node({ status: 'error', shape: 'dot', size: [2, 2, 2] }), theme);
+        const spec = nodeSpec(node({ status: 'error', shape: 'dot', size: [2, 2, 2] }), RENDER_THEME);
         expect(spec.type).toBe('ShapeNode');
         expect(spec.data).toMatchObject({ shape: 'circle', size: 2, color: 0xef4444 });
     });
 
     test('lets the core choose a shape size when the host omits one', () => {
-        const spec = nodeSpec(node({ shape: 'panel' }), theme);
+        const spec = nodeSpec(node({ shape: 'panel' }), RENDER_THEME);
         expect(spec.data).not.toHaveProperty('size');
     });
 
@@ -103,7 +68,7 @@ describe('nodeSpec', () => {
                 size: [320, 220],
                 interactive: true,
             }),
-            theme,
+            RENDER_THEME,
         );
         expect(spec.type).toBe('HtmlNode');
         expect(spec.data).toMatchObject({
@@ -118,19 +83,19 @@ describe('nodeSpec', () => {
     });
 
     test('passes a node parent through to the core for group dragging', () => {
-        const spec = nodeSpec(node({ html: '<b>child</b>', parent: 'group:turn' }), theme);
+        const spec = nodeSpec(node({ html: '<b>child</b>', parent: 'group:turn' }), RENDER_THEME);
         expect(spec.data.parent).toBe('group:turn');
     });
 });
 
 describe('edgeSpec', () => {
     test('uses LabeledEdge when a label is present and curves otherwise', () => {
-        expect(edgeSpec(edge({ label: 'reads' }), theme).type).toBe('LabeledEdge');
-        expect(edgeSpec(edge(), theme).type).toBe('CurvedEdge');
+        expect(edgeSpec(edge({ label: 'reads' }), RENDER_THEME).type).toBe('LabeledEdge');
+        expect(edgeSpec(edge(), RENDER_THEME).type).toBe('CurvedEdge');
     });
 
     test('mutes and dashes inferred edges with correct opacity', () => {
-        const spec = edgeSpec(edge({ confidence: 'inferred', directed: true }), theme);
+        const spec = edgeSpec(edge({ confidence: 'inferred', directed: true }), RENDER_THEME);
         expect(spec.data).toMatchObject({
             dashed: true,
             thickness: 1,
@@ -141,14 +106,14 @@ describe('edgeSpec', () => {
     });
 
     test('widens emphasized edges into causal ribbons', () => {
-        const plain = edgeSpec(edge({ confidence: 'explicit' }), theme);
+        const plain = edgeSpec(edge({ confidence: 'explicit' }), RENDER_THEME);
         const loud = edgeSpec(
             edge({
                 confidence: 'explicit',
                 emphasis: 0.8,
                 data: { ribbon: { weight: 0.8, minRadius: 1, maxRadius: 8, segments: 3 } },
             }),
-            theme,
+            RENDER_THEME,
         );
         expect(loud.type).toBe('TaperedEdge');
         expect(loud.data.thickness).toBeCloseTo(plain.data.thickness * 1.8);
@@ -157,7 +122,7 @@ describe('edgeSpec', () => {
     test('a fluid ribbon selects the flux edge with curve and halo data', () => {
         const spec = edgeSpec(
             edge({ data: { ribbon: { fluid: true, curve: 0.2, inset: 0.12, halo: 0.6 } } }),
-            theme,
+            RENDER_THEME,
         );
         expect(spec.type).toBe('FluxEdge');
         expect(spec.data).toMatchObject({ curve: 0.2, inset: 0.12, halo: 0.6 });
@@ -166,30 +131,30 @@ describe('edgeSpec', () => {
     test('a flux ribbon carries collar and sheath as opaque geometry data', () => {
         const spec = edgeSpec(
             edge({ data: { ribbon: { fluid: true, collar: 0.9, sheath: 0.6 } } }),
-            theme,
+            RENDER_THEME,
         );
         expect(spec.type).toBe('FluxEdge');
         expect(spec.data).toMatchObject({ collar: 0.9, sheath: 0.6 });
     });
 
     test('a ribbon color overrides the edge style color', () => {
-        const spec = edgeSpec(edge({ data: { ribbon: { color: '#8ff0d0' } } }), theme);
+        const spec = edgeSpec(edge({ data: { ribbon: { color: '#8ff0d0' } } }), RENDER_THEME);
         expect(spec.data.color).toBe(parseColor('#8ff0d0'));
     });
 
     test('adds arrowhead only on evidence/delegates edges', () => {
-        const evidenceSpec = edgeSpec(edge({ kind: 'evidence', confidence: 'explicit' }), theme);
+        const evidenceSpec = edgeSpec(edge({ kind: 'evidence', confidence: 'explicit' }), RENDER_THEME);
         expect(evidenceSpec.data.arrowhead).toBe('target');
-        const delegateSpec = edgeSpec(edge({ kind: 'delegates', confidence: 'explicit' }), theme);
+        const delegateSpec = edgeSpec(edge({ kind: 'delegates', confidence: 'explicit' }), RENDER_THEME);
         expect(delegateSpec.data.arrowhead).toBe('target');
-        const explicitSpec = edgeSpec(edge({ kind: 'sequence', confidence: 'explicit' }), theme);
+        const explicitSpec = edgeSpec(edge({ kind: 'sequence', confidence: 'explicit' }), RENDER_THEME);
         expect(explicitSpec.data.arrowhead).toBe(false);
     });
 });
 
 describe('spaceGraphTheme (RF.6)', () => {
-    test('maps the host theme onto the core theme surface', () => {
-        expect(spaceGraphTheme(theme)).toEqual({
+    test('maps the host RENDER_THEME onto the core RENDER_THEME surface', () => {
+        expect(spaceGraphTheme(RENDER_THEME)).toEqual({
             background: '#101014',
             node: { stroke: 0x3a3a44 },
             edge: { color: 0x6b7280, labelColor: '#a0a0aa', labelBackground: '#1b1b22' },
