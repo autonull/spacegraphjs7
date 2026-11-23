@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { decodePolicyVector } from 'spacegraphjs/policy';
 import type { VisionLoopAnalyzers, VisionReport } from 'spacegraphjs/vision';
 import { SecondHost } from '../second-host';
 
@@ -69,6 +70,20 @@ describe('second reference host', () => {
         expect(host.dispatchTouch({ x: 0, y: -100, at: 30 }, 'up')).toBe('swipeUp');
         expect(host.touchActions).toEqual(['swipeUp']);
         expect(host.moves.some((move) => move.startsWith('flyTo:'))).toBe(true);
+    });
+
+    it('resolves a host-owned policy through the promoted engine', () => {
+        const host = new SecondHost();
+        expect(host.policy.values['demo.gap']).toBe(120);
+        host.setPolicy('panel', { 'demo.gap': 999 });
+        expect(host.policy.values['demo.gap']).toBe(400);
+        expect(host.policy.provenance['demo.gap']).toBe('panel');
+
+        const link = host.policyLink();
+        expect(decodePolicyVector(host.policySchema, link)).toEqual(host.policy.vector);
+        const other = new SecondHost();
+        expect(other.loadPolicy(link)).toBe(true);
+        expect(other.policy.values['demo.gap']).toBe(400);
     });
 
     it('runs the library vision loop without owning layout state', async () => {

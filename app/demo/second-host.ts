@@ -3,6 +3,17 @@
 // vision loop. The page owns rendering; this host owns state and behavior.
 
 import { TouchRecognizer, type TouchGesture, type TouchPoint } from 'spacegraphjs/input';
+import {
+    decodePolicyVector,
+    encodePolicyVector,
+    resolvePolicy,
+    withLayer,
+    type PolicyLayer,
+    type PolicyLayers,
+    type PolicySchema,
+    type PolicyVector,
+    type ResolvedPolicy,
+} from 'spacegraphjs/policy';
 import { createVisionLoop, type VisionLoop, type VisionLoopAnalyzers } from 'spacegraphjs/vision';
 import {
     MotionDirector,
@@ -18,6 +29,32 @@ import {
     type PlaySettings,
     type PlaySimulation,
 } from 'spacegraphjs/world';
+
+const DEMO_SCHEMA: PolicySchema = {
+    version: 1,
+    knobs: [
+        {
+            id: 'demo.gap',
+            family: 'geometry',
+            type: 'number',
+            default: 120,
+            min: 40,
+            max: 400,
+            step: 10,
+            description: 'Demo node gap',
+            rationale: '',
+        },
+        {
+            id: 'demo.surface',
+            family: 'surface',
+            type: 'enum',
+            default: 'graph',
+            options: ['graph', 'map'],
+            description: 'Demo surface',
+            rationale: '',
+        },
+    ],
+};
 
 export class SecondHost {
     readonly director = new MotionDirector();
@@ -45,6 +82,7 @@ export class SecondHost {
     #settled = true;
     #instant = false;
     #energy = 0;
+    #policyLayers: PolicyLayers = {};
 
     constructor(analyzers?: VisionLoopAnalyzers) {
         const host = this;
@@ -79,6 +117,27 @@ export class SecondHost {
             },
         });
         this.visionLoop = createVisionLoop(analyzers, () => {});
+    }
+
+    readonly policySchema = DEMO_SCHEMA;
+
+    get policy(): ResolvedPolicy {
+        return resolvePolicy(this.policySchema, this.#policyLayers);
+    }
+
+    setPolicy(layer: PolicyLayer, values: PolicyVector): void {
+        this.#policyLayers = withLayer(this.policySchema, this.#policyLayers, layer, values);
+    }
+
+    policyLink(): string {
+        return encodePolicyVector(this.policySchema, this.policy.vector);
+    }
+
+    loadPolicy(link: string): boolean {
+        const values = decodePolicyVector(this.policySchema, link);
+        if (!values) return false;
+        this.#policyLayers = withLayer(this.policySchema, this.#policyLayers, 'url', values);
+        return true;
     }
 
     get viewport(): { center: [number, number, number]; zoom: number } {

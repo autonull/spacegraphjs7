@@ -51,6 +51,12 @@ export const LIBRARY_ENTRIES: LibraryEntry[] = [
         types: 'dist/plugins-mermaid.d.ts',
     },
     { subpath: './input', name: 'input', source: 'src/input/index.ts', types: 'dist/input.d.ts' },
+    {
+        subpath: './policy',
+        name: 'policy',
+        source: 'src/policy/index.ts',
+        types: 'dist/policy.d.ts',
+    },
     { subpath: './utils', name: 'utils', source: 'src/utils/index.ts', types: 'dist/utils.d.ts' },
     { subpath: './types', name: 'types', source: 'src/types.ts', types: 'dist/types.d.ts' },
     { subpath: './builder', name: 'builder', source: 'src/builder.ts', types: 'dist/builder.d.ts' },

@@ -40,6 +40,7 @@ const PROMOTIONS: readonly { helper: string; source: string }[] = [
     { helper: 'representationRung', source: 'src/salience/representation.ts' },
     { helper: 'createPhysicsPlaySession', source: 'src/world/PhysicsPlaySession.ts' },
     { helper: 'createCameraMotionHandlers', source: 'src/motion/camera-handlers.ts' },
+    { helper: 'resolvePolicy', source: 'src/policy/resolve.ts' },
 ];
 
 describe('promoted helper reuse', () => {

@@ -56,6 +56,11 @@
             "import": "./dist/input.js",
             "default": "./dist/input.js"
         },
+        "./policy": {
+            "types": "./dist/policy.d.ts",
+            "import": "./dist/policy.js",
+            "default": "./dist/policy.js"
+        },
         "./utils": {
             "types": "./dist/utils.d.ts",
             "import": "./dist/utils.js",

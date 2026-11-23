@@ -1,100 +1,22 @@
 import {
-    coerceValue,
-    defaultVector,
-    sanitizeVector,
-    type KnobValue,
+    decodePolicyVector as decode,
     type PolicySchema,
     type PolicyVector,
-} from './schema';
+} from 'spacegraphjs/policy';
 
-export const POLICY_LAYERS = ['preset', 'experiment', 'url', 'panel'] as const;
-export type PolicyLayer = (typeof POLICY_LAYERS)[number];
-export type PolicySource = 'defaults' | PolicyLayer;
+export {
+    POLICY_LAYERS,
+    encodePolicyVector,
+    policyChange,
+    resolvePolicy,
+    withLayer,
+    type PolicyChangeEvent,
+    type PolicyLayer,
+    type PolicyLayers,
+    type PolicySource,
+    type ResolvedPolicy,
+} from 'spacegraphjs/policy';
 
-export type PolicyLayers = Partial<Record<PolicyLayer, PolicyVector>>;
-
-export interface ResolvedPolicy {
-    readonly values: PolicyVector;
-    readonly provenance: Readonly<Record<string, PolicySource>>;
-    readonly vector: PolicyVector;
-}
-
-/** Fixed precedence: defaults → preset → experiment → URL → live panel. */
-export const resolvePolicy = (schema: PolicySchema, layers: PolicyLayers = {}): ResolvedPolicy => {
-    const values: Record<string, KnobValue> = defaultVector(schema);
-    const provenance: Record<string, PolicySource> = Object.fromEntries(
-        schema.knobs.map((knob) => [knob.id, 'defaults' as PolicySource]),
-    );
-    for (const source of POLICY_LAYERS) {
-        const layer = layers[source];
-        if (!layer) continue;
-        for (const knob of schema.knobs) {
-            const value = coerceValue(knob, layer[knob.id]);
-            if (value === undefined) continue;
-            values[knob.id] = value;
-            provenance[knob.id] = source;
-        }
-    }
-    return { values, provenance, vector: { ...values } };
-};
-
-export const withLayer = (
-    schema: PolicySchema,
-    layers: PolicyLayers,
-    layer: PolicyLayer,
-    values: PolicyVector,
-): PolicyLayers => ({
-    ...layers,
-    [layer]: { ...layers[layer], ...sanitizeVector(schema, values) },
-});
-
-/**
- * Compact, order-stable, URL-safe encoding: `p<version>.<base64url(json array)>`.
- * Version 2 appends `geometry.occupancyTarget` after every v1 knob, so a shorter legacy array is
- * decoded by padding trailing knobs with their schema defaults. Unknown versions are rejected.
- */
-export const encodePolicyVector = (schema: PolicySchema, values: PolicyVector): string => {
-    const packed = schema.knobs.map((knob) => values[knob.id] ?? knob.default);
-    const json = JSON.stringify(packed);
-    const bytes = new TextEncoder().encode(json);
-    let binary = '';
-    for (const byte of bytes) binary += String.fromCharCode(byte);
-    return `p${schema.version}.${btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')}`;
-};
-
-export const decodePolicyVector = (schema: PolicySchema, encoded: string): PolicyVector | null => {
-    const match = /^p(\d+)\.([A-Za-z0-9_-]+)$/.exec(encoded);
-    if (!match) return null;
-    const version = Number(match[1]);
-    const legacy = version === 1 && schema.version === 2;
-    if (version !== schema.version && !legacy) return null;
-    try {
-        const binary = atob(match[2].replace(/-/g, '+').replace(/_/g, '/'));
-        const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-        const packed: unknown = JSON.parse(new TextDecoder().decode(bytes));
-        if (!Array.isArray(packed) || packed.length > schema.knobs.length || packed.length === 0)
-            return null;
-        const defaults = defaultVector(schema);
-        const values: Record<string, unknown> = {};
-        schema.knobs.forEach((knob, index) => {
-            values[knob.id] = packed[index] ?? defaults[knob.id];
-        });
-        return sanitizeVector(schema, values);
-    } catch {
-        return null;
-    }
-};
-
-export interface PolicyChangeEvent {
-    readonly type: 'policy:change';
-    readonly id: string;
-    readonly source: PolicySource;
-    readonly value: KnobValue | undefined;
-}
-
-export const policyChange = (id: string, source: PolicySource, resolved: ResolvedPolicy): PolicyChangeEvent => ({
-    type: 'policy:change',
-    id,
-    source,
-    value: resolved.values[id],
-});
+/** Pi still accepts its v1 vector shape for the v2 schema. */
+export const decodePolicyVector = (schema: PolicySchema, encoded: string): PolicyVector | null =>
+    decode(schema, encoded, { legacyVersions: schema.version === 2 ? [1] : [] });
