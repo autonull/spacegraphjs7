@@ -1,6 +1,8 @@
+import { DEPTH_MODES } from '@spacegraphjs/shared/types';
 import type { CardFacing, DepthMode, Projection } from '../types';
 import { clamp01 } from '../utils/math';
 
+export { DEPTH_MODES };
 export type { DepthMode };
 
 /**
@@ -8,8 +10,6 @@ export type { DepthMode };
  * camera projection/pose plus a fog density, and `depthFade` is the attenuation curve a host can apply
  * to per-node opacity when it wants a fade without scene fog. Nothing here reads host semantics.
  */
-
-export const DEPTH_MODES: readonly DepthMode[] = ['flat', 'layered', 'depth-stack', 'orbit'];
 
 export interface DepthTreatment {
     /** The camera projection this mode uses. */

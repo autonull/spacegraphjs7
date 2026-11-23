@@ -64,6 +64,7 @@ import type {
 } from '@spacegraphjs/renderer';
 
 /** Re-exported renderer contract types for convenience. */
+export { DEPTH_MODES } from '@spacegraphjs/renderer';
 export type {
     Projection,
     DepthMode,
@@ -93,7 +94,7 @@ export interface GraphFacets {
     retries?: boolean;
     costlyNodes?: boolean;
     /** How active semantic filters compose: "or" keeps a node matching any, "and" requires all. Defaults to "or". */
-    composeMode?: "or" | "and";
+    composeMode?: 'or' | 'and';
 }
 
 /** Facet counts for display. */
@@ -295,12 +296,6 @@ export const VOCABULARY_KEYS: VocabularyKeys = {
 
 /** Constants for toolbar components. */
 export const ZOOM_LEVELS: readonly ZoomLevel[] = ['overview', 'execution', 'detail'] as const;
-export const DEPTH_MODES: readonly DepthMode[] = [
-    'flat',
-    'layered',
-    'depth-stack',
-    'orbit',
-] as const;
 export const LAYOUTS: readonly Layout[] = [
     'lanes',
     'timeline',
