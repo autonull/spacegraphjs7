@@ -90,6 +90,11 @@
             .durable-card .card-label { font-weight: 600; }
             .durable-card .card-summary { opacity: .72; }
             .durable-card .card-status { margin-left: 6px; font-size: .8em; opacity: .7; font-weight: 400; }
+            .durable-card .card-workshop { font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+                color: var(--accent); opacity: .85; }
+            .durable-card[data-workshop="call"] { border-left: 2px solid var(--accent); }
+            .durable-card[data-workshop="artifact"] { border-left: 2px solid var(--warn); }
+            .durable-card[data-workshop="plate"] { border-left: 2px solid var(--accent); }
             .durable-card .card-image { display: block; width: 48px; height: 48px; margin-top: 6px;
                 object-fit: contain; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 4px; }
             .survey-mark { width: 22px; height: 22px; margin-right: 8px; vertical-align: middle;
@@ -100,6 +105,11 @@
                 border-radius: 8px; background: var(--panel-2); color: var(--muted); }
             #rung-switch button[aria-current="true"] { color: var(--accent); border-color: var(--accent); }
             #rung-caption { padding-top: 8px; color: var(--muted); font-size: 11px; }
+            #trail { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 11px; }
+            #trail button { min-height: 30px; padding: 0 6px; border: 0; background: transparent;
+                color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+            #trail button[aria-current="page"] { color: var(--accent); }
+            #trail span { color: var(--line); }
             #lens-form { display: flex; gap: 6px; margin-bottom: 8px; }
             #lens-input { flex: 1; min-width: 0; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line);
                 border-radius: 8px; background: var(--bg); font-family: ui-monospace, monospace; font-size: 12px; }
@@ -113,6 +123,7 @@
             #survey .plate-frame { fill: none; stroke: var(--line); }
             #survey circle { fill: var(--accent); opacity: .65; }
             #survey rect:not(.plate-frame) { fill: none; stroke: var(--warn); stroke-width: 1; }
+            [dir="rtl"] #survey { right: auto; left: 12px; }
             footer { display: flex; gap: 10px; align-items: flex-end; padding: 12px 16px;
                 border-top: 1px solid var(--line); background: var(--panel); }
             #prompt-form { display: flex; flex: 1; min-width: 0; gap: 8px; align-items: flex-end; }
@@ -194,6 +205,7 @@
                         <h2>Rung</h2>
                         <div id="rung-switch"></div>
                         <div id="rung-caption"></div>
+                        <nav id="trail" aria-label="Landmark trail"></nav>
                     </div>
                     <div class="rail-section">
                         <h2>Inspector</h2>

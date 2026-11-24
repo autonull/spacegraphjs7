@@ -379,16 +379,20 @@ export const SCENARIOS: readonly Scenario[] = [
         }),
         extraOps: [
             addNode('d:1:code:call', 'action', 'code()', {
-                runId: '1', status: 'complete', toolName: 'code', text: 'code() → read → summarize', importance: 'hero',
+                runId: '1', status: 'complete', toolName: 'code', text: 'code() → read → summarize',
+                importance: 'hero', workshop: 'program', workshopDepth: 0,
             }),
             addNode('d:1:code:read', 'action', 'read', {
                 runId: '1', status: 'complete', toolName: 'read', text: 'docs/PLAN/INDEX.md',
+                workshop: 'call', workshopDepth: 1,
             }),
             addNode('d:1:code:summarize', 'action', 'summarize', {
                 runId: '1', status: 'complete', toolName: 'summarize', text: '412 bytes',
+                workshop: 'call', workshopDepth: 1,
             }),
             addNode('d:1:code:artifact:a1', 'artifact', 'Workshop note', {
-                runId: '1', status: 'complete', doc: 'app.code', text: 'Workshop plan read.', importance: 'medium',
+                runId: '1', status: 'complete', doc: 'app.code', text: 'Workshop plan read.',
+                importance: 'medium', workshop: 'artifact', workshopDepth: 2,
             }),
         ],
         expected: {
@@ -407,6 +411,7 @@ export const SCENARIOS: readonly Scenario[] = [
             addNode('d:1:image:pixel', 'artifact', 'Tiny PNG', {
                 runId: '1', status: 'complete', toolName: 'fit', doc: 'app.images',
                 text: '4 × 4 PNG fitted to 106 bytes', importance: 'medium', image: TINY_PNG,
+                workshop: 'plate', workshopDepth: 1,
             }),
         ],
         expected: { nodes: ['d:1:image:pixel'], edges: ['orders'] },

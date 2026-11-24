@@ -1,10 +1,10 @@
 # TODO13 — Durable workspace: local model, richer representations, deferred surfaces
 
-> **Status: in progress (2026-11-24).** TODO12 landed the Core, Next scenarios, scoped placements,
-> gates, the opt-in OpenAI path and 22 tracked shots. This plan continues three streams (A/B/C) plus
-> the Stream D atlas. Streams A, B and C are landed; D1/D2 (continuous attention and Lens) are
-> landed; D3–D7 remain proposed. It deliberately opens a new plan instead of growing TODO12 beyond
-> its stop rule.
+> **Status: complete (2026-11-24).** TODO12 landed the Core, Next scenarios, scoped placements,
+> gates, the opt-in OpenAI path and 22 tracked shots. This plan continued with three streams (A/B/C)
+> and the Stream D atlas. All rows A0–A4, B1–B4, C1–C6 and D1–D7 are landed. Human verdicts on the
+> recaptured pairs stay an external gate; this plan never writes one. It deliberately opened a new
+> plan instead of growing TODO12 beyond its stop rule.
 
 ## 0. Baseline
 
@@ -253,7 +253,8 @@ The live model smoke test is separately invoked and its skip reason is reported.
   double-click gesture.
 - D attention must stay a host data facet over the same folded kernel. Landmarks are addresses on a continuous field; if a behavior needs a second camera, another renderer contract field or a competing owner, negotiate or report the gap.
 - The survey mark is drawn from theme tokens, not a bitmap, so light/dark and custom themes stay consistent; RTL mirrors the overview gutter without mirroring node ids.
-- Continuous culling must never drop committed truth: low attention shrinks and mutes evidence, it does not delete edges or hide documents from the fold.
+- Continuous culling must never drop committed truth: low attention shrinks and mutes evidence, it does not delete edges or hide documents from the fold. The budget only applies above 160 nodes and reports an `omitted` count.
+- Headless Strobe refuses frame and GPU metrics (`Headless`, plus `SCHED_IDLE` here). The recorded run still gives main-thread and CPU numbers; the cold-paint check is a separate Playwright measurement, not a visual gate.
 - Human verdicts on new pairs remain an external gate; this plan never writes one.
 
 ## 7. Progress
@@ -263,7 +264,7 @@ The live model smoke test is separately invoked and its skip reason is reported.
 | A — local model smoke | Landed | `PI_DURABLE_PROVIDER=local` with OpenAI-compatible `llama-server`; `tests/local-model.spec.ts` passes with the 0.8B Qwen GGUF (13 s); README env table updated |
 | B — visual detail and representations | Landed | B1/B2: friendly labels, per-card summaries, edge captions, legend, richer inspector; `tests/detail.spec.ts`. B1b/B3: importance tiers (`hero`/`medium`/`compact`) from committed `data`, `nodeSizeFn` + card template, lane/axis captions, four re-placements (`diff`, `trace`, `docs`, `transcript`), `tests/representations.spec.ts`. B4: seven tracked composites in `docs/screenshots/pi-durable/stories/`, four Core heroes retained, 18 near-duplicate Next PNGs retired (gallery 2.4 MB → 1.2 MB), `tests/stories.spec.ts`, `shots:stories` and `--composite`, contact sheet/docs/landing page updated. Frames are captured at 1600×1000 and drawn into 800×500 grid cells: the lower viewport made the mobile rail dominate the frame. Gates 2026-11-24: `pnpm check:fast` (39 tests), `pnpm verify`, `pnpm build`, `pnpm verify:visual` (5 tests), `pnpm shots:all` (4 heroes + 6 stories), root `pnpm run check` all green. |
 | C — deferred surfaces | Landed | C3/C4/C5/C6 landed 2026-11-24: observer process (`PI_DURABLE_OBSERVER=1`, `/events/observe`, typed `read-only`, `tests/observer.test.ts`, `tests/observer-ui.spec.ts`); `?asOf=<seq>` snapshots with badge (`tests/time-travel.test.ts`, `tests/time-travel.spec.ts`); deferred `app.replay` recorder/replay (`tests/replay.test.ts`); upstream `registerStorageConformance` for memory, custom delegating adapter, JSONL and SQLite behind `PI_DURABLE_CONFORMANCE=1` (`tests/storage-conformance.test.ts`). C1/C2 landed 2026-11-24: `createCodemodeExtension` with `CodemodeSandbox` behind `PI_DURABLE_CODEMODE=1`, Photon `createFitImagesExtension` behind `PI_DURABLE_IMAGES=1`, both advertised through `/api/health` `capabilities`; `code-mode` and `images` scenarios, `tests/workshop.test.ts`, and new `inspect-flow` / `host-boundary` story frames. Gates: `pnpm check:fast` (64 vitest tests), `pnpm verify`, `pnpm test:e2e` (31 tests), `pnpm verify:visual` (5 tests), `pnpm build`, root `pnpm run check` green. Playwright starts the observer on `PI_DURABLE_SERVER_PORT + 12` so spawn-based tests keep their own ports. |
-| D — iconic fractal ZUI | In progress | First slice landed: survey-mark brand, five-landmark switch/permalink, `ZoomBands` zoom-driven landmarks, corner survey plate with click/arrow pan (`src/rungs.ts`, `src/host.ts`, `tests/rungs.spec.ts`). D1/D2 landed 2026-11-24: `src/attention.ts` samples `ScaleDomain` into continuous weights and `applyModelEmphasis` grades size/opacity/label density; `rungView` hard filtering is gone, so every committed node and edge survives every landmark. `src/lens.ts` supplies one grammar (`view`, `rung`, `as of`, `tab`, `layout`, `find`) built on `rankedSearch`/`parseNavigation`; `Ctrl/⌘ K` focuses the Lens form, `representationChanges` + `createRenderClock` morph placement, camera stays per tab, and permalinks carry view/rung/layout/asOf/zoom. Tests: `tests/attention.test.ts`, `tests/lens.test.ts`, `tests/lens.spec.ts`, rewritten `tests/rungs.spec.ts`. Native library routes remain for D3 `Navigation.project`/`GraphMinimap` and D7 `applyNodeBudget`/`SpatialIndex2D`. D3 survey refinement, D4 deep-link codec, D5 scrubbable plates, D6 workshop framing and D7 strobe are still proposed. Gates: `pnpm check:fast` (64 vitest tests), `pnpm verify`, `pnpm test:e2e` (31 tests), `pnpm verify:visual` (5 tests), `pnpm build`, root `pnpm run check` green; all 11 screenshots recaptured and the contact sheet refreshed. |
+| D — iconic fractal ZUI | Landed | First slice: survey-mark brand, five-landmark switch/permalink, `ZoomBands` landmarks, corner survey plate. D1/D2: `src/attention.ts` samples `ScaleDomain` into continuous weights and `applyModelEmphasis` grades size/opacity/label density; `rungView` filtering is gone. `src/lens.ts` supplies one grammar (`view`, `rung`, `as of`, `tab`, `layout`, `find`) built on `rankedSearch`/`parseNavigation`; `Ctrl/⌘ K` focuses it, `representationChanges` + `createRenderClock` morph placement, and camera stays per tab. D3: `Navigation.project`/`unproject` owns the survey reticle and click/arrow pan, with an RTL gutter. D4: breadcrumb trail plus `src/address.ts` compact codec (`?at=`), round-tripped by `tests/address.test.ts` and `tests/chapters.spec.ts`. D5: seven engraved plates (survey mark, numbered captions, landmark legend, scale bar) with `setStory`/`chapters`/`scrub` hooks; `tests/chapters.spec.ts` scrubs the same frames. D6: `program → calls → artifacts` workshop framing and bounded image plate insets ride in committed `data`. D7: `applyNodeBudget` above 160 nodes with a visible `omitted` count, `SpatialIndex2D` nearby boosts, cached scope targets per node/edge key, and `representationChanges`-driven morph. Gates: `pnpm --filter pi-durable typecheck`, `test` (66 vitest), `verify`, `test:e2e` (33 tests), `verify:visual` (5 tests), `build`, root `pnpm run check` green; all 11 screenshots recaptured and the contact sheet refreshed. Strobe `rec_487bf5` (headless, 6 s): main 7.00% busy, 2 long tasks, 7.91 ms paint; frame/GPU metrics refused without a display. Separate Playwright cold paint: `ready` 893 ms, first ops 1123 ms, no provider. |
 
 C1/C2 dependency gap, closed: `pi-codemode@1.6.0` was added as a direct pin with an offline install
 and `scripts/verify.ts` checks it. `CodemodeSandbox` comes from the main `@earendil-works/pi-codemode`
@@ -271,10 +272,10 @@ entry, not `/portable`; `createNodePhotonImages()` comes from `@earendil-works/p
 and resolves Photon's WebAssembly through the installed `pi-durable` dependency, so no direct
 `@silvia-odwyer/photon` pin is needed. C3–C6 need no new dependency and are landed.
 
-Next change set (D3–D7): refine the survey plate with `Navigation.project`, add the D4 breadcrumb
-and deep-link codec, turn the seven composites into scrubbable chapters, frame C1/C2 as workshops
-and plates, and record one strobe measurement. Keep attention as host data over the same folded
-kernel; no second camera, renderer contract field or hidden filter.
+All implementation rows are landed. Remaining work is external: a human verdict on the recaptured
+pairs in `docs/screenshots/pi-durable-index.html`, and any new plan for features beyond this atlas.
+Keep attention as host data over the same folded kernel; no second camera, renderer contract field
+or hidden filter.
 
 Update this table at the end of each change set with the exact commands and results. Keep TODO12 as
 the record of the landed Core; record new work here only.

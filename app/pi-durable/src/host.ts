@@ -1,14 +1,17 @@
 import { agentDomain } from '@spacegraphjs/agent';
 import { VocabularyAdapter, type AdapterNode } from '@spacegraphjs/adapter';
-import { diffKernels, Kernel } from '@spacegraphjs/kernel';
+import { applyNodeBudget, diffKernels, Kernel, SpatialIndex2D } from '@spacegraphjs/kernel';
 import { createRenderClock, DEFAULT_THEME, type RenderModel, type RenderTheme } from '@spacegraphjs/renderer';
 import { rankedSearch } from '@spacegraphjs/search';
 import type { GraphViewData } from '@spacegraphjs/shared';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { ScopeSimulation, type ScopeSpec } from 'spacegraphjs/layout';
+import { Navigation, type MinimapProjection } from 'spacegraphjs/navigation';
 import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import { ZoomBands, type ScaleSample } from 'spacegraphjs/zoom';
+import { decodeAddress, encodeAddress, type Address } from './address';
+import { chapterCaptions, chapterFrames } from './chapters';
 import {
     attentionWeights,
     createScaleDomain,
@@ -32,6 +35,7 @@ import { replayFeed } from './replay';
 import { isRung, RUNGS, type Rung } from './rungs';
 import { VIEW_NAMES, type ViewName } from './scenarios';
 import { shotById } from './shots';
+import { storyByID, type Story } from './stories';
 import { asOfFeed } from './time-travel';
 
 const THEME: RenderTheme = {
@@ -80,6 +84,11 @@ const ATTENTION_MAPPING = mappingFor(['size', 'opacity', 'labelDensity'], {
 
 const LAYOUT_STRATEGIES: Readonly<Record<LayoutName, NonNullable<ScopeSpec['strategy']>>> = {
     grid: 'grid', radial: 'force', timeline: 'tree',
+};
+
+const BUDGET_WEIGHTS: Readonly<Record<string, number>> = {
+    conversation: 1000, run: 900, task: 700, boundary: 500,
+    message: 300, action: 100, artifact: 50, state: 20, config: 10, pending: 10,
 };
 
 const sizeOf = (node: DurableNode): readonly [number, number] => {
@@ -148,6 +157,8 @@ const summaryForNode = (node: DurableNode): string => {
     if (typeof error === 'string') parts.push(`error ${error}`);
     const recovery = node.data?.['recovery'];
     if (typeof recovery === 'string') parts.push(`recovery ${short(recovery, 40)}`);
+    const workshop = node.data?.['workshop'];
+    if (typeof workshop === 'string') parts.push(workshop);
     return parts.join(' · ');
 };
 
@@ -160,7 +171,8 @@ const cardTemplate = (node: DurableNode): string => {
         ? `<img class="card-image" alt="committed image artifact" src="data:image/png;base64,${encoded}" />`
         : '';
     const attention = typeof node.data?.['attention'] === 'number' ? node.data['attention'].toFixed(2) : '0.50';
-    return `<div class="durable-card ${node.importance}" data-kind="${escapeHTML(node.kind)}" data-status="${escapeHTML(node.status)}" data-importance="${node.importance}" data-attention="${attention}"${diff ? ` data-diff="${diff}"` : ''}><span class="card-label">${escapeHTML(labelForNode(node))}${status}</span>${summary ? `<span class="card-summary">${escapeHTML(summary)}</span>` : ''}${image}</div>`;
+    const workshop = typeof node.data?.['workshop'] === 'string' ? node.data['workshop'] : '';
+    return `<div class="durable-card ${node.importance}" data-kind="${escapeHTML(node.kind)}" data-status="${escapeHTML(node.status)}" data-importance="${node.importance}" data-attention="${attention}"${workshop ? ` data-workshop="${escapeHTML(workshop)}"` : ''}${diff ? ` data-diff="${diff}"` : ''}>${workshop ? `<span class="card-workshop">${escapeHTML(workshop)}</span>` : ''}<span class="card-label">${escapeHTML(labelForNode(node))}${status}</span>${summary ? `<span class="card-summary">${escapeHTML(summary)}</span>` : ''}${image}</div>`;
 };
 
 const el = <T extends HTMLElement = HTMLElement>(id: string): T => {
@@ -235,11 +247,15 @@ export class DurableHost {
     #edgeCount = 0;
     #fitted = false;
     #shot: string | undefined;
+    #story: Story | undefined;
     #seed: string;
     #presented: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } = {
         nodes: [], edges: [],
     };
-    #overviewBounds: { minX: number; maxX: number; minY: number; maxY: number } | undefined;
+    #overviewProjection: MinimapProjection | undefined;
+    #omitted = 0;
+    #scopeKey = '';
+    #scopes: ReturnType<typeof buildScopes> | undefined;
     #laneNames: readonly string[] = [];
     #axisNames: readonly string[] = [];
     #edgeLabels: readonly string[] = [];
@@ -370,14 +386,25 @@ export class DurableHost {
     refresh(): void {
         const tab = this.registry.active();
         if (!tab) return;
-        const kernel = tabKernel(tab);
+        const full = tabKernel(tab);
+        const kernel = full.nodes.length > 160
+            ? applyNodeBudget(full, {
+                  maxNodes: 160, weights: BUDGET_WEIGHTS,
+                  protectedIds: tab.view.focus ? [tab.view.focus] : [],
+              })
+            : full;
+        this.#omitted = full.nodes.length - kernel.nodes.length;
         const presented = this.#presentation(agentDomain.build(kernel), kernel, tab.view.focus);
         const positions = this.#layout(presented.nodes, presented.edges);
         const labels = this.#labels(presented, positions);
         this.#presented = presented;
         this.#laneNames = labels.laneLabels.map((lane) => lane.label);
         this.#axisNames = labels.axisLabels.map((axis) => axis.label);
-        const weights = attentionWeights(presented.nodes, this.#sample, tab.view.focus);
+        const index = new SpatialIndex2D([...positions].map(([id, point]) => ({ id, x: point.x, y: point.y })));
+        const anchor = tab.view.focus ? positions.get(tab.view.focus) : undefined;
+        const nearby = anchor ? new Set(index.near(anchor.x, anchor.y, 600)) : new Set<string>();
+        const weights = new Map([...attentionWeights(presented.nodes, this.#sample, tab.view.focus)]
+            .map(([id, weight]) => [id, nearby.has(id) ? Math.min(1, weight + 0.08) : weight] as const));
         this.#attention = weights;
         const model = this.#adapter.build(
             {
@@ -579,6 +606,51 @@ export class DurableHost {
         this.announce(`Shot ${id}`);
     }
 
+    loadShot(id: string, options?: { readonly replay?: boolean; readonly asOf?: number }): boolean {
+        const feed = options?.replay
+            ? replayFeed(id, this.#seed)
+            : options?.asOf !== undefined
+                ? asOfFeed(id, options.asOf)
+                : localFeed(undefined, this.#seed, id);
+        this.loadFeed(feed);
+        this.setAsOf(options?.asOf);
+        this.applyShot(id);
+        return true;
+    }
+
+    setStory(id: string): boolean {
+        const story = storyByID(id);
+        if (!story) return false;
+        this.#story = story;
+        return true;
+    }
+
+    async scrub(index: number): Promise<boolean> {
+        const frame = this.#story?.frames[index];
+        if (!frame) return false;
+        if ('shot' in frame) {
+            if (frame.observer) {
+                this.announce('Observer chapters need a read-only stream — open ?observer=1');
+                return false;
+            }
+            this.loadShot(frame.shot, { replay: Boolean(frame.replayId), asOf: frame.asOf });
+        } else if (frame.action === 'prompt') {
+            const input = el<HTMLInputElement>('prompt-input');
+            input.value = frame.value ?? '';
+            el<HTMLFormElement>('prompt-form').requestSubmit();
+        } else if (frame.action === 'approve') {
+            el<HTMLButtonElement>('approve-button').click();
+        } else if (frame.action === 'setView') {
+            this.setView(frame.value as ViewName);
+        } else if (frame.action === 'setTab') {
+            this.setTab(frame.value ?? '');
+        } else {
+            this.reveal(frame.value ?? '');
+        }
+        this.announce(`Chapter ${index + 1}: ${frame.caption}`);
+        return true;
+    }
+
     permalink(): string {
         const tab = this.registry.active();
         const params = new URLSearchParams({ s: tab?.id ?? '' });
@@ -595,22 +667,51 @@ export class DurableHost {
 
     applyPermalink(value: string): boolean {
         const params = new URLSearchParams(value.includes('?') ? value.split('?')[1] : value);
-        const id = params.get('s');
-        const rung = params.get('rung');
         const view = params.get('view');
+        const rung = params.get('rung');
         const layout = params.get('layout');
+        const asOf = Number(params.get('asOf'));
         const zoom = Number(params.get('zoom'));
-        if (view && VIEW_NAMES.includes(view as ViewName)) this.setView(view as ViewName);
-        if (rung && isRung(rung)) this.setRung(rung);
-        if (layout && LAYOUT_NAMES.includes(layout as LayoutName)) this.setLayout(layout as LayoutName);
-        const asOf = params.get('asOf');
-        if (asOf !== null && Number.isFinite(Number(asOf))) this.setAsOf(Number(asOf));
-        if (params.has('zoom') && Number.isFinite(zoom) && zoom > 0) {
+        return this.applyAddress({
+            s: params.get('s') ?? undefined,
+            shot: params.get('shot') ?? undefined,
+            view: view && VIEW_NAMES.includes(view as ViewName) ? view as ViewName : undefined,
+            rung: rung && isRung(rung) ? rung : undefined,
+            layout: layout && LAYOUT_NAMES.includes(layout as LayoutName) ? layout as LayoutName : undefined,
+            asOf: params.has('asOf') && Number.isFinite(asOf) ? asOf : undefined,
+            zoom: params.has('zoom') && Number.isFinite(zoom) ? zoom : undefined,
+        });
+    }
+
+    address(): Address {
+        const viewport = this.renderer.getViewport?.();
+        return {
+            s: this.registry.activeID() || undefined,
+            shot: this.#shot,
+            view: this.#viewName === 'graph' ? undefined : this.#viewName,
+            rung: this.#rung === 'fact' ? undefined : this.#rung,
+            layout: this.#layoutName === 'grid' ? undefined : this.#layoutName,
+            asOf: this.#asOf,
+            zoom: viewport?.zoom,
+        };
+    }
+
+    applyAddress(address: Address): boolean {
+        if (address.shot) this.applyShot(address.shot);
+        if (address.view) this.setView(address.view);
+        if (address.rung) this.setRung(address.rung);
+        if (address.layout) this.setLayout(address.layout);
+        if (address.asOf !== undefined) this.setAsOf(address.asOf);
+        if (address.zoom !== undefined && address.zoom > 0) {
             const viewport = this.renderer.getViewport?.();
-            if (viewport) this.renderer.setViewport({ zoom, center: viewport.center });
+            if (viewport) this.renderer.setViewport({ zoom: address.zoom, center: viewport.center });
         }
-        if (id && this.registry.get(id)) return this.setTab(id);
+        if (address.s && this.registry.get(address.s)) return this.setTab(address.s);
         return false;
+    }
+
+    compactAddress(): string {
+        return `?at=${encodeAddress(this.address())}`;
     }
 
     hooks(): Record<string, unknown> {
@@ -624,19 +725,21 @@ export class DurableHost {
             focus: (id: string) => this.focus(id),
             applyShot: (id: string) => this.applyShot(id),
             setAsOf: (seq?: number) => this.setAsOf(seq),
-            loadShot: (id: string, options?: { readonly replay?: boolean; readonly asOf?: number }) => {
-                const feed = options?.replay
-                    ? replayFeed(id, this.#seed)
-                    : options?.asOf !== undefined
-                        ? asOfFeed(id, options.asOf)
-                        : localFeed(undefined, this.#seed, id);
-                this.loadFeed(feed);
-                this.setAsOf(options?.asOf);
-                this.applyShot(id);
-                return true;
-            },
+            loadShot: (id: string, options?: { readonly replay?: boolean; readonly asOf?: number }) =>
+                this.loadShot(id, options),
+            setStory: (id: string) => this.setStory(id),
+            chapters: () => chapterCaptions(this.#story?.id),
+            chapterFrames: () => chapterFrames(this.#story?.id).map((frame) =>
+                'shot' in frame ? { caption: frame.caption, shot: frame.shot } : { caption: frame.caption, action: frame.action },
+            ),
+            scrub: (index: number) => this.scrub(index),
             permalink: () => this.permalink(),
             applyPermalink: (value: string) => this.applyPermalink(value),
+            address: () => this.address(),
+            compactAddress: () => this.compactAddress(),
+            applyAddress: (value: string) => this.applyAddress(decodeAddress(value) ?? {}),
+            trail: () => RUNGS.slice(0, RUNGS.findIndex((entry) => entry.id === this.#rung) + 1)
+                .map((entry) => entry.id),
             lens: (query: string) => this.lens(query),
             lensHelp: () => LENS_HELP,
             attention: () => ({
@@ -673,6 +776,7 @@ export class DurableHost {
             representation: () => ({
                 view: this.#viewName,
                 nodes: this.#presented.nodes.length,
+                omitted: this.#omitted,
                 edgeKinds: this.#presented.edges.map((edge) => edge.kind),
                 edgeLabels: [...this.#edgeLabels],
                 laneLabels: [...this.#laneNames],
@@ -730,7 +834,12 @@ export class DurableHost {
         const contains: ScopeEdge[] = placed
             .filter((edge) => CONTAINMENT.has(edge.kind))
             .map((edge, index) => ({ id: `contains-${index}`, source: edge.source, target: edge.target, kind: 'contains' }));
-        const scopes = buildScopes(nodes, contains, 300);
+        const key = `${this.#layoutName}|${nodes.map((node) => node.id).join(',')}|${placed.map((edge) => edge.id).join(',')}`;
+        if (key !== this.#scopeKey || !this.#scopes) {
+            this.#scopes = buildScopes(nodes, contains, 300);
+            this.#scopeKey = key;
+        }
+        const scopes = this.#scopes;
         const spec: ScopeSpec = {
             id: 'root',
             strategy: LAYOUT_STRATEGIES[this.#layoutName],
@@ -935,6 +1044,7 @@ export class DurableHost {
                 [`storage: ${this.#status.storage}`, 'muted'],
                 [`${this.#status.tasks} task${this.#status.tasks === 1 ? '' : 's'}`, sleeping ? 'warn' : 'ok'],
                 [`tab ${this.registry.activeID()}`, 'ok'],
+                ...(this.#omitted ? [[`${this.#omitted} omitted by budget`, 'warn'] as const] : []),
             ].map(([label, tone]) => {
                 const badge = document.createElement('span');
                 badge.className = 'badge';
@@ -995,35 +1105,54 @@ export class DurableHost {
         );
         el('app').dataset['rung'] = this.#rung;
         el('rung-caption').textContent = RUNGS.find((entry) => entry.id === this.#rung)!.description;
+        this.renderTrail();
+    }
+
+    private renderTrail(): void {
+        const index = RUNGS.findIndex((entry) => entry.id === this.#rung);
+        const nodes = RUNGS.slice(0, index + 1).flatMap((rung, position) => [
+            ...(position ? [Object.assign(document.createElement('span'), { textContent: '›' })] : []),
+            (() => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = rung.label.toLowerCase();
+                button.dataset['rung'] = rung.id;
+                button.setAttribute('aria-current', rung.id === this.#rung ? 'page' : 'false');
+                button.addEventListener('click', () => this.setRung(rung.id));
+                return button;
+            })(),
+        ]);
+        el('trail').replaceChildren(...nodes);
     }
 
     private renderOverview(): void {
         if (!this.#ready) return;
-        const positions = [...this.#simulation.view().positions.values()];
         const svg = document.getElementById('survey-svg') as unknown as SVGSVGElement;
-        if (!positions.length) {
-            this.#overviewBounds = undefined;
+        const positions = new Map([...this.#simulation.view().positions].map(([id, point]) => [id, { x: point.x, y: point.y }]));
+        if (!positions.size) {
+            this.#overviewProjection = undefined;
             svg.replaceChildren();
             return;
         }
-        const xs = positions.map((position) => position.x);
-        const ys = positions.map((position) => position.y);
-        const minX = Math.min(...xs);
-        const maxX = Math.max(...xs);
-        const minY = Math.min(...ys);
-        const maxY = Math.max(...ys);
-        this.#overviewBounds = { minX, maxX, minY, maxY };
-        const width = Math.max(1, maxX - minX);
-        const height = Math.max(1, maxY - minY);
-        const mapX = (x: number) => 8 + ((x - minX) / width) * 144;
-        const mapY = (y: number) => 8 + ((y - minY) / height) * 84;
-        const dots = positions
-            .map((position) => `<circle cx="${mapX(position.x).toFixed(1)}" cy="${mapY(position.y).toFixed(1)}" r="2.2" />`)
-            .join('');
         const viewport = this.renderer.getViewport?.();
-        const extent = viewport?.extent;
-        const reticle = extent
-            ? `<rect x="${Math.max(2, mapX(viewport!.center[0] - extent.width / 2)).toFixed(1)}" y="${Math.max(2, mapY(viewport!.center[1] - extent.height / 2)).toFixed(1)}" width="${((extent.width / width) * 144).toFixed(1)}" height="${((extent.height / height) * 84).toFixed(1)}" />`
+        const projection = Navigation.project({
+            positions,
+            box: { width: 160, height: 100 },
+            padding: 8,
+            viewport: viewport?.extent
+                ? { center: [viewport.center[0], viewport.center[1]], extent: viewport.extent }
+                : undefined,
+        });
+        this.#overviewProjection = projection;
+        const dots = [...positions.values()]
+            .map((point) => {
+                const at = projection.project(point);
+                return `<circle cx="${at.x.toFixed(1)}" cy="${at.y.toFixed(1)}" r="2.2" />`;
+            })
+            .join('');
+        const rect = projection.viewRect;
+        const reticle = rect
+            ? `<rect x="${rect.x.toFixed(1)}" y="${rect.y.toFixed(1)}" width="${rect.width.toFixed(1)}" height="${rect.height.toFixed(1)}" />`
             : '';
         svg.innerHTML = `<rect class="plate-frame" x="1" y="1" width="158" height="98" />${dots}${reticle}`;
     }
@@ -1077,32 +1206,30 @@ export class DurableHost {
             button.addEventListener('click', () => this.setView(button.dataset['view'] as ViewName));
         el('help-close').addEventListener('click', () => this.toggleHelp(false));
         el('survey').addEventListener('click', (event) => {
-            const bounds = this.#overviewBounds;
+            const projection = this.#overviewProjection;
             const viewport = this.renderer.getViewport?.();
-            if (!bounds || !viewport) return;
+            if (!projection || !viewport) return;
             const rect = el('survey').getBoundingClientRect();
-            const fx = (event.clientX - rect.left) / rect.width;
-            const fy = (event.clientY - rect.top) / rect.height;
-            const x = bounds.minX + fx * (bounds.maxX - bounds.minX);
-            const y = bounds.minY + fy * (bounds.maxY - bounds.minY);
-            this.renderer.setViewport({ zoom: viewport.zoom, center: [x, y, viewport.center[2]] });
+            const point = projection.unproject({
+                x: ((event.clientX - rect.left) / rect.width) * 160,
+                y: ((event.clientY - rect.top) / rect.height) * 100,
+            });
+            this.renderer.setViewport({ zoom: viewport.zoom, center: [point.x, point.y, viewport.center[2]] });
         });
         el('survey').addEventListener('keydown', (event) => {
-            const bounds = this.#overviewBounds;
+            const projection = this.#overviewProjection;
             const viewport = this.renderer.getViewport?.();
-            if (!bounds || !viewport) return;
-            const dx = event.key === 'ArrowRight' ? 0.1 : event.key === 'ArrowLeft' ? -0.1 : 0;
-            const dy = event.key === 'ArrowDown' ? 0.1 : event.key === 'ArrowUp' ? -0.1 : 0;
+            if (!projection || !viewport) return;
+            const rect = projection.viewRect;
+            const dx = event.key === 'ArrowRight' ? 8 : event.key === 'ArrowLeft' ? -8 : 0;
+            const dy = event.key === 'ArrowDown' ? 8 : event.key === 'ArrowUp' ? -8 : 0;
             if (!dx && !dy) return;
             event.preventDefault();
-            this.renderer.setViewport({
-                zoom: viewport.zoom,
-                center: [
-                    viewport.center[0] + dx * (bounds.maxX - bounds.minX),
-                    viewport.center[1] + dy * (bounds.maxY - bounds.minY),
-                    viewport.center[2],
-                ],
+            const point = projection.unproject({
+                x: (rect?.x ?? 80) + (rect?.width ?? 0) / 2 + dx,
+                y: (rect?.y ?? 50) + (rect?.height ?? 0) / 2 + dy,
             });
+            this.renderer.setViewport({ zoom: viewport.zoom, center: [point.x, point.y, viewport.center[2]] });
         });
     }
 

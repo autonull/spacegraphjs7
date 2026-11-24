@@ -44,11 +44,13 @@ OpenAI-compatible provider to a local `llama-server` (no key, no network); start
    selection, camera, view and transcript position.
 6. `Ctrl+C`, restart: conversations and tasks are recovered from storage; a retried `requestId`
    returns the original submission and adds no second answer.
-7. `[` / `]` switch tabs; **Copy** writes a permalink carrying the active tab.
+7. `[` / `]` switch tabs; **Copy** writes a permalink carrying the active tab, view, landmark,
+   layout, time and camera. `?at=<codec>` is the compact form of the same address.
 8. `/` focuses the prompt, `Ctrl/⌘ K` focuses the Lens (`view diff`, `rung grain`, `as of 2`,
    `tab 2`, `layout radial`, `find Paris`), `?` toggles help, `g` cycles views, `Esc` clears overlays.
-   Landmarks grade attention on one kernel; they never filter committed facts. Export produces JSON,
-   a session document, SVG or Markdown.
+   Landmarks grade attention on one kernel; they never filter committed facts. The survey plate maps
+   node positions through `Navigation.project`; click or arrow keys pan. Export produces JSON, a
+   session document, SVG or Markdown.
 9. `pnpm --filter pi-durable build` serves the same page from a local op feed with no server.
 
 Keyboard traversal, a roving-tabindex ARIA tablist with RTL arrows, live announcements, 44px
@@ -73,10 +75,12 @@ Four Core heroes are tracked at full resolution: `basic-turn`, `sleeping-approva
 `resumed`. Seven story composites replace the wall of near-duplicate `Next` frames: `turn-flow`,
 `task-wake`, `fork-journey`, `resume-journey`, `inspect-flow`, `host-boundary` and `child-flow`. Each story captures
 four states from pure `?shot`/`?scenario` state through `window.__durable` hooks, then composes them
-in a browser canvas. Views `diff`, `trace`, `docs` and `transcript` re-place the same folded kernel
-and are represented inside those stories, not as new renderer contracts. `pnpm --filter pi-durable
-shots:all` captures heroes and stories; the contact sheet keeps before/after pairs without writing a
-verdict.
+in a browser canvas. Each cell is an engraved plate: a survey mark, landmark legend and scale bar
+alongside its numbered caption. The same frames are scrubbable through `setStory` / `chapters` /
+`scrub`; the PNG is the printed plate and the hooks are the film. Views `diff`, `trace`, `docs` and
+`transcript` re-place the same folded kernel and are represented inside those stories, not as new
+renderer contracts. `pnpm --filter pi-durable shots:all` captures heroes and stories; the contact
+sheet keeps before/after pairs without writing a verdict.
 
 ## Environment
 
@@ -142,6 +146,7 @@ Errors are typed (`no-provider`, `unknown-conversation`, `run_failed`, `turn_lim
 - `src/attention.ts` — `ScaleDomain` samples landmarks into continuous attention weights; a low
   weight mutes a fact, it never deletes it.
 - `src/lens.ts` — one command grammar for view, landmark, time, tab, layout and node lookup.
+- `src/address.ts` / `src/chapters.ts` — compact permalink codec and the hooks behind scrubbable plates.
 - `src/shots.ts` — shot catalog; `?shot=<id>` reproduces each state from pure data.
 
 The shared pipeline lives in `app/pi-kit` (ops/demux, `TabRegistry`, session/workspace state, scope

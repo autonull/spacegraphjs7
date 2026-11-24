@@ -1,6 +1,7 @@
 import { addEdge, addNode } from '@spacegraphjs/kernel';
 import { demuxOp, TabRegistry, type KernelOp } from 'pi-kit';
 import { getJSON, postJSON, type ConversationInfo, type Health, type Scenario } from './api';
+import { decodeAddress } from './address';
 import { DurableHost } from './host';
 import { localFeed } from './local-feed';
 import { replayFeed } from './replay';
@@ -9,13 +10,14 @@ import { SCENARIOS } from './scenarios';
 import { asOfFeed } from './time-travel';
 
 const params = new URLSearchParams(location.search);
-const shot = params.get('shot') ?? undefined;
+const compact = decodeAddress(params.get('at'));
+const shot = params.get('shot') ?? compact?.shot;
 const scenario = params.get('scenario') ?? undefined;
 const seed = params.get('seed') ?? 'fixed';
 const replayID = params.get('replay') ?? undefined;
-const asOf = params.get('asOf') === null ? undefined : Number(params.get('asOf'));
+const asOf = params.get('asOf') === null ? compact?.asOf : Number(params.get('asOf'));
 const observer = params.get('observer') === '1';
-const rung = params.get('rung');
+const rung = params.get('rung') ?? compact?.rung;
 const initialRung = isRung(rung) ? rung : undefined;
 const offline = Boolean(shot) || Boolean(scenario) || Boolean(replayID)
     || asOf !== undefined || params.get('offline') === '1';
@@ -276,6 +278,7 @@ const boot = async (): Promise<void> => {
     await connect();
     if (['s', 'view', 'rung', 'layout', 'asOf', 'zoom'].some((key) => params.has(key)))
         host.applyPermalink(location.href);
+    if (compact) host.applyAddress(compact);
     if (!host.registry.active()) host.loadFeed(localFeed(shot, seed));
     host.refresh();
     Object.assign(window, { __durable: host.hooks() });
