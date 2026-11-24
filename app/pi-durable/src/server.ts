@@ -28,6 +28,12 @@ const PORT = Number(process.env.PI_DURABLE_SERVER_PORT ?? 8788);
 const STORAGE = process.env.PI_DURABLE_STORAGE ?? 'jsonl';
 const DIR = resolve(process.cwd(), process.env.PI_DURABLE_DIR ?? '.pi-durable');
 const SEED = process.env.PI_DURABLE_FAUX_SEED ?? 'fixed';
+const PROVIDER = process.env.PI_DURABLE_PROVIDER ?? 'faux';
+const MODEL = process.env.PI_DURABLE_MODEL ?? 'gpt-4o-mini';
+const LIVE = PROVIDER === 'openai';
+const PROVIDER_ERROR = LIVE && !process.env.OPENAI_API_KEY
+    ? { error: 'no-provider', recovery: 'set OPENAI_API_KEY or unset PI_DURABLE_PROVIDER' }
+    : undefined;
 const Approval = defineSignal({ name: 'durable.approval', version: 1, schema: obj({ allow: bool() }) });
 const APPROVAL_KEY = 'approve';
 
@@ -66,9 +72,15 @@ const ApprovalTask = defineTask<ApprovalInput, ApprovalState, ApprovalResult>({
 });
 
 const faux = fauxProvider();
-faux.setResponses([fauxAssistantMessage(answerFor('What can this workspace show?'))]);
+if (!LIVE) faux.setResponses([fauxAssistantMessage(answerFor('What can this workspace show?'))]);
 const models = createModels();
-models.setProvider(faux.provider);
+if (LIVE && !PROVIDER_ERROR) {
+    const { openaiProvider } = await import('@earendil-works/pi-ai/providers/openai');
+    models.setProvider(openaiProvider());
+} else models.setProvider(faux.provider);
+const agentModel = LIVE && !PROVIDER_ERROR
+    ? { provider: 'openai', modelId: MODEL }
+    : { provider: 'faux', modelId: 'faux-1' };
 const registry = createRegistry();
 registry.install(defineExtension({ name: 'durable-workspace', tasks: [ApprovalTask] }));
 
@@ -143,11 +155,9 @@ const seed = async (conversation: Conversation, question: string, requestID: str
 
 const idOf = (conversation: Conversation): string => String(conversation.id);
 
-const root = await harness.root(BACKGROUND_CONTEXT, {
-    agent: { model: { provider: 'faux', modelId: 'faux-1' } },
-});
+const root = await harness.root(BACKGROUND_CONTEXT, { agent: { model: agentModel } });
 await watchConversation(root);
-if (!views.get(idOf(root))?.entries.length) {
+if (!LIVE && !views.get(idOf(root))?.entries.length) {
     await seed(root, 'What can this workspace show?', 'seed-1');
 }
 if (!approvalTaskID) {
@@ -183,7 +193,10 @@ const text = (value: unknown): string => (typeof value === 'string' ? value : ''
 const health = () => ({
     ok: true,
     storage: STORAGE,
-    provider: 'faux',
+    provider: LIVE ? 'openai' : 'faux',
+    providerMode: LIVE ? 'live' : 'faux',
+    model: LIVE ? MODEL : 'faux-1',
+    ...(PROVIDER_ERROR ? { providerError: PROVIDER_ERROR } : {}),
     conversations: conversations.size,
     sleepingTasks: tasks.filter((task) => task.state.status === 'sleeping').length,
     recovered: tasks.length,
@@ -258,7 +271,11 @@ const server = createServer(async (request, response) => {
             const conversation = await harness.createConversation(
                 {
                     ownership: { kind: 'ownerless' },
-                    ...(text(body.agent) ? { agent: { model: { provider: 'faux', modelId: text(body.agent) } } } : {}),
+                    ...(LIVE && !PROVIDER_ERROR
+                        ? { agent: { model: agentModel } }
+                        : text(body.agent)
+                          ? { agent: { model: { provider: 'faux', modelId: text(body.agent) } } }
+                          : {}),
                 },
                 BACKGROUND_CONTEXT,
             );
@@ -268,6 +285,7 @@ const server = createServer(async (request, response) => {
         }
         const promptMatch = /^\/api\/conversations\/([^/]+)\/prompt$/.exec(url.pathname);
         if (promptMatch && request.method === 'POST') {
+            if (PROVIDER_ERROR) return json(response, 503, PROVIDER_ERROR);
             const id = promptMatch[1]!;
             const conversation = conversations.get(id);
             if (!conversation) return json(response, 404, { error: 'unknown-conversation', recovery: 'choose another tab' });
@@ -279,7 +297,7 @@ const server = createServer(async (request, response) => {
             if (await storage.submissionByRequest(Number(id) as never, requestID, BACKGROUND_CONTEXT)) {
                 return json(response, 200, { status: 'duplicate', requestId: requestID });
             }
-            faux.appendResponses([fauxAssistantMessage(answerFor(prompt))]);
+            if (!LIVE) faux.appendResponses([fauxAssistantMessage(answerFor(prompt))]);
             const submission = await conversation.submit(
                 { type: 'input', content: prompt, requestId: requestID, whenBusy: mode },
                 BACKGROUND_CONTEXT,
@@ -302,7 +320,7 @@ const server = createServer(async (request, response) => {
                 return json(response, 400, { error: 'no-entry', recovery: 'select an entry first' });
             const child = await conversation.fork(entryID as never, {
                 ownership: { kind: 'ownerless' },
-                agent: { model: { provider: 'faux', modelId: 'faux-1' } },
+                agent: { model: agentModel },
             }, BACKGROUND_CONTEXT);
             await watchConversation(child);
             const childID = idOf(child);
@@ -335,8 +353,13 @@ const server = createServer(async (request, response) => {
         if (loadMatch && request.method === 'POST') {
             const scenario = SCENARIOS.find((entry) => entry.id === loadMatch[1]);
             if (!scenario) return json(response, 404, { error: 'unknown-scenario', recovery: 'pick a listed scenario' });
+            if (LIVE)
+                return json(response, 400, {
+                    error: 'scenario-unavailable',
+                    recovery: 'use ?scenario=<id> in faux mode; live mode does not seed fixture answers',
+                });
             const conversation = await harness.createConversation(
-                { ownership: { kind: 'ownerless' }, agent: { model: { provider: 'faux', modelId: 'faux-1' } } },
+                { ownership: { kind: 'ownerless' }, agent: { model: agentModel } },
                 BACKGROUND_CONTEXT,
             );
             await watchConversation(conversation);

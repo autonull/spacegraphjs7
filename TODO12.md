@@ -2,8 +2,8 @@
 
 > **Status: Core + Next landed, Phase 3 gates closed (2026-11-24).** The runnable app, shared kit,
 > server adapter, translator, tabs, two scoped placements, 22 named scenarios with tracked shots,
-> a11y/restart/coverage gates, docs and guards are in place; see §13. Only §11 deferred items and an
-> opt-in real provider remain. This adds a second private workspace consumer for
+> a11y/restart/coverage gates, the opt-in live provider path, docs and guards are in place; see §13.
+> Only §11 deferred items and external human verdicts remain. This adds a second private workspace consumer for
 > `@earendil-works/pi-durable`. No published surface, renderer contract, default in `app/pi`, or
 > human verdict (ADR 0008) changes.
 
@@ -523,13 +523,14 @@ uses a NOOP span — a real span is needed for `pi.durable.*` telemetry (a Next 
 | X1 — scoped placements | Done | One `ScopeSimulation` is the position authority; kit `buildScopes` supplies targets for graph, tasks and timeline views of the same folded kernel. `task-graph` and `timeline` shots are tracked. |
 | C1 — scenario pack | Done | `src/scenarios.ts` holds one deterministic fixture per §2 row: Core plus 15 Next cases, each with expected stable ids, a URL state, a vitest case and a shot. No bespoke panel per capability. |
 | U1 / G1 — gates | Done | `tests/a11y.spec.ts` (roving tabindex, RTL arrows, live announcements, no dead control, narrow viewport), `tests/resume.spec.ts` (real stop/restart on an isolated JSONL dir), `CORE_COVERAGE` assertion, vision gate, dependency/docs guard, build, root `check`. |
-| D1 — docs | Done | App README (scenarios, URL state, scoped placements), root README, `app/pi` README, `SPACEGRAPH_OS.md` §4, 22-row screenshot table, `PLAN/INDEX.md`, ADRs 0017/0018, narrow docs allowlist in both guards, `app/demo/pi-durable.html` landing page. |
+| D1 — docs | Done | App README (scenarios, URL state, scoped placements, live provider env), root README, `app/pi` README, `SPACEGRAPH_OS.md` §4, 22-row screenshot table, `PLAN/INDEX.md`, ADRs 0017/0018, narrow docs allowlist in both guards, `app/demo/pi-durable.html` landing page. |
+| Live provider opt-in | Done | `PI_DURABLE_PROVIDER=openai` + `OPENAI_API_KEY` loads `openaiProvider()` behind a dynamic import, uses `PI_DURABLE_MODEL`, skips faux fixture seeding, reports provider mode in health, and returns typed `no-provider`/`scenario-unavailable` errors. `tests/provider.spec.ts` covers the keyless path offline. |
 
 ### Verification results
 
 ```text
 pnpm --filter pi-durable check:fast      35 tests passed (translator, tabs, scenarios)
-pnpm --filter pi-durable test:e2e        31 passed (9 journey/a11y/resume/vision + 22 shots)
+pnpm --filter pi-durable test:e2e        32 passed (10 journey/a11y/resume/provider/vision + 22 shots)
 pnpm --filter pi-durable verify          dependency / docs allowlist guard passed
 pnpm --filter pi-durable build           static bundle built
 pnpm run check                           all package typechecks passed
@@ -559,16 +560,17 @@ temp directory. Visual evidence is tracked pairs only; no human verdict was writ
 - `PI_DURABLE_LOCAL_FEED` is documented but is not a server switch: faux + JSONL is already
   provider-free. `?shot=<id>`, `?scenario=<id>` and `?offline=1` select the pure local feed in the
   browser.
-- Real provider opt-in (`PI_DURABLE_PROVIDER=openai` + key) is not implemented; health reports `faux`.
+- Live provider mode never seeds faux fixtures or loads named scenarios through the server; those
+  stay offline URL states. A live smoke test with a real key is outside CI.
 - `vision()` is a deterministic DOM/canvas score, not an ONNX model verdict. No human verdict was written.
 - The demo landing page embeds four PNG copies under `public/pi-durable/`; the catalog remains tracked
   in `docs/screenshots/pi-durable/`.
 
 ### Remaining work
 
-1. **Real provider opt-in** — add `PI_DURABLE_PROVIDER=openai` plus key handling behind a typed
-   `no-provider` error, with a live smoke test outside CI. It cannot be verified offline and upstream
-   1.6.0 provider APIs churn, so keep it in its own change set rather than add a shim here.
+1. **Live smoke test** — exercise `PI_DURABLE_PROVIDER=openai` with a real key outside CI. The keyless
+   typed-error path is covered offline; upstream 1.6.0 provider APIs churn, so any upgrade gets its
+   own change set rather than a shim.
 2. **§11 deferred** — code mode, images, hosted Harness / `readOnly` observer, `snapshotAsOf` time
    travel, recorder/replay and custom storage conformance. None blocks the working Core.
 3. **Human verdicts** — external gate on new shot pairs and the flagship's pending pairs; no verdict

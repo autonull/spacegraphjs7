@@ -23,7 +23,10 @@ pnpm --filter pi-durable build        # static bundle, boots from the local feed
 ```
 
 No provider, key or fixture command is needed: the default Harness uses a faux provider over JSONL
-storage in the gitignored `.pi-durable/` directory.
+storage in the gitignored `.pi-durable/` directory. `PI_DURABLE_PROVIDER=openai` opts into a live
+OpenAI model with `OPENAI_API_KEY` and an optional `PI_DURABLE_MODEL`; it skips faux fixture seeding,
+reports its mode in `/api/health`, and returns a typed `no-provider` error without a key. Named
+scenarios stay offline in that mode.
 
 ## First-run journey
 
@@ -70,7 +73,9 @@ a verdict.
 | `PI_DURABLE_LOCAL_FEED` | off in dev | Marks the browser harness as a local fixture run |
 | `PI_DURABLE_STORAGE` | `jsonl` | `jsonl`, `memory` or `sqlite` store |
 | `PI_DURABLE_DIR` | `.pi-durable` | JSONL directory; an isolated directory is used by the restart test |
-| `PI_DURABLE_PROVIDER` | `faux` | Provider mode reported by health; faux is the only Core provider |
+| `PI_DURABLE_PROVIDER` | `faux` | `faux` (default) or `openai` (opt-in live mode) |
+| `PI_DURABLE_MODEL` | `gpt-4o-mini` | Model id for `openai` mode; faux mode always uses `faux-1` |
+| `OPENAI_API_KEY` | unset | Required when `PI_DURABLE_PROVIDER=openai`; otherwise prompts fail with typed `no-provider` |
 | `PI_DURABLE_FAUX_SEED` | `fixed` | Keeps screenshot answers deterministic |
 | `PI_DURABLE_SERVER_PORT` | `8788` | Node server port |
 | `PI_DURABLE_WEB_PORT` | `5176` | Vite port |

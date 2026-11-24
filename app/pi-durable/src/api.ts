@@ -2,6 +2,9 @@ export type Health = {
     readonly ok: boolean;
     readonly storage: string;
     readonly provider: string;
+    readonly providerMode?: string;
+    readonly model?: string;
+    readonly providerError?: { readonly error: string; readonly recovery: string };
     readonly conversations: number;
     readonly sleepingTasks: number;
     readonly recovered: number;
