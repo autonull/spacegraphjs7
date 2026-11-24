@@ -104,6 +104,9 @@
                     <option value="radial">Radial</option>
                     <option value="tree">Tree</option>
                     <option value="spectral">Spectral</option>
+                    <option value="cluster">Cluster</option>
+                    <option value="geo">Geographic</option>
+                    <option value="timeline">Timeline</option>
                 </select>
             </div>
             <div class="control-group">
@@ -131,6 +134,7 @@
                 SpectralLayout,
                 TreeLayout,
             } from '@src/index.ts';
+            import { ClusterLayout, GeoLayout, TimelineLayout } from 'spacegraphjs/plugins';
 
             // Create sample graph data
             const nodes = [];
@@ -229,6 +233,9 @@
                     radial: new RadialLayout(),
                     tree: new TreeLayout({ direction: 'TB' }),
                     spectral: new SpectralLayout(),
+                    cluster: new ClusterLayout({ clusterBy: 'cluster' }),
+                    geo: new GeoLayout(),
+                    timeline: new TimelineLayout(),
                 };
 
                 // Initialize all layouts with graph context

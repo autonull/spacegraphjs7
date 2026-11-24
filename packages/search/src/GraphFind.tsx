@@ -197,14 +197,18 @@ export const GraphFind = (props: GraphFindProps) => {
         const button = input.nextSibling as HTMLButtonElement;
         const buttonSpan = button.firstChild as HTMLElement;
 
-        createComponent(props.Icon, { name: 'magnifying-glass', size: 'small', class: 'shrink-0 text-text-weak' });
-        insert(iconSpan, () => ''); // Icon rendered via createComponent above
+        insert(iconSpan, () =>
+            createComponent(props.Icon, {
+                name: 'magnifying-glass',
+                size: 'small',
+                class: 'shrink-0 text-text-weak',
+            }),
+        );
 
         setAttribute(input, 'placeholder', props.t('ui.find.search.placeholder'));
         setAttribute(input, 'aria-label', props.t('ui.find.search.placeholder'));
         setAttribute(button, 'aria-label', props.t('ui.find.search.clear'));
-        createComponent(props.Icon, { name: 'close-small', size: 'small' });
-        insert(buttonSpan, () => '');
+        insert(buttonSpan, () => createComponent(props.Icon, { name: 'close-small', size: 'small' }));
 
         input.oninput = (e: Event) => {
             const target = e.target as HTMLInputElement;
@@ -362,8 +366,9 @@ export const GraphFind = (props: GraphFindProps) => {
                 
                 const iconSpan = document.createElement('span');
                 iconSpan.className = 'shrink-0 text-text-weak';
-                createComponent(props.Icon, { name: 'outline-dots', size: 'small' });
-                insert(iconSpan, () => '');
+                insert(iconSpan, () =>
+                    createComponent(props.Icon, { name: 'outline-dots', size: 'small' }),
+                );
                 
                 const labelSpan = document.createElement('span');
                 labelSpan.className = 'truncate text-text-strong';
