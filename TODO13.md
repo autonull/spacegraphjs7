@@ -209,14 +209,13 @@ The live model smoke test is separately invoked and its skip reason is reported.
 | ------ | ----- | -------- |
 | A — local model smoke | Landed | `PI_DURABLE_PROVIDER=local` with OpenAI-compatible `llama-server`; `tests/local-model.spec.ts` passes with the 0.8B Qwen GGUF (13 s); README env table updated |
 | B — visual detail and representations | Landed | B1/B2: friendly labels, per-card summaries, edge captions, legend, richer inspector; `tests/detail.spec.ts`. B1b/B3: importance tiers (`hero`/`medium`/`compact`) from committed `data`, `nodeSizeFn` + card template, lane/axis captions, four re-placements (`diff`, `trace`, `docs`, `transcript`), `tests/representations.spec.ts`. B4: six tracked composites in `docs/screenshots/pi-durable/stories/`, four Core heroes retained, 18 near-duplicate Next PNGs retired (gallery 2.4 MB → 1.2 MB), `tests/stories.spec.ts`, `shots:stories` and `--composite`, contact sheet/docs/landing page updated. Frames are captured at 1600×1000 and drawn into 800×500 grid cells: the lower viewport made the mobile rail dominate the frame. Gates 2026-11-24: `pnpm check:fast` (39 tests), `pnpm verify`, `pnpm build`, `pnpm verify:visual` (5 tests), `pnpm shots:all` (4 heroes + 6 stories), root `pnpm run check` all green. |
-| C — deferred surfaces | Proposed | No code changed |
+| C — deferred surfaces | In progress | C3/C4/C5/C6 landed 2026-11-24: observer process (`PI_DURABLE_OBSERVER=1`, `/events/observe`, typed `read-only`, `tests/observer.test.ts`, `tests/observer-ui.spec.ts`); `?asOf=<seq>` snapshots with badge (`tests/time-travel.test.ts`, `tests/time-travel.spec.ts`); deferred `app.replay` recorder/replay (`tests/replay.test.ts`); upstream `registerStorageConformance` for memory, custom delegating adapter, JSONL and SQLite behind `PI_DURABLE_CONFORMANCE=1` (`tests/storage-conformance.test.ts`). Seven composites now include `resume-journey` as-of/replay frames and a new `host-boundary` story. Gates: `pnpm check:fast` (48 vitest tests), `pnpm verify`, `pnpm shots:stories` (7 composites), `pnpm test:e2e` (29 tests), `pnpm verify:visual`, root `pnpm run check` green. Playwright starts the observer on `PI_DURABLE_SERVER_PORT + 12` so spawn-based tests keep their own ports. C1/C2 remain proposed; see the stop-rule note below. |
 
-Next change set: Stream C. C4 (`snapshotAsOf`) and C6 (`registerStorageConformance`) exist in the
-installed Pi Durable 1.6.0 typings; C5 is pure local-feed logic. C1/C2 helpers (`createCodemodeExtension`,
-`createNodePhotonImages`, `CodemodeSandbox`) are absent from the installed Pi AI 1.6.0 typings, so
-the §4 stop rule applies: record that exact gap and split those surfaces into their own change set
-instead of adding a shim. C3 needs a second owner process and stays separate. C4/C5 extend the
-existing `resume-journey` composite; neither adds a standalone PNG.
+Stop-rule gaps for C1/C2 (recorded, not shimmed): `createCodemodeExtension` is exported from
+`@earendil-works/pi-durable/codemode`, but its required `CodemodeSandbox` comes from
+`@earendil-works/pi-codemode/portable`, which is not installed. C2's `createNodePhotonImages()` needs
+`@silvia-odwyer/photon`'s WebAssembly, also not installed. Both surfaces therefore stay proposed and
+need a dependency change in their own change set. C3/C4/C5/C6 need no new dependency and are landed.
 
 Update this table at the end of each change set with the exact commands and results. Keep TODO12 as
 the record of the landed Core; record new work here only.

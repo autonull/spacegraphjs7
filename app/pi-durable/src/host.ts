@@ -15,8 +15,11 @@ import {
     type ViewState,
 } from 'pi-kit';
 import type { Feed } from './local-feed';
+import { localFeed } from './local-feed';
+import { replayFeed } from './replay';
 import { VIEW_NAMES, type ViewName } from './scenarios';
 import { shotById } from './shots';
+import { asOfFeed } from './time-travel';
 
 const THEME: RenderTheme = {
     ...DEFAULT_THEME,
@@ -370,6 +373,18 @@ export class DurableHost {
         el('announcer').textContent = message;
     }
 
+    setAsOf(seq?: number): void {
+        const badge = el('asof-badge');
+        if (seq === undefined) {
+            el('app').removeAttribute('data-asof');
+            badge.hidden = true;
+            return;
+        }
+        el('app').dataset['asof'] = String(seq);
+        badge.textContent = `as of ${seq}`;
+        badge.hidden = false;
+    }
+
     applyShot(id: string): void {
         this.#shot = id;
         const rail = shotById(id)?.rail ?? 'graph';
@@ -402,6 +417,18 @@ export class DurableHost {
             reveal: (id: string) => this.reveal(id),
             focus: (id: string) => this.focus(id),
             applyShot: (id: string) => this.applyShot(id),
+            setAsOf: (seq?: number) => this.setAsOf(seq),
+            loadShot: (id: string, options?: { readonly replay?: boolean; readonly asOf?: number }) => {
+                const feed = options?.replay
+                    ? replayFeed(id, this.#seed)
+                    : options?.asOf !== undefined
+                        ? asOfFeed(id, options.asOf)
+                        : localFeed(undefined, this.#seed, id);
+                this.loadFeed(feed);
+                this.setAsOf(options?.asOf);
+                this.applyShot(id);
+                return true;
+            },
             permalink: () => this.permalink(),
             applyPermalink: (value: string) => this.applyPermalink(value),
             export: (format: string) => this.export(format),

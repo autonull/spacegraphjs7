@@ -332,6 +332,37 @@ export const SCENARIOS: readonly Scenario[] = [
         }, test: 'representations.spec.ts',
         expected: { nodes: ['d:1:tool:1-tool', 'd:1:entry:1-compact'], edges: ['orders', 'checkpoint'] },
     }),
+    scenario({
+        id: 'replay', title: 'Recorded replay', question: 'Can host actions replay without a model call?',
+        description: 'A deferred app.replay document replays prompt, approve and view actions on the local feed.',
+        tier: 'Next', row: 'Your Own State', rail: 'graph',
+        view: base('1', 'Replay host actions', 'Replayed.', {
+            'app.replay': {
+                events: [
+                    { at: 1000, action: { kind: 'prompt', text: 'Reply with exactly: ready.' } },
+                    { at: 2000, action: { kind: 'approve' } },
+                    { at: 3000, action: { kind: 'view', view: 'graph' } },
+                ],
+            },
+        }),
+        tasks: [sleeping('2')], test: 'replay.test.ts',
+        expected: { nodes: ['d:1:app.replay', 'd:1:task:2'], edges: ['orders'] },
+    }),
+    scenario({
+        id: 'time-travel', title: 'Time travel', question: 'Can an earlier committed state be read without changing the present?',
+        description: 'Two committed answers, read at a stored asOf point with a read-only badge.',
+        tier: 'Next', row: 'Persist and Resume', rail: 'timeline', test: 'time-travel.test.ts',
+        view: {
+            ...base('1', 'Remember the first answer', 'First answer.'),
+            entries: [
+                message('1-user', 'user', 'Remember the first answer'),
+                message('1-first', 'assistant', 'First answer.'),
+                message('1-follow', 'user', 'And the second?'),
+                message('1-second', 'assistant', 'Second answer.'),
+            ],
+        },
+        expected: { nodes: ['d:1:entry:1-first', 'd:1:entry:1-second'], edges: ['orders'] },
+    }),
 ];
 
 export const scenarioByID = (id: string | null | undefined): Scenario | undefined =>

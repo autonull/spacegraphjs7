@@ -59,11 +59,14 @@ isolated JSONL directory to prove recovery without a duplicate answer.
 `?scenario=<id>` boots one named fixture without a server; `?shot=<id>` does the same and selects the
 shot's view. `src/scenarios.ts` is the single catalog: each row names a `Core` or `Next` coverage row
 from the plan, a deterministic view, tasks, expected stable ids and the test that guards it. `?s=<tab>`
-restores the active tab; `?seed=<name>` varies faux answers for capture runs.
+restores the active tab; `?seed=<name>` varies faux answers for capture runs. `?replay=<id>` folds a
+deferred `app.replay` action list onto the local feed; `?asOf=<seq>` reads a stored earlier entry
+point with a badge and no commit controls; `?observer=1` renders a second process's read-only
+`/events/observe` stream. Named scenarios and replay stay offline in live provider modes.
 
 Four Core heroes are tracked at full resolution: `basic-turn`, `sleeping-approval`, `fork-tabs` and
-`resumed`. Six story composites replace the wall of near-duplicate `Next` frames: `turn-flow`,
-`task-wake`, `fork-journey`, `resume-journey`, `inspect-flow` and `child-flow`. Each story captures
+`resumed`. Seven story composites replace the wall of near-duplicate `Next` frames: `turn-flow`,
+`task-wake`, `fork-journey`, `resume-journey`, `inspect-flow`, `host-boundary` and `child-flow`. Each story captures
 four states from pure `?shot`/`?scenario` state through `window.__durable` hooks, then composes them
 in a browser canvas. Views `diff`, `trace`, `docs` and `transcript` re-place the same folded kernel
 and are represented inside those stories, not as new renderer contracts. `pnpm --filter pi-durable
@@ -91,6 +94,10 @@ verdict.
 | `SG_DURABLE_SHOTS` | `docs/screenshots` | Screenshot output directory |
 | `SG_DURABLE_SHOT` | heroes | Comma-separated hero shot ids |
 | `SG_DURABLE_STORY` | all | Comma-separated story ids |
+| `PI_DURABLE_OBSERVER` | `0` | Open the JSONL directory read-only; commits return typed `read-only` |
+| `PI_DURABLE_OBSERVER_URL` | — | Observer base URL advertised by the owner server |
+| `PI_DURABLE_OBSERVE_IDS` | — | Extra conversation ids an observer may watch |
+| `PI_DURABLE_CONFORMANCE` | `0` | Run upstream storage conformance at boot; results at `/api/conformance` |
 
 ## Server API (Core)
 
@@ -98,6 +105,9 @@ verdict.
 | ----- | ------- |
 | `GET /events` | One SSE stream; `id:` is the conversation id and `data:` is one `KernelOp` |
 | `GET /api/health` | Harness state, storage, provider and recovered task count |
+| `GET /events/observe` | Read-only SSE stream from an observer process |
+| `GET /api/observer` | Observer URL advertised by the owner |
+| `GET /api/conformance` | Storage conformance results when enabled |
 | `GET /api/conversations` / `POST /api/conversations` | Conversation registry |
 | `POST /api/conversations/:id/prompt` | `{ text, mode: steer\|followUp, requestId }` |
 | `POST /api/conversations/:id/fork` | `{ entryId }` → new conversation |

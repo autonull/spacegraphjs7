@@ -3,16 +3,24 @@ import { demuxOp, TabRegistry, type KernelOp } from 'pi-kit';
 import { getJSON, postJSON, type ConversationInfo, type Health, type Scenario } from './api';
 import { DurableHost } from './host';
 import { localFeed } from './local-feed';
+import { replayFeed } from './replay';
 import { SCENARIOS } from './scenarios';
+import { asOfFeed } from './time-travel';
 
 const params = new URLSearchParams(location.search);
 const shot = params.get('shot') ?? undefined;
 const scenario = params.get('scenario') ?? undefined;
 const seed = params.get('seed') ?? 'fixed';
-const offline = Boolean(shot) || Boolean(scenario) || params.get('offline') === '1';
+const replayID = params.get('replay') ?? undefined;
+const asOf = params.get('asOf') === null ? undefined : Number(params.get('asOf'));
+const observer = params.get('observer') === '1';
+const offline = Boolean(shot) || Boolean(scenario) || Boolean(replayID)
+    || asOf !== undefined || params.get('offline') === '1';
 const registry = new TabRegistry();
 const host = new DurableHost(registry, offline, shot, seed);
 const el = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
+if (observer) el('app').dataset['observer'] = 'true';
+if (asOf !== undefined) host.setAsOf(asOf);
 
 let localOrdinal = 0;
 
@@ -42,6 +50,10 @@ const bindPrompt = (): void => {
         const input = el<HTMLInputElement>('prompt-input');
         const text = input.value.trim();
         if (!text) return;
+        if (observer || asOf !== undefined) {
+            host.announce('read-only — commit through the owner server');
+            return;
+        }
         input.value = '';
         const mode = el<HTMLSelectElement>('prompt-mode').value as 'steer' | 'followUp';
         const button = el<HTMLButtonElement>('prompt-submit');
@@ -67,6 +79,7 @@ const bindPrompt = (): void => {
 
 const bindFork = (): void => {
     el('fork-button').addEventListener('click', async () => {
+        if (observer || asOf !== undefined) return host.announce('read-only — fork through the owner server');
         const from = registry.activeID();
         const to = String(Number(from) + Math.max(10, registry.list().length * 10));
         try {
@@ -90,6 +103,7 @@ const bindFork = (): void => {
 
 const bindApprove = (): void => {
     el('approve-button').addEventListener('click', async () => {
+        if (observer || asOf !== undefined) return host.announce('read-only — approve through the owner server');
         const id = registry.activeID();
         try {
             if (offline) {
@@ -195,11 +209,31 @@ const bindChrome = (): void => {
 };
 
 const connect = async (): Promise<void> => {
+    if (observer) {
+        const info = await getJSON<{ readonly url: string | null; readonly readOnly: boolean }>('/api/observer');
+        if (!info.url) {
+            host.announce('No observer URL configured — set PI_DURABLE_OBSERVER_URL');
+            return;
+        }
+        host.setStatus({ provider: 'observer', storage: 'read-only', tasks: 0 });
+        const events = new EventSource(`${info.url}/events/observe`);
+        events.onmessage = (event) =>
+            demuxOp({ data: event.data, lastEventId: event.lastEventId }, (id, op) => host.consume(id, op));
+        events.onerror = () => host.announce('Observer stream interrupted — reconnecting');
+        host.announce('Observer connected — read-only');
+        return;
+    }
     if (offline) {
-        const selected = scenario ?? shot ?? 'basic-turn';
-        host.loadFeed(localFeed(shot, seed, selected));
-        host.setStatus({ provider: 'local feed', storage: 'fixture', tasks: SCENARIOS.find((entry) => entry.id === selected)?.tasks.length ?? 0 });
+        const selected = scenario ?? shot ?? replayID ?? (asOf === undefined ? undefined : 'time-travel') ?? 'basic-turn';
+        if (replayID) host.loadFeed(replayFeed(replayID, seed));
+        else if (asOf !== undefined) host.loadFeed(asOfFeed(selected, asOf));
+        else host.loadFeed(localFeed(shot, seed, selected));
+        const source = replayID ? 'replay' : asOf !== undefined ? 'as-of' : 'fixture';
+        const tasks = SCENARIOS.find((entry) => entry.id === selected)?.tasks.length ?? 0;
+        host.setStatus({ provider: 'local feed', storage: source, tasks });
         host.applyShot(selected);
+        if (replayID) host.announce(`Replayed ${replayID}`);
+        else if (asOf !== undefined) host.announce(`Read-only view as of entry ${asOf}`);
         return;
     }
     try {

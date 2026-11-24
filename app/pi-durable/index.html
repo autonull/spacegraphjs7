@@ -100,6 +100,12 @@
             #prompt-submit { min-width: 96px; border: 0; border-radius: var(--radius); background: var(--accent);
                 color: #06141a; font-weight: 700; }
             #prompt-submit[data-busy="true"] { opacity: 0.65; }
+            #app[data-observer="true"] #prompt-form,
+            #app[data-observer="true"] #fork-button,
+            #app[data-observer="true"] #approve-button { display: none; }
+            #app[data-asof] #prompt-form,
+            #app[data-asof] #fork-button,
+            #app[data-asof] #approve-button { display: none; }
             #announcer { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
             #help { position: absolute; inset: 0; display: grid; place-items: center; background: #050a0ecc;
                 z-index: 10; }
@@ -122,6 +128,7 @@
         <div id="app">
             <header>
                 <div class="brand">spacegraph<span>/</span>durable</div>
+                <span id="asof-badge" class="badge" data-tone="warn" hidden></span>
                 <div id="status-strip" aria-live="polite"></div>
                 <div id="tab-strip" role="tablist" aria-label="Conversations"></div>
             </header>

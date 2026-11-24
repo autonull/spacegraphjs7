@@ -1,6 +1,8 @@
-import { existsSync } from 'node:fs';
+import assert from 'node:assert/strict';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { resolve } from 'node:path';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import { createProvider, type Model } from '@earendil-works/pi-ai';
 import { createModels } from '@earendil-works/pi-ai/models';
@@ -14,9 +16,12 @@ import {
     Harness,
     MemoryStorage,
     type Conversation,
+    type Storage,
     type TaskId,
 } from '@earendil-works/pi-durable';
 import { openNodeJsonlStorage } from '@earendil-works/pi-durable/storage/jsonl/node';
+import { openNodeSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/node';
+import { registerStorageConformance } from '@earendil-works/pi-durable/testing';
 import { bool, obj } from '@earendil-works/pi-schema';
 import { KernelCodec, SessionKernel } from '@spacegraphjs/kernel';
 import { encodeOp, opID, type KernelOp } from 'pi-kit';
@@ -34,6 +39,8 @@ const PROVIDER = process.env.PI_DURABLE_PROVIDER ?? 'faux';
 const OPENAI = PROVIDER === 'openai';
 const LOCAL = PROVIDER === 'local' || PROVIDER === 'llamacpp';
 const LIVE = OPENAI || LOCAL;
+const OBSERVER = process.env.PI_DURABLE_OBSERVER === '1';
+const OBSERVER_URL = process.env.PI_DURABLE_OBSERVER_URL;
 const MODEL = process.env.PI_DURABLE_MODEL ?? (OPENAI ? 'gpt-4o-mini' : 'local-model');
 const MODEL_PATH = process.env.PI_DURABLE_MODEL_PATH;
 const MODEL_URL = process.env.PI_DURABLE_MODEL_URL ?? 'http://127.0.0.1:9931/v1';
@@ -116,9 +123,11 @@ const agentModel = LIVE && !PROVIDER_ERROR
 const registry = createRegistry();
 registry.install(defineExtension({ name: 'durable-workspace', tasks: [ApprovalTask] }));
 
-const storage = STORAGE === 'jsonl' ? await openNodeJsonlStorage(DIR, BACKGROUND_CONTEXT) : new MemoryStorage();
-const harness = await Harness.open(storage, { models, registry }, BACKGROUND_CONTEXT);
-harness.resume();
+const storage = STORAGE === 'jsonl'
+    ? await openNodeJsonlStorage(DIR, BACKGROUND_CONTEXT, { readOnly: OBSERVER })
+    : new MemoryStorage();
+const harness = await Harness.open(storage, { models, registry, readOnly: OBSERVER }, BACKGROUND_CONTEXT);
+if (!OBSERVER) harness.resume();
 
 type Client = { readonly response: ServerResponse };
 const clients = new Set<Client>();
@@ -189,10 +198,10 @@ const idOf = (conversation: Conversation): string => String(conversation.id);
 
 const root = await harness.root(BACKGROUND_CONTEXT, { agent: { model: agentModel } });
 await watchConversation(root);
-if (!LIVE && !views.get(idOf(root))?.entries.length) {
+if (!OBSERVER && !LIVE && !views.get(idOf(root))?.entries.length) {
     await seed(root, 'What can this workspace show?', 'seed-1');
 }
-if (!approvalTaskID) {
+if (!OBSERVER && !approvalTaskID) {
     approvalTaskID = await root.commit(
         (tx) =>
             tx.createTask(ApprovalTask, { question: 'Allow the sleeping task to wake?' }, {
@@ -201,16 +210,111 @@ if (!approvalTaskID) {
         BACKGROUND_CONTEXT,
     );
 }
+if (OBSERVER) {
+    for (const raw of (process.env.PI_DURABLE_OBSERVE_IDS ?? '').split(',')) {
+        const id = Number(raw.trim());
+        if (!Number.isFinite(id)) continue;
+        const conversation = await harness.conversation(id as never, BACKGROUND_CONTEXT);
+        if (conversation) await watchConversation(conversation);
+    }
+}
 const graphWatch = await harness.watchTaskGraph(BACKGROUND_CONTEXT);
-graphWatch.start(async (call) => {
+if (!OBSERVER) graphWatch.start(async (call) => {
     if (call.kind !== 'value') return;
     taskGraph = call.value;
     tasks = taskList();
     for (const id of conversations.keys()) broadcast(id, translateTasks(id, tasks));
 });
 
+type ConformanceReport = {
+    readonly backend: string;
+    readonly passed: number;
+    readonly failures: readonly string[];
+};
+
+/** Upstream suite, adapted to a runner-free server so tests never import Pi directly. */
+const runStorageConformance = async (): Promise<readonly ConformanceReport[]> => {
+    const cases: { readonly name: string; readonly run: () => Promise<void> }[] = [];
+    const dirs: string[] = [];
+    const expectFn = (actual: unknown) => {
+        const partial = (value: unknown, expected: unknown): boolean => {
+            if (!expected || typeof expected !== 'object' || Array.isArray(expected)) {
+                assert.deepEqual(value, expected);
+                return true;
+            }
+            if (!value || typeof value !== 'object') return false;
+            return Object.entries(expected).every(([key, nested]) =>
+                partial((value as Record<string, unknown>)[key], nested),
+            );
+        };
+        return {
+            toBe: (expected: unknown) => assert.strictEqual(actual, expected),
+            toEqual: (expected: unknown) => assert.deepEqual(actual, expected),
+            toBeTruthy: () => assert.ok(actual),
+            toBeDefined: () => assert.notStrictEqual(actual, undefined),
+            toBeUndefined: () => assert.strictEqual(actual, undefined),
+            toBeGreaterThan: (expected: number) =>
+                assert.ok(typeof actual === 'number' && actual > expected, `${String(actual)} <= ${expected}`),
+            toMatchObject: (expected: unknown) => assert.ok(partial(actual, expected)),
+            toThrow: (message: string) => assert.throws(actual as () => unknown, (error: unknown) => String(error).includes(message)),
+            rejects: {
+                toThrow: async (message: string) =>
+                    assert.rejects(actual as Promise<unknown>, (error: unknown) => String(error).includes(message)),
+            },
+        };
+    };
+    const runner = {
+        describe: (_name: string, suite: () => void) => suite(),
+        expect: expectFn,
+        it: (name: string, test: () => Promise<void>) => void cases.push({ name, run: test }),
+    };
+    /** An in-repo adapter that delegates through a fresh receiver without changing storage semantics. */
+    const delegatingStorage = (inner: Storage): Storage =>
+        new Proxy(inner, {
+            get: (target, key, receiver) => {
+                const value = Reflect.get(target, key, receiver);
+                return typeof value === 'function' ? value.bind(target) : value;
+            },
+        });
+    const withTemp = async (use: (storage: Storage) => Promise<void>, open: (dir: string) => Promise<Storage>) => {
+        const dir = mkdtempSync(join(tmpdir(), 'pi-durable-conformance-'));
+        dirs.push(dir);
+        await use(await open(dir));
+    };
+    const backends: readonly (readonly [string, (use: (storage: Storage) => Promise<void>) => Promise<void>])[] = [
+        ['memory', async (use) => use(new MemoryStorage())],
+        ['custom', async (use) => use(delegatingStorage(new MemoryStorage()))],
+        ['jsonl', async (use) => withTemp(use, (dir) => openNodeJsonlStorage(dir, BACKGROUND_CONTEXT))],
+        ['sqlite', async (use) => withTemp(use, (dir) => openNodeSqliteStorage(join(dir, 'durable.db')))],
+    ];
+    const reports: ConformanceReport[] = [];
+    for (const [backend, withStorage] of backends) {
+        const before = cases.length;
+        registerStorageConformance(runner, backend, withStorage);
+        const passedCases = cases.slice(before);
+        let passed = 0;
+        const failures: string[] = [];
+        for (const entry of passedCases) {
+            try {
+                await entry.run();
+                passed += 1;
+            } catch (error) {
+                failures.push(`${entry.name}: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+        reports.push({ backend, passed, failures });
+    }
+    for (const dir of dirs) rmSync(dir, { recursive: true, force: true });
+    return reports;
+};
+
+const conformance = process.env.PI_DURABLE_CONFORMANCE === '1' ? await runStorageConformance() : [];
+
 const json = (response: ServerResponse, status: number, body: unknown): void => {
-    response.writeHead(status, { 'content-type': 'application/json' });
+    response.writeHead(status, {
+        'content-type': 'application/json',
+        'access-control-allow-origin': '*',
+    });
     response.end(JSON.stringify(body));
 };
 
@@ -228,6 +332,10 @@ const health = () => ({
     provider: LOCAL ? 'local' : OPENAI ? 'openai' : 'faux',
     providerMode: LIVE ? 'live' : 'faux',
     model: LIVE ? MODEL : 'faux-1',
+    observer: OBSERVER,
+    readOnly: OBSERVER,
+    observerURL: OBSERVER_URL ?? null,
+    conformance: conformance.map((report) => ({ backend: report.backend, passed: report.passed, failed: report.failures.length })),
     ...(LOCAL ? { modelPath: MODEL_PATH ?? null, baseUrl: MODEL_URL } : {}),
     ...(PROVIDER_ERROR ? { providerError: PROVIDER_ERROR } : {}),
     conversations: conversations.size,
@@ -237,6 +345,9 @@ const health = () => ({
 
 const routes: Record<string, (request: IncomingMessage, response: ServerResponse, id?: string) => Promise<void>> = {
     '/api/health': async (_request, response) => json(response, 200, health()),
+    '/api/observer': async (_request, response) =>
+        json(response, 200, { url: OBSERVER_URL ?? null, readOnly: OBSERVER }),
+    '/api/conformance': async (_request, response) => json(response, 200, conformance),
     '/api/conversations': async (_request, response) =>
         json(
             response,
@@ -283,11 +394,14 @@ const routes: Record<string, (request: IncomingMessage, response: ServerResponse
 const server = createServer(async (request, response) => {
     const url = new URL(request.url ?? '/', `http://127.0.0.1:${PORT}`);
     try {
-        if (url.pathname === '/events') {
+        if (OBSERVER && request.method !== 'GET' && url.pathname !== '/api/health')
+            return json(response, 403, { error: 'read-only', recovery: 'commit through the owner server' });
+        if (url.pathname === '/events' || url.pathname === '/events/observe') {
             response.writeHead(200, {
                 'content-type': 'text/event-stream',
                 'cache-control': 'no-cache',
                 connection: 'keep-alive',
+                'access-control-allow-origin': '*',
             });
             response.write(': connected\n\n');
             const client: Client = { response };

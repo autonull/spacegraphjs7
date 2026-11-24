@@ -18,12 +18,34 @@ const ready = async (page: Page): Promise<void> => {
 
 const apply = async (page: Page, frame: StoryFrame): Promise<void> => {
     if ('shot' in frame) {
-        await page.goto(`/?shot=${frame.shot}&seed=fixed`);
+        const options = {
+            ...(frame.replayId ? { replay: true } : {}),
+            ...(frame.asOf !== undefined ? { asOf: frame.asOf } : {}),
+        };
+        const mounted = await page.evaluate(() =>
+            Boolean((window as unknown as { __durable?: { loadShot?: unknown } }).__durable?.loadShot),
+        ).catch(() => false);
+        if (frame.observer || !mounted) {
+            await page.goto('about:blank');
+            const params = new URLSearchParams({ seed: 'fixed' });
+            if (frame.observer) params.set('observer', '1');
+            else params.set('shot', frame.shot);
+            if (frame.replayId) params.set('replay', frame.replayId);
+            if (frame.asOf !== undefined) params.set('asOf', String(frame.asOf));
+            await page.goto(`/?${params.toString()}`);
+        } else {
+            await call(page, 'loadShot', frame.shot, options);
+        }
         await ready(page);
     } else if (frame.action === 'prompt') {
-        const before = await call<number>(page, 'ops');
-        await call(page, 'prompt', frame.value ?? '');
-        await expect.poll(() => call<number>(page, 'ops')).toBeGreaterThan(before);
+        if ((await page.locator('#app').getAttribute('data-observer')) === 'true') {
+            await call(page, 'prompt', frame.value ?? '');
+            await expect(page.locator('#announcer')).toContainText('read-only');
+        } else {
+            const before = await call<number>(page, 'ops');
+            await call(page, 'prompt', frame.value ?? '');
+            await expect.poll(() => call<number>(page, 'ops')).toBeGreaterThan(before);
+        }
     } else if (frame.action === 'approve') {
         await page.locator('#approve-button').click();
         await expect
@@ -45,7 +67,8 @@ const apply = async (page: Page, frame: StoryFrame): Promise<void> => {
 type Frame = { readonly data: string; readonly caption: string };
 
 const compose = async (page: Page, frames: readonly Frame[]): Promise<Buffer> => {
-    const dataURL = await page.evaluate(async (items: readonly Frame[]) => {
+    const canvasPage = await page.context().newPage();
+    const dataURL = await canvasPage.evaluate(async (items: readonly Frame[]) => {
         const canvas = document.createElement('canvas');
         canvas.width = 1600;
         canvas.height = 1000;
@@ -67,6 +90,7 @@ const compose = async (page: Page, frames: readonly Frame[]): Promise<Buffer> =>
         }
         return canvas.toDataURL('image/png');
     }, frames);
+    await canvasPage.close();
     return Buffer.from(dataURL.slice(dataURL.indexOf(',') + 1), 'base64');
 };
 
@@ -74,14 +98,14 @@ for (const story of stories) {
     test(`${story.id} composite shows a sequence from pure shot state`, async ({ page }) => {
         const errors: string[] = [];
         page.on('pageerror', (error) => errors.push(error.message));
-        await page.setViewportSize({ width: 1600, height: 1000 });
+        await page.setViewportSize({ width: 1280, height: 800 });
         const frames: Frame[] = [];
         for (const frame of story.frames) {
             await apply(page, frame);
             const vision = await call<{ score: number }>(page, 'vision');
             expect(vision.score).toBeGreaterThan(0.5);
-            const png = await page.screenshot({ animations: 'disabled' });
-            frames.push({ data: `data:image/png;base64,${png.toString('base64')}`, caption: frame.caption });
+            const shot = await page.screenshot({ type: 'jpeg', quality: 85, animations: 'disabled' });
+            frames.push({ data: `data:image/jpeg;base64,${shot.toString('base64')}`, caption: frame.caption });
         }
         const composite = await compose(page, frames);
         expect(composite.length).toBeGreaterThan(10_000);

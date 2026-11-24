@@ -69,6 +69,7 @@ motion instead of one near-duplicate frame per scenario. `SG_DURABLE_SHOTS` redi
 | `pi-durable/stories/fork-journey.png` | `fork-journey` | How does a child conversation inherit a boundary? |
 | `pi-durable/stories/resume-journey.png` | `resume-journey` | Does a resumed turn keep its boundary and answer? |
 | `pi-durable/stories/inspect-flow.png` | `inspect-flow` | Can usage, traces and host documents stay distinct? |
+| `pi-durable/stories/host-boundary.png` | `host-boundary` | Can a second process read without owning the directory? |
 | `pi-durable/stories/child-flow.png` | `child-flow` | How do child tasks and failures read as durable facts? |
 
 Recapture the heroes with `pnpm --filter pi-durable shots:focus`, the composites with

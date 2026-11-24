@@ -1,5 +1,11 @@
 export type StoryFrame =
-    | { readonly caption: string; readonly shot: string }
+    | {
+          readonly caption: string;
+          readonly shot: string;
+          readonly replayId?: string;
+          readonly observer?: boolean;
+          readonly asOf?: number;
+      }
     | {
           readonly caption: string;
           readonly action: 'prompt' | 'approve' | 'setTab' | 'setView' | 'reveal';
@@ -51,9 +57,9 @@ export const STORIES: readonly Story[] = [
         file: 'pi-durable/stories/resume-journey.png',
         frames: [
             { caption: '1 · compaction boundary', shot: 'compaction' },
-            { caption: '2 · ordered entries and head', action: 'setView', value: 'transcript' },
+            { caption: '2 · historical asOf view', shot: 'time-travel', asOf: 2 },
             { caption: '3 · resumed conversation', shot: 'resumed' },
-            { caption: '4 · answer without a duplicate', action: 'setView', value: 'graph' },
+            { caption: '4 · recorded actions replayed', shot: 'replay', replayId: 'replay' },
         ],
     },
     {
@@ -64,6 +70,16 @@ export const STORIES: readonly Story[] = [
             { caption: '2 · agent-event spans', shot: 'trace' },
             { caption: '3 · host documents', shot: 'docs' },
             { caption: '4 · deferred state inspected', action: 'reveal', value: 'd:1:app.todos' },
+        ],
+    },
+    {
+        id: 'host-boundary', title: 'Owner and observer', question: 'Can a second process read without owning the directory?',
+        file: 'pi-durable/stories/host-boundary.png',
+        frames: [
+            { caption: '1 · owner commits', shot: 'basic-turn' },
+            { caption: '2 · observer stream', shot: 'basic-turn', observer: true },
+            { caption: '3 · read-only boundary inspected', action: 'reveal', value: 'd:1:conversation' },
+            { caption: '4 · commit refused as read-only', action: 'prompt', value: 'must not commit' },
         ],
     },
     {

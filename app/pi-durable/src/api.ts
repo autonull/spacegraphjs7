@@ -8,6 +8,9 @@ export type Health = {
     readonly conversations: number;
     readonly sleepingTasks: number;
     readonly recovered: number;
+    readonly observer?: boolean;
+    readonly readOnly?: boolean;
+    readonly observerURL?: string | null;
 };
 
 export type ConversationInfo = {
