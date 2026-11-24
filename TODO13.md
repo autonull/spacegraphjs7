@@ -13,9 +13,10 @@
 - Local GGUF files exist at `/home/me/gguf` (symlink to `/home/me/notention9/models`), including
   `Qwen_Qwen3.5-0.8B-Q4_K_M.gguf` (553 MB), 2B (1.4 GB), 4B (2.9 GB) and a 3B Llama (1.9 GB).
   The 0.8B Q4 model is the smoke-test candidate.
-- Current screenshots are sparse: cards show kind or label only, the rail lists minimal rows, edges
-  have no captions, and large areas of the canvas are empty. A shot must explain a durable fact at a
-  glance, not just prove that a canvas exists.
+- B1/B2 improved the shots: friendly labels, committed-detail summaries, captioned edges and a legend.
+  They still use one full-size PNG per state, most nodes render at one size, and the gallery has 22
+  near-duplicate frames. A shot must show a sequence and a size hierarchy, not just prove a canvas
+  exists.
 - Deferred list from TODO12 §11: code mode, images, remote/hosted Harness, `readOnly` observer,
   custom storage conformance, `snapshotAsOf` time travel, recorder/replay, and human verdicts. Human
   verdicts stay external; everything else is in scope here.
@@ -79,6 +80,23 @@ record the exact failure and keep faux as the default; do not add a compatibilit
 Exit: `vision()` counts visible `[data-kind]` cards and summaries; a dedicated test asserts that a
 sleeping task card contains its signal and a deadline, and that a message card contains its text.
 
+### B1b Importance-sized cards and visual variety
+
+- Assign each node an importance tier and feed the adapter's existing `nodeSizeFn` and a custom card
+  template: `conversation`, `run`, the active/selected task, compaction/handoff boundaries and the
+  committed answer are large (more padding, larger type, status pill); messages and tool actions are
+  medium; docs, config and deferred state are compact chips. The tier comes from committed `data`,
+  not from a renderer branch.
+- Give tiers distinct treatments inside the durable palette (flat panels, an accent rule for a
+  boundary, dashed border for deferred docs), deliberately **not** the Pi Agent demo's glass/glow
+  styling. Share semantics with that demo — `diffKernels`, agent "why" selectors, scope simulation
+  and the replay idea — but keep this app's chrome, palette, typography and card proportions.
+- At least one screenshot must make the size hierarchy obvious: one large conversation/answer node
+  surrounded by smaller evidence nodes.
+
+Exit: a test asserts `${data-importance}` classes and three distinct rendered sizes in one frame;
+the vision score still gates the shot.
+
 ### B2 Edge and scope readability
 
 - Caption edges with their recorded kind (`orders`, `owns`, `sleeps-on`, `delegates`, `retry`,
@@ -92,7 +110,8 @@ frame at 1600x1000 and at 900x700.
 ### B3 Additional representations
 
 Each is a placement of the same folded kernel, selected by `?shot=<id>` or a view button, not a new
-panel per capability:
+panel per capability. Reuse the Pi Agent demo's **functions** (`diffKernels`, selectors, scope
+simulation, recorder patterns) without copying its visual language:
 
 | View | Shows | Source |
 | ---- | ----- | ------ |
@@ -104,15 +123,41 @@ panel per capability:
 Exit: four new URL states and shots (`diff`, `trace`, `docs`, `transcript`), each with a test that
 asserts the representation and that no new causal edge was invented.
 
-### B4 Shot matrix refresh
+### B4 Story composites instead of one PNG per state
 
-- Extend `src/shots.ts` catalog and `docs/screenshots/README.md` with B3 shots and any new B1/B2
-  detail shot. Recapture all shots once with `PI_DURABLE_FAUX_SEED=fixed` and regenerate the contact
-  sheet. Keep `.prev` pairs; no verdict is written automatically.
-- Update the demo landing page to embed the strongest four images from the new matrix.
+One story = one tracked composite that shows a **sequence of motion**, not one static frame per
+scenario. This cuts the gallery from 22 PNGs toward roughly 10: four full-resolution Core heroes for
+README embedding, plus six story composites.
 
-Exit: `shots:all` green, every shot has a `.prev` pair on re-capture, vision scores above the gate,
-and README tables match the catalog exactly.
+| Story | Frames (captured from pure `?shot`/`?scenario` state) |
+| ----- | ---------------------------------------------------- |
+| `turn-flow` | seeded conversation → prompt submitted → answer committed |
+| `task-wake` | sleeping approval → Approve pressed → task settled |
+| `fork-journey` | fork created → child tab active → diff of parent and child |
+| `resume-journey` | compaction boundary → historical `asOf` view → resumed answer |
+| `inspect-flow` | usage → agent-event trace → host documents |
+| `child-flow` | subagent report → child tasks → typed error with recovery |
+
+Implementation:
+
+- Capture each frame at a lower viewport (start with 800×500) in one Playwright page, driving
+  `window.__durable` hooks (`applyShot`, `setTab`, `prompt`, `viewName`, `reveal`) with a fixed seed.
+  Wait for stable viewport between frames; never encode a private camera path.
+- Compose frames into one PNG per story inside the browser with a `<canvas>` drawn from the captured
+  frame data URLs, adding a short caption per frame. Use a 2×2 grid for four frames or a 3×1 strip
+  for three; output stays 1600×1000 so existing README embeds keep their aspect ratio. No new image
+  dependency (`canvas` is only an indirect jsdom dependency, not an app dependency).
+- Store composites under `docs/screenshots/pi-durable/stories/<id>.png`; keep four Core heroes
+  (`basic-turn`, `fork-tabs`, `sleeping-approval`, `resumed`) at full resolution. Retire the
+  superseded individual Next PNGs once composites are tracked; keep `.prev` pairs for everything
+  that remains.
+- `scripts/shot.ts` gains `shots:stories` and a `--composite` path; `shots:all` becomes heroes +
+  stories. The contact sheet shows composites with before/after pairs, not a wall of near-duplicate
+  single frames. Recapture once with `PI_DURABLE_FAUX_SEED=fixed`; no verdict is written.
+
+Exit: tracked gallery shrinks, `shots:all` green, each composite has 3–4 legible frames with captions,
+total screenshot bytes drop versus the current 22 PNGs, and `docs/screenshots/README.md` plus the
+demo landing page list stories instead of retired single frames.
 
 ## 4. Stream C — deferred surfaces from TODO12 §11
 
@@ -124,6 +169,9 @@ and README tables match the catalog exactly.
 | C4 | Time travel | Read documents at a stored `at` / `snapshotAsOf` point via `?asOf=<seq>`; render a read-only historical view with a badge. Current view stays the default. | `time-travel` scenario with two committed states, test that past view differs from present, shot |
 | C5 | Recorder/replay | Record host actions (prompt, fork, approve, view switch) as a deferred `app.replay` document; `?replay=<id>` replays them against the local feed with an injected clock. No model calls. | `tests/replay.test.ts` with deterministic event sequence; shot |
 | C6 | Storage conformance | Run upstream `registerStorageConformance` against Memory, JSONL and SQLite plus one in-repo custom storage adapter. No UI. | `tests/storage-conformance.test.ts` green for all backends |
+
+The "shot" in each row above is a story frame, not a new standalone PNG: C1 joins `inspect-flow`,
+C2/C3 join a new `host-boundary` story, and C4/C5 join `resume-journey`.
 
 Stop rule: a surface that needs a competing owner inside the same page, a network fetch, or a new
 renderer contract is split into its own change set and reported rather than forced into the Core.
@@ -160,7 +208,7 @@ The live model smoke test is separately invoked and its skip reason is reported.
 | Stream | State | Evidence |
 | ------ | ----- | -------- |
 | A — local model smoke | Landed | `PI_DURABLE_PROVIDER=local` with OpenAI-compatible `llama-server`; `tests/local-model.spec.ts` passes with the 0.8B Qwen GGUF (13 s); README env table updated |
-| B — visual detail and representations | In progress | B1/B2 landed: friendly labels, per-card summaries (status, signal, wake time, head, error), edge captions, legend, richer inspector; `tests/detail.spec.ts`; all 22 shots recaptured; Vite `resolve.dedupe: ['three']` removes the duplicate-import warning in both apps. B3/B4 still proposed. |
+| B — visual detail and representations | In progress | B1/B2 landed: friendly labels, per-card summaries (status, signal, wake time, head, error), edge captions, legend, richer inspector; `tests/detail.spec.ts`; all 22 shots recaptured; Vite `resolve.dedupe: ['three']` removes the duplicate-import warning in both apps. B1b (importance sizing), B3 (shared representations) and B4 (story composites) still proposed. |
 | C — deferred surfaces | Proposed | No code changed |
 
 Update this table at the end of each change set with the exact commands and results. Keep TODO12 as
