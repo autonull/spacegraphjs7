@@ -182,12 +182,76 @@ const bindLens = (): void => {
     });
 };
 
+let drawerTrigger: HTMLElement | undefined;
+
+const closeDrawer = (): void => {
+    el('drawer').hidden = true;
+    delete el('app').dataset['drawerOpen'];
+    for (const button of document.querySelectorAll<HTMLButtonElement>('#rail .rail-icon[data-drawer]'))
+        button.setAttribute('aria-expanded', 'false');
+    drawerTrigger?.focus();
+    drawerTrigger = undefined;
+};
+
+const openDrawer = (section: string, trigger: HTMLElement): void => {
+    closeDrawer();
+    drawerTrigger = trigger;
+    el('drawer').hidden = false;
+    el('app').dataset['drawerOpen'] = section;
+    el('drawer-title').textContent = section;
+    trigger.setAttribute('aria-expanded', 'true');
+    const panel = el('drawer').querySelector<HTMLElement>(`[data-section="${section}"]`);
+    panel?.scrollIntoView({ block: 'nearest' });
+    panel?.querySelector<HTMLElement>('button, input, select')?.focus();
+};
+
+const toggleRailMenu = (open?: boolean): void => {
+    const next = open ?? el('app').dataset['railOpen'] !== 'true';
+    el('app').dataset['railOpen'] = String(next);
+    el('menu-button').setAttribute('aria-expanded', String(next));
+    if (next) el('rail').querySelector<HTMLButtonElement>('.rail-icon')?.focus();
+    else el('menu-button').focus();
+};
+
+const togglePresentation = (on?: boolean): void => {
+    const next = on ?? el('app').dataset['present'] !== 'true';
+    if (next) {
+        closeDrawer();
+        delete el('app').dataset['railOpen'];
+        el('menu-button').setAttribute('aria-expanded', 'false');
+    }
+    el('app').dataset['present'] = String(next);
+    const button = document.querySelector<HTMLButtonElement>('[data-action="present"]');
+    button?.setAttribute('aria-pressed', String(next));
+    (next ? el('present-exit') : button ?? el('menu-button')).focus();
+    host.announce(next ? 'Presentation mode — Shift+F to exit' : 'Presentation exited');
+};
+
+const bindPanelChrome = (): void => {
+    for (const button of document.querySelectorAll<HTMLButtonElement>('#rail .rail-icon')) {
+        button.addEventListener('click', () => {
+            const section = button.dataset['drawer'];
+            if (section) {
+                if (el('app').dataset['drawerOpen'] === section && !el('drawer').hidden) closeDrawer();
+                else openDrawer(section, button);
+            } else if (button.dataset['focus'] === 'lens') {
+                closeDrawer();
+                el<HTMLInputElement>('lens-input').focus();
+            } else if (button.dataset['action'] === 'present') togglePresentation();
+        });
+    }
+    el('drawer-close').addEventListener('click', closeDrawer);
+    el('menu-button').addEventListener('click', () => toggleRailMenu());
+    el('present-exit').addEventListener('click', () => togglePresentation(false));
+};
+
 const bindChrome = (): void => {
     bindPrompt();
     bindLens();
     bindFork();
     bindApprove();
     bindCatalog();
+    bindPanelChrome();
     el('export-format').addEventListener('change', (event) =>
         host.export((event.target as HTMLSelectElement).value),
     );
@@ -201,8 +265,10 @@ const bindChrome = (): void => {
         const target = event.target as HTMLElement;
         const typing = target.tagName === 'INPUT' || target.tagName === 'SELECT';
         if (event.key === 'Escape') {
-            host.toggleHelp(false);
-            el('catalog').hidden = true;
+            if (!el('help').hidden) host.toggleHelp(false);
+            else if (!el('catalog').hidden) el('catalog').hidden = true;
+            else if (!el('drawer').hidden) closeDrawer();
+            else if (el('app').dataset['railOpen'] === 'true') toggleRailMenu(false);
             return;
         }
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
@@ -216,8 +282,17 @@ const bindChrome = (): void => {
             el<HTMLInputElement>('prompt-input').focus();
         } else if (event.key === '?') {
             host.toggleHelp();
+        } else if (event.shiftKey && event.key.toLowerCase() === 'f') {
+            event.preventDefault();
+            togglePresentation();
         } else if (event.key === 'g') {
             host.cycleView();
+        } else if (event.key === 'f') {
+            const focus = host.address().focus;
+            if (focus) host.focus(focus);
+            else host.announce('Select a node to focus it');
+        } else if (event.key === '0') {
+            host.resetView();
         } else if (event.key === '[' || event.key === ']') {
             const tabs = registry.list();
             const index = tabs.findIndex((tab) => tab.id === registry.activeID());

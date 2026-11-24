@@ -47,7 +47,8 @@ OpenAI-compatible provider to a local `llama-server` (no key, no network); start
 7. `[` / `]` switch tabs; **Copy** writes a permalink carrying the active tab, view, landmark,
    layout, time and camera. `?at=<codec>` is the compact form of the same address.
 8. `/` focuses the prompt, `Ctrl/⌘ K` focuses the Lens (`view diff`, `rung grain`, `as of 2`,
-   `tab 2`, `layout radial`, `find Paris`), `?` toggles help, `g` cycles views, `Esc` clears overlays.
+   `tab 2`, `layout radial`, `find Paris`), `?` toggles help, `g` cycles views, `f` focuses the
+   selection, `0` resets the view, `Shift+F` enters presentation mode, `Esc` clears overlays.
    Landmarks grade attention on one kernel; they never filter committed facts. The survey plate maps
    node positions through `Navigation.project`; click or arrow keys pan. Export produces JSON, a
    session document, SVG or Markdown.
@@ -142,7 +143,7 @@ Errors are typed (`no-provider`, `unknown-conversation`, `run_failed`, `turn_lim
 - `src/host.ts` — one renderer restored from the active tab's kernel and view state; kit `buildScopes`
   feeds one `ScopeSimulation`, which places the graph, tasks and timeline views of that same kernel.
   Cards show friendly labels and committed detail (status, signal, wake time, head, error), edges are
-  captioned with their recorded kind, and the rail carries a status/edge legend.
+  captioned with their recorded kind, and the collapsible panel carries a status/edge legend.
 - `src/attention.ts` — `ScaleDomain` samples landmarks into continuous attention weights; a low
   weight mutes a fact, it never deletes it.
 - `src/octaves.ts` — one power-of-two size ladder (`8 … 512`) driven by committed role and the
@@ -181,3 +182,17 @@ Pin 1.6.0; the API changes without notice between releases.
   feed and needs no server.
 - A shot looks stale: `pnpm --filter pi-durable shots:focus` copies the old PNG to `.prev` and writes
   a contact sheet with before/after pairs. No verdict is written automatically.
+
+## Chrome and icons
+
+The canvas owns the frame. A 56px icon rail holds the controls; their text lives in `aria-label`,
+`title`, the announcer and one collapsible panel opened from the rail. The panel is the home for
+views, landmarks, inspector, controls, legend and glossary. At 900px and below the rail slides out
+from the header menu. `Shift+F` toggles presentation mode, `f` focuses the selected node, `0` resets
+the view, and `Esc` closes the panel and restores focus to its icon.
+
+Icons are decorative inline SVG `<symbol>` definitions in `index.html` — survey mark, views grid,
+landmark rungs, lens, inspector, controls sliders, legend rules, glossary book, tasks checkbox,
+documents, signal bars, menu, close and presentation screen. Theme tokens own their colour; there is
+no icon font or new dependency. The same survey grammar is used by the header badges and the Lens
+command bar over the canvas.

@@ -12,6 +12,17 @@ export const boot = async (page: Page, query = ''): Promise<string[]> => {
     return errors;
 };
 
+/** Opens the control panel through its accessible rail icon. */
+export const openPanel = async (page: Page, section = 'views'): Promise<void> => {
+    await page.getByRole('button', { name: SECTION_NAMES[section] ?? section }).click();
+    await expect(page.locator('#drawer')).toBeVisible();
+};
+
+const SECTION_NAMES: Readonly<Record<string, string>> = {
+    views: 'Views', rung: 'Landmarks', inspector: 'Inspector',
+    controls: 'Controls', legend: 'Legend', glossary: 'Glossary',
+};
+
 export const settle = async (page: Page): Promise<void> => {
     await page.waitForFunction(() => {
         const api = (window as unknown as { __durable?: { viewport: () => { zoom: number } } }).__durable;

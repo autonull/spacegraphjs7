@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { boot, call } from './boot';
+import { boot, call, openPanel } from './boot';
 
 test('tablist exposes selection, roving focus and RTL arrows', async ({ page }) => {
     await boot(page, '?shot=fork-tabs');
@@ -25,6 +25,7 @@ test('tablist exposes selection, roving focus and RTL arrows', async ({ page }) 
 test('chrome announces every outcome and has no dead control offline', async ({ page }) => {
     const errors = await boot(page, '?shot=basic-turn');
     const announcer = page.locator('#announcer');
+    await openPanel(page);
 
     await page.click('#view-switch [data-view="tasks"]');
     await expect(announcer).toContainText('tasks view');
@@ -50,11 +51,56 @@ test('chrome announces every outcome and has no dead control offline', async ({ 
     expect(errors).toEqual([]);
 });
 
+test('icon rail keeps every control named, tabbable and off hover only', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 1000 });
+    const errors = await boot(page, '?shot=basic-turn');
+    const icons = page.locator('#rail .rail-icon');
+    expect(await icons.count()).toBe(8);
+    for (let index = 0; index < (await icons.count()); index++) {
+        const icon = icons.nth(index);
+        await expect(icon).toHaveAttribute('aria-label', /\S/);
+        await expect(icon).toHaveAttribute('title', /\S/);
+        await icon.focus();
+        await expect(icon).toBeFocused();
+    }
+    const width = await page.locator('#rail').evaluate((node) => node.getBoundingClientRect().width);
+    expect(width).toBeLessThanOrEqual(64);
+    const stage = await page.locator('#stage').evaluate((node) => node.getBoundingClientRect().width);
+    expect(stage / 1600).toBeGreaterThanOrEqual(0.7);
+    expect(errors).toEqual([]);
+});
+
+test('presentation mode hides chrome, keeps the view and exits by keyboard', async ({ page }) => {
+    await boot(page, '?shot=basic-turn&rung=passage');
+    await call(page, 'lens', 'view trace');
+    const before = await call<string>(page, 'permalink');
+    await page.keyboard.press('Shift+F');
+    await expect(page.locator('#app')).toHaveAttribute('data-present', 'true');
+    await expect(page.locator('#rail')).toBeHidden();
+    await expect(page.locator('#canvas canvas').first()).toBeVisible();
+    await expect(page.locator('#present-exit')).toBeVisible();
+    expect(await call<string>(page, 'permalink')).toBe(before);
+    await page.locator('#present-exit').focus();
+    await page.keyboard.press('Shift+F');
+    await expect(page.locator('#app')).toHaveAttribute('data-present', 'false');
+    await expect(page.locator('#rail')).toBeVisible();
+    expect(await call<string>(page, 'permalink')).toBe(before);
+});
+
 test('narrow viewport keeps controls and graph reachable', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await boot(page, '?shot=basic-turn');
+    const errors = await boot(page, '?shot=basic-turn');
     await expect(page.locator('#canvas canvas').first()).toBeVisible();
     await expect(page.locator('#prompt-submit')).toBeInViewport();
-    await expect(page.locator('#view-switch')).toBeInViewport();
     await expect(page.locator('#prompt-submit')).toHaveCSS('min-height', '44px');
+    await page.click('#menu-button');
+    await expect(page.locator('#rail')).toBeVisible();
+    await openPanel(page);
+    await expect(page.locator('#view-switch')).toBeInViewport();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#drawer')).toBeHidden();
+    await expect(page.locator('[data-drawer="views"]')).toBeFocused();
+    const stage = await page.locator('#stage').evaluate((node) => node.getBoundingClientRect().width);
+    expect(stage / 375).toBeGreaterThanOrEqual(0.7);
+    expect(errors).toEqual([]);
 });

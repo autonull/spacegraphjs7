@@ -41,6 +41,10 @@ import { shotById } from './shots';
 import { storyByID, type Story } from './stories';
 import { asOfFeed } from './time-travel';
 
+/** A fit never shrinks a world unit below this many CSS pixels; unreadable content is panned instead. */
+const FIT_MIN_SCALE = 1;
+const FIT_OPTIONS = { minScale: FIT_MIN_SCALE, padding: 100 } as const;
+
 const THEME: RenderTheme = {
     ...DEFAULT_THEME,
     background: '#0b1016',
@@ -307,7 +311,7 @@ export class DurableHost {
         this.bindChrome();
         this.#ready = true;
         this.refresh();
-        this.renderer.fit();
+        this.renderer.fit(undefined, FIT_OPTIONS);
     }
 
     ready(): boolean {
@@ -460,7 +464,7 @@ export class DurableHost {
         this.#edgeLabels = model.edges.flatMap((edge) => (edge.label ? [edge.label] : []));
         if (!this.#fitted && presented.nodes.length) {
             this.#fitted = true;
-            requestAnimationFrame(() => this.renderer.fit());
+            requestAnimationFrame(() => this.renderer.fit(undefined, FIT_OPTIONS));
         }
         this.renderTabs();
         this.renderStatus();
@@ -480,7 +484,7 @@ export class DurableHost {
         if (name === this.#viewName) return;
         this.#viewName = name;
         this.refresh();
-        requestAnimationFrame(() => this.renderer.fit());
+        requestAnimationFrame(() => this.renderer.fit(undefined, FIT_OPTIONS));
         this.renderView();
         this.announce(`${name} view`);
     }
@@ -520,6 +524,13 @@ export class DurableHost {
         this.#sample = this.#scale.feed(zoom);
         this.#rungPinned = true;
         this.renderer.setViewport({ zoom, center: viewport.center });
+    }
+
+    resetView(): void {
+        this.setRung('fact');
+        this.#rungPinned = false;
+        this.renderer.fit(undefined, FIT_OPTIONS);
+        this.announce('View reset');
     }
 
     regrade(): void {
@@ -805,6 +816,7 @@ export class DurableHost {
             rung: () => this.#rung,
             setRung: (rung: string) => this.setRung(rung as Rung),
             zoomBy: (factor: number) => this.zoomBy(factor),
+            resetView: () => this.resetView(),
             setView: (name: string) => {
                 if (!VIEW_NAMES.includes(name as ViewName)) return false;
                 this.setView(name as ViewName);
@@ -1096,16 +1108,22 @@ export class DurableHost {
             : 0;
         el('status-strip').replaceChildren(
             ...[
-                [`provider: ${this.#status.provider}`, 'accent'],
-                [`storage: ${this.#status.storage}`, 'muted'],
-                [`${this.#status.tasks} task${this.#status.tasks === 1 ? '' : 's'}`, sleeping ? 'warn' : 'ok'],
-                [`tab ${this.registry.activeID()}`, 'ok'],
-                ...(this.#omitted ? [[`${this.#omitted} omitted by budget`, 'warn'] as const] : []),
-            ].map(([label, tone]) => {
+                [`provider: ${this.#status.provider}`, 'accent', 'i-signal'],
+                [`storage: ${this.#status.storage}`, 'muted', 'i-docs'],
+                [`${this.#status.tasks} task${this.#status.tasks === 1 ? '' : 's'}`, sleeping ? 'warn' : 'ok', 'i-tasks'],
+                [`tab ${this.registry.activeID()}`, 'ok', 'i-views'],
+                ...(this.#omitted ? [[`${this.#omitted} omitted by budget`, 'warn', 'i-lens']] : []),
+            ].map(([label, tone, icon]) => {
                 const badge = document.createElement('span');
                 badge.className = 'badge';
                 badge.dataset['tone'] = tone;
-                badge.textContent = label;
+                const glyph = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                glyph.setAttribute('class', 'icon');
+                glyph.setAttribute('aria-hidden', 'true');
+                const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+                use.setAttribute('href', `#${icon}`);
+                glyph.append(use);
+                badge.append(glyph, document.createTextNode(label));
                 return badge;
             }),
         );
@@ -1160,6 +1178,7 @@ export class DurableHost {
             }),
         );
         el('app').dataset['rung'] = this.#rung;
+        el('rung-badge').textContent = RUNGS.find((entry) => entry.id === this.#rung)!.id;
         el('rung-caption').textContent = RUNGS.find((entry) => entry.id === this.#rung)!.description;
         this.renderTrail();
     }
@@ -1214,6 +1233,7 @@ export class DurableHost {
     }
 
     private renderView(): void {
+        el('view-badge').textContent = this.#viewName;
         el('tasks').toggleAttribute('data-active', this.#viewName === 'tasks');
         el('timeline').toggleAttribute('data-active', this.#viewName === 'timeline');
         for (const button of document.querySelectorAll<HTMLButtonElement>('#view-switch button'))

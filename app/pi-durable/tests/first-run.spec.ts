@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { boot, call } from './boot';
+import { boot, call, openPanel } from './boot';
 
 test('nine-step first run works offline', async ({ page }) => {
     const errors = await boot(page, '?shot=basic-turn');
+    await openPanel(page);
     expect(await page.locator('#tab-strip [role="tab"]').count()).toBe(1);
     await expect(page.locator('#status-strip')).toContainText('local feed');
     await expect(page.locator('#status-strip')).toContainText('task');
@@ -25,8 +26,10 @@ test('nine-step first run works offline', async ({ page }) => {
     expect(await call<string>(page, 'activeTab')).not.toBe('1');
 
     const link = await call<string>(page, 'permalink');
-    expect(call(page, 'applyPermalink', link)).resolves.toBe(true);
+    await expect(call(page, 'applyPermalink', link)).resolves.toBe(true);
+    await expect.poll(() => call<string>(page, 'viewName')).toBe('tasks');
     await page.keyboard.press('g');
+    await expect.poll(() => call<string>(page, 'viewName')).toBe('timeline');
     await expect(page.locator('#tasks')).not.toHaveAttribute('data-active', '');
     await page.keyboard.press('?');
     await expect(page.locator('#help')).toBeVisible();
@@ -40,6 +43,7 @@ test('nine-step first run works offline', async ({ page }) => {
 
 test('tasks and timeline are two scoped placements of one kernel', async ({ page }) => {
     const errors = await boot(page, '?shot=basic-turn');
+    await openPanel(page);
     const graph = await call<{ view: string; nodes: number }>(page, 'layout');
     expect(graph.view).toBe('graph');
     await page.click('#view-switch [data-view="tasks"]');

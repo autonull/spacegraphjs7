@@ -47,7 +47,7 @@ const apply = async (page: Page, frame: StoryFrame): Promise<void> => {
             await expect.poll(() => call<number>(page, 'ops')).toBeGreaterThan(before);
         }
     } else if (frame.action === 'approve') {
-        await page.locator('#approve-button').click();
+        await page.locator('#approve-button').dispatchEvent('click');
         await expect
             .poll(() => page.locator('#canvas .durable-card[data-kind="task"]').first().getAttribute('data-status'))
             .toBe('complete');

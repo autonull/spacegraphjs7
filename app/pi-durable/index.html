@@ -18,6 +18,8 @@
                 --warn: #f2bd70;
                 --error: #f08383;
                 --radius: 10px;
+                --rail: 56px;
+                --drawer: 300px;
                 font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
             }
             * { box-sizing: border-box; }
@@ -28,62 +30,107 @@
             button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
                 outline: 2px solid var(--accent); outline-offset: 2px;
             }
-            #app { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
-            header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px 16px;
+            .icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.4;
+                stroke-linecap: square; stroke-linejoin: miter; flex: none; }
+            #app { display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: minmax(0, 1fr);
+                width: 100%; height: 100vh; }
+            header, main, footer { min-width: 0; }
+            header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 5px 12px;
                 border-bottom: 1px solid var(--line); background: var(--panel); }
-            .brand { font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
+            .brand { font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; font-size: 13px; }
             .brand span { color: var(--accent); }
-            #status-strip { display: flex; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 12px; }
-            .badge { padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px;
-                background: var(--panel-2); white-space: nowrap; }
+            .brand .icon { width: 18px; height: 18px; margin-right: 6px; stroke: var(--accent); }
+            #status-strip { display: flex; flex-wrap: wrap; gap: 6px; color: var(--muted); font-size: 11px; }
+            .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; min-height: 0;
+                border: 1px solid var(--line); border-radius: 999px; background: var(--panel-2); white-space: nowrap; }
+            .badge .icon { width: 13px; height: 13px; stroke: var(--muted); }
             .badge[data-tone="ok"] { color: var(--ok); border-color: #2d5b46; }
             .badge[data-tone="warn"] { color: var(--warn); border-color: #6b4d24; }
             .badge[data-tone="error"] { color: var(--error); border-color: #6b3030; }
+            .badge[data-tone="accent"] .icon { stroke: var(--accent); }
+            .badge[data-tone="ok"] .icon { stroke: var(--ok); }
+            .badge[data-tone="warn"] .icon { stroke: var(--warn); }
+            .badge[data-tone="error"] .icon { stroke: var(--error); }
             #tab-strip { display: flex; gap: 4px; margin-left: auto; role: tablist; }
-            .tab { min-height: 44px; padding: 0 14px; border: 1px solid transparent; border-radius: var(--radius);
-                background: transparent; color: var(--muted); }
+            .tab { min-height: 36px; padding: 0 10px; border: 1px solid transparent; border-radius: var(--radius);
+                background: transparent; color: var(--muted); font-size: 11px; }
             .tab[aria-selected="true"] { background: var(--panel-2); border-color: var(--line); color: var(--text); }
-            main { display: grid; grid-template-columns: 1fr 330px; min-height: 0; }
+            main { display: grid; grid-template-columns: 1fr var(--rail); position: relative; min-height: 0; }
             #stage { position: relative; min-width: 0; overflow: hidden; }
             #canvas { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; }
             #canvas canvas { display: block; }
+            #lens-bar { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 2;
+                display: flex; align-items: center; gap: 6px; padding: 4px 6px; border: 1px solid var(--line);
+                border-radius: var(--radius); background: color-mix(in srgb, var(--panel) 92%, transparent); }
+            #lens-form { display: flex; gap: 6px; }
+            #lens-input { width: 240px; max-width: 42vw; min-width: 0; min-height: 36px; padding: 6px 8px;
+                border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
+                font-family: ui-monospace, monospace; font-size: 12px; }
+            #lens-go { min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px;
+                background: var(--panel-2); font-size: 12px; }
+            #lens-hint { font-size: 11px; color: var(--muted); white-space: nowrap; }
+            #lens-hint kbd { padding: 1px 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-2); }
             #catalog { position: absolute; left: 12px; top: 12px; width: 220px; max-height: 70%;
                 overflow: auto; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius);
-                background: color-mix(in srgb, var(--panel) 94%, transparent); backdrop-filter: blur(8px); }
+                background: color-mix(in srgb, var(--panel) 94%, transparent); backdrop-filter: blur(8px); z-index: 4; }
             #catalog[hidden] { display: none; }
-            #catalog h2, #rail h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em;
-                color: var(--muted); margin: 0 0 8px; }
             .scenario { display: block; width: 100%; text-align: left; min-height: 44px; padding: 8px 10px;
                 border: 0; border-radius: 8px; background: transparent; }
             .scenario:hover { background: var(--panel-2); }
-            #rail { border-left: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 14px; }
-            .rail-section { margin-bottom: 20px; }
+            #survey { position: absolute; right: 12px; bottom: 12px; width: 160px; height: 100px;
+                border: 1px solid var(--line); border-radius: 8px; cursor: crosshair;
+                background: color-mix(in srgb, var(--panel) 88%, transparent); }
+            #survey svg { display: block; width: 100%; height: 100%; }
+            #survey .plate-frame { fill: none; stroke: var(--line); }
+            #survey circle { fill: var(--accent); opacity: .65; }
+            #survey rect:not(.plate-frame) { fill: none; stroke: var(--warn); stroke-width: 1; }
+            [dir="rtl"] #survey { right: auto; left: 12px; }
+            #rail { width: var(--rail); border-left: 1px solid var(--line); background: var(--panel);
+                display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0; overflow-y: auto; }
+            [dir="rtl"] #rail { border-left: 0; border-right: 1px solid var(--line); }
+            .rail-icon { width: 44px; height: 44px; min-height: 44px; display: grid; place-items: center;
+                border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted); }
+            .rail-icon:hover { background: var(--panel-2); }
+            .rail-icon[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); background: var(--panel-2); }
+            #drawer { position: absolute; top: 0; right: var(--rail); bottom: 0; width: var(--drawer);
+                max-width: calc(100vw - var(--rail)); overflow: auto; padding: 12px; z-index: 6;
+                border-left: 1px solid var(--line); background: var(--panel); box-shadow: -8px 0 24px #0006; }
+            #drawer[hidden] { display: none; }
+            [dir="rtl"] #drawer { right: auto; left: var(--rail); border-left: 0; border-right: 1px solid var(--line);
+                box-shadow: 8px 0 24px #0006; }
+            #drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+                padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+            #drawer-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+            #drawer-close { width: 36px; min-height: 36px; display: grid; place-items: center; border: 1px solid var(--line);
+                border-radius: 8px; background: var(--panel-2); color: var(--muted); }
+            .rail-section { margin-top: 16px; }
+            .rail-section h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+                color: var(--muted); margin: 0 0 6px; }
             .row { display: flex; align-items: center; justify-content: space-between; gap: 10px;
-                padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+                padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
             .row:last-child { border-bottom: 0; }
             .row .label { color: var(--muted); }
             .row .value { color: var(--text); text-align: right; }
             .value[data-tone="warn"] { color: var(--warn); }
             .value[data-tone="ok"] { color: var(--ok); }
             .value[data-tone="error"] { color: var(--error); }
-            #inspector { min-height: 72px; font-size: 13px; color: var(--muted); }
+            #inspector { min-height: 64px; font-size: 12px; color: var(--muted); }
             #inspector strong { color: var(--text); }
-            .action { min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 8px;
+            .action { min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px;
                 background: var(--panel-2); }
             .action.primary { background: var(--accent); border-color: var(--accent); color: #06141a; font-weight: 700; }
-            #view-switch { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
-            #view-switch button { flex: 1 1 28%; min-height: 40px; padding: 0 6px; font-size: 11px;
+            #view-switch { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+            #view-switch button { min-height: 40px; padding: 0 4px; font-size: 11px;
                 border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); color: var(--muted); }
             #view-switch button[aria-selected="true"] { color: var(--text); border-color: var(--accent); }
+            #view-switch button .icon { width: 14px; height: 14px; margin-right: 3px; vertical-align: middle; }
+            #view-badge, #rung-badge { display: inline-block; padding: 2px 8px; margin-bottom: 6px;
+                border: 1px solid var(--line); border-radius: 999px; font: 11px ui-monospace, monospace; color: var(--accent); }
             #tasks, #timeline { display: none; }
             #tasks[data-active], #timeline[data-active] { display: block; }
             .durable-card { display: flex; flex-direction: column; gap: 4px; box-sizing: border-box;
                 border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2);
                 color: var(--text); font-family: inherit; line-height: 1.35; }
-            .durable-card.hero { width: 280px; padding: 18px 20px; font-size: 16px;
-                box-shadow: inset 3px 0 var(--accent); }
-            .durable-card.medium { width: 190px; padding: 10px 12px; font-size: 13px; }
-            .durable-card.compact { width: 110px; padding: 5px 8px; font-size: 11px; color: var(--muted); }
             .durable-card.band-dot { padding: 2px 3px; font-size: 8px; border-radius: 2px; }
             .durable-card.band-chip { padding: 4px 6px; font-size: 10px; border-radius: 3px; }
             .durable-card.band-card { padding: 8px 10px; font-size: 12px; }
@@ -95,7 +142,6 @@
             .durable-card[data-status="failed"] { border-left: 3px solid var(--error); }
             .durable-card[data-kind="boundary"] { border-left: 3px solid var(--accent); }
             .durable-card[data-status="deferred"] { border-style: dashed; }
-            .durable-card[data-workshop="call"] { outline: 1px solid var(--line); outline-offset: 2px; }
             .durable-card[data-diff="added"] { border-color: var(--ok); }
             .durable-card[data-diff="removed"] { border-color: var(--error); border-style: dashed; opacity: .75; }
             .durable-card .card-label { font-weight: 600; }
@@ -103,39 +149,33 @@
             .durable-card .card-status { margin-left: 6px; font-size: .8em; opacity: .7; font-weight: 400; }
             .durable-card .card-workshop { font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
                 color: var(--accent); opacity: .85; }
-            .durable-card[data-workshop="call"] { border-left: 2px solid var(--accent); }
+            .durable-card[data-workshop="call"], .durable-card[data-workshop="plate"] { border-left: 2px solid var(--accent); }
             .durable-card[data-workshop="artifact"] { border-left: 2px solid var(--warn); }
-            .durable-card[data-workshop="plate"] { border-left: 2px solid var(--accent); }
             .durable-card .card-image { display: block; width: 48px; height: 48px; margin-top: 6px;
                 object-fit: contain; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 4px; }
-            .survey-mark { width: 22px; height: 22px; margin-right: 8px; vertical-align: middle;
-                fill: none; stroke: var(--accent); stroke-width: 1.3; }
-            #rung-switch { display: flex; flex-wrap: wrap; gap: 4px; }
-            #rung-switch button { flex: 1 1 28%; min-height: 34px; padding: 0 6px; font-size: 10px;
+            #rung-switch { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+            #rung-switch button { min-height: 34px; padding: 0 4px; font-size: 10px;
                 letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--line);
                 border-radius: 8px; background: var(--panel-2); color: var(--muted); }
             #rung-switch button[aria-current="true"] { color: var(--accent); border-color: var(--accent); }
             #rung-caption { padding-top: 8px; color: var(--muted); font-size: 11px; }
-            #trail { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 11px; }
+            #trail { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 11px; color: var(--muted);
+                text-transform: uppercase; letter-spacing: .08em; }
             #trail button { min-height: 30px; padding: 0 6px; border: 0; background: transparent;
                 color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
             #trail button[aria-current="page"] { color: var(--accent); }
             #trail span { color: var(--line); }
-            #lens-form { display: flex; gap: 6px; margin-bottom: 8px; }
-            #lens-input { flex: 1; min-width: 0; min-height: 40px; padding: 8px 10px; border: 1px solid var(--line);
-                border-radius: 8px; background: var(--bg); font-family: ui-monospace, monospace; font-size: 12px; }
-            #lens-go { min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px;
-                background: var(--panel-2); font-size: 12px; }
-            #lens-help { color: var(--muted); font-size: 11px; line-height: 1.4; }
-            #survey { position: absolute; right: 12px; bottom: 12px; width: 160px; height: 100px;
-                border: 1px solid var(--line); border-radius: 8px; cursor: crosshair;
-                background: color-mix(in srgb, var(--panel) 88%, transparent); }
-            #survey svg { display: block; width: 100%; height: 100%; }
-            #survey .plate-frame { fill: none; stroke: var(--line); }
-            #survey circle { fill: var(--accent); opacity: .65; }
-            #survey rect:not(.plate-frame) { fill: none; stroke: var(--warn); stroke-width: 1; }
-            [dir="rtl"] #survey { right: auto; left: 12px; }
-            footer { display: flex; gap: 10px; align-items: flex-end; padding: 12px 16px;
+            #menu-button { display: none; }
+            #present-exit { position: fixed; top: 8px; right: 8px; z-index: 20; display: none; }
+            #app[data-present="true"] header,
+            #app[data-present="true"] #rail,
+            #app[data-present="true"] #drawer,
+            #app[data-present="true"] #lens-bar,
+            #app[data-present="true"] footer { display: none !important; }
+            #app[data-present="true"] { grid-template-rows: 1fr; }
+            #app[data-present="true"] main { grid-template-columns: 1fr; }
+            #app[data-present="true"] ~ #present-exit { display: grid; }
+            footer { display: flex; gap: 10px; align-items: flex-end; padding: 8px 12px;
                 border-top: 1px solid var(--line); background: var(--panel); }
             #prompt-form { display: flex; flex: 1; min-width: 0; gap: 8px; align-items: flex-end; }
             #prompt-input { flex: 1; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line);
@@ -153,26 +193,56 @@
             #app[data-asof] #approve-button { display: none; }
             #announcer { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
             #help { position: absolute; inset: 0; display: grid; place-items: center; background: #050a0ecc;
-                z-index: 10; }
+                z-index: 30; }
             #help[hidden] { display: none; }
             #help > div { max-width: 560px; padding: 24px; border: 1px solid var(--line);
                 border-radius: 14px; background: var(--panel); }
             #help h2 { margin-top: 0; }
             kbd { padding: 2px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); }
             @media (max-width: 900px) {
-                main { grid-template-columns: 1fr; grid-template-rows: 1fr 220px; }
-                #rail { border-left: 0; border-top: 1px solid var(--line); }
-                #catalog { width: 170px; }
-                #prompt-form { flex-wrap: wrap; }
+                main { grid-template-columns: 1fr; }
+                #rail { position: absolute; top: 0; right: 0; bottom: 0; z-index: 8;
+                    transform: translateX(100%); transition: transform .18s ease-out;
+                    box-shadow: -8px 0 24px #0006; }
+                [dir="rtl"] #rail { right: auto; left: 0; transform: translateX(-100%); }
+                #app[data-rail-open="true"] #rail { transform: translateX(0); }
+                #drawer { right: 0; width: min(320px, 100vw); max-width: 100vw; }
+                [dir="rtl"] #drawer { left: 0; }
+                #menu-button { display: grid; width: 44px; min-height: 36px; place-items: center;
+                    border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); color: var(--muted); }
+                #lens-bar { left: 12px; right: 12px; transform: none; justify-content: center; }
+                #lens-input { max-width: none; flex: 1; }
+                #lens-hint { display: none; }
+                footer { flex-wrap: wrap; }
                 #prompt-input { flex: 1 1 100%; }
                 #prompt-mode, #prompt-submit { flex: 1; }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                * { transition: none !important; animation: none !important; }
             }
         </style>
     </head>
     <body>
+        <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute;overflow:hidden">
+            <symbol id="i-survey" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="10" height="10" rx="1" transform="rotate(45 12 12)"/><rect x="10" y="10" width="4" height="4"/></symbol>
+            <symbol id="i-views" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></symbol>
+            <symbol id="i-rung" viewBox="0 0 24 24"><path d="M3 20h18M6 20V9M12 20V4M18 20v-7"/></symbol>
+            <symbol id="i-lens" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15 15 6 6"/></symbol>
+            <symbol id="i-inspect" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></symbol>
+            <symbol id="i-controls" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="17" r="2"/></symbol>
+            <symbol id="i-legend" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h13"/></symbol>
+            <symbol id="i-glossary" viewBox="0 0 24 24"><path d="M4 5h7v14H4zM13 5h7v14h-7z"/></symbol>
+            <symbol id="i-tasks" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="m8 12 3 3 5-6"/></symbol>
+            <symbol id="i-docs" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/></symbol>
+            <symbol id="i-signal" viewBox="0 0 24 24"><path d="M12 20V10M6 20v-6M18 20V4"/></symbol>
+            <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+            <symbol id="i-close" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"/></symbol>
+            <symbol id="i-present" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8"/></symbol>
+        </svg>
         <div id="app">
             <header>
-                <div class="brand"><svg class="survey-mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="10" height="10" rx="1" transform="rotate(45 12 12)"/><rect x="10" y="10" width="4" height="4"/></svg>spacegraph<span>/</span>durable</div>
+                <button id="menu-button" type="button" aria-label="Open controls" title="Open controls" aria-expanded="false" aria-controls="rail"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+                <div class="brand"><svg class="icon" aria-hidden="true"><use href="#i-survey"/></svg>spacegraph<span>/</span>durable</div>
                 <span id="asof-badge" class="badge" data-tone="warn" hidden></span>
                 <div id="status-strip" aria-live="polite"></div>
                 <div id="tab-strip" role="tablist" aria-label="Conversations"></div>
@@ -180,6 +250,14 @@
             <main>
                 <section id="stage">
                     <div id="canvas" aria-label="Conversation graph"></div>
+                    <div id="lens-bar">
+                        <form id="lens-form" role="search" aria-label="Lens command bar">
+                            <input id="lens-input" autocomplete="off" spellcheck="false"
+                                placeholder="view diff · rung fact · find Paris" aria-label="Lens command" />
+                            <button type="submit" id="lens-go">Go</button>
+                        </form>
+                        <span id="lens-hint"><kbd>Ctrl/⌘ K</kbd></span>
+                    </div>
                     <div id="survey" role="button" tabindex="0" aria-label="Survey overview — click to pan">
                         <svg id="survey-svg" viewBox="0 0 160 100"></svg>
                     </div>
@@ -188,41 +266,48 @@
                         <div id="scenario-list"></div>
                     </aside>
                 </section>
-                <aside id="rail" aria-label="Conversation details">
-                    <div class="rail-section">
+                <aside id="rail" aria-label="Control icons">
+                    <button type="button" class="rail-icon" data-drawer="views" aria-label="Views" title="Views" aria-expanded="false" aria-controls="drawer"><svg class="icon" aria-hidden="true"><use href="#i-views"/></svg></button>
+                    <button type="button" class="rail-icon" data-drawer="rung" aria-label="Landmarks" title="Landmarks" aria-expanded="false" aria-controls="drawer"><svg class="icon" aria-hidden="true"><use href="#i-rung"/></svg></button>
+                    <button type="button" class="rail-icon" data-focus="lens" aria-label="Lens" title="Lens (Ctrl/⌘ K)"><svg class="icon" aria-hidden="true"><use href="#i-lens"/></svg></button>
+                    <button type="button" class="rail-icon" data-drawer="inspector" aria-label="Inspector" title="Inspector" aria-expanded="false" aria-controls="drawer"><svg class="icon" aria-hidden="true"><use href="#i-inspect"/></svg></button>
+                    <button type="button" class="rail-icon" data-drawer="controls" aria-label="Controls" title="Controls" aria-expanded="false" aria-controls="drawer"><svg class="icon" aria-hidden="true"><use href="#i-controls"/></svg></button>
+                    <button type="button" class="rail-icon" data-drawer="legend" aria-label="Legend" title="Legend" aria-expanded="false" aria-controls="drawer"><svg class="icon" aria-hidden="true"><use href="#i-legend"/></svg></button>
+                    <button type="button" class="rail-icon" data-drawer="glossary" aria-label="Glossary" title="Glossary" aria-expanded="false" aria-controls="drawer"><svg class="icon" aria-hidden="true"><use href="#i-glossary"/></svg></button>
+                    <button type="button" class="rail-icon" data-action="present" aria-label="Presentation mode" title="Presentation mode (Shift+F)" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-present"/></svg></button>
+                </aside>
+                <aside id="drawer" aria-label="Control panel" hidden>
+                    <div id="drawer-head">
+                        <span id="drawer-title">Controls</span>
+                        <button id="drawer-close" type="button" aria-label="Close panel" title="Close panel (Esc)"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+                    </div>
+                    <div class="rail-section" data-section="views">
                         <h2>Views</h2>
+                        <span id="view-badge">graph</span>
                         <div id="view-switch">
-                            <button type="button" data-view="graph" aria-selected="true">Graph</button>
-                            <button type="button" data-view="tasks" aria-selected="false">Tasks</button>
-                            <button type="button" data-view="timeline" aria-selected="false">Time</button>
-                            <button type="button" data-view="diff" aria-selected="false">Diff</button>
-                            <button type="button" data-view="trace" aria-selected="false">Trace</button>
-                            <button type="button" data-view="docs" aria-selected="false">Docs</button>
-                            <button type="button" data-view="transcript" aria-selected="false">Text</button>
+                            <button type="button" data-view="graph" aria-selected="true"><svg class="icon" aria-hidden="true"><use href="#i-views"/></svg>Graph</button>
+                            <button type="button" data-view="tasks" aria-selected="false"><svg class="icon" aria-hidden="true"><use href="#i-tasks"/></svg>Tasks</button>
+                            <button type="button" data-view="timeline" aria-selected="false"><svg class="icon" aria-hidden="true"><use href="#i-rung"/></svg>Time</button>
+                            <button type="button" data-view="diff" aria-selected="false"><svg class="icon" aria-hidden="true"><use href="#i-signal"/></svg>Diff</button>
+                            <button type="button" data-view="trace" aria-selected="false"><svg class="icon" aria-hidden="true"><use href="#i-signal"/></svg>Trace</button>
+                            <button type="button" data-view="docs" aria-selected="false"><svg class="icon" aria-hidden="true"><use href="#i-docs"/></svg>Docs</button>
+                            <button type="button" data-view="transcript" aria-selected="false"><svg class="icon" aria-hidden="true"><use href="#i-docs"/></svg>Text</button>
                         </div>
                         <div id="tasks"></div>
                         <div id="timeline"></div>
                     </div>
-                    <div class="rail-section">
-                        <h2>Lens</h2>
-                        <form id="lens-form">
-                            <input id="lens-input" autocomplete="off" spellcheck="false"
-                                placeholder="view diff · rung fact · find Paris" aria-label="Lens command" />
-                            <button type="submit" id="lens-go">Go</button>
-                        </form>
-                        <div id="lens-help">Ctrl/⌘ K · view &lt;name&gt; · rung &lt;landmark&gt; · as of &lt;seq&gt; · tab &lt;id&gt; · layout &lt;grid|radial|timeline&gt; · find &lt;text&gt;</div>
-                    </div>
-                    <div class="rail-section">
-                        <h2>Rung</h2>
+                    <div class="rail-section" data-section="rung">
+                        <h2>Landmarks</h2>
+                        <span id="rung-badge">fact</span>
                         <div id="rung-switch"></div>
                         <div id="rung-caption"></div>
                         <nav id="trail" aria-label="Landmark trail"></nav>
                     </div>
-                    <div class="rail-section">
+                    <div class="rail-section" data-section="inspector">
                         <h2>Inspector</h2>
                         <div id="inspector">Select a node to inspect its committed facts.</div>
                     </div>
-                    <div class="rail-section">
+                    <div class="rail-section" data-section="controls">
                         <h2>Controls</h2>
                         <div class="row"><span class="label">Fork here</span>
                             <button type="button" class="action" id="fork-button">Fork</button></div>
@@ -238,8 +323,8 @@
                         <div class="row"><span class="label">Catalog</span>
                             <button type="button" class="action" id="catalog-button">Scenarios</button></div>
                     </div>
-                    <div class="rail-section"><h2>Legend</h2><div id="legend"></div></div>
-                    <div class="rail-section"><h2>Glossary</h2><div id="glossary"></div></div>
+                    <div class="rail-section" data-section="legend"><h2>Legend</h2><div id="legend"></div></div>
+                    <div class="rail-section" data-section="glossary"><h2>Glossary</h2><div id="glossary"></div></div>
                 </aside>
             </main>
             <footer>
@@ -252,12 +337,12 @@
                 </form>
             </footer>
         </div>
+        <button id="present-exit" type="button" class="action" aria-label="Exit presentation mode" title="Exit presentation mode (Shift+F)">Exit presentation</button>
         <div id="announcer" role="status" aria-live="polite"></div>
         <div id="help" hidden>
             <div>
                 <h2>Keyboard</h2>
-                <p><kbd>Ctrl/⌘ K</kbd> Lens &nbsp; <kbd>/</kbd> prompt &nbsp; <kbd>?</kbd> help
-                    &nbsp; <kbd>g</kbd> cycle views &nbsp; <kbd>[</kbd> <kbd>]</kbd> switch tabs &nbsp; <kbd>Esc</kbd> clear</p>
+                <p><kbd>Ctrl/⌘ K</kbd> Lens &nbsp; <kbd>/</kbd> prompt &nbsp; <kbd>?</kbd> help &nbsp; <kbd>Esc</kbd> close &nbsp; <kbd>g</kbd> cycle views &nbsp; <kbd>[</kbd> <kbd>]</kbd> switch tabs &nbsp; <kbd>f</kbd> focus selection &nbsp; <kbd>0</kbd> reset view &nbsp; <kbd>Shift+F</kbd> presentation</p>
                 <p>Every node records a committed Durable fact. Edges are only drawn where Durable recorded a link.</p>
                 <button type="button" class="action" id="help-close">Close</button>
             </div>
