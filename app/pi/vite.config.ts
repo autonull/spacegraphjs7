@@ -8,6 +8,7 @@ const server = process.env.PI_SERVER_PORT ?? '8787';
 export default defineConfig({
     root,
     resolve: {
+        dedupe: ['three'],
         alias: [
             { find: /^spacegraphjs$/, replacement: resolve(workspace, 'src/index.ts') },
             {

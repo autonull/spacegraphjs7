@@ -160,7 +160,7 @@ The live model smoke test is separately invoked and its skip reason is reported.
 | Stream | State | Evidence |
 | ------ | ----- | -------- |
 | A — local model smoke | Landed | `PI_DURABLE_PROVIDER=local` with OpenAI-compatible `llama-server`; `tests/local-model.spec.ts` passes with the 0.8B Qwen GGUF (13 s); README env table updated |
-| B — visual detail and representations | Proposed | No code changed |
+| B — visual detail and representations | In progress | B1/B2 landed: friendly labels, per-card summaries (status, signal, wake time, head, error), edge captions, legend, richer inspector; `tests/detail.spec.ts`; all 22 shots recaptured; Vite `resolve.dedupe: ['three']` removes the duplicate-import warning in both apps. B3/B4 still proposed. |
 | C — deferred surfaces | Proposed | No code changed |
 
 Update this table at the end of each change set with the exact commands and results. Keep TODO12 as

@@ -119,6 +119,8 @@ Errors are typed (`no-provider`, `unknown-conversation`, `run_failed`, `turn_lim
 - `src/client.ts` — one `EventSource` demultiplexed on `lastEventId`; DOM and keyboard binding.
 - `src/host.ts` — one renderer restored from the active tab's kernel and view state; kit `buildScopes`
   feeds one `ScopeSimulation`, which places the graph, tasks and timeline views of that same kernel.
+  Cards show friendly labels and committed detail (status, signal, wake time, head, error), edges are
+  captioned with their recorded kind, and the rail carries a status/edge legend.
 - `src/shots.ts` — shot catalog; `?shot=<id>` reproduces each state from pure data.
 
 The shared pipeline lives in `app/pi-kit` (ops/demux, `TabRegistry`, session/workspace state, scope

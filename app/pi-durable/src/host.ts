@@ -53,6 +53,49 @@ const TASK_KINDS = new Set(['conversation', 'run', 'task', 'pending']);
 const TIMELINE_KINDS = new Set(['conversation', 'run', 'message', 'boundary', 'state', 'action']);
 const CONTAINMENT = new Set(['orders', 'owns', 'waiting.on', 'sleeps-on', 'delegates', 'retry', 'checkpoint', 'fork', 'forkedFrom']);
 
+const NODE_LABELS: Readonly<Record<string, string>> = {
+    'pi.usage': 'Usage', 'pi.agent': 'Agent', 'pi.provider': 'Provider',
+    'pi.live': 'Live state', 'pi.settings': 'Settings', 'pi.env': 'Environment',
+    'pi.extension': 'Extension', 'pi.instructions': 'Instructions',
+    'pi.error': 'Error', 'pi.trace': 'Agent events', 'app.todos': 'Host todos',
+};
+
+const EDGE_LABELS: Readonly<Record<string, string>> = {
+    orders: 'order', owns: 'owns', 'waiting.on': 'waits on', 'sleeps-on': 'sleeps on',
+    delegates: 'delegates', retry: 'retry', checkpoint: 'checkpoint', fork: 'fork', forkedFrom: 'forked from',
+};
+
+const short = (value: string, max = 72): string =>
+    value.length > max ? `${value.slice(0, max)}…` : value;
+
+const labelForNode = (node: DurableNode): string => {
+    if (node.kind === 'task' && node.data?.['kind'] === 'durable.approval')
+        return `Approval task ${String(node.data['taskId'] ?? '')}`.trim();
+    return NODE_LABELS[node.label] ?? node.label;
+};
+
+const summaryForNode = (node: DurableNode): string => {
+    const parts: string[] = [];
+    const text = dataText(node);
+    if (text) parts.push(short(text));
+    const role = node.data?.['role'];
+    if (typeof role === 'string' && role !== node.kind) parts.push(role);
+    if (node.status) parts.push(node.status);
+    const signals = node.data?.['signals'];
+    if (typeof signals === 'string' && signals) parts.push(`signal: ${signals}`);
+    const until = node.data?.['until'];
+    if (typeof until === 'number') parts.push(`wakes ${new Date(until).toISOString().slice(0, 16)}Z`);
+    const toolName = node.data?.['toolName'];
+    if (typeof toolName === 'string') parts.push(`tool ${toolName}`);
+    if (node.data?.['head'] !== undefined) parts.push(`head ${String(node.data['head'])}`);
+    if (node.data?.['deferred'] === true) parts.push('deferred');
+    const error = node.data?.['error'];
+    if (typeof error === 'string') parts.push(`error ${error}`);
+    const recovery = node.data?.['recovery'];
+    if (typeof recovery === 'string') parts.push(`recovery ${short(recovery, 40)}`);
+    return parts.join(' · ');
+};
+
 const el = <T extends HTMLElement = HTMLElement>(id: string): T => {
     const node = document.getElementById(id);
     if (!node) throw new Error(`missing element #${id}`);
@@ -85,6 +128,7 @@ export class DurableHost {
             done: 'success',
         },
         extraNodeData: (node) => ({ text: dataText(node), duration: node.data?.['durationMs'] ?? null }),
+        extraEdgeData: (edge) => ({ label: EDGE_LABELS[edge.kind] ?? edge.kind }),
     });
     #status: { readonly provider: string; readonly storage: string; readonly tasks: number } = {
         provider: 'local feed',
@@ -121,6 +165,7 @@ export class DurableHost {
         );
         this.renderer.on('bandChange', ({ band }) => this.patchView({ band }));
         this.renderGlossary();
+        this.renderLegend();
         this.bindChrome();
         this.#ready = true;
         this.refresh();
@@ -170,11 +215,25 @@ export class DurableHost {
     select(id: string): void {
         this.renderer.setSelection([id]);
         this.patchView({ selection: id, focus: id });
-        const node = tabKernel(this.registry.active()!)
-            .nodes.find((candidate) => candidate.id === id);
-        el('inspector').innerHTML = node
-            ? `<strong>${escapeHTML(node.label)}</strong><br>${escapeHTML(node.kind)} · ${escapeHTML(String(node.data?.['status'] ?? 'committed'))}${dataText(node) ? `<br>${escapeHTML(dataText(node))}` : ''}`
-            : 'Select a node to inspect its committed facts.';
+        const tab = this.registry.active()!;
+        const kernel = tabKernel(tab);
+        const node = kernel.nodes.find((candidate) => candidate.id === id);
+        if (!node) {
+            el('inspector').innerHTML = 'Select a node to inspect its committed facts.';
+            return;
+        }
+        const durable: DurableNode = {
+            id: node.id,
+            kind: node.kind,
+            label: node.label,
+            status: String(node.data?.['status'] ?? ''),
+            role: String(node.data?.['role'] ?? node.kind),
+            data: node.data,
+        };
+        const links = kernel.edges
+            .filter((edge) => edge.source === id || edge.target === id)
+            .map((edge) => EDGE_LABELS[edge.kind] ?? edge.kind);
+        el('inspector').innerHTML = `<strong>${escapeHTML(labelForNode(durable))}</strong><br>${escapeHTML(node.kind)} · ${escapeHTML(String(node.data?.['status'] ?? 'committed'))}${summaryForNode(durable) ? `<br>${escapeHTML(summaryForNode(durable))}` : ''}<br><code>${escapeHTML(node.id)}</code>${links.length ? `<br>links: ${escapeHTML([...new Set(links)].join(', '))}` : ''}`;
     }
 
     reveal(id: string): void {
@@ -201,15 +260,21 @@ export class DurableHost {
         const positions = this.#layout(view.nodes, view.edges);
         const model = this.#adapter.build(
             {
-                nodes: view.nodes.map((node): DurableNode => ({
-                    id: node.id,
-                    kind: node.kind,
-                    label: node.label,
-                    status: String(node.data?.['status'] ?? ''),
-                    summary: dataText(node),
-                    role: String(node.data?.['role'] ?? node.kind),
-                    data: node.data,
-                })),
+                nodes: view.nodes.map((node): DurableNode => {
+                    const durable: DurableNode = {
+                        id: node.id,
+                        kind: node.kind,
+                        label: node.label,
+                        status: String(node.data?.['status'] ?? ''),
+                        role: String(node.data?.['role'] ?? node.kind),
+                        data: node.data,
+                    };
+                    return {
+                        ...durable,
+                        label: labelForNode(durable),
+                        summary: summaryForNode(durable),
+                    };
+                }),
                 edges: view.edges.map((edge) => ({
                     id: edge.id,
                     source: edge.source,
@@ -476,6 +541,29 @@ export class DurableHost {
         el('timeline').toggleAttribute('data-active', this.#viewName === 'timeline');
         for (const button of document.querySelectorAll<HTMLButtonElement>('#view-switch button'))
             button.setAttribute('aria-selected', String(button.dataset['view'] === this.#viewName));
+    }
+
+    private renderLegend(): void {
+        const statuses: readonly [string, string][] = [
+            ['committed · complete', 'ok'],
+            ['sleeping · waiting · pending', 'warn'],
+            ['running · streaming', 'running'],
+            ['failed · aborted', 'error'],
+        ];
+        el('legend').replaceChildren(
+            ...statuses.map(([label, tone]) => {
+                const row = document.createElement('div');
+                row.className = 'row';
+                row.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value" data-tone="${tone}">${escapeHTML(tone)}</span>`;
+                return row;
+            }),
+            ...Object.entries(EDGE_LABELS).map(([kind, label]) => {
+                const row = document.createElement('div');
+                row.className = 'row';
+                row.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value">${escapeHTML(kind)}</span>`;
+                return row;
+            }),
+        );
     }
 
     private renderGlossary(): void {
