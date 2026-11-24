@@ -4,6 +4,7 @@ import { getJSON, postJSON, type ConversationInfo, type Health, type Scenario } 
 import { DurableHost } from './host';
 import { localFeed } from './local-feed';
 import { replayFeed } from './replay';
+import { isRung } from './rungs';
 import { SCENARIOS } from './scenarios';
 import { asOfFeed } from './time-travel';
 
@@ -14,10 +15,12 @@ const seed = params.get('seed') ?? 'fixed';
 const replayID = params.get('replay') ?? undefined;
 const asOf = params.get('asOf') === null ? undefined : Number(params.get('asOf'));
 const observer = params.get('observer') === '1';
+const rung = params.get('rung');
+const initialRung = isRung(rung) ? rung : undefined;
 const offline = Boolean(shot) || Boolean(scenario) || Boolean(replayID)
     || asOf !== undefined || params.get('offline') === '1';
 const registry = new TabRegistry();
-const host = new DurableHost(registry, offline, shot, seed);
+const host = new DurableHost(registry, offline, shot, seed, initialRung);
 const el = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
 if (observer) el('app').dataset['observer'] = 'true';
 if (asOf !== undefined) host.setAsOf(asOf);

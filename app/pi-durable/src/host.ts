@@ -4,6 +4,7 @@ import { diffKernels, Kernel } from '@spacegraphjs/kernel';
 import { DEFAULT_THEME, type RenderTheme } from '@spacegraphjs/renderer';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { ScopeSimulation, type ScopeSpec } from 'spacegraphjs/layout';
+import { ZoomBands } from 'spacegraphjs/zoom';
 import {
     buildScopes,
     TabRegistry,
@@ -17,6 +18,7 @@ import {
 import type { Feed } from './local-feed';
 import { localFeed } from './local-feed';
 import { replayFeed } from './replay';
+import { isRung, RUNGS, rungView, type Rung } from './rungs';
 import { VIEW_NAMES, type ViewName } from './scenarios';
 import { shotById } from './shots';
 import { asOfFeed } from './time-travel';
@@ -58,6 +60,8 @@ const VIEW_LABELS: Readonly<Record<ViewName, string>> = {
     graph: 'facts', tasks: 'owners', timeline: 'order', diff: 'delta',
     trace: 'spans', docs: 'documents', transcript: 'entries',
 };
+
+const ZOOM_RANGE = { min: 0.25, max: 4, closerIsLarger: true } as const;
 
 const GLOSSARY: Readonly<Record<string, string>> = {
     conversation: 'A durable conversation: one owner of its transcript and documents.',
@@ -179,6 +183,16 @@ export class DurableHost {
         tasks: 0,
     };
     #viewName: ViewName = 'graph';
+    #rung: Rung = 'fact';
+    readonly #bands = new ZoomBands({
+        bands: RUNGS.map((rung, index) => ({
+            id: rung.id,
+            min: index / RUNGS.length,
+            max: (index + 1) / RUNGS.length,
+            label: rung.label,
+        })),
+        hysteresis: 0.03,
+    });
     #ready = false;
     #offline = false;
     #edgeCount = 0;
@@ -188,6 +202,8 @@ export class DurableHost {
     #presented: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } = {
         nodes: [], edges: [],
     };
+    #zoomDriven = false;
+    #overviewBounds: { minX: number; maxX: number; minY: number; maxY: number } | undefined;
     #laneNames: readonly string[] = [];
     #axisNames: readonly string[] = [];
     #edgeLabels: readonly string[] = [];
@@ -199,22 +215,29 @@ export class DurableHost {
     onFork: (() => Promise<void>) | undefined;
     onApprove: (() => Promise<void>) | undefined;
 
-    constructor(registry: TabRegistry, offline = false, shot?: string, seed = 'fixed') {
+    constructor(registry: TabRegistry, offline = false, shot?: string, seed = 'fixed', rung?: Rung) {
         this.registry = registry;
         this.#offline = offline;
         this.#shot = shot;
         this.#seed = seed;
+        if (rung && isRung(rung)) this.#rung = rung;
+        this.#bands.onChange((change) => {
+            if (isRung(change.band)) this.setRung(change.band);
+        });
     }
 
     async mount(container: HTMLElement): Promise<void> {
         await this.renderer.mount(container, { theme: THEME, projection: '2d' });
         this.renderer.on('nodeClick', ({ id }) => this.select(id));
-        this.renderer.on('viewportChange', ({ zoom, center }) =>
-            this.patchView({ camera: { zoom, center } }),
-        );
+        this.renderer.on('viewportChange', ({ zoom, center }) => {
+            if (this.#zoomDriven) this.#bands.feed(zoom, ZOOM_RANGE);
+            this.patchView({ camera: { zoom, center } });
+            this.renderOverview();
+        });
         this.renderer.on('bandChange', ({ band }) => this.patchView({ band }));
         this.renderGlossary();
         this.renderLegend();
+        this.renderRungs();
         this.bindChrome();
         this.#ready = true;
         this.refresh();
@@ -369,6 +392,30 @@ export class DurableHost {
         this.announce(`${name} view`);
     }
 
+    setRung(rung: Rung): boolean {
+        if (!isRung(rung)) return false;
+        if (!this.#ready) {
+            this.#rung = rung;
+            return true;
+        }
+        if (rung === this.#rung) return false;
+        this.#zoomDriven = false;
+        this.#rung = rung;
+        this.renderRungs();
+        this.refresh();
+        this.renderOverview();
+        this.announce(`${RUNGS.find((entry) => entry.id === rung)!.label} rung`);
+        return true;
+    }
+
+    zoomBy(factor: number): void {
+        const viewport = this.renderer.getViewport?.();
+        if (!viewport) return;
+        this.#zoomDriven = true;
+        this.renderer.setViewport({ zoom: viewport.zoom * factor, center: viewport.center });
+        this.#bands.feed(viewport.zoom * factor, ZOOM_RANGE);
+    }
+
     announce(message: string): void {
         el('announcer').textContent = message;
     }
@@ -396,6 +443,7 @@ export class DurableHost {
         const tab = this.registry.active();
         const params = new URLSearchParams({ s: tab?.id ?? '' });
         if (this.#shot) params.set('shot', this.#shot);
+        if (this.#rung !== 'fact') params.set('rung', this.#rung);
         if (this.#seed !== 'fixed') params.set('seed', this.#seed);
         return `${location.pathname}?${params.toString()}`;
     }
@@ -403,6 +451,8 @@ export class DurableHost {
     applyPermalink(value: string): boolean {
         const params = new URLSearchParams(value.includes('?') ? value.split('?')[1] : value);
         const id = params.get('s');
+        const rung = params.get('rung');
+        if (rung && isRung(rung)) this.setRung(rung);
         if (id && this.registry.get(id)) return this.setTab(id);
         return false;
     }
@@ -442,6 +492,9 @@ export class DurableHost {
             },
             viewport: () => this.renderer.getViewport?.() ?? { zoom: 1, center: [0, 0, 0] },
             viewName: () => this.#viewName,
+            rung: () => this.#rung,
+            setRung: (rung: string) => this.setRung(rung as Rung),
+            zoomBy: (factor: number) => this.zoomBy(factor),
             setView: (name: string) => {
                 if (!VIEW_NAMES.includes(name as ViewName)) return false;
                 this.setView(name as ViewName);
@@ -568,6 +621,13 @@ export class DurableHost {
     }
 
     #viewData(
+        view: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] },
+        kernel: Kernel,
+    ): { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } {
+        return rungView(this.#rung, this.#viewDataForView(view, kernel));
+    }
+
+    #viewDataForView(
         view: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] },
         kernel: Kernel,
     ): { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } {
@@ -750,6 +810,54 @@ export class DurableHost {
         );
     }
 
+    private renderRungs(): void {
+        el('rung-switch').replaceChildren(
+            ...RUNGS.map((rung) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.dataset['rung'] = rung.id;
+                button.textContent = rung.label.toLowerCase();
+                button.title = rung.description;
+                button.setAttribute('aria-current', String(this.#rung === rung.id));
+                button.addEventListener('click', () => this.setRung(rung.id));
+                return button;
+            }),
+        );
+        el('app').dataset['rung'] = this.#rung;
+        el('rung-caption').textContent = RUNGS.find((entry) => entry.id === this.#rung)!.description;
+    }
+
+    private renderOverview(): void {
+        if (!this.#ready) return;
+        const positions = [...this.#simulation.view().positions.values()];
+        const svg = document.getElementById('survey-svg') as unknown as SVGSVGElement;
+        if (!positions.length) {
+            this.#overviewBounds = undefined;
+            svg.replaceChildren();
+            return;
+        }
+        const xs = positions.map((position) => position.x);
+        const ys = positions.map((position) => position.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+        this.#overviewBounds = { minX, maxX, minY, maxY };
+        const width = Math.max(1, maxX - minX);
+        const height = Math.max(1, maxY - minY);
+        const mapX = (x: number) => 8 + ((x - minX) / width) * 144;
+        const mapY = (y: number) => 8 + ((y - minY) / height) * 84;
+        const dots = positions
+            .map((position) => `<circle cx="${mapX(position.x).toFixed(1)}" cy="${mapY(position.y).toFixed(1)}" r="2.2" />`)
+            .join('');
+        const viewport = this.renderer.getViewport?.();
+        const extent = viewport?.extent;
+        const reticle = extent
+            ? `<rect x="${Math.max(2, mapX(viewport!.center[0] - extent.width / 2)).toFixed(1)}" y="${Math.max(2, mapY(viewport!.center[1] - extent.height / 2)).toFixed(1)}" width="${((extent.width / width) * 144).toFixed(1)}" height="${((extent.height / height) * 84).toFixed(1)}" />`
+            : '';
+        svg.innerHTML = `<rect class="plate-frame" x="1" y="1" width="158" height="98" />${dots}${reticle}`;
+    }
+
     private renderView(): void {
         el('tasks').toggleAttribute('data-active', this.#viewName === 'tasks');
         el('timeline').toggleAttribute('data-active', this.#viewName === 'timeline');
@@ -793,9 +901,39 @@ export class DurableHost {
     }
 
     private bindChrome(): void {
+        for (const event of ['wheel', 'dblclick'] as const)
+            el('canvas').addEventListener(event, () => { this.#zoomDriven = true; }, { passive: true });
         for (const button of document.querySelectorAll<HTMLButtonElement>('#view-switch button'))
             button.addEventListener('click', () => this.setView(button.dataset['view'] as ViewName));
         el('help-close').addEventListener('click', () => this.toggleHelp(false));
+        el('survey').addEventListener('click', (event) => {
+            const bounds = this.#overviewBounds;
+            const viewport = this.renderer.getViewport?.();
+            if (!bounds || !viewport) return;
+            const rect = el('survey').getBoundingClientRect();
+            const fx = (event.clientX - rect.left) / rect.width;
+            const fy = (event.clientY - rect.top) / rect.height;
+            const x = bounds.minX + fx * (bounds.maxX - bounds.minX);
+            const y = bounds.minY + fy * (bounds.maxY - bounds.minY);
+            this.renderer.setViewport({ zoom: viewport.zoom, center: [x, y, viewport.center[2]] });
+        });
+        el('survey').addEventListener('keydown', (event) => {
+            const bounds = this.#overviewBounds;
+            const viewport = this.renderer.getViewport?.();
+            if (!bounds || !viewport) return;
+            const dx = event.key === 'ArrowRight' ? 0.1 : event.key === 'ArrowLeft' ? -0.1 : 0;
+            const dy = event.key === 'ArrowDown' ? 0.1 : event.key === 'ArrowUp' ? -0.1 : 0;
+            if (!dx && !dy) return;
+            event.preventDefault();
+            this.renderer.setViewport({
+                zoom: viewport.zoom,
+                center: [
+                    viewport.center[0] + dx * (bounds.maxX - bounds.minX),
+                    viewport.center[1] + dy * (bounds.maxY - bounds.minY),
+                    viewport.center[2],
+                ],
+            });
+        });
     }
 
     toggleHelp(visible?: boolean): void {
