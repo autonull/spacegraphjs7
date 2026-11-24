@@ -1,8 +1,6 @@
 import { createDemoWithNodes, type SpaceGraph } from '../../framework';
 
 export default async function fractalDebugDemo(): Promise<SpaceGraph> {
-    const LEVELS = ['Alpha', 'Beta', 'Gamma'];
-
     const nodes = [
         {
             id: 'debug-group',

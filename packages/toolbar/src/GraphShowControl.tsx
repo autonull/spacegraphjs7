@@ -5,7 +5,7 @@
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
 import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
-import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shared/popover';
+import type { PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { DetailMode, GraphViewData } from '@spacegraphjs/shared/types';
 import { menuOption } from './MenuOption';
@@ -39,9 +39,8 @@ export interface GraphShowControlProps {
 }
 
 export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
-    const { i18n, Icon, Popover, ...rest } = props;
+    const { i18n, Icon, ...rest } = props;
     const renderIcon = Icon ?? createIconRenderer();
-    const PopoverComponent = Popover ?? createPopoverRenderer();
 
     return (
         <>

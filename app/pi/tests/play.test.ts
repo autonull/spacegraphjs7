@@ -16,11 +16,9 @@ const harness = () => {
         groundY: -500,
     };
     let settled = true;
-    let instant = false;
     let energy = 0;
     const simulation: PlaySimulation = {
         setInstant: (value) => {
-            instant = value;
             if (value) settled = true;
         },
         settle: () => {

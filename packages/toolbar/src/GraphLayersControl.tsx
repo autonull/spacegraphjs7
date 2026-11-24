@@ -5,7 +5,7 @@
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
 import { facetCount, mergeFacets, toggleFacet, type FacetDisplayCounts } from '@spacegraphjs/shared';
-import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
+import type { IconComponent } from '@spacegraphjs/shared/icons';
 import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { RendererCapabilities } from '@spacegraphjs/renderer';
@@ -50,8 +50,7 @@ export interface GraphLayersControlProps {
 }
 
 export function GraphLayersControl(props: GraphLayersControlProps): JSX.Element {
-    const { i18n, Icon, Popover, ...rest } = props;
-    const renderIcon = Icon ?? createIconRenderer();
+    const { i18n, Popover, ...rest } = props;
     const PopoverComponent = Popover ?? createPopoverRenderer();
 
     const facets = () => rest.facets;

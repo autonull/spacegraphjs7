@@ -2,22 +2,16 @@
 import { describe, expect, test } from 'vitest';
 import type { RenderNode } from '@spacegraphjs/renderer';
 import { ModelAdapter } from '../src/ModelAdapter';
-import type {
-    AdapterModel,
-    AdapterNode,
-    AdapterEdge,
-    AdapterPosition,
-    BuildOptions,
-} from '../src/types';
+import type { AdapterModel, AdapterNode, AdapterEdge, AdapterPosition } from '../src/types';
 
 interface PerfNode extends AdapterNode {
     lane: string;
     outcome: string;
 }
 
-interface PerfEdge extends AdapterEdge {}
+type PerfEdge = AdapterEdge;
 
-interface PerfModel extends AdapterModel<PerfNode, PerfEdge> {}
+type PerfModel = AdapterModel<PerfNode, PerfEdge>;
 
 class PerfAdapter extends ModelAdapter<PerfNode, PerfEdge, 'execution', PerfModel> {
     nodeShape(): RenderNode['shape'] {
@@ -168,7 +162,7 @@ describe('diffRenderModels performance', () => {
     test('diff is fast even on large models', () => {
         const { model, positions } = generateModel(20_000, 36_000);
 
-        const renderModel = adapter.build(model, { level: 'execution', positions });
+        adapter.build(model, { level: 'execution', positions });
 
         const { ms } = timed(() => {
             // diff against itself (worst case: no changes but still walks all nodes)

@@ -103,12 +103,13 @@ export function checkQuality(model: QualityModel, options: QualityOptions = {}):
     const overlapDistance = options.overlapDistance ?? 24;
     const nodes = model.nodes.filter((node) => node.visible !== false);
     const ids = new Set(nodes.map((node) => node.id));
+    const points = nodes.map((node) => point(node.position));
     const issues: QualityIssue[] = [];
 
     for (let first = 0; first < nodes.length; first += 1) {
         for (let second = first + 1; second < nodes.length; second += 1) {
-            const a = point(nodes[first]!.position);
-            const b = point(nodes[second]!.position);
+            const a = points[first]!;
+            const b = points[second]!;
             if (Math.hypot(a[0] - b[0], a[1] - b[1]) < overlapDistance) {
                 issues.push({
                     code: 'overlap',
@@ -272,10 +273,8 @@ export interface VisionAssertions {
     meetsFloor(minScore?: number): void;
 }
 
-const checkOptionsOf = (options: QualityOptions): QualityOptions => {
-    const { minScore: _minScore, ...checkOptions } = options;
-    return checkOptions;
-};
+const checkOptionsOf = ({ minScore: _minScore, ...checkOptions }: QualityOptions): QualityOptions =>
+    checkOptions;
 
 export function spacegraphVision(model: QualityModel, options: QualityOptions = {}): SpaceGraphVisionReport {
     const minScore = options.minScore ?? 80;

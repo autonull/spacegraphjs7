@@ -2,6 +2,7 @@ import { escapeHtml } from '@spacegraphjs/adapter';
 import { KernelCodec, type Kernel } from '@spacegraphjs/kernel';
 import type { AgentView } from '@spacegraphjs/agent';
 import { sensoryAdapter, type RegisteredSensorySeam } from 'spacegraphjs/world';
+import { clamp } from 'spacegraphjs/utils';
 import type { AgentLevel } from '../adapter';
 
 export type Position = { x: number; y: number; z: number };
@@ -39,8 +40,6 @@ export const UNSUPPORTED: readonly UnsupportedSeam[] = [
 /** A registered host adapter removes its seam from the unsupported list. */
 export const unsupportedSeams = (): readonly UnsupportedSeam[] =>
     UNSUPPORTED.filter((seam) => !sensoryAdapter(seam.id as RegisteredSensorySeam));
-
-const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
 /** Host-side overlap estimate. The Playwright gate uses the library's full vision analyzer. */
 export const scoreVision = (

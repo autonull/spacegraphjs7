@@ -93,7 +93,7 @@ export default async function fractalDemo(): Promise<SpaceGraph> {
         ],
     );
 
-    const zoomIndicator = addOverlayPanel(
+    addOverlayPanel(
         sg,
         'top-right',
         { pointerEvents: 'none' },

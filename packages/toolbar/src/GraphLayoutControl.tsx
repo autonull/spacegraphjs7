@@ -4,7 +4,7 @@
 
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
-import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
+import type { IconComponent } from '@spacegraphjs/shared/icons';
 import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { Layout } from '@spacegraphjs/shared/types';
@@ -20,8 +20,7 @@ export interface GraphLayoutControlProps {
 }
 
 export function GraphLayoutControl(props: GraphLayoutControlProps): JSX.Element {
-    const { layout, onLayoutChange, i18n, Icon, Popover } = props;
-    const renderIcon = Icon ?? createIconRenderer();
+    const { layout, onLayoutChange, i18n, Popover } = props;
     const PopoverComponent = Popover ?? createPopoverRenderer();
 
     return (

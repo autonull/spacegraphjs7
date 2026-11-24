@@ -141,7 +141,7 @@ export interface GraphEdgeLike {
     confidence?: string;
 }
 
-export interface GraphViewDataLike<NodeID extends string = string> {
+export interface GraphViewDataLike {
     nodes: ReadonlyArray<GraphNodeLike>;
     edges: ReadonlyArray<GraphEdgeLike>;
 }
@@ -156,7 +156,7 @@ export interface WithAnnotationsResult<NodeID extends string = string> {
  * Returns a new model with the annotations applied.
  */
 export function withAnnotations<NodeID extends string>(
-    model: GraphViewDataLike<NodeID>,
+    model: GraphViewDataLike,
     annotations: Annotations,
     policy: NoteNodePolicy<NodeID>,
 ): WithAnnotationsResult<NodeID> {

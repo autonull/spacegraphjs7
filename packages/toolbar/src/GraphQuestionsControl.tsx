@@ -3,7 +3,7 @@
  */
 
 import type { JSX } from 'solid-js';
-import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
+import type { IconComponent } from '@spacegraphjs/shared/icons';
 import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import { ToolbarMenu } from './ToolbarMenu';
@@ -16,8 +16,7 @@ export interface GraphQuestionsControlProps {
 }
 
 export function GraphQuestionsControl(props: GraphQuestionsControlProps): JSX.Element {
-    const { dispatchCommand, i18n, Icon, Popover } = props;
-    const renderIcon = Icon ?? createIconRenderer();
+    const { dispatchCommand, i18n, Popover } = props;
     const PopoverComponent = Popover ?? createPopoverRenderer();
 
     const ask = (
