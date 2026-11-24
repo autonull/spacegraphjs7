@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "strict": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        "allowImportingTsExtensions": true,
+        "isolatedModules": true,
+        "verbatimModuleSyntax": true,
+        "noEmit": true,
+        "types": ["node"],
+        "paths": {
+            "@spacegraphjs/navigation/follow": ["../../packages/navigation/src/follow.ts"],
+            "pi-kit": ["../pi-kit/src/index.ts"]
+        }
+    },
+    "include": ["src", "scripts", "tests", "vite.config.ts", "vitest.config.ts"]
+}

@@ -2,7 +2,9 @@
 
 The Pi reference app: a private pnpm workspace consumer that embeds Pi in a Node process, turns its
 events into `KernelOp`s and renders them through an unmodified SpaceGraphJS. SpaceGraphJS has no
-knowledge of this app; see `pnpm --filter pi verify`.
+knowledge of this app; see `pnpm --filter pi verify`. The sibling `app/pi-durable` uses the same
+pipeline but a different session model; `app/pi-kit` holds that shared pipeline. Each app's
+`src/server.ts` is its only Pi importer, and the one-way dependency guard covers both apps.
 
 ```bash
 pnpm --filter pi dev         # Node op server + Vite client, one command
@@ -37,6 +39,7 @@ Keep `pnpm --filter pi dev` running so Playwright reuses the Vite and op servers
   imports Pi packages; it translates `AgentSessionEvent`s through `src/pi-events.ts` into the generic
   `AgentEvent` type from `@spacegraphjs/agent`.
 - `src/client.ts` — thin DOM/SSE binding: `EventSource` → `decodeOp` → `PiHost.consume`.
+- `src/ops.ts` — re-exports `encodeOp`, `decodeOp` and `foldKernelOps` from `app/pi-kit`.
 - `src/host.ts` — host-owned policy: kernel, view, controller, contract renderer, `ScopeSimulation`
   (seeded zero-gravity forces, cooling, sleep, warm starts), camera flight, frame clock, levels,
   depth gating and the log/map/hybrid transcript. Exposes the `window.__pi` hooks.

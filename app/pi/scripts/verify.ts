@@ -41,9 +41,17 @@ for (const file of ['package.json', 'app/demo/vite.config.ts', 'vite.lib.config.
 }
 
 const docs = resolve(workspace, 'docs');
+const docAllowlist = new Set([
+    'docs/PLAN/SPACEGRAPH_OS.md',
+    'docs/PLAN/INDEX.md',
+    'docs/screenshots/README.md',
+    'docs/adr/0017-one-owner-tabs-as-views.md',
+    'docs/adr/0018-committed-state-is-truth.md',
+]);
 for (const entry of readdirSync(docs, { recursive: true, encoding: 'utf8' }).filter((path) =>
     statSync(join(docs, path)).isFile(),
 )) {
+    if (docAllowlist.has(`docs/${entry.replaceAll('\\', '/')}`)) continue;
     const text = readFileSync(join(docs, entry), 'utf8');
     check(!/app\/pi|@earendil-works/.test(text), `pi reference in docs/${entry}`);
 }

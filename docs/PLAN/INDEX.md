@@ -20,6 +20,7 @@
 | **See growth strategy**    | [GROWTH.md](./GROWTH.md)                        | 15 min    |
 | **Manage risks**           | [RISKS.md](./RISKS.md)                          | 10 min    |
 | **ZUI / OS architecture**  | [SPACEGRAPH_OS.md](./SPACEGRAPH_OS.md)          | 5 min     |
+| **Durable workspace plan** | [TODO12.md](../../TODO12.md)                    | 10 min    |
 | **Build a domain wrapper** | [semantic-wrappers.md](../semantic-wrappers.md) | 15 min    |
 | **Run the flagship study** | [pi-study.md](../pi-study.md)                   | 10 min    |
 

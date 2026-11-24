@@ -18,6 +18,8 @@ docs/screenshots/inner-layout/
 docs/screenshots/retro-style/
 docs/screenshots/capture/
 docs/screenshots/index.html
+docs/screenshots/pi-durable-index.html
+.pi-durable/
 docs/screenshots/*.prev
 docs/screenshots/**/*.prev
 tsconfig.tsbuildinfo

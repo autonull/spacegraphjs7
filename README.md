@@ -218,6 +218,22 @@ is never changed by default: `emphasis.focusScale` and its neighbors are opt-in 
 lens is a fixed-size host overlay anchored to the focused node with clickable inner chips and actions.
 Causal edges are thick faceted ribbons through the existing `RenderEdge.data` path. The catalog and
 rail are on-demand drawers and all surfaces use square corners, so the canvas keeps the reclaimed width.
+
+A second private consumer, [`app/pi-durable/`](app/pi-durable/README.md), renders durable Pi sessions
+as a navigable workspace: one server-owned Harness, one SSE stream, per-conversation kernels and a tab
+switcher that restores state instead of remounting a run. It runs with a faux provider and no API key,
+and ships tracked screenshots as soon as its Core runs.
+
+![Durable workspace](docs/screenshots/pi-durable/basic-turn.png)
+
+```
+pnpm --filter pi-durable dev           # provider-free durable demo
+pnpm --filter pi-durable verify:fast   # types, fold tests and browser journey
+pnpm --filter pi-durable shots:focus   # four tracked, vision-gated shots
+```
+
+Both hosts are private workspace consumers. SpaceGraphJS itself knows neither Pi nor either host's
+state machine; only the pipeline (`app/pi-kit`) is shared.
 `pnpm --filter pi shots:all` regenerates the curated
 gallery in [`docs/screenshots/`](docs/screenshots/README.md); `pnpm --filter pi shot --watch`
 recaptures on source change and refreshes a local contact sheet, so visual iteration needs no manual

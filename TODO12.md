@@ -1,8 +1,10 @@
 # TODO12 — Pi Durable sessions as a navigable workspace
 
-> **Status: DRAFT (2026-11-24).** No implementation has landed. This adds a second private workspace
-> consumer for `@earendil-works/pi-durable`. No published surface, renderer contract, default in
-> `app/pi`, or human verdict (ADR 0008) changes.
+> **Status: Phase 1 Core landed (2026-11-24).** The runnable app, shared kit, server adapter,
+> translator, tabs, four tracked Core shots, docs and guards are in place. Phase 2 (Next scenarios,
+> tasks/timeline shots) and the last Phase 3 gates remain; see §13. This adds a second private
+> workspace consumer for `@earendil-works/pi-durable`. No published surface, renderer contract,
+> default in `app/pi`, or human verdict (ADR 0008) changes.
 
 Purpose: `app/pi` renders one in-memory coding-agent run. It cannot show a session that survives a
 restart, contains forks or delegated conversations, parks a tool on a sleep or signal, compacts a
@@ -499,3 +501,67 @@ uses a NOOP span — a real span is needed for `pi.durable.*` telemetry (a Next 
 **Watch-outs:** guard conflict in `app/pi/scripts/verify.ts:43-49`; never import Pi outside
 `server.ts`; do not refactor `PiHost`; tests from package dirs only; no fixed sleeps; keep
 `PI_DURABLE_FAUX_SEED` fixed for shots.
+
+---
+
+## 13. Progress and remaining work (2026-11-24)
+
+### Landed in Phase 1
+
+| Item | State | Evidence |
+| ---- | ----- | -------- |
+| K1 — `app/pi-kit` | Done | `ops.ts` (encode/decode/demux/opID), `session.ts` (`TabRegistry`, `SessionKernel`, `WorkspaceKernel`), `scopes.ts`, `theme.ts`, `fixtures.ts`; zero Pi imports. `app/pi/src/ops.ts` re-exports the kit. |
+| A1 — app scaffold | Done | `app/pi-durable` with configs, `index.html`, two-server dev script, Vite proxy at 5176→8788, Playwright servers, static build from the local feed. |
+| R1 — server adapter | Done | `src/server.ts` opens one Harness over JSONL/Memory with faux models and a registered sleeping approval task; Core routes and one SSE stream are live. Health reports provider, storage and recovered tasks. |
+| R2 — translator | Done | `src/translator.ts` maps view/ops → `AgentEvent[]` → idempotent `KernelOp[]` with stable `d:<id>:…` ids, dedupe by id, and only recorded link kinds. Fold and idempotency tests pass. |
+| T1 — tabs | Done | `TabRegistry` holds one `SessionKernel` and view state per tab; fork, permalink, active-tab restore, RTL tablist, one renderer. |
+| S1 — shots | Done | Four Core PNGs tracked in `docs/screenshots/pi-durable/`, `.prev` pairs, contact sheet, `shots:focus`/`shots:all`/`shots:watch`; `?shot=<id>` boots pure feed data. |
+| G1 (Core) — gates | Done | Translator/fold/tab vitest, nine-step offline journey, resume/duplicate request id, vision gate, dependency/docs guard, build, root `check`, flagship `verify:fast`. |
+| D1 (partial) — docs | Done | App README with embedded shots, root README thumbnail and commands, `app/pi` README kit note, `SPACEGRAPH_OS.md` §4, screenshot table, `PLAN/INDEX.md` entry, ADRs 0017/0018, narrow docs allowlist in both guards. |
+
+### Verification results
+
+```text
+pnpm --filter pi-durable check:fast      11 tests passed
+pnpm --filter pi-durable test:e2e         first-run journey + resume + vision + 4 shots passed
+pnpm --filter pi-durable shots:focus     4 PNGs + .prev pairs; vision score > 0.5
+pnpm --filter pi-durable verify          dependency / docs allowlist guard passed
+pnpm --filter pi-durable build           static bundle built
+pnpm run check                           all package typechecks passed
+pnpm --filter pi verify:fast             181 tests + 20 browser tests passed
+```
+
+Local note: ports 5175 and 5176 were already occupied by unrelated Vite processes, so browser gates
+ran with `SG_PI_PORT=5195` and `SG_DURABLE_PORT=5186` (`PI_DURABLE_WEB_PORT=5186`). The default ports
+in the configs are unchanged. `pnpm --filter pi verify` (not `verify:fast`) still fails on
+pre-existing `app/pi` references in docs outside the new allowlist; that failure predates this work
+and was not widened.
+
+### Deliberate deviations from the original layout
+
+- `src/tabs.ts` and `src/views/*` were not created: the registry lives in `app/pi-kit/src/session.ts`
+  and the tasks/timeline placements are rendered by `src/host.ts`. No behavior was dropped.
+- The first cut uses a deterministic grid position per node. `ScopeSimulation`/`computeGraphLayout`
+  and the kit's `buildScopes` are available but not wired; this keeps one position authority and a
+  stable first paint.
+- `PI_DURABLE_LOCAL_FEED` is documented but is not a server switch: faux + JSONL is already
+  provider-free. `?shot=<id>` and `?offline=1` select the pure local feed in the browser.
+- Real provider opt-in (`PI_DURABLE_PROVIDER=openai` + key) is not implemented; health reports `faux`.
+- `vision()` is a deterministic DOM/canvas score, not an ONNX model verdict. No human verdict was written.
+
+### Remaining work (next session)
+
+1. **X1** — place tasks and timeline as two scoped layouts of the same kernel (use `buildScopes` and
+   `ScopeSimulation`), then capture and track `task-graph` and `timeline` shots. Keep labels legible.
+2. **C1** — add the `Next` scenarios one at a time from §2: busy inbox, hooks/wraps/tasks, settings,
+   compaction/reset, subagents, child tasks, host docs, usage and errors. Each needs one pinned
+   scenario, one URL state, one test and a shot; no bespoke panel per capability.
+3. **U1 / G1 (rest)** — dedicated a11y spec (roving tabindex, RTL arrows, live announcements, dead
+   controls), full nine-step Playwright restart scenario (stop/restart the server between steps 6–7),
+   CI assertion that every `Core` row in §2 has a scenario and a test, and a real provider opt-in path.
+4. **D1 (rest)** — `app/demo/pi-durable.html` landing page embedding the gallery, plus the final
+   screenshot README links after Phase 2 shots exist. Keep the docs allowlist narrow.
+5. **Deferred** — see §11: code mode, images, hosted Harness/readOnly observer, time travel, recorder
+   and human verdicts. Do not add them to the working Core.
+
+Stop rule unchanged: a scenario that cannot be deterministic is dropped, not papered over.

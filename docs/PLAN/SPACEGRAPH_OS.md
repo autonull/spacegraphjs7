@@ -40,6 +40,22 @@ In a Fractal ZUI, the canvas cannot drastically reorganize itself unexpectedly; 
 
 In standard zoomable interfaces (like Google Maps), zooming is pure coordinate translation. In a FZUI, zooming can traverse semantic edges. Double-clicking an edge smoothly forces the camera down the path to the connected component, acting as the primary navigation model instead of "clicking links".
 
+### 4. Durable sessions are OS state
+
+The private `app/pi-durable` consumer models a session as persistent OS state rather than a page:
+
+- A **conversation** is a document node with committed entries; a **commit** is the only source of facts.
+- The **task graph** is a process tree: owners, waits and signals are edges already recorded by Pi Durable.
+- A **checkpoint** is spatial memory: a fork starts a new document at an existing entry, and the
+  `fork` edge is a branch a user can navigate back along.
+- A **sleep** or **signal** is a pending edge; it shows why work waits without inventing a cause.
+- **Tabs** are workspace views over one owner, restoring selection, camera and transcript position
+  instead of starting competing sessions.
+
+This maps directly onto *Autonomous Layout Stability* (the same folded kernel keeps its spatial
+arrangement across tab switches) and *Semantic Edge Navigation* (`orders`, `owns`, `sleeps-on` and
+`fork` are the paths a user follows). The host owns layout; the durable adapter owns facts.
+
 ## The Road Ahead
 
 SpaceGraphJS is the graphics primitive.

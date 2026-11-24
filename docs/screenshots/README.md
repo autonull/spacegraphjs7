@@ -8,6 +8,7 @@ contact sheet are disposable. Pending visual work is indexed in `experiments.jso
 | Path | Contents | Git |
 | ---- | -------- | --- |
 | `pi/` | Curated flagship shots named by `app/pi/src/shots.ts` | tracked |
+| `pi-durable/` | Core durable-workspace shots named by `app/pi-durable/src/shots.ts` | tracked |
 | `labs/` | Generated incumbent/variant pairs (`ui-presets/`, `scenario-workflow-chapters/`, `scale-lab/`) | ignored |
 | `reports/` | Comparison decisions and baselines with stable names (`graph-baseline.json`, `graph-layout-comparison.json`, `scenario-comparison.json`, `motion-comparison.json`, `edges-comparison.json`, `edges-decision.json`, `audit.json`) | tracked |
 | `atlas/`, `demo-atlas/`, `inner-layout/`, `retro-style/`, `capture/` | Visual-gate output | ignored |
@@ -48,6 +49,24 @@ same state in a browser; no screenshot script encodes a special camera path.
 | `pi/pi-agent-preset.png`           | `policy`        | A launched `quiet` preset with provenance badges in the live policy panel.                   |
 | `full_gui.png`                  | —               | Design reference: the dense rectangle workspace at the detail rung.                          |
 | `graph_view.png`                | —               | Design reference: the same structure seen from far away.                                     |
+
+## Curated Pi Durable shots
+
+`app/pi-durable/src/shots.ts` names four Core shots. Each `?shot=<id>` boots the same deterministic
+local feed, so no capture script carries a private camera path. `SG_DURABLE_SHOTS` redirects output;
+`SG_DURABLE_SHOT` filters ids.
+
+| File | Shot | Question |
+| ---- | ---- | -------- |
+| `pi-durable/basic-turn.png` | `basic-turn` | Can I finish a chat turn with no provider and no API key? |
+| `pi-durable/sleeping-approval.png` | `sleeping-approval` | Can I see why a task sleeps and wake it? |
+| `pi-durable/fork-tabs.png` | `fork-tabs` | Can two conversations stay open with independent state? |
+| `pi-durable/resumed.png` | `resumed` | Does a retried request id produce one answer? |
+
+Two Phase 2 shots (`task-graph`, `timeline`) share the same catalog. Recapture with
+`pnpm --filter pi-durable shots:focus`; `scripts/shot.ts` copies prior images to gitignored `.prev`
+pairs and writes `pi-durable-index.html`, a local studio with a kept/rejected selector. Verdicts stay
+in the browser until a human pastes them into a review file.
 
 ## Regenerate and iterate
 
