@@ -1,5 +1,7 @@
 // One host-callable quality floor. It reads a graph spec or a `RenderModel`, returns a report, and
 // applies only measured, re-verified corrections. Preferences are reported but never flipped.
+import { gradeFor, type VisionGrade } from '../vision/grade';
+
 export type QualityPosition = readonly [number, number, number] | { readonly x: number; readonly y: number; readonly z?: number };
 
 export interface QualityNode {
@@ -255,9 +257,65 @@ const fix = (model: QualityModel, issue: QualityIssue): boolean => {
     return false;
 };
 
+export interface SpaceGraphVisionReport extends QualityReport {
+    readonly minScore: number;
+    readonly passed: boolean;
+    readonly grade: VisionGrade;
+}
+
+export interface VisionAssertions {
+    noOverlap(): void;
+    noMissingLabels(): void;
+    noInvalidEdges(): void;
+    withinDomBudget(): void;
+    accessible(): void;
+    meetsFloor(minScore?: number): void;
+}
+
+const checkOptionsOf = (options: QualityOptions): QualityOptions => {
+    const { minScore: _minScore, ...checkOptions } = options;
+    return checkOptions;
+};
+
+export function spacegraphVision(model: QualityModel, options: QualityOptions = {}): SpaceGraphVisionReport {
+    const minScore = options.minScore ?? 80;
+    const report = checkQuality(model, checkOptionsOf(options));
+    return { ...report, minScore, passed: report.score >= minScore, grade: gradeFor(report.score) };
+}
+
+export function visionAssert(model: QualityModel, options: QualityOptions = {}): VisionAssertions {
+    const checkOptions = checkOptionsOf(options);
+    const requireNo = (name: string, codes: readonly QualityCode[]) => {
+        const found = checkQuality(model, checkOptions).issues.filter((issue) => codes.includes(issue.code));
+        if (!found.length) return;
+        const detail = found.map((issue) => `${issue.code}(${issue.nodeIds.join('+')})`).join(', ');
+        throw new Error(`visionAssert.${name} failed: ${detail}`);
+    };
+    return {
+        noOverlap: () => requireNo('noOverlap', ['overlap']),
+        noMissingLabels: () => requireNo('noMissingLabels', ['missing-label']),
+        noInvalidEdges: () => requireNo('noInvalidEdges', ['edge-endpoint']),
+        withinDomBudget: () => requireNo('withinDomBudget', ['dom-budget']),
+        accessible: () => requireNo('accessible', [
+            'a11y-mirror',
+            'a11y-missing-item',
+            'a11y-role',
+            'a11y-tabindex',
+            'direction-mismatch',
+            'motion-mismatch',
+        ]),
+        meetsFloor: (minScore = 80) => {
+            const report = checkQuality(model, checkOptions);
+            if (report.score < minScore) {
+                throw new Error(`quality floor ${minScore} not met (score ${report.score}): ${report.issues.map((issue) => issue.code).join(', ')}`);
+            }
+        },
+    };
+}
+
 export function correctQuality(model: QualityModel, options: QualityOptions & { maxEdits?: number } = {}): CorrectionOutcome {
     const maxEdits = options.maxEdits ?? 3;
-    const { minScore: _minScore, ...checkOptions } = options;
+    const checkOptions = checkOptionsOf(options);
     const working = clone(model);
     const before = checkQuality(working, checkOptions);
     let report = before;

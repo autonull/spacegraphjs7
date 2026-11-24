@@ -51,7 +51,8 @@ The workspace is split into core rendering and CLI tooling:
     - `src/nodes/`: Available 3D UI objects (`ShapeNode`, `TextMeshNode`, `IFrameNode`).
     - `src/edges/`: Linking behaviors (`DottedEdge`, `DynamicThicknessEdge`).
     - `src/plugins/`: Auto-layouts, Physics algorithms, and the `VisionOverlayPlugin`.
-    - `src/vision/`: Playwright assertions (`visionAssert`), the Vite Plugin (`spacegraphVision`), and the ML analyzer.
+    - `src/quality/`: the published quality floor and the `spacegraphVision` / `visionAssert` helpers.
+    - `src/vision/`: analyzers, the vision loop, the browser test helper and the ML analyzer.
 - `packages/`: Additional workspaces
     - `packages/cli/`: `sg6 fix` CLI tool for auto-fixing code using AI telemetry.
     - `packages/create-spacegraph/`: `sg6 create` scaffolding tool.
@@ -64,8 +65,7 @@ We maintain high quality standards. Before opening a PR, ensure you have:
 1. **Written specific types** for any new payloads or options interfaces.
 2. **Added unit tests**.
     - If adding rendering logic, update `test/spacegraph.test.ts`.
-    - If adding visual layout logic, implement an invariant test inside `test/vision.spec.ts` using the `visionAssert`
-      utility!
+    - If adding visual layout logic, add a focused invariant test using `visionAssert` from `spacegraphjs/quality`.
 3. **Run CI checks locally**.
     ```bash
     pnpm run lint

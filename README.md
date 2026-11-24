@@ -391,9 +391,11 @@ Model management uses `graph.vision.loadModels(paths)` and `graph.vision.modelsL
 
 ### Quality gates
 
-- `createVisionAssert(page)` exposes Playwright assertions: `noOverlap()`, `isLegible()`, and `expectedLayoutScore(minScore)`.
-- The Vite plugin `spacegraphVision(...)` runs analysis after a build and can emit `spacegraph-autofix-patch.json`.
-- `sg fix` consumes that patch, with a `--dry-run` mode.
+- `checkQuality(spec)` scores a graph spec and returns the issues behind that score.
+- `spacegraphVision(spec, { minScore })` returns the same report plus `passed` and a letter `grade`; it does not throw.
+- `visionAssert(spec)` returns test assertions: `noOverlap()`, `noMissingLabels()`, `noInvalidEdges()`, `withinDomBudget()`, `accessible()` and `meetsFloor(minScore)`.
+- `correctQuality(spec, { maxEdits })` applies only measured, re-verified fixes; preferences are logged, never flipped.
+- `sg fix` consumes a `spacegraph-autofix-patch.json` when a host supplies one, with a `--dry-run` mode.
 - `VisionOverlayPlugin` surfaces scores and fixes inside a running app.
 
 Vision is a verification tool, not a guarantee. Use it alongside unit, interaction, and visual-regression tests.
@@ -650,7 +652,7 @@ A practical contribution loop:
 1. Clone the repository and install with `pnpm install`.
 2. Run `pnpm run dev:demo` and open `/` for the complete demo, or `pnpm run dev` for the engine demos.
 3. Pick an issue, or start from a failing test.
-4. Add or update tests. Use `createVisionAssert(page)` for visual invariants and Playwright specs for interaction.
+4. Add or update tests. Use `visionAssert(spec)` for model-level quality invariants and Playwright specs for interaction.
 5. Run `pnpm run lint`, `pnpm run format:check`, `pnpm test`, and the relevant demo or vision suite.
 6. Open a pull request with a clear summary and the tests that cover the change.
 

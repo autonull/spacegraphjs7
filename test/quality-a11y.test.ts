@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { checkQuality, correctQuality, type QualityModel } from '../src/quality';
+import { checkQuality, correctQuality, visionAssert, type QualityModel } from '../src/quality';
 
 const model: QualityModel = {
     nodes: [
@@ -60,5 +60,12 @@ describe('quality accessibility assertions', () => {
         const dom = mirror(['a', 'b']);
         for (const item of [...dom.querySelectorAll('li')]) item.removeAttribute('role');
         expect(checkQuality(model, { dom }).issues).toEqual([]);
+    });
+
+    it('visionAssert.accessible passes on a matching mirror and fails on a missing item', () => {
+        expect(() => visionAssert(model, { dom: mirror(['a', 'b']) }).accessible()).not.toThrow();
+        expect(() => visionAssert(model, { dom: mirror(['a']) }).accessible()).toThrow(
+            /visionAssert\.accessible failed: a11y-missing-item\(b\)/,
+        );
     });
 });

@@ -4,7 +4,7 @@
 > landed and verified; see §6 for evidence. Publication is not planned, so no registry-mode work is
 > pending. Nothing is published, so the compatibility layer was removed: no aliases, no deprecation
 > gate and no published-surface snapshot. §7 lists the remaining non-local items and the ones
-> deliberately declined.
+> deliberately declined; §8 records the landed D4 vision-helper feature.
 
 Purpose: SpaceGraphJS already has unusually broad mechanisms — three renderers, two framework
 bindings, four domain vocabularies, a layout catalogue, a plugin system and a vision loop. What it
@@ -183,17 +183,16 @@ as developer work.
 
 ## 7. Remaining work
 
-The developer-side foundations are now gates and the plan is complete. No local implementation is
-outstanding. The items below are new-feature, optional, deferred or external; the "Reopen when"
-column names the condition that would turn one into work. None is met at this commit. Items
-deliberately declined are listed after the table.
+The developer-side foundations are now gates and the plan is complete. The D4 vision helpers from
+the original list are now landed under the feature plan in §8. The items below are optional, deferred
+or external; the "Reopen when" column names the condition that would turn one into work. None is met
+at this commit. Items deliberately declined are listed after the table.
 
 | # | Item | Category | Blocker / why not now | Reopen when |
 | - | ---- | -------- | --------------------- | ----------- |
-| 1 | D4 optional vision helpers (`spacegraphVision`, `visionAssert`) | New feature | The quality floor checks labels, overlap, DOM budget, edge endpoints, DOM mirror items/roles/tabindex, RTL direction, reduced motion and the preference boundary; the quickstart claims were corrected rather than building these helpers | A separate feature plan approves them |
-| 2 | D5 generated-domain benchmark | Optional | `test:extension` runs the generated domain's conformance suite and one-way dependency guard; the benchmark demo uses the shared registry, not a scaffold-generated host | A scaffold-generated host benchmark is requested |
-| 3 | Local trace and replay | Deferred | Observation side of the loop; the measurement side (D4) is trustworthy, but traces stay local and opt-in | A separate feature plan for observation |
-| 4 | Human verdicts and recruitment | External | The nine evidence entries and the n ≥ 5 study remain pending; no default may flip from a screenshot alone | Study results and human verdicts are recorded |
+| 1 | D5 generated-domain benchmark | Optional | `test:extension` runs the generated domain's conformance suite and one-way dependency guard; the benchmark demo uses the shared registry, not a scaffold-generated host | A scaffold-generated host benchmark is requested |
+| 2 | Local trace and replay | Deferred | Observation side of the loop; the measurement side (D4) is trustworthy, but traces stay local and opt-in | A separate feature plan for observation |
+| 3 | Human verdicts and recruitment | External | The nine evidence entries and the n ≥ 5 study remain pending; no default may flip from a screenshot alone | Study results and human verdicts are recorded |
 
 ### Declined — not pending work
 
@@ -202,3 +201,39 @@ deliberately declined are listed after the table.
 | Registry-mode onboarding and published-version upgrade | Publication is not planned. `npm view` returns 404 for `spacegraphjs` and `create-spacegraph`; literal `pnpm dlx create-spacegraph` and "download the previous release" cannot run offline or in CI. `test:quickstart` uses packed tarballs as the standing local mode, not a placeholder. Do not simulate registry access with mocks. |
 | D2 previous-release baseline | Removed with the compatibility layer. With nothing published, the checkout cannot supply a release baseline; `pnpm check` no longer gates removals. |
 | D3 per-pixel parity | Screenshots change during active UI development, so a pixel lock would be counterproductive and go stale immediately. `test:publish` mounts SpaceGraph and Cytoscape from packed bytes with the shared model and `test:conformance` covers identity, capabilities and the static SVG draw; the capability matrix records intentional differences. |
+
+---
+
+## 8. Feature plan — D4 vision helpers (2026-11-23)
+
+The stale README/CONTRIBUTING claims described a build-time Vite plugin and a Playwright assertion
+object that no longer exist. This feature gives the two names a real, dependency-free meaning on top
+of the quality floor rather than restoring deleted bundler and browser machinery.
+
+**Design.** Both helpers live in `src/quality/index.ts` and ship through the existing `./quality`
+subpath — no new entry, no generated-manifest change, no Playwright or ML dependency, no fourth score
+scale.
+
+- `spacegraphVision(model, options)` is the non-throwing build report: a `QualityReport` plus
+  `minScore`, `passed` and a letter `grade` from the existing `gradeFor` scale. It strips `minScore`
+  before calling `checkQuality`, so a failed gate is returned rather than thrown.
+- `visionAssert(model, options)` is the test gate: an object with `noOverlap()`, `noMissingLabels()`,
+  `noInvalidEdges()`, `withinDomBudget()`, `accessible()` and `meetsFloor(minScore?)`. Each assertion
+  re-checks the same model and throws on the matching `QualityCode`. Accessibility assertions are
+  meaningful only when `options.dom` is supplied, matching `checkQuality`.
+
+**Scope.** No autofix, no preference flips, no screenshots, no default, no renderer branch, no new
+published subpath. The Playwright `createVisionAssert(page)` gate remains a separate browser test
+utility; it is not renamed or removed.
+
+**Tests.** `test/vision-helpers.test.ts` (node) covers report fields, pass/fail and grade on a clean
+and a defective model, and each assertion's throw/pass path. `test/quality-a11y.test.ts` adds the
+`accessible()` path against the existing DOM mirror.
+
+**Verification.** `pnpm exec tsc --noEmit -p tsconfig.json`, the two affected test files, then
+`pnpm test` once. Docs command lint and `check:generated` are unchanged inputs.
+
+**Progress.** Landed: helpers, tests, README/CONTRIBUTING/QUICKSTART corrections, CHANGELOG entry.
+Verified in one pass: `pnpm exec tsc --noEmit -p tsconfig.json` and `pnpm test` (147 files / 1071
+tests). No generated manifest, subpath or docs command changed, so the Tier 1 gate inputs are
+unchanged.

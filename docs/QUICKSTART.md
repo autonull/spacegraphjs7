@@ -168,6 +168,22 @@ const outcome = correctQuality(spec, { maxEdits: 2 });
 console.log(outcome.before, outcome.after, outcome.applied);
 ```
 
+The same floor is exposed as a non-throwing build report and a test gate:
+
+```typescript
+import { spacegraphVision, visionAssert } from 'spacegraphjs/quality';
+
+const gate = spacegraphVision(spec, { minScore: 80 });
+console.log(gate.passed, gate.grade, gate.issues);
+
+const assertions = visionAssert(spec);
+assertions.noOverlap();
+assertions.meetsFloor(80);
+```
+
+`visionAssert.accessible()` checks the DOM mirror, so pass `dom` (and `direction` / `reducedMotion`
+when relevant) to both helpers.
+
 ---
 
 ## Interactive Controls
