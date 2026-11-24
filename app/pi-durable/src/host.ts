@@ -5,7 +5,7 @@ import { createRenderClock, DEFAULT_THEME, type RenderModel, type RenderTheme } 
 import { rankedSearch } from '@spacegraphjs/search';
 import type { GraphViewData } from '@spacegraphjs/shared';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
-import { ScopeSimulation, type ScopeSpec } from 'spacegraphjs/layout';
+import { ScopeSimulation, solveErgonomicLayout, solveNodeAreaDensity, type ScopeSpec } from 'spacegraphjs/layout';
 import { Navigation, type MinimapProjection } from 'spacegraphjs/navigation';
 import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
@@ -42,8 +42,18 @@ import { storyByID, type Story } from './stories';
 import { asOfFeed } from './time-travel';
 
 /** A fit never shrinks a world unit below this many CSS pixels; unreadable content is panned instead. */
-const FIT_MIN_SCALE = 1;
+const FIT_MIN_SCALE = 0.85;
 const FIT_OPTIONS = { minScale: FIT_MIN_SCALE, padding: 100 } as const;
+/** Core layout hint: how much of the surface the node boxes should cover. */
+const NODES_AREA_DENSITY = 0.32;
+const MAX_NODE_SIZE = 1024;
+const scaledSize = (octave: number, scale: number): readonly [number, number] => {
+    const [width, height] = sizeForOctave(octave);
+    return [
+        Math.min(MAX_NODE_SIZE, Math.round(width * scale)),
+        Math.min(MAX_NODE_SIZE, Math.round(height * scale)),
+    ];
+};
 
 const THEME: RenderTheme = {
     ...DEFAULT_THEME,
@@ -266,6 +276,7 @@ export class DurableHost {
     };
     #overviewProjection: MinimapProjection | undefined;
     #omitted = 0;
+    #densityScale = 1;
     #scopeKey = '';
     #scopes: ReturnType<typeof buildScopes> | undefined;
     #laneNames: readonly string[] = [];
@@ -415,6 +426,19 @@ export class DurableHost {
             : full;
         this.#omitted = full.nodes.length - kernel.nodes.length;
         const presented = this.#presentation(agentDomain.build(kernel), kernel, tab.view.focus);
+        const focus = tab.view.focus;
+        this.#densityScale = solveNodeAreaDensity({
+            nodes: presented.nodes.map((node) => {
+                const [width, height] = sizeForOctave(octaveFor(node, this.#sample, focus));
+                return { width, height };
+            }),
+            viewport: {
+                width: el('stage').clientWidth || 1600,
+                height: el('stage').clientHeight || 900,
+            },
+            nodesAreaDensity: NODES_AREA_DENSITY,
+            maxScale: 8,
+        }).scale;
         const positions = this.#layout(presented.nodes, presented.edges);
         const labels = this.#labels(presented, positions);
         this.#presented = presented;
@@ -445,7 +469,7 @@ export class DurableHost {
                         ...durable,
                         octave,
                         band: bandForOctave(octave),
-                        data: { ...durable.data, octave, size: sizeForOctave(octave) },
+                        data: { ...durable.data, octave, size: scaledSize(octave, this.#densityScale) },
                     };
                     return { ...sized, label: labelForNode(sized), summary: summaryForNode(sized) };
                 }),
@@ -897,7 +921,7 @@ export class DurableHost {
         const focus = this.registry.active()?.view.focus;
         const octaves = nodes.map((node) => octaveFor(node, this.#sample, focus));
         const buckets = octaves.map(bandForOctave).join(',');
-        const key = `${this.#layoutName}|${buckets}|${nodes.map((node) => node.id).join(',')}|${placed.map((edge) => edge.id).join(',')}`;
+        const key = `${this.#layoutName}|${buckets}|${this.#densityScale.toFixed(2)}|${nodes.map((node) => node.id).join(',')}|${placed.map((edge) => edge.id).join(',')}`;
         if (key !== this.#scopeKey || !this.#scopes) {
             this.#scopes = buildScopes(nodes, contains, 300);
             this.#scopeKey = key;
@@ -910,17 +934,38 @@ export class DurableHost {
                 id: node.id,
                 lane: this.#viewName,
                 row: index,
-                size: sizeForOctave(octaves[index]!),
+                size: scaledSize(octaves[index]!, this.#densityScale),
             })),
             edges: placed,
         };
         this.#simulation.setSpecs([spec]);
-        this.#simulation.setLayoutTargets(new Map(
-            scopes.map((scope) => [
-                `root/${scope.id}`,
-                { x: scope.position[0], y: scope.position[1], z: scope.position[2] },
-            ]),
-        ));
+        const solved = solveErgonomicLayout(
+            nodes.map((node, index) => ({
+                id: node.id,
+                width: scaledSize(octaves[index]!, this.#densityScale)[0],
+                height: scaledSize(octaves[index]!, this.#densityScale)[1],
+            })),
+            placed.map((edge) => ({ source: edge.source, target: edge.target })),
+            {
+                width: el('stage').clientWidth || 1600,
+                height: el('stage').clientHeight || 900,
+            },
+            {
+                minCard: [
+                    Math.max(16, ...nodes.map((_, index) => scaledSize(octaves[index]!, this.#densityScale)[0])),
+                    Math.max(16, ...nodes.map((_, index) => scaledSize(octaves[index]!, this.#densityScale)[1])),
+                ],
+                maxColumns: 3,
+                refinementPasses: 3,
+                nodesAreaDensity: NODES_AREA_DENSITY,
+            },
+        );
+        this.#simulation.setLayoutTargets(solved
+            ? new Map([...solved.positions].map(([id, position]) => [`root/${id}`, position]))
+            : new Map(scopes.map((scope) => [
+                  `root/${scope.id}`,
+                  { x: scope.position[0], y: scope.position[1], z: scope.position[2] },
+              ])));
         this.#simulation.settle();
         return new Map(
             [...this.#simulation.view().positions].map(([qualified, position]) => [

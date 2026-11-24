@@ -128,14 +128,16 @@
                 border: 1px solid var(--line); border-radius: 999px; font: 11px ui-monospace, monospace; color: var(--accent); }
             #tasks, #timeline { display: none; }
             #tasks[data-active], #timeline[data-active] { display: block; }
-            .durable-card { display: flex; flex-direction: column; gap: 4px; box-sizing: border-box;
+            #canvas .spacegraph-html-node { display: flex !important; flex-direction: column; }
+            .durable-card { display: flex; flex-direction: column; justify-content: center; gap: 4px;
+                width: 100%; height: 100%; box-sizing: border-box; overflow: hidden;
                 border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2);
                 color: var(--text); font-family: inherit; line-height: 1.35; }
-            .durable-card.band-dot { padding: 2px 3px; font-size: 8px; border-radius: 2px; }
-            .durable-card.band-chip { padding: 4px 6px; font-size: 10px; border-radius: 3px; }
-            .durable-card.band-card { padding: 8px 10px; font-size: 12px; }
-            .durable-card.band-panel { padding: 12px 14px; font-size: 14px; box-shadow: inset 3px 0 var(--accent); }
-            .durable-card.band-monument { padding: 16px 18px; font-size: 16px; box-shadow: inset 4px 0 var(--accent); }
+            .durable-card.band-dot { padding: 4px 6px; font-size: 12px; border-radius: 2px; }
+            .durable-card.band-chip { padding: 8px 12px; font-size: 14px; border-radius: 3px; }
+            .durable-card.band-card { padding: 12px 16px; font-size: 16px; }
+            .durable-card.band-panel { padding: 16px 20px; font-size: 20px; box-shadow: inset 3px 0 var(--accent); }
+            .durable-card.band-monument { padding: 20px 24px; font-size: 24px; box-shadow: inset 4px 0 var(--accent); }
             .durable-card.band-dot .card-summary,
             .durable-card.band-chip .card-summary { display: none; }
             .durable-card[data-status="sleeping"] .card-label::after { content: "◷"; margin-left: 6px; color: var(--warn); }

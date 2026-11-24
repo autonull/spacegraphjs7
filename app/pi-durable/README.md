@@ -149,7 +149,9 @@ Errors are typed (`no-provider`, `unknown-conversation`, `run_failed`, `turn_lim
 - `src/octaves.ts` — one power-of-two size ladder (`8 … 512`) driven by committed role and the
   attention sample. `sizeForOctave` feeds the adapter's CSS width/height, the renderer footprint and
   layout collision, so the DOM and the canvas agree. Bands are `dot`, `chip`, `card`, `panel` and
-  `monument`; focus raises a node to at least the card band without moving it.
+  `monument`; focus raises a node to at least the card band without moving it. The core
+  `solveNodeAreaDensity` hint scales the whole ladder uniformly so nodes cover a useful share of the
+  stage; `solveErgonomicLayout` supplies compact positions that the simulation still owns.
 - `src/edge-style.ts` — recorded edge kinds map to the renderer's solid/dashed/dotted and confidence
   channels. Colour stays theme-owned because the renderer contract has no edge-tone field.
 - `src/provenance.ts` — "why is this here?" reads the folded kernel and entry log; it reports commit

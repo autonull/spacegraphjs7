@@ -20,6 +20,8 @@ export interface ErgonomicsViewport {
 }
 
 export interface ErgonomicsOptions {
+    /** Node-area density hint: fraction of the surface the cards should carry, before gaps. */
+    readonly nodesAreaDensity?: number;
     /** Fraction of the surface the cards should carry, before gaps. Default 0.62. */
     readonly targetOccupancy?: number;
     /** Smallest card that still fits a label and a status chip. */
@@ -191,7 +193,7 @@ export const solveErgonomicLayout = (
     const gap = options.gap ?? 16;
     const minCard = options.minCard ?? DEFAULT_CARD;
     const maxCard = options.maxCard ?? [viewport.width, viewport.height];
-    const target = clamp(options.targetOccupancy ?? 0.62, 0.1, 0.95);
+    const target = clamp(options.nodesAreaDensity ?? options.targetOccupancy ?? 0.62, 0.1, 0.95);
     const maxColumns = options.maxColumns ?? 4;
     const passes = options.refinementPasses ?? 2;
     const proximity = orderByProximity(nodes, edges);
