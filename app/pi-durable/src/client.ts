@@ -241,6 +241,7 @@ const openDrawer = (section: string, trigger: HTMLElement): void => {
     el('app').dataset['drawerOpen'] = section;
     el('drawer-title').textContent = section;
     trigger.setAttribute('aria-expanded', 'true');
+    host.refreshInsights();
     const panel = el('drawer').querySelector<HTMLElement>(`[data-section="${section}"]`);
     panel?.scrollIntoView({ block: 'nearest' });
     panel?.querySelector<HTMLElement>('button, input, select')?.focus();
@@ -280,6 +281,14 @@ const plain = (key: string) => (event: KeyboardEvent): boolean =>
     !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && event.key === key;
 
 const closePriority = (): void => {
+    if (host.threadActive()) {
+        host.exitThread();
+        return;
+    }
+    if (host.focusLensActive()) {
+        host.exitFocusLens();
+        return;
+    }
     if (!el('help').hidden) host.toggleHelp(false);
     else if (!el('catalog').hidden) el('catalog').hidden = true;
     else if (!el('drawer').hidden) closeDrawer();
@@ -318,6 +327,8 @@ const KEY_BINDINGS: readonly KeyBinding[] = [
     { keys: 'g', label: 'Cycle views', match: plain('g'), run: () => host.cycleView() },
     { keys: 'f', label: 'Focus selection', match: plain('f'), run: focusSelection },
     { keys: '0', label: 'Reset view', match: plain('0'), run: () => host.resetView() },
+    { keys: 'm', label: 'Reset muting filters', match: plain('m'), run: () => host.resetFilters() },
+    { keys: 'e', label: 'Focus neighbourhood', match: plain('e'), run: () => host.toggleFocusLens() },
     { keys: '[ / ]', label: 'Switch tabs',
       match: (event) => event.key === '[' || event.key === ']', run: switchTab },
 ];
@@ -372,6 +383,15 @@ const bindChrome = (): void => {
     el<HTMLInputElement>('time-scrub').addEventListener('change', (event) =>
         host.scrubTo(Number((event.target as HTMLInputElement).value)));
     el('time-present').addEventListener('click', () => host.scrubTo(undefined));
+    el('route-prev').addEventListener('click', () => host.routeStep(-1));
+    el('route-next').addEventListener('click', () => host.routeStep(1));
+    el('filter-reset').addEventListener('click', () => host.resetFilters());
+    el('thread-follow').addEventListener('click', () => {
+        const id = host.address().focus;
+        if (id) host.followThread(id);
+        else host.announce('Select a node to follow its thread');
+    });
+    el('thread-next').addEventListener('click', () => host.nextThreadStep());
     renderShortcuts();
     document.addEventListener('keydown', (event) => {
         const target = event.target as HTMLElement;

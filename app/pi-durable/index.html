@@ -136,7 +136,7 @@
                 border: 1px dashed color-mix(in srgb, var(--line) 80%, transparent); border-radius: 10px; position: relative; }
             .durable-band span { position: absolute; top: 6px; left: 8px; font-size: 11px;
                 text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
-            .durable-card { display: flex; flex-direction: column; justify-content: center; gap: 4px;
+            .durable-card { display: flex; flex-direction: column; justify-content: center; gap: 4px; position: relative;
                 width: 100%; height: 100%; box-sizing: border-box; overflow: hidden;
                 border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2);
                 color: var(--text); font-family: inherit; line-height: 1.35; }
@@ -211,6 +211,17 @@
             #digest { font-size: 11px; line-height: 1.5; }
             .shortcut { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 12px; }
             .shortcut span { color: var(--muted); }
+            .durable-card[data-muted="true"] { opacity: .28; }
+            .durable-card[data-pulse="true"]::after { content: ""; position: absolute; inset: -4px;
+                border: 1px solid var(--accent); border-radius: inherit; animation: durable-pulse .7s ease-out 1; }
+            @keyframes durable-pulse { from { transform: scale(.92); opacity: .9; } to { transform: scale(1.08); opacity: 0; } }
+            .filter-chip { min-height: 32px; padding: 0 8px; margin: 0 4px 4px 0; border: 1px solid var(--line);
+                border-radius: 999px; background: var(--panel-2); color: var(--muted); font-size: 11px; }
+            .filter-chip[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+            #callouts button { display: block; width: 100%; text-align: left; margin-bottom: 4px; }
+            #route-caption, #thread-status, #commit-ticker, #filter-count { font-size: 11px; color: var(--muted); }
+            #route-prev, #route-next, #thread-follow, #thread-next { min-height: 32px; margin: 4px 4px 0 0; }
+            @media (prefers-reduced-motion: reduce) { .durable-card[data-pulse="true"]::after { animation: none; opacity: 0; } }
             #announcer { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
             #help { position: absolute; inset: 0; display: grid; place-items: center; background: #050a0ecc;
                 z-index: 30; }
@@ -363,6 +374,33 @@
                         <div class="insight-block" id="instruments-block" hidden>
                             <h3>Instruments</h3>
                             <div id="instruments"></div>
+                        </div>
+                        <div class="insight-block">
+                            <h3>Route</h3>
+                            <div id="route-caption"></div>
+                            <button type="button" class="action" id="route-prev">Prev</button>
+                            <button type="button" class="action" id="route-next">Next</button>
+                        </div>
+                        <div class="insight-block">
+                            <h3>Curiosity</h3>
+                            <div id="callouts"></div>
+                        </div>
+                        <div class="insight-block">
+                            <h3>Mute filters</h3>
+                            <div id="filter-kinds"></div>
+                            <div id="filter-statuses"></div>
+                            <span id="filter-count"></span>
+                            <button type="button" class="action" id="filter-reset">Reset (m)</button>
+                        </div>
+                        <div class="insight-block">
+                            <h3>Activity</h3>
+                            <div id="commit-ticker"></div>
+                        </div>
+                        <div class="insight-block">
+                            <h3>Thread</h3>
+                            <div id="thread-status">No active thread</div>
+                            <button type="button" class="action" id="thread-follow">Follow thread</button>
+                            <button type="button" class="action" id="thread-next">Next step</button>
                         </div>
                     </div>
                 </aside>

@@ -198,6 +198,9 @@ panel behind `?instruments=1`. At 900px and below the rail slides out from the h
 toggles presentation mode, `f` focuses the selected node, `0` resets the view, `Alt+←`/`Alt+→` walk
 discrete view history, `Ctrl/⌘ K` opens the Lens, `?` lists every binding, and `Esc` closes the panel
 and restores focus to its icon. Lens keeps query history (`↑`/`↓`) and completes command prefixes on `Tab`.
+The insights panel also drives guided routes, curiosity callouts, kind/status muting chips, the commit
+ticker and thread following; `e` toggles a focus lens on the selection and `m` resets muting filters.
+Muting dims facts without removing nodes, edges or documents, and `Esc` restores a thread or focus lens.
 
 Icons are decorative inline SVG `<symbol>` definitions in `index.html` — survey mark, views grid,
 landmark rungs, lens, inspector, controls sliders, legend rules, glossary book, insights dial, tasks

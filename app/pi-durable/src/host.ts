@@ -25,8 +25,11 @@ import {
     sampleForRung,
     ZOOM_RANGE,
 } from './attention';
+import { calloutsFor, type Callout } from './callouts';
 import { chapterCaptions, chapterFrames } from './chapters';
 import { digestKernels, type Digest } from './digest';
+import { focusLens } from './focus';
+import { filterCounts, matchesFilter, type MuteFilter } from './filters';
 import { instrumentsFor, type Instruments } from './instruments';
 import { LAYOUT_NAMES, lensCompletions, LENS_HELP, parseLens, type LayoutName } from './lens';
 import { bandForOctave, octaveFor, sizeForOctave, type OctaveBand } from './octaves';
@@ -48,6 +51,7 @@ import { isRung, RUNGS, type Rung } from './rungs';
 import { scenarioByID, scenarioOps, VIEW_NAMES, type ViewName } from './scenarios';
 import { shotById } from './shots';
 import { storyByID, type Story } from './stories';
+import { threadFrom, type ThreadStep } from './thread';
 import { asOfFeed, snapshotsOf } from './time-travel';
 
 /** A fit never shrinks a world unit below this many CSS pixels; unreadable content is panned instead. */
@@ -56,6 +60,10 @@ const FIT_OPTIONS = { minScale: FIT_MIN_SCALE, padding: 100 } as const;
 /** Core layout hint: how much of the surface the node boxes should cover. */
 const NODES_AREA_DENSITY = 0.32;
 const MAX_NODE_SIZE = 1024;
+/** Eased reveal delay per band; reduced motion bypasses the morph entirely. */
+const BAND_DELAY: Readonly<Record<string, number>> = {
+    dot: 0, chip: 0.04, card: 0.08, panel: 0.12, monument: 0.16,
+};
 const scaledSize = (octave: number, scale: number): readonly [number, number] => {
     const [width, height] = sizeForOctave(octave);
     return [
@@ -250,7 +258,7 @@ const cardTemplate = (node: DurableNode): string => {
     const attention = typeof node.data?.['attention'] === 'number' ? node.data['attention'].toFixed(2) : '0.50';
     const workshop = typeof node.data?.['workshop'] === 'string' ? node.data['workshop'] : '';
     const name = `${labelForNode(node)}${summary ? ` — ${summary}` : ''}`;
-    return `<div class="durable-card ${node.importance} band-${node.band}" data-kind="${escapeHTML(node.kind)}" data-status="${escapeHTML(node.status)}" data-importance="${node.importance}" data-attention="${attention}" data-octave="${node.octave.toFixed(2)}" data-band="${node.band}" aria-label="${escapeHTML(name)}" title="${escapeHTML(name)}"${workshop ? ` data-workshop="${escapeHTML(workshop)}"` : ''}${diff ? ` data-diff="${diff}"` : ''}>${workshop ? `<span class="card-workshop">${escapeHTML(workshop)}</span>` : ''}<span class="card-label">${escapeHTML(labelForNode(node))}${status}</span>${summary ? `<span class="card-summary">${escapeHTML(summary)}</span>` : ''}${detail ? `<span class="card-detail">${escapeHTML(detail)}</span>` : ''}${image}</div>`;
+    return `<div class="durable-card ${node.importance} band-${node.band}" data-kind="${escapeHTML(node.kind)}" data-status="${escapeHTML(node.status)}" data-importance="${node.importance}" data-attention="${attention}" data-octave="${node.octave.toFixed(2)}" data-band="${node.band}"${node.data?.['muted'] ? ' data-muted="true"' : ''}${node.data?.['pulse'] ? ' data-pulse="true"' : ''} aria-label="${escapeHTML(name)}" title="${escapeHTML(name)}"${workshop ? ` data-workshop="${escapeHTML(workshop)}"` : ''}${diff ? ` data-diff="${diff}"` : ''}>${workshop ? `<span class="card-workshop">${escapeHTML(workshop)}</span>` : ''}<span class="card-label">${escapeHTML(labelForNode(node))}${status}</span>${summary ? `<span class="card-summary">${escapeHTML(summary)}</span>` : ''}${detail ? `<span class="card-detail">${escapeHTML(detail)}</span>` : ''}${image}</div>`;
 };
 
 /** One committed kernel, different captions per landmark: zoom changes detail, never facts. */
@@ -312,6 +320,7 @@ export class DurableHost {
             text: dataText(node),
             duration: node.data?.['durationMs'] ?? null,
             importance: node.importance,
+            band: node.band,
             style: {
                 width: `${sizeForNode(node)[0]}px`,
                 height: `${sizeForNode(node)[1]}px`,
@@ -365,6 +374,17 @@ export class DurableHost {
     #history: readonly Address[] = [];
     #historyCursor = -1;
     #suppressHistory = false;
+    #threadHead: string | undefined;
+    #thread: readonly ThreadStep[] = [];
+    #threadPrior: Address | undefined;
+    #focusNeighbours: ReadonlySet<string> | undefined;
+    #pinnedID: string | undefined;
+    #comparePrior: ViewName | undefined;
+    #chapter = -1;
+    #filter: MuteFilter = { kinds: [], statuses: [] };
+    #pulseID: string | undefined;
+    #ticker: readonly string[] = [];
+    #callouts: readonly Callout[] = [];
     #seed: string;
     #presented: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } = {
         nodes: [], edges: [],
@@ -404,7 +424,8 @@ export class DurableHost {
 
     async mount(container: HTMLElement): Promise<void> {
         await this.renderer.mount(container, { theme: THEME, projection: '2d' });
-        this.renderer.on('nodeClick', ({ id }) => this.select(id));
+        this.renderer.on('nodeClick', ({ id }) => this.focus(id));
+        this.renderer.on('nodeDoubleClick', ({ id }) => this.toggleFocusLens(id));
         this.renderer.on('viewportChange', ({ zoom, center }) => {
             this.#bands.feed(zoom, ZOOM_RANGE);
             this.#sample = this.#scale.feed(zoom);
@@ -445,6 +466,10 @@ export class DurableHost {
     consume(conversationID: string, op: KernelOp): void {
         const isNew = !this.registry.get(conversationID);
         this.registry.append(conversationID, op, Date.now());
+        if (op.op === 'add-node') {
+            this.#pulseID = op.node.id;
+            this.#ticker = [`${op.node.kind} · ${op.node.label}`, ...this.#ticker].slice(0, 6);
+        }
         if (isNew) this.renderTabs();
         if (this.registry.activeID() === conversationID) this.refresh();
     }
@@ -565,7 +590,17 @@ export class DurableHost {
         const nearby = anchor ? new Set(index.near(anchor.x, anchor.y, 600)) : new Set<string>();
         const weights = new Map([...attentionWeights(presented.nodes, this.#sample, tab.view.focus)]
             .map(([id, weight]) => [id, nearby.has(id) ? Math.min(1, weight + 0.08) : weight] as const));
-        this.#attention = weights;
+        const baseOctaves = new Map(presented.nodes.map((node) =>
+            [node.id, octaveFor(node, this.#sample, focus)] as const));
+        const lensed = this.#focusNeighbours
+            ? focusLens(baseOctaves, weights, this.#focusNeighbours)
+            : undefined;
+        this.#attention = lensed?.weights ?? weights;
+        this.#callouts = calloutsFor(presented.nodes.map((node) => ({
+            kind: node.kind,
+            status: String(node.data?.['status'] ?? ''),
+            data: node.data,
+        })));
         const model = this.#adapter.build(
             {
                 nodes: presented.nodes.map((node): DurableNode => {
@@ -591,12 +626,18 @@ export class DurableHost {
                             ),
                         },
                     };
-                    const octave = octaveFor(durable, this.#sample, tab.view.focus);
+                    const octave = lensed?.octaves.get(node.id) ?? baseOctaves.get(node.id) ?? octaveFor(durable, this.#sample, tab.view.focus);
+                    const status = String(node.data?.['status'] ?? '');
+                    const muted = Boolean(lensed?.muted.has(node.id))
+                        || !matchesFilter({ kind: node.kind, status }, this.#filter);
                     const sized: DurableNode = {
                         ...durable,
                         octave,
                         band: bandForOctave(octave),
-                        data: { ...durable.data, octave, size: scaledSize(octave, this.#densityScale) },
+                        data: {
+                            ...durable.data, octave, size: scaledSize(octave, this.#densityScale),
+                            muted, pulse: node.id === this.#pulseID,
+                        },
                     };
                     return { ...sized, label: labelForNode(sized), summary: summaryForNode(sized) };
                 }),
@@ -610,7 +651,7 @@ export class DurableHost {
             { level: 'execution', positions, focus: tab.view.focus, cardBudget: 30, bands: true, ...labels },
         );
         this.#baseModel = model;
-        this.#setModel(applyModelEmphasis(model, weights, ATTENTION_MAPPING));
+        this.#setModel(applyModelEmphasis(model, this.#attention, ATTENTION_MAPPING));
         this.#edgeCount = model.edges.length;
         this.#edgeLabels = model.edges.flatMap((edge) => (edge.label ? [edge.label] : []));
         if (!this.#fitted && presented.nodes.length) {
@@ -736,6 +777,134 @@ export class DurableHost {
         return true;
     }
 
+    threadActive(): boolean {
+        return this.#thread.length > 0;
+    }
+
+    focusLensActive(): boolean {
+        return this.#focusNeighbours !== undefined;
+    }
+
+    followThread(id: string): readonly ThreadStep[] {
+        const tab = this.registry.active();
+        const steps = tab ? threadFrom(tabKernel(tab), id) : [];
+        this.#threadPrior = this.#snapshot();
+        this.#threadHead = steps.length ? id : undefined;
+        this.#thread = steps;
+        if (steps.length) {
+            this.focus(id);
+            this.announce(`Following ${steps.length} committed steps`);
+        } else this.announce('No recorded thread from this node');
+        this.renderInsights();
+        return steps;
+    }
+
+    nextThreadStep(): boolean {
+        if (!this.#thread.length || !this.#threadHead) return false;
+        const current = this.registry.active()?.view.focus ?? this.#threadHead;
+        const index = this.#thread.findIndex((step) => step.id === current);
+        const next = this.#thread[(index + 1) % this.#thread.length]!;
+        this.focus(next.id);
+        this.announce(`Thread step via ${next.kind}`);
+        return true;
+    }
+
+    exitThread(): boolean {
+        if (!this.#thread.length) return false;
+        this.#thread = [];
+        this.#threadHead = undefined;
+        const prior = this.#threadPrior;
+        this.#threadPrior = undefined;
+        if (prior) this.applyAddress(prior);
+        this.announce('Thread closed');
+        this.renderInsights();
+        return true;
+    }
+
+    toggleFocusLens(id?: string): boolean {
+        const target = id ?? this.registry.active()?.view.focus;
+        if (!target) {
+            this.announce('Select a node to focus its neighbourhood');
+            return false;
+        }
+        if (this.#focusNeighbours?.has(target)) return this.exitFocusLens();
+        const tab = this.registry.active();
+        const kernel = tab ? tabKernel(tab) : new Kernel();
+        const neighbours = new Set([target]);
+        for (const edge of kernel.edges) {
+            if (edge.source === target) neighbours.add(edge.target);
+            if (edge.target === target) neighbours.add(edge.source);
+        }
+        this.#focusNeighbours = neighbours;
+        this.select(target);
+        this.refresh();
+        this.announce(`Focus lens: ${neighbours.size} related facts`);
+        return true;
+    }
+
+    exitFocusLens(): boolean {
+        if (!this.#focusNeighbours) return false;
+        this.#focusNeighbours = undefined;
+        this.refresh();
+        this.announce('Focus restored');
+        return true;
+    }
+
+    filterCounts() {
+        return filterCounts(this.#presented.nodes.map((node) => ({
+            kind: node.kind,
+            status: String(node.data?.['status'] ?? ''),
+        })), this.#filter);
+    }
+
+    setFilter(group: 'kind' | 'status', value: string): boolean {
+        const key = group === 'kind' ? 'kinds' : 'statuses';
+        const current = this.#filter[key];
+        const next = current.includes(value) ? current.filter((item) => item !== value) : [...current, value];
+        this.#filter = { ...this.#filter, [key]: next };
+        this.refresh();
+        this.announce(`${group} filter ${next.includes(value) ? 'set' : 'cleared'}: ${value}`);
+        return true;
+    }
+
+    resetFilters(): boolean {
+        if (!this.#filter.kinds.length && !this.#filter.statuses.length) return false;
+        this.#filter = { kinds: [], statuses: [] };
+        this.refresh();
+        this.announce('Filters reset');
+        return true;
+    }
+
+    pinCompare(id?: string): boolean {
+        const target = id ?? this.registry.list().find((tab) => tab.id !== this.registry.activeID())?.id;
+        if (!target) return false;
+        this.#pinnedID = target;
+        this.#comparePrior ??= this.#viewName;
+        this.setView('diff');
+        this.refresh();
+        this.announce(`Pinned ${target} for comparison`);
+        return true;
+    }
+
+    clearCompare(): boolean {
+        if (!this.#pinnedID) return false;
+        this.#pinnedID = undefined;
+        const prior = this.#comparePrior ?? 'graph';
+        this.#comparePrior = undefined;
+        this.setView(prior);
+        this.refresh();
+        this.announce('Comparison cleared');
+        return true;
+    }
+
+    routeStep(delta: number): boolean {
+        const count = chapterFrames(this.#story?.id).length;
+        if (!count) return false;
+        const next = Math.max(0, Math.min(count - 1, (this.#chapter < 0 ? 0 : this.#chapter) + delta));
+        void this.scrub(next);
+        return true;
+    }
+
     scrubTo(seq?: number): boolean {
         if (!this.onScrub) return false;
         this.onScrub(seq);
@@ -769,11 +938,76 @@ export class DurableHost {
         });
     }
 
+    refreshInsights(): void {
+        this.renderInsights();
+    }
+
     private renderInsights(): void {
         this.renderTime();
+        this.renderRoute();
+        this.renderThread();
         if (el('app').dataset['drawerOpen'] !== 'insights') return;
         this.renderDigest();
         if (el('app').dataset['instruments'] === 'true') this.renderInstruments();
+        this.renderCallouts();
+        this.renderFilters();
+        this.renderTicker();
+    }
+
+    private renderRoute(): void {
+        const caption = this.#chapter >= 0 ? chapterCaptions(this.#story?.id)[this.#chapter] : undefined;
+        el('route-caption').textContent = caption ?? '';
+    }
+
+    private renderThread(): void {
+        const steps = this.#thread;
+        el('thread-status').textContent = steps.length
+            ? `${this.#threadHead} → ${steps.length} steps · ${[...new Set(steps.map((step) => step.kind))].join(', ')}`
+            : 'No active thread';
+    }
+
+    private renderCallouts(): void {
+        el('callouts').replaceChildren(...this.#callouts.map((callout) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'action';
+            button.textContent = `${callout.count} ${callout.label}`;
+            button.setAttribute('aria-label', `${callout.count} ${callout.label} — open ${callout.view}`);
+            button.addEventListener('click', () => {
+                this.setView(callout.view);
+                this.announce(`${callout.count} ${callout.label}`);
+            });
+            return button;
+        }));
+    }
+
+    private renderFilters(): void {
+        const groups = [
+            ['kind', [...new Set(this.#presented.nodes.map((node) => node.kind))]] as const,
+            ['status', [...new Set(this.#presented.nodes.map((node) => String(node.data?.['status'] ?? '')))]] as const,
+        ];
+        for (const [group, values] of groups) {
+            const key = group === 'kind' ? 'kinds' : 'statuses';
+            el(group === 'kind' ? 'filter-kinds' : 'filter-statuses').replaceChildren(
+                ...values.filter(Boolean).map((value) => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'filter-chip';
+                    button.textContent = value;
+                    button.setAttribute('aria-pressed', String(this.#filter[key].includes(value)));
+                    button.addEventListener('click', () => this.setFilter(group, value));
+                    return button;
+                }),
+            );
+        }
+        const counts = this.filterCounts();
+        el('filter-count').textContent = `${counts.matching} / ${counts.total} in fold`;
+    }
+
+    private renderTicker(): void {
+        el('commit-ticker').textContent = this.#ticker.length
+            ? this.#ticker.join(' · ')
+            : 'No new commits in this session';
     }
 
     private renderTime(): void {
@@ -822,7 +1056,14 @@ export class DurableHost {
 
     regrade(): void {
         if (!this.#baseModel) return;
-        this.#attention = attentionWeights(this.#presented.nodes, this.#sample, this.registry.active()?.view.focus);
+        const focus = this.registry.active()?.view.focus;
+        const base = attentionWeights(this.#presented.nodes, this.#sample, focus);
+        if (!this.#focusNeighbours) this.#attention = base;
+        else {
+            const octaves = new Map(this.#presented.nodes.map((node) =>
+                [node.id, octaveFor(node, this.#sample, focus)] as const));
+            this.#attention = focusLens(octaves, base, this.#focusNeighbours).weights;
+        }
         this.#setModel(applyModelEmphasis(this.#baseModel, this.#attention, ATTENTION_MAPPING), false);
     }
 
@@ -848,13 +1089,25 @@ export class DurableHost {
             new Map(model.nodes.map((node) => [node.id, String(node.emphasis ?? 0)])),
             this.#sample,
         );
-        const duration = Math.max(0.12, ...changes.map((change) => change.duration));
-        const clock = createRenderClock(model, moves);
+        const delays = new Map(moves.map((move) => {
+            const node = model.nodes.find((candidate) => candidate.id === move.id);
+            return [move.id, BAND_DELAY[String(node?.data?.['band'] ?? 'card')] ?? 0] as const;
+        }));
+        const maxDelay = Math.max(0, ...delays.values());
+        const duration = Math.max(0.12, ...changes.map((change) => change.duration)) * (1 + maxDelay);
+        const clocks = new Map(moves.map((move) => [move.id, createRenderClock(model, [move])] as const));
         const start = performance.now();
         const step = (now: number): void => {
             if (token !== this.#motionToken) return;
             const progress = Math.min(1, (now - start) / (duration * 1000));
-            this.renderer.setModel(clock.advance(progress));
+            const staggered = model.nodes.map((node) => {
+                const clock = clocks.get(node.id);
+                if (!clock) return node;
+                const delay = delays.get(node.id) ?? 0;
+                const local = Math.max(0, Math.min(1, (progress - delay) / (1 - delay)));
+                return clock.advance(local).nodes.find((candidate) => candidate.id === node.id)!;
+            });
+            this.renderer.setModel({ ...model, nodes: staggered });
             if (progress < 1) requestAnimationFrame(step);
             else this.renderer.setModel(model);
         };
@@ -985,7 +1238,11 @@ export class DurableHost {
         } else {
             this.reveal(frame.value ?? '');
         }
-        this.announce(`Chapter ${index + 1}: ${frame.caption}`);
+        this.#chapter = index;
+        const caption = `Chapter ${index + 1}: ${frame.caption}`;
+        el('inspector').insertAdjacentHTML('beforeend', `<br>route: ${escapeHTML(caption)}`);
+        this.renderRoute();
+        this.announce(caption);
         return true;
     }
 
@@ -1051,6 +1308,10 @@ export class DurableHost {
         const tabID = address.s;
         const tabApplied = tabID !== undefined && this.registry.get(tabID) !== undefined && this.setTab(tabID);
         if (address.focus) this.reveal(address.focus);
+        else {
+            this.patchView({ focus: undefined, selection: undefined });
+            this.renderer.setSelection([]);
+        }
         this.#suppressHistory = false;
         return tabApplied || Boolean(address.focus);
     }
@@ -1097,6 +1358,26 @@ export class DurableHost {
             scrubTo: (seq?: number) => this.scrubTo(seq),
             digest: () => this.digest(),
             instruments: () => this.instruments(),
+            thread: () => this.#thread,
+            threadIDs: () => this.#threadHead ? [this.#threadHead, ...this.#thread.map((step) => step.id)] : [],
+            threadActive: () => this.threadActive(),
+            followThread: (id: string) => this.followThread(id),
+            nextThreadStep: () => this.nextThreadStep(),
+            exitThread: () => this.exitThread(),
+            focusLensActive: () => this.focusLensActive(),
+            toggleFocusLens: (id?: string) => this.toggleFocusLens(id),
+            exitFocusLens: () => this.exitFocusLens(),
+            callouts: () => this.#callouts,
+            filters: () => ({ filter: this.#filter, counts: this.filterCounts() }),
+            setFilter: (group: 'kind' | 'status', value: string) => this.setFilter(group, value),
+            resetFilters: () => this.resetFilters(),
+            pinned: () => this.#pinnedID ?? null,
+            pinCompare: (id?: string) => this.pinCompare(id),
+            clearCompare: () => this.clearCompare(),
+            ticker: () => this.#ticker,
+            refreshInsights: () => this.renderInsights(),
+            chapterIndex: () => this.#chapter,
+            routeStep: (delta: number) => this.routeStep(delta),
             attention: () => ({
                 stop: this.#sample.stop,
                 position: this.#sample.position,
@@ -1135,6 +1416,8 @@ export class DurableHost {
                 return {
                     view: this.#viewName,
                     nodes: this.#presented.nodes.length,
+                    nodeIDs: this.#presented.nodes.map((node) => node.id),
+                    edgeIDs: this.#presented.edges.map((edge) => edge.id),
                     omitted: this.#omitted,
                     edgeKinds: this.#presented.edges.map((edge) => edge.kind),
                     edgeLabels: [...this.#edgeLabels],
@@ -1379,7 +1662,9 @@ export class DurableHost {
         view: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] },
         kernel: Kernel,
     ): { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } {
-        const peer = this.registry.list().find((tab) => tab.id !== this.registry.activeID());
+        const peer = this.#pinnedID
+            ? this.registry.get(this.#pinnedID)
+            : this.registry.list().find((tab) => tab.id !== this.registry.activeID());
         const diff = diffKernels(peer ? tabKernel(peer) : new Kernel(), kernel);
         const added = new Set([...diff.nodes.added, ...diff.nodes.changed].map((node) => node.id));
         const nodes: ScopeNode[] = [
