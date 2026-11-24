@@ -159,6 +159,34 @@ Exit: tracked gallery shrinks, `shots:all` green, each composite has 3–4 legib
 total screenshot bytes drop versus the current 22 PNGs, and `docs/screenshots/README.md` plus the
 demo landing page list stories instead of retired single frames.
 
+## 3b. Stream D — the Durable Atlas: an iconic fractal ZUI
+
+Ambition: turn the workspace from a diagnostic panel into a navigable instrument. One folded kernel,
+five zoom rungs, one visual grammar, no new renderer contract. The signature is a **survey mark** —
+nested squares turned 45°, drawn from theme tokens in SVG/CSS — used in the brand, the overview and
+the focus reticle. It is original to this app; the Pi Agent demo's glass/glow language stays out.
+
+**Design canon**
+
+- Rungs are places, not filters. Zoom changes what a committed fact means at that scale; it never invents an edge or hides committed truth.
+- Ink and vellum: deep ink ground, muted panels, cyan survey lines, amber waits, vermilion failures. Flat surfaces, hairline rules, small-caps captions, monospaced ids. No glass, no glow.
+- One authority: kit scopes own targets, the simulation owns the current frame, the adapter owns level-of-detail, the host owns rung semantics, theme tokens own colour.
+- Motion is an eased dive and surface with a crossfade between rungs; reduced motion falls back to an instant cut. No parallax jitter, no bounce.
+- Every rung is legible at 900×700 and 1600×1000, mirrored under RTL, and reachable by keyboard.
+
+| ID | Rung or capability | Design | Exit evidence |
+| -- | ------------------ | ------ | ------------- |
+| D1 | Five named rungs | `cosmos` (whole workspace), `territory` (conversations/tasks), `passage` (turns), `fact` (entries/edges), `grain` (raw document fields). Each rung has its own label case, symbol weight and edge density, selected from committed `data`. | `?rung=<name>` states; one test asserts five distinct renderings of the same kernel and no new edge kinds. |
+| D2 | Dive and surface | Wheel/pinch and double-click dive; Escape surfaces one rung; `+`/`-` and arrow keys navigate; focus reticle uses the survey mark. Camera state stays per tab in `ViewState`. | Keyboard + pointer Playwright test; focus state survives tab switch; no renderer contract field. |
+| D3 | Survey overview | A permanent corner overview draws the current scope as a miniature survey plate with a viewport reticle; click to pan. It reads folded kernel data, never a second model. | Overview test: reticle tracks viewport; click changes centre; RTL mirrors the gutter. |
+| D4 | Trail and address | Breadcrumb `cosmos › territory › passage › fact` doubles as a copyable permalink; `?rung=` and `?s=` round-trip. | Permalink test; reload restores rung, tab and camera. |
+| D5 | Atlas plates | Story composites become engraved plates: numbered captions, the survey mark, a scale bar, and a rung legend. Four heroes stay full-resolution. | Seven plates recaptured; contact sheet shows plates; no new standalone PNGs. |
+| D6 | Workshop and plate surfaces | C1 code mode reads as nested workshops (program → calls → artifacts). C2 images read as bounded plate insets inside a fact card. Both keep the ink/vellum grammar. | `code-mode` and `images` story frames; tests assert action/artifact nodes and image data only. |
+| D7 | Performance and grace | Fractal culling by rung, cached fold and scope targets, dynamic imports for code mode/images. Cold paint under two seconds with no provider. | Strobe measurement recorded; reduced-motion and no-provider paths green. |
+
+Stop rule: if a rung needs a new renderer contract field or a second owner, keep the rung as a host
+data facet and report the gap instead of adding a parallel camera or panel.
+
 ## 4. Stream C — deferred surfaces from TODO12 §11
 
 | ID | Surface | Design | Exit evidence |
@@ -201,6 +229,9 @@ The live model smoke test is separately invoked and its skip reason is reported.
   field appears necessary, stop and propose it instead of adding one silently.
 - Code mode and images may pull heavy optional packages; keep them behind dynamic imports so the
   provider-free default still paints in under two seconds.
+- D rungs must be host data facets over the same folded kernel. If a rung needs a second camera, another renderer contract field or a competing owner, stop and report the gap.
+- The survey mark is drawn from theme tokens, not a bitmap, so light/dark and custom themes stay consistent; RTL mirrors the overview gutter without mirroring node ids.
+- Fractal culling must never drop committed truth: a coarse rung summarises, it does not delete edges from the fold.
 - Human verdicts on new pairs remain an external gate; this plan never writes one.
 
 ## 7. Progress
@@ -210,12 +241,15 @@ The live model smoke test is separately invoked and its skip reason is reported.
 | A — local model smoke | Landed | `PI_DURABLE_PROVIDER=local` with OpenAI-compatible `llama-server`; `tests/local-model.spec.ts` passes with the 0.8B Qwen GGUF (13 s); README env table updated |
 | B — visual detail and representations | Landed | B1/B2: friendly labels, per-card summaries, edge captions, legend, richer inspector; `tests/detail.spec.ts`. B1b/B3: importance tiers (`hero`/`medium`/`compact`) from committed `data`, `nodeSizeFn` + card template, lane/axis captions, four re-placements (`diff`, `trace`, `docs`, `transcript`), `tests/representations.spec.ts`. B4: six tracked composites in `docs/screenshots/pi-durable/stories/`, four Core heroes retained, 18 near-duplicate Next PNGs retired (gallery 2.4 MB → 1.2 MB), `tests/stories.spec.ts`, `shots:stories` and `--composite`, contact sheet/docs/landing page updated. Frames are captured at 1600×1000 and drawn into 800×500 grid cells: the lower viewport made the mobile rail dominate the frame. Gates 2026-11-24: `pnpm check:fast` (39 tests), `pnpm verify`, `pnpm build`, `pnpm verify:visual` (5 tests), `pnpm shots:all` (4 heroes + 6 stories), root `pnpm run check` all green. |
 | C — deferred surfaces | In progress | C3/C4/C5/C6 landed 2026-11-24: observer process (`PI_DURABLE_OBSERVER=1`, `/events/observe`, typed `read-only`, `tests/observer.test.ts`, `tests/observer-ui.spec.ts`); `?asOf=<seq>` snapshots with badge (`tests/time-travel.test.ts`, `tests/time-travel.spec.ts`); deferred `app.replay` recorder/replay (`tests/replay.test.ts`); upstream `registerStorageConformance` for memory, custom delegating adapter, JSONL and SQLite behind `PI_DURABLE_CONFORMANCE=1` (`tests/storage-conformance.test.ts`). Seven composites now include `resume-journey` as-of/replay frames and a new `host-boundary` story. Gates: `pnpm check:fast` (48 vitest tests), `pnpm verify`, `pnpm shots:stories` (7 composites), `pnpm test:e2e` (29 tests), `pnpm verify:visual`, root `pnpm run check` green. Playwright starts the observer on `PI_DURABLE_SERVER_PORT + 12` so spawn-based tests keep their own ports. C1/C2 remain proposed; see the stop-rule note below. |
+| D — iconic fractal ZUI | Proposed | Design canon and seven rung/plate capabilities drafted in §3b; no code changed yet. Both missing C dependencies are cached in the pnpm store, so D can start with C1/C2 in one offline dependency change set. |
 
-Stop-rule gaps for C1/C2 (recorded, not shimmed): `createCodemodeExtension` is exported from
+C1/C2 dependency gap, since closed: `createCodemodeExtension` is exported from
 `@earendil-works/pi-durable/codemode`, but its required `CodemodeSandbox` comes from
-`@earendil-works/pi-codemode/portable`, which is not installed. C2's `createNodePhotonImages()` needs
-`@silvia-odwyer/photon`'s WebAssembly, also not installed. Both surfaces therefore stay proposed and
-need a dependency change in their own change set. C3/C4/C5/C6 need no new dependency and are landed.
+`@earendil-works/pi-codemode/portable`; C2's `createNodePhotonImages()` needs
+`@silvia-odwyer/photon`'s WebAssembly. Neither package was installed as a direct dependency. Both
+versions (`pi-codemode@1.6.0`, `photon@0.3.3`) are already in `pnpm-lock.yaml` and the local pnpm
+store, so the next change set can add them offline and land C1/C2 together with the first D rungs.
+C3/C4/C5/C6 need no new dependency and are landed.
 
 Update this table at the end of each change set with the exact commands and results. Keep TODO12 as
 the record of the landed Core; record new work here only.
