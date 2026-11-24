@@ -1,9 +1,10 @@
 # TODO13 — Durable workspace: local model, richer representations, deferred surfaces
 
-> **Status: proposed (2026-11-24).** TODO12 landed the Core, Next scenarios, scoped placements,
-> gates, the opt-in OpenAI path and 22 tracked shots. This plan continues with three streams: a real
-> offline model smoke test, denser and more varied visual evidence, and the surfaces TODO12 §11
-> deferred. It deliberately opens a new plan instead of growing TODO12 beyond its stop rule.
+> **Status: in progress (2026-11-24).** TODO12 landed the Core, Next scenarios, scoped placements,
+> gates, the opt-in OpenAI path and 22 tracked shots. This plan continues three streams (A/B/C) plus
+> the Stream D atlas. Streams A, B and C are landed; D1/D2 (continuous attention and Lens) are
+> landed; D3–D7 remain proposed. It deliberately opens a new plan instead of growing TODO12 beyond
+> its stop rule.
 
 ## 0. Baseline
 
@@ -244,8 +245,12 @@ The live model smoke test is separately invoked and its skip reason is reported.
   live run out of the visual gate.
 - Edge captions and lane labels must reuse the renderer's existing capabilities; if a new contract
   field appears necessary, stop and propose it instead of adding one silently.
-- Code mode and images may pull heavy optional packages; keep them behind dynamic imports so the
-  provider-free default still paints in under two seconds.
+- Code mode and images are now installed behind `PI_DURABLE_CODEMODE` / `PI_DURABLE_IMAGES` with
+  dynamic imports in `server.ts`; health reports `capabilities`. The default paint stays light.
+- `ScaleDomain` builds four bands from five stops, so zoom alone cannot name the last landmark.
+  `ZoomBands` still resolves the five landmark addresses; `ScaleDomain.sample()` owns interpolation.
+  A landmark can be pinned by an explicit URL/permalink or Lens command and released by a wheel or
+  double-click gesture.
 - D attention must stay a host data facet over the same folded kernel. Landmarks are addresses on a continuous field; if a behavior needs a second camera, another renderer contract field or a competing owner, negotiate or report the gap.
 - The survey mark is drawn from theme tokens, not a bitmap, so light/dark and custom themes stay consistent; RTL mirrors the overview gutter without mirroring node ids.
 - Continuous culling must never drop committed truth: low attention shrinks and mutes evidence, it does not delete edges or hide documents from the fold.
@@ -257,16 +262,19 @@ The live model smoke test is separately invoked and its skip reason is reported.
 | ------ | ----- | -------- |
 | A — local model smoke | Landed | `PI_DURABLE_PROVIDER=local` with OpenAI-compatible `llama-server`; `tests/local-model.spec.ts` passes with the 0.8B Qwen GGUF (13 s); README env table updated |
 | B — visual detail and representations | Landed | B1/B2: friendly labels, per-card summaries, edge captions, legend, richer inspector; `tests/detail.spec.ts`. B1b/B3: importance tiers (`hero`/`medium`/`compact`) from committed `data`, `nodeSizeFn` + card template, lane/axis captions, four re-placements (`diff`, `trace`, `docs`, `transcript`), `tests/representations.spec.ts`. B4: seven tracked composites in `docs/screenshots/pi-durable/stories/`, four Core heroes retained, 18 near-duplicate Next PNGs retired (gallery 2.4 MB → 1.2 MB), `tests/stories.spec.ts`, `shots:stories` and `--composite`, contact sheet/docs/landing page updated. Frames are captured at 1600×1000 and drawn into 800×500 grid cells: the lower viewport made the mobile rail dominate the frame. Gates 2026-11-24: `pnpm check:fast` (39 tests), `pnpm verify`, `pnpm build`, `pnpm verify:visual` (5 tests), `pnpm shots:all` (4 heroes + 6 stories), root `pnpm run check` all green. |
-| C — deferred surfaces | In progress | C3/C4/C5/C6 landed 2026-11-24: observer process (`PI_DURABLE_OBSERVER=1`, `/events/observe`, typed `read-only`, `tests/observer.test.ts`, `tests/observer-ui.spec.ts`); `?asOf=<seq>` snapshots with badge (`tests/time-travel.test.ts`, `tests/time-travel.spec.ts`); deferred `app.replay` recorder/replay (`tests/replay.test.ts`); upstream `registerStorageConformance` for memory, custom delegating adapter, JSONL and SQLite behind `PI_DURABLE_CONFORMANCE=1` (`tests/storage-conformance.test.ts`). Seven composites now include `resume-journey` as-of/replay frames and a new `host-boundary` story. Gates: `pnpm check:fast` (48 vitest tests), `pnpm verify`, `pnpm shots:stories` (7 composites), `pnpm test:e2e` (30 tests), `pnpm verify:visual`, root `pnpm run check` green. Playwright starts the observer on `PI_DURABLE_SERVER_PORT + 12` so spawn-based tests keep their own ports. C1/C2 remain proposed; see the stop-rule note below. |
-| D — iconic fractal ZUI | In progress | Provisional first slice landed: survey-mark brand, five-landmark switch/permalink, `ZoomBands` zoom-driven landmarks, corner survey plate with click/arrow pan (`src/rungs.ts`, `src/host.ts`, `tests/rungs.spec.ts`). **Superseded by the continuous-field decision in §3b:** `rungView` hard filtering and the 12 separate switch buttons are temporary; D1/D2 replace them with `ScaleDomain` attention weights and one Lens command. Native library routes identified: `ScaleDomain`/`representationChanges`/`createRenderClock` (D1/D2), `Navigation.project`/`GraphMinimap` (D3), `rankedSearch`/`parseNavigation` (D2 Lens), `applyNodeBudget`/`SpatialIndex2D` (D7). D4 deep links, D5 scrubbable plates, D6 C1/C2 surfaces and D7 strobe remain. Both missing C dependencies are cached for one offline install. First-slice gates: `pnpm check:fast` (48 vitest tests), `pnpm verify`, `pnpm build`, `pnpm test:e2e` (30 tests), `pnpm shots:focus`, root `pnpm run check` all green. |
+| C — deferred surfaces | Landed | C3/C4/C5/C6 landed 2026-11-24: observer process (`PI_DURABLE_OBSERVER=1`, `/events/observe`, typed `read-only`, `tests/observer.test.ts`, `tests/observer-ui.spec.ts`); `?asOf=<seq>` snapshots with badge (`tests/time-travel.test.ts`, `tests/time-travel.spec.ts`); deferred `app.replay` recorder/replay (`tests/replay.test.ts`); upstream `registerStorageConformance` for memory, custom delegating adapter, JSONL and SQLite behind `PI_DURABLE_CONFORMANCE=1` (`tests/storage-conformance.test.ts`). C1/C2 landed 2026-11-24: `createCodemodeExtension` with `CodemodeSandbox` behind `PI_DURABLE_CODEMODE=1`, Photon `createFitImagesExtension` behind `PI_DURABLE_IMAGES=1`, both advertised through `/api/health` `capabilities`; `code-mode` and `images` scenarios, `tests/workshop.test.ts`, and new `inspect-flow` / `host-boundary` story frames. Gates: `pnpm check:fast` (64 vitest tests), `pnpm verify`, `pnpm test:e2e` (31 tests), `pnpm verify:visual` (5 tests), `pnpm build`, root `pnpm run check` green. Playwright starts the observer on `PI_DURABLE_SERVER_PORT + 12` so spawn-based tests keep their own ports. |
+| D — iconic fractal ZUI | In progress | First slice landed: survey-mark brand, five-landmark switch/permalink, `ZoomBands` zoom-driven landmarks, corner survey plate with click/arrow pan (`src/rungs.ts`, `src/host.ts`, `tests/rungs.spec.ts`). D1/D2 landed 2026-11-24: `src/attention.ts` samples `ScaleDomain` into continuous weights and `applyModelEmphasis` grades size/opacity/label density; `rungView` hard filtering is gone, so every committed node and edge survives every landmark. `src/lens.ts` supplies one grammar (`view`, `rung`, `as of`, `tab`, `layout`, `find`) built on `rankedSearch`/`parseNavigation`; `Ctrl/⌘ K` focuses the Lens form, `representationChanges` + `createRenderClock` morph placement, camera stays per tab, and permalinks carry view/rung/layout/asOf/zoom. Tests: `tests/attention.test.ts`, `tests/lens.test.ts`, `tests/lens.spec.ts`, rewritten `tests/rungs.spec.ts`. Native library routes remain for D3 `Navigation.project`/`GraphMinimap` and D7 `applyNodeBudget`/`SpatialIndex2D`. D3 survey refinement, D4 deep-link codec, D5 scrubbable plates, D6 workshop framing and D7 strobe are still proposed. Gates: `pnpm check:fast` (64 vitest tests), `pnpm verify`, `pnpm test:e2e` (31 tests), `pnpm verify:visual` (5 tests), `pnpm build`, root `pnpm run check` green; all 11 screenshots recaptured and the contact sheet refreshed. |
 
-C1/C2 dependency gap, since closed: `createCodemodeExtension` is exported from
-`@earendil-works/pi-durable/codemode`, but its required `CodemodeSandbox` comes from
-`@earendil-works/pi-codemode/portable`; C2's `createNodePhotonImages()` needs
-`@silvia-odwyer/photon`'s WebAssembly. Neither package was installed as a direct dependency. Both
-versions (`pi-codemode@1.6.0`, `photon@0.3.3`) are already in `pnpm-lock.yaml` and the local pnpm
-store, so the next change set can add them offline and land C1/C2 together with the first D rungs.
-C3/C4/C5/C6 need no new dependency and are landed.
+C1/C2 dependency gap, closed: `pi-codemode@1.6.0` was added as a direct pin with an offline install
+and `scripts/verify.ts` checks it. `CodemodeSandbox` comes from the main `@earendil-works/pi-codemode`
+entry, not `/portable`; `createNodePhotonImages()` comes from `@earendil-works/pi-durable/images/node`
+and resolves Photon's WebAssembly through the installed `pi-durable` dependency, so no direct
+`@silvia-odwyer/photon` pin is needed. C3–C6 need no new dependency and are landed.
+
+Next change set (D3–D7): refine the survey plate with `Navigation.project`, add the D4 breadcrumb
+and deep-link codec, turn the seven composites into scrubbable chapters, frame C1/C2 as workshops
+and plates, and record one strobe measurement. Keep attention as host data over the same folded
+kernel; no second camera, renderer contract field or hidden filter.
 
 Update this table at the end of each change set with the exact commands and results. Keep TODO12 as
 the record of the landed Core; record new work here only.

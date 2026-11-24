@@ -1,10 +1,21 @@
 import { agentDomain } from '@spacegraphjs/agent';
 import { VocabularyAdapter, type AdapterNode } from '@spacegraphjs/adapter';
 import { diffKernels, Kernel } from '@spacegraphjs/kernel';
-import { DEFAULT_THEME, type RenderTheme } from '@spacegraphjs/renderer';
+import { createRenderClock, DEFAULT_THEME, type RenderModel, type RenderTheme } from '@spacegraphjs/renderer';
+import { rankedSearch } from '@spacegraphjs/search';
+import type { GraphViewData } from '@spacegraphjs/shared';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { ScopeSimulation, type ScopeSpec } from 'spacegraphjs/layout';
-import { ZoomBands } from 'spacegraphjs/zoom';
+import { representationChanges } from 'spacegraphjs/representations';
+import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
+import { ZoomBands, type ScaleSample } from 'spacegraphjs/zoom';
+import {
+    attentionWeights,
+    createScaleDomain,
+    sampleForRung,
+    ZOOM_RANGE,
+} from './attention';
+import { LAYOUT_NAMES, LENS_HELP, parseLens, type LayoutName } from './lens';
 import {
     buildScopes,
     TabRegistry,
@@ -18,7 +29,7 @@ import {
 import type { Feed } from './local-feed';
 import { localFeed } from './local-feed';
 import { replayFeed } from './replay';
-import { isRung, RUNGS, rungView, type Rung } from './rungs';
+import { isRung, RUNGS, type Rung } from './rungs';
 import { VIEW_NAMES, type ViewName } from './scenarios';
 import { shotById } from './shots';
 import { asOfFeed } from './time-travel';
@@ -61,7 +72,22 @@ const VIEW_LABELS: Readonly<Record<ViewName, string>> = {
     trace: 'spans', docs: 'documents', transcript: 'entries',
 };
 
-const ZOOM_RANGE = { min: 0.25, max: 4, closerIsLarger: true } as const;
+const ATTENTION_MAPPING = mappingFor(['size', 'opacity', 'labelDensity'], {
+    size: [0.94, 1.08],
+    opacity: [0.78, 1],
+    labelDensity: [0.6, 1],
+});
+
+const LAYOUT_STRATEGIES: Readonly<Record<LayoutName, NonNullable<ScopeSpec['strategy']>>> = {
+    grid: 'grid', radial: 'force', timeline: 'tree',
+};
+
+const sizeOf = (node: DurableNode): readonly [number, number] => {
+    const [width, height] = IMPORTANCE_SIZE[node.importance];
+    const attention = typeof node.data?.['attention'] === 'number' ? node.data['attention'] : 0.5;
+    const scale = 0.94 + attention * 0.12;
+    return [Math.round(width * scale), Math.round(height * scale)];
+};
 
 const GLOSSARY: Readonly<Record<string, string>> = {
     conversation: 'A durable conversation: one owner of its transcript and documents.',
@@ -129,7 +155,12 @@ const cardTemplate = (node: DurableNode): string => {
     const summary = summaryForNode(node);
     const status = node.status ? `<span class="card-status">${escapeHTML(node.status)}</span>` : '';
     const diff = typeof node.data?.['diff'] === 'string' ? String(node.data['diff']) : '';
-    return `<div class="durable-card ${node.importance}" data-kind="${escapeHTML(node.kind)}" data-status="${escapeHTML(node.status)}" data-importance="${node.importance}"${diff ? ` data-diff="${diff}"` : ''}><span class="card-label">${escapeHTML(labelForNode(node))}${status}</span>${summary ? `<span class="card-summary">${escapeHTML(summary)}</span>` : ''}</div>`;
+    const encoded = node.data?.['image'];
+    const image = typeof encoded === 'string' && /^[A-Za-z0-9+/=]+$/.test(encoded)
+        ? `<img class="card-image" alt="committed image artifact" src="data:image/png;base64,${encoded}" />`
+        : '';
+    const attention = typeof node.data?.['attention'] === 'number' ? node.data['attention'].toFixed(2) : '0.50';
+    return `<div class="durable-card ${node.importance}" data-kind="${escapeHTML(node.kind)}" data-status="${escapeHTML(node.status)}" data-importance="${node.importance}" data-attention="${attention}"${diff ? ` data-diff="${diff}"` : ''}><span class="card-label">${escapeHTML(labelForNode(node))}${status}</span>${summary ? `<span class="card-summary">${escapeHTML(summary)}</span>` : ''}${image}</div>`;
 };
 
 const el = <T extends HTMLElement = HTMLElement>(id: string): T => {
@@ -168,13 +199,13 @@ export class DurableHost {
             duration: node.data?.['durationMs'] ?? null,
             importance: node.importance,
             style: {
-                width: `${IMPORTANCE_SIZE[node.importance][0]}px`,
-                height: `${IMPORTANCE_SIZE[node.importance][1]}px`,
+                width: `${sizeOf(node)[0]}px`,
+                height: `${sizeOf(node)[1]}px`,
             },
         }),
         extraEdgeData: (edge) => ({ label: EDGE_LABELS[edge.kind] ?? edge.kind }),
     }, {
-        nodeSizeFn: (node: DurableNode) => IMPORTANCE_SIZE[node.importance],
+        nodeSizeFn: sizeOf,
         renderCardTemplate: cardTemplate,
     });
     #status: { readonly provider: string; readonly storage: string; readonly tasks: number } = {
@@ -184,15 +215,21 @@ export class DurableHost {
     };
     #viewName: ViewName = 'graph';
     #rung: Rung = 'fact';
+    #rungPinned = false;
+    #layoutName: LayoutName = 'grid';
+    #asOf: number | undefined;
+    readonly #scale = createScaleDomain();
     readonly #bands = new ZoomBands({
         bands: RUNGS.map((rung, index) => ({
-            id: rung.id,
-            min: index / RUNGS.length,
-            max: (index + 1) / RUNGS.length,
-            label: rung.label,
+            id: rung.id, min: index / RUNGS.length, max: (index + 1) / RUNGS.length, label: rung.label,
         })),
         hysteresis: 0.03,
     });
+    #sample: ScaleSample;
+    #attention: ReadonlyMap<string, number> = new Map();
+    #baseModel: RenderModel | undefined;
+    #model: RenderModel | undefined;
+    #motionToken = 0;
     #ready = false;
     #offline = false;
     #edgeCount = 0;
@@ -202,7 +239,6 @@ export class DurableHost {
     #presented: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } = {
         nodes: [], edges: [],
     };
-    #zoomDriven = false;
     #overviewBounds: { minX: number; maxX: number; minY: number; maxY: number } | undefined;
     #laneNames: readonly string[] = [];
     #axisNames: readonly string[] = [];
@@ -220,9 +256,13 @@ export class DurableHost {
         this.#offline = offline;
         this.#shot = shot;
         this.#seed = seed;
-        if (rung && isRung(rung)) this.#rung = rung;
+        this.#rung = rung && isRung(rung) ? rung : this.#rung;
+        this.#rungPinned = rung !== undefined;
+        this.#sample = sampleForRung(this.#scale, this.#rung);
         this.#bands.onChange((change) => {
-            if (isRung(change.band)) this.setRung(change.band);
+            if (this.#rungPinned || !isRung(change.band)) return;
+            this.#rung = change.band;
+            this.renderRungs();
         });
     }
 
@@ -230,8 +270,10 @@ export class DurableHost {
         await this.renderer.mount(container, { theme: THEME, projection: '2d' });
         this.renderer.on('nodeClick', ({ id }) => this.select(id));
         this.renderer.on('viewportChange', ({ zoom, center }) => {
-            if (this.#zoomDriven) this.#bands.feed(zoom, ZOOM_RANGE);
+            this.#bands.feed(zoom, ZOOM_RANGE);
+            this.#sample = this.#scale.feed(zoom);
             this.patchView({ camera: { zoom, center } });
+            this.regrade();
             this.renderOverview();
         });
         this.renderer.on('bandChange', ({ band }) => this.patchView({ band }));
@@ -335,6 +377,8 @@ export class DurableHost {
         this.#presented = presented;
         this.#laneNames = labels.laneLabels.map((lane) => lane.label);
         this.#axisNames = labels.axisLabels.map((axis) => axis.label);
+        const weights = attentionWeights(presented.nodes, this.#sample, tab.view.focus);
+        this.#attention = weights;
         const model = this.#adapter.build(
             {
                 nodes: presented.nodes.map((node): DurableNode => {
@@ -345,7 +389,7 @@ export class DurableHost {
                         status: String(node.data?.['status'] ?? ''),
                         role: String(node.data?.['role'] ?? node.kind),
                         importance: this.#importanceOf(node),
-                        data: node.data,
+                        data: { ...node.data, attention: weights.get(node.id) ?? 0 },
                     };
                     return {
                         ...durable,
@@ -362,7 +406,8 @@ export class DurableHost {
             },
             { level: 'execution', positions, focus: tab.view.focus, cardBudget: 30, ...labels },
         );
-        this.renderer.setModel(model);
+        this.#baseModel = model;
+        this.#setModel(applyModelEmphasis(model, weights, ATTENTION_MAPPING));
         this.#edgeCount = model.edges.length;
         this.#edgeLabels = model.edges.flatMap((edge) => (edge.label ? [edge.label] : []));
         if (!this.#fitted && presented.nodes.length) {
@@ -394,26 +439,80 @@ export class DurableHost {
 
     setRung(rung: Rung): boolean {
         if (!isRung(rung)) return false;
-        if (!this.#ready) {
-            this.#rung = rung;
-            return true;
-        }
         if (rung === this.#rung) return false;
-        this.#zoomDriven = false;
+        this.#rungPinned = true;
         this.#rung = rung;
+        this.#bands.feedNormalized(RUNGS.findIndex((entry) => entry.id === rung) / RUNGS.length);
+        this.#sample = sampleForRung(this.#scale, rung);
         this.renderRungs();
+        if (!this.#ready) return true;
+        const viewport = this.renderer.getViewport?.();
+        if (viewport && !this.#offline) {
+            const zoom = this.#scale.rawAt(RUNGS.findIndex((entry) => entry.id === rung) / (RUNGS.length - 1));
+            this.renderer.setViewport({ zoom, center: viewport.center });
+        }
         this.refresh();
         this.renderOverview();
         this.announce(`${RUNGS.find((entry) => entry.id === rung)!.label} rung`);
         return true;
     }
 
+    setLayout(name: LayoutName): void {
+        this.#layoutName = name;
+        this.refresh();
+        this.announce(`Layout ${name}`);
+    }
+
     zoomBy(factor: number): void {
         const viewport = this.renderer.getViewport?.();
         if (!viewport) return;
-        this.#zoomDriven = true;
-        this.renderer.setViewport({ zoom: viewport.zoom * factor, center: viewport.center });
-        this.#bands.feed(viewport.zoom * factor, ZOOM_RANGE);
+        const zoom = viewport.zoom * factor;
+        this.#rungPinned = false;
+        this.#bands.feed(zoom, ZOOM_RANGE);
+        this.#sample = this.#scale.feed(zoom);
+        this.#rungPinned = true;
+        this.renderer.setViewport({ zoom, center: viewport.center });
+    }
+
+    regrade(): void {
+        if (!this.#baseModel) return;
+        this.#attention = attentionWeights(this.#presented.nodes, this.#sample, this.registry.active()?.view.focus);
+        this.#setModel(applyModelEmphasis(this.#baseModel, this.#attention, ATTENTION_MAPPING), false);
+    }
+
+    /** Morph positions between placements; reduced motion and pure shots cut instantly. */
+    #setModel(model: RenderModel, morph = true): void {
+        const previous = this.#model;
+        const token = ++this.#motionToken;
+        this.#model = model;
+        const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        const moves = previous && morph && !reduced && !this.#offline
+            ? model.nodes.flatMap((node) => {
+                  const before = previous.nodes.find((candidate) => candidate.id === node.id);
+                  if (!before || before.position.every((value, index) => value === node.position[index])) return [];
+                  return [{ id: node.id, from: before.position, to: node.position }];
+              })
+            : [];
+        if (!moves.length) {
+            this.renderer.setModel(model);
+            return;
+        }
+        const changes = representationChanges(
+            new Map(previous!.nodes.map((node) => [node.id, String(node.emphasis ?? 0)])),
+            new Map(model.nodes.map((node) => [node.id, String(node.emphasis ?? 0)])),
+            this.#sample,
+        );
+        const duration = Math.max(0.12, ...changes.map((change) => change.duration));
+        const clock = createRenderClock(model, moves);
+        const start = performance.now();
+        const step = (now: number): void => {
+            if (token !== this.#motionToken) return;
+            const progress = Math.min(1, (now - start) / (duration * 1000));
+            this.renderer.setModel(clock.advance(progress));
+            if (progress < 1) requestAnimationFrame(step);
+            else this.renderer.setModel(model);
+        };
+        requestAnimationFrame(step);
     }
 
     announce(message: string): void {
@@ -421,6 +520,7 @@ export class DurableHost {
     }
 
     setAsOf(seq?: number): void {
+        this.#asOf = seq;
         const badge = el('asof-badge');
         if (seq === undefined) {
             el('app').removeAttribute('data-asof');
@@ -430,6 +530,46 @@ export class DurableHost {
         el('app').dataset['asof'] = String(seq);
         badge.textContent = `as of ${seq}`;
         badge.hidden = false;
+    }
+
+    /** One command line steers view, landmark, time, tab, layout and node lookup. */
+    lens(query: string): boolean {
+        const command = parseLens(query);
+        if (!command) {
+            this.announce(`Unknown Lens command: ${query}`);
+            return false;
+        }
+        if (command.kind === 'view') this.setView(command.value);
+        if (command.kind === 'rung') this.setRung(command.value);
+        if (command.kind === 'asOf') this.setAsOf(command.value);
+        if (command.kind === 'tab') return this.setTab(command.value);
+        if (command.kind === 'layout') this.setLayout(command.value);
+        if (command.kind === 'help') this.toggleHelp(true);
+        if (command.kind === 'find') {
+            const model: GraphViewData = {
+                nodes: this.#presented.nodes.map((node) => ({
+                    id: node.id,
+                    label: `${labelForNode({
+                        id: node.id, kind: node.kind, label: node.label ?? node.id,
+                        status: String(node.data?.['status'] ?? ''), importance: this.#importanceOf(node), data: node.data,
+                    })} ${dataText(node)}`,
+                    kind: node.kind,
+                    status: String(node.data?.['status'] ?? ''),
+                    data: node.data,
+                })),
+                edges: this.#presented.edges.map((edge) => ({
+                    id: edge.id, source: edge.source, target: edge.target, kind: edge.kind,
+                })),
+            };
+            const [hit] = rankedSearch(model, command.value);
+            if (!hit) {
+                this.announce(`No committed node matches ${command.value}`);
+                return false;
+            }
+            this.reveal(hit.id);
+        }
+        this.announce(`Lens ${query}`);
+        return true;
     }
 
     applyShot(id: string): void {
@@ -443,8 +583,13 @@ export class DurableHost {
         const tab = this.registry.active();
         const params = new URLSearchParams({ s: tab?.id ?? '' });
         if (this.#shot) params.set('shot', this.#shot);
+        if (this.#viewName !== 'graph') params.set('view', this.#viewName);
         if (this.#rung !== 'fact') params.set('rung', this.#rung);
+        if (this.#layoutName !== 'grid') params.set('layout', this.#layoutName);
+        if (this.#asOf !== undefined) params.set('asOf', String(this.#asOf));
         if (this.#seed !== 'fixed') params.set('seed', this.#seed);
+        const viewport = this.renderer.getViewport?.();
+        if (viewport) params.set('zoom', viewport.zoom.toFixed(3));
         return `${location.pathname}?${params.toString()}`;
     }
 
@@ -452,7 +597,18 @@ export class DurableHost {
         const params = new URLSearchParams(value.includes('?') ? value.split('?')[1] : value);
         const id = params.get('s');
         const rung = params.get('rung');
+        const view = params.get('view');
+        const layout = params.get('layout');
+        const zoom = Number(params.get('zoom'));
+        if (view && VIEW_NAMES.includes(view as ViewName)) this.setView(view as ViewName);
         if (rung && isRung(rung)) this.setRung(rung);
+        if (layout && LAYOUT_NAMES.includes(layout as LayoutName)) this.setLayout(layout as LayoutName);
+        const asOf = params.get('asOf');
+        if (asOf !== null && Number.isFinite(Number(asOf))) this.setAsOf(Number(asOf));
+        if (params.has('zoom') && Number.isFinite(zoom) && zoom > 0) {
+            const viewport = this.renderer.getViewport?.();
+            if (viewport) this.renderer.setViewport({ zoom, center: viewport.center });
+        }
         if (id && this.registry.get(id)) return this.setTab(id);
         return false;
     }
@@ -481,6 +637,20 @@ export class DurableHost {
             },
             permalink: () => this.permalink(),
             applyPermalink: (value: string) => this.applyPermalink(value),
+            lens: (query: string) => this.lens(query),
+            lensHelp: () => LENS_HELP,
+            attention: () => ({
+                stop: this.#sample.stop,
+                position: this.#sample.position,
+                importance: this.#sample.importance,
+                weights: Object.fromEntries(this.#attention),
+            }),
+            layoutName: () => this.#layoutName,
+            setLayout: (name: string) => {
+                if (!LAYOUT_NAMES.includes(name as LayoutName)) return false;
+                this.setLayout(name as LayoutName);
+                return true;
+            },
             export: (format: string) => this.export(format),
             health: () => ({ ...this.#status, offline: this.#offline }),
             prompt: async (text: string, mode: 'steer' | 'followUp' = 'steer') => {
@@ -563,7 +733,7 @@ export class DurableHost {
         const scopes = buildScopes(nodes, contains, 300);
         const spec: ScopeSpec = {
             id: 'root',
-            strategy: 'grid',
+            strategy: LAYOUT_STRATEGIES[this.#layoutName],
             nodes: nodes.map((node, index) => ({ id: node.id, lane: this.#viewName, row: index })),
             edges: placed,
         };
@@ -624,7 +794,7 @@ export class DurableHost {
         view: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] },
         kernel: Kernel,
     ): { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } {
-        return rungView(this.#rung, this.#viewDataForView(view, kernel));
+        return this.#viewDataForView(view, kernel);
     }
 
     #viewDataForView(
@@ -902,7 +1072,7 @@ export class DurableHost {
 
     private bindChrome(): void {
         for (const event of ['wheel', 'dblclick'] as const)
-            el('canvas').addEventListener(event, () => { this.#zoomDriven = true; }, { passive: true });
+            el('canvas').addEventListener(event, () => { this.#rungPinned = false; }, { passive: true });
         for (const button of document.querySelectorAll<HTMLButtonElement>('#view-switch button'))
             button.addEventListener('click', () => this.setView(button.dataset['view'] as ViewName));
         el('help-close').addEventListener('click', () => this.toggleHelp(false));

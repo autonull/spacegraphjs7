@@ -11,6 +11,7 @@ export type Health = {
     readonly observer?: boolean;
     readonly readOnly?: boolean;
     readonly observerURL?: string | null;
+    readonly capabilities?: { readonly codemode: boolean; readonly images: boolean };
 };
 
 export type ConversationInfo = {

@@ -123,6 +123,35 @@ const agentModel = LIVE && !PROVIDER_ERROR
 const registry = createRegistry();
 registry.install(defineExtension({ name: 'durable-workspace', tasks: [ApprovalTask] }));
 
+/** Optional workshops stay off the default boot path; health advertises what installed. */
+const capabilities = { codemode: false, images: false };
+if (process.env.PI_DURABLE_CODEMODE === '1') {
+    try {
+        const [{ CodemodeSandbox }, { createCodemodeExtension }] = await Promise.all([
+            import('@earendil-works/pi-codemode'),
+            import('@earendil-works/pi-durable/codemode'),
+        ]);
+        registry.install(createCodemodeExtension({
+            sandbox: new CodemodeSandbox({ memoryLimitBytes: 64 * 1024 * 1024 }),
+        }));
+        capabilities.codemode = true;
+    } catch (error) {
+        console.warn('[pi-durable] code mode unavailable:', error instanceof Error ? error.message : String(error));
+    }
+}
+if (process.env.PI_DURABLE_IMAGES === '1') {
+    try {
+        const [{ createNodePhotonImages }, { createFitImagesExtension }] = await Promise.all([
+            import('@earendil-works/pi-durable/images/node'),
+            import('@earendil-works/pi-durable/images/fit'),
+        ]);
+        registry.install(createFitImagesExtension(await createNodePhotonImages({ worker: false })));
+        capabilities.images = true;
+    } catch (error) {
+        console.warn('[pi-durable] image workshop unavailable:', error instanceof Error ? error.message : String(error));
+    }
+}
+
 const storage = STORAGE === 'jsonl'
     ? await openNodeJsonlStorage(DIR, BACKGROUND_CONTEXT, { readOnly: OBSERVER })
     : new MemoryStorage();
@@ -335,6 +364,7 @@ const health = () => ({
     observer: OBSERVER,
     readOnly: OBSERVER,
     observerURL: OBSERVER_URL ?? null,
+    capabilities: { ...capabilities },
     conformance: conformance.map((report) => ({ backend: report.backend, passed: report.passed, failed: report.failures.length })),
     ...(LOCAL ? { modelPath: MODEL_PATH ?? null, baseUrl: MODEL_URL } : {}),
     ...(PROVIDER_ERROR ? { providerError: PROVIDER_ERROR } : {}),

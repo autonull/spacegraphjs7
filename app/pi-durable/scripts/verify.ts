@@ -31,7 +31,7 @@ for (const dir of [join(root, 'src'), join(root, 'tests'), join(root, 'scripts')
 const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
     dependencies: Record<string, string>;
 };
-for (const name of ['chord', 'pi-ai', 'pi-durable', 'pi-schema'])
+for (const name of ['chord', 'pi-ai', 'pi-codemode', 'pi-durable', 'pi-schema'])
     check(manifest.dependencies[`@earendil-works/${name}`] === '1.6.0', `${name} must pin 1.6.0`);
 
 const allowlist = new Set([

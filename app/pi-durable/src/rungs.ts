@@ -1,5 +1,3 @@
-import type { ScopeEdge, ScopeNode } from 'pi-kit';
-
 export type Rung = 'cosmos' | 'territory' | 'passage' | 'fact' | 'grain';
 
 export type RungSpec = {
@@ -42,17 +40,3 @@ export const RUNGS: readonly RungSpec[] = [
 export const RUNG_IDS: readonly Rung[] = RUNGS.map((rung) => rung.id);
 
 export const isRung = (value: unknown): value is Rung => RUNG_IDS.includes(value as Rung);
-
-export const rungView = (
-    rung: Rung,
-    view: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] },
-): { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } => {
-    const spec = RUNGS.find((entry) => entry.id === rung)!;
-    if (rung === 'fact') return view;
-    const ids = new Set(view.nodes.filter((node) => spec.kinds.has(node.kind)).map((node) => node.id));
-    if (!ids.size) return view;
-    return {
-        nodes: view.nodes.filter((node) => ids.has(node.id)),
-        edges: view.edges.filter((edge) => spec.edges.has(edge.kind) && ids.has(edge.source) && ids.has(edge.target)),
-    };
-};

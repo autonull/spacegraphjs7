@@ -15,7 +15,7 @@ pnpm --filter pi-durable dev          # server 8788 + Vite 5176 → http://local
 pnpm --filter pi-durable check:fast   # types + translator/fold/tab tests
 pnpm --filter pi-durable verify:fast  # check:fast + browser journey
 pnpm --filter pi-durable shots:focus  # four Core heroes + before/after pairs
-pnpm --filter pi-durable shots:stories # six story composites
+pnpm --filter pi-durable shots:stories # seven story composites
 pnpm --filter pi-durable shots:all    # heroes + stories
 pnpm --filter pi-durable verify:visual
 pnpm --filter pi-durable verify       # dependency and docs allowlist guard
@@ -45,8 +45,10 @@ OpenAI-compatible provider to a local `llama-server` (no key, no network); start
 6. `Ctrl+C`, restart: conversations and tasks are recovered from storage; a retried `requestId`
    returns the original submission and adds no second answer.
 7. `[` / `]` switch tabs; **Copy** writes a permalink carrying the active tab.
-8. `/` focuses the prompt, `?` toggles help, `g` cycles graph/tasks/timeline, `Esc` clears overlays.
-   Export produces JSON, a session document, SVG or Markdown.
+8. `/` focuses the prompt, `Ctrl/⌘ K` focuses the Lens (`view diff`, `rung grain`, `as of 2`,
+   `tab 2`, `layout radial`, `find Paris`), `?` toggles help, `g` cycles views, `Esc` clears overlays.
+   Landmarks grade attention on one kernel; they never filter committed facts. Export produces JSON,
+   a session document, SVG or Markdown.
 9. `pnpm --filter pi-durable build` serves the same page from a local op feed with no server.
 
 Keyboard traversal, a roving-tabindex ARIA tablist with RTL arrows, live announcements, 44px
@@ -62,7 +64,10 @@ from the plan, a deterministic view, tasks, expected stable ids and the test tha
 restores the active tab; `?seed=<name>` varies faux answers for capture runs. `?replay=<id>` folds a
 deferred `app.replay` action list onto the local feed; `?asOf=<seq>` reads a stored earlier entry
 point with a badge and no commit controls; `?observer=1` renders a second process's read-only
-`/events/observe` stream. Named scenarios and replay stay offline in live provider modes.
+`/events/observe` stream. `?rung=<landmark>` addresses `cosmos … grain`, `?layout=grid|radial|timeline`
+feeds one scope simulation, and `?view=<name>`/`?zoom=<value>` restore the placement. Permalinks carry
+tab, shot, view, landmark, layout, time and camera. Named scenarios and replay stay offline in live
+provider modes.
 
 Four Core heroes are tracked at full resolution: `basic-turn`, `sleeping-approval`, `fork-tabs` and
 `resumed`. Seven story composites replace the wall of near-duplicate `Next` frames: `turn-flow`,
@@ -98,13 +103,15 @@ verdict.
 | `PI_DURABLE_OBSERVER_URL` | — | Observer base URL advertised by the owner server |
 | `PI_DURABLE_OBSERVE_IDS` | — | Extra conversation ids an observer may watch |
 | `PI_DURABLE_CONFORMANCE` | `0` | Run upstream storage conformance at boot; results at `/api/conformance` |
+| `PI_DURABLE_CODEMODE` | `0` | Install the code-mode workshop in the server registry; advertised by `/api/health` |
+| `PI_DURABLE_IMAGES` | `0` | Install Photon's fit workshop; image artifacts are read from committed `data` |
 
 ## Server API (Core)
 
 | Route | Purpose |
 | ----- | ------- |
 | `GET /events` | One SSE stream; `id:` is the conversation id and `data:` is one `KernelOp` |
-| `GET /api/health` | Harness state, storage, provider and recovered task count |
+| `GET /api/health` | Harness state, storage, provider, recovered task count and installed workshops |
 | `GET /events/observe` | Read-only SSE stream from an observer process |
 | `GET /api/observer` | Observer URL advertised by the owner |
 | `GET /api/conformance` | Storage conformance results when enabled |
@@ -132,6 +139,9 @@ Errors are typed (`no-provider`, `unknown-conversation`, `run_failed`, `turn_lim
   feeds one `ScopeSimulation`, which places the graph, tasks and timeline views of that same kernel.
   Cards show friendly labels and committed detail (status, signal, wake time, head, error), edges are
   captioned with their recorded kind, and the rail carries a status/edge legend.
+- `src/attention.ts` — `ScaleDomain` samples landmarks into continuous attention weights; a low
+  weight mutes a fact, it never deletes it.
+- `src/lens.ts` — one command grammar for view, landmark, time, tab, layout and node lookup.
 - `src/shots.ts` — shot catalog; `?shot=<id>` reproduces each state from pure data.
 
 The shared pipeline lives in `app/pi-kit` (ops/demux, `TabRegistry`, session/workspace state, scope

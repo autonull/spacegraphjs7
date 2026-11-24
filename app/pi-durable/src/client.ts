@@ -172,8 +172,17 @@ const bindCatalog = (): void => {
     });
 };
 
+const bindLens = (): void => {
+    el<HTMLFormElement>('lens-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const input = el<HTMLInputElement>('lens-input');
+        if (host.lens(input.value)) input.value = '';
+    });
+};
+
 const bindChrome = (): void => {
     bindPrompt();
+    bindLens();
     bindFork();
     bindApprove();
     bindCatalog();
@@ -192,6 +201,11 @@ const bindChrome = (): void => {
         if (event.key === 'Escape') {
             host.toggleHelp(false);
             el('catalog').hidden = true;
+            return;
+        }
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+            event.preventDefault();
+            el<HTMLInputElement>('lens-input').focus();
             return;
         }
         if (typing) return;
@@ -260,8 +274,8 @@ const boot = async (): Promise<void> => {
     await host.mount(el('canvas'));
     bindChrome();
     await connect();
-    const permalink = params.get('s');
-    if (permalink) host.applyPermalink(permalink);
+    if (['s', 'view', 'rung', 'layout', 'asOf', 'zoom'].some((key) => params.has(key)))
+        host.applyPermalink(location.href);
     if (!host.registry.active()) host.loadFeed(localFeed(shot, seed));
     host.refresh();
     Object.assign(window, { __durable: host.hooks() });

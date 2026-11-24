@@ -1,4 +1,4 @@
-import type { KernelOp } from '@spacegraphjs/kernel';
+import { addNode, type KernelOp } from '@spacegraphjs/kernel';
 import {
     translateView,
     type DurableEntry,
@@ -102,6 +102,9 @@ const scenario = (
         },
     };
 };
+
+/** A 4 × 4 RGBA PNG, generated once with zlib and kept as a deterministic fixture. */
+const TINY_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAMUlEQVR4nBXIQREAMAzDsAALsMIxiPDzbnoqCTZ4wQWTYotXXH8c9vAOdz+GHd5wwwd8yCUxWFpdYwAAAABJRU5ErkJggg==';
 
 /** One named, deterministic scenario per coverage row in TODO12 §2. */
 export const SCENARIOS: readonly Scenario[] = [
@@ -362,6 +365,51 @@ export const SCENARIOS: readonly Scenario[] = [
             ],
         },
         expected: { nodes: ['d:1:entry:1-first', 'd:1:entry:1-second'], edges: ['orders'] },
+    }),
+    scenario({
+        id: 'code-mode', title: 'Code workshop', question: 'Can a code call keep nested results?',
+        description: 'A code() call with nested tool results and a committed artifact.', tier: 'Next',
+        row: 'Hooks', rail: 'graph', test: 'workshop.test.ts',
+        view: base('1', 'Run a code call', 'Nested results committed.', {
+            'app.code': {
+                version: 1, call: 'code()',
+                nested: [{ name: 'read', path: 'docs/PLAN/INDEX.md' }, { name: 'summarize', bytes: 412 }],
+                artifacts: [{ id: 'a1', text: 'Workshop plan read.' }],
+            },
+        }),
+        extraOps: [
+            addNode('d:1:code:call', 'action', 'code()', {
+                runId: '1', status: 'complete', toolName: 'code', text: 'code() → read → summarize', importance: 'hero',
+            }),
+            addNode('d:1:code:read', 'action', 'read', {
+                runId: '1', status: 'complete', toolName: 'read', text: 'docs/PLAN/INDEX.md',
+            }),
+            addNode('d:1:code:summarize', 'action', 'summarize', {
+                runId: '1', status: 'complete', toolName: 'summarize', text: '412 bytes',
+            }),
+            addNode('d:1:code:artifact:a1', 'artifact', 'Workshop note', {
+                runId: '1', status: 'complete', doc: 'app.code', text: 'Workshop plan read.', importance: 'medium',
+            }),
+        ],
+        expected: {
+            nodes: ['d:1:code:call', 'd:1:code:read', 'd:1:code:summarize', 'd:1:code:artifact:a1'],
+            edges: ['orders'],
+        },
+    }),
+    scenario({
+        id: 'images', title: 'Image plate', question: 'Can a fitted PNG stay a bounded artifact?',
+        description: 'A deterministic tiny PNG fitted by the image workshop and shown from committed data.',
+        tier: 'Next', row: 'Your Own State', rail: 'graph', test: 'workshop.test.ts',
+        view: base('1', 'Inspect an image artifact', 'Tiny PNG fitted.', {
+            'app.images': { tool: 'fit', images: [{ id: 'pixel', mediaType: 'image/png', bytes: 106 }] },
+        }),
+        extraOps: [
+            addNode('d:1:image:pixel', 'artifact', 'Tiny PNG', {
+                runId: '1', status: 'complete', toolName: 'fit', doc: 'app.images',
+                text: '4 × 4 PNG fitted to 106 bytes', importance: 'medium', image: TINY_PNG,
+            }),
+        ],
+        expected: { nodes: ['d:1:image:pixel'], edges: ['orders'] },
     }),
 ];
 

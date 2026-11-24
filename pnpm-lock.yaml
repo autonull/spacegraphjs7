@@ -274,7 +274,7 @@ importers:
         version: 2.11.10(@testing-library/jest-dom@7.0.1(@testing-library/dom@10.4.2)(vitest@5.0.5))(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
       vitest:
         specifier: ^5.0.5
-        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   app/demo:
     dependencies:
@@ -383,7 +383,7 @@ importers:
         version: 8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)
       vitest:
         specifier: ^5.0.5
-        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   app/pi-durable:
     dependencies:
@@ -393,6 +393,9 @@ importers:
       '@earendil-works/pi-ai':
         specifier: 1.6.0
         version: 1.6.0(@aws-sdk/credential-provider-node@3.972.97)(@smithy/signature-v4@5.7.5)(google-auth-library@10.9.1)(undici@8.12.3)(ws@8.22.1)
+      '@earendil-works/pi-codemode':
+        specifier: 1.6.0
+        version: 1.6.0
       '@earendil-works/pi-durable':
         specifier: 1.6.0
         version: 1.6.0(@aws-sdk/credential-provider-node@3.972.97)(@smithy/signature-v4@5.7.5)(esbuild@0.28.2)(google-auth-library@10.9.1)(react@19.3.1)(undici@8.12.3)(ws@8.22.1)
@@ -411,6 +414,9 @@ importers:
       '@spacegraphjs/renderer':
         specifier: workspace:*
         version: link:../../packages/renderer
+      '@spacegraphjs/search':
+        specifier: workspace:*
+        version: link:../../packages/search
       '@spacegraphjs/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -441,7 +447,7 @@ importers:
         version: 8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)
       vitest:
         specifier: ^5.0.5
-        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   app/pi-kit:
     devDependencies:
@@ -481,7 +487,7 @@ importers:
         version: 2.11.10(@testing-library/jest-dom@6.10.0(@testing-library/dom@10.4.2))(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
       vitest:
         specifier: ^5.0.0
-        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/adapter:
     dependencies:
@@ -534,7 +540,7 @@ importers:
         version: 2.11.10(@testing-library/jest-dom@6.10.0(@testing-library/dom@10.4.2))(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
       vitest:
         specifier: ^5.0.0
-        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/config:
     dependencies:
@@ -575,7 +581,7 @@ importers:
         version: 2.11.10(@testing-library/jest-dom@6.10.0(@testing-library/dom@10.4.2))(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
       vitest:
         specifier: ^5.0.0
-        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/create-spacegraph: {}
 
@@ -609,7 +615,7 @@ importers:
         version: 2.11.10(@testing-library/jest-dom@6.10.0(@testing-library/dom@10.4.2))(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
       vitest:
         specifier: ^5.0.0
-        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/domain/agent:
     dependencies:
@@ -808,7 +814,7 @@ importers:
         version: 2.11.10(@testing-library/jest-dom@6.10.0(@testing-library/dom@10.4.2))(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
       vitest:
         specifier: ^5.0.0
-        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/overlays:
     dependencies:
@@ -833,7 +839,7 @@ importers:
         version: 2.11.10(@testing-library/jest-dom@6.10.0(@testing-library/dom@10.4.2))(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
       vitest:
         specifier: ^5.0.0
-        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/react-spacegraph:
     dependencies:
@@ -910,7 +916,7 @@ importers:
         version: 2.11.10(@testing-library/jest-dom@6.10.0(@testing-library/dom@10.4.2))(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
       vitest:
         specifier: ^5.0.0
-        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/solid-spacegraph:
     dependencies:
@@ -978,7 +984,7 @@ importers:
         version: 2.11.10(@testing-library/jest-dom@6.10.0(@testing-library/dom@10.4.2))(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
       vitest:
         specifier: ^5.0.0
-        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/trace:
     dependencies:
@@ -1019,7 +1025,7 @@ importers:
         version: 2.11.10(@testing-library/jest-dom@6.10.0(@testing-library/dom@10.4.2))(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
       vitest:
         specifier: ^5.0.0
-        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/window-manager:
     devDependencies:
@@ -5590,7 +5596,7 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
     optionalDependencies:
-      vitest: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+      vitest: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   '@tweenjs/tween.js@23.1.3': {}
 
@@ -5862,7 +5868,7 @@ snapshots:
       obug: 2.1.4
       std-env: 4.2.0
       tinyrainbow: 3.1.1
-      vitest: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+      vitest: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   '@vitest/istanbul-lib-coverage@1.0.1': {}
 
@@ -7765,7 +7771,7 @@ snapshots:
     transitivePeerDependencies:
       - msw
 
-  vitest@5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)):
+  vitest@5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/mocker': 5.0.5(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))

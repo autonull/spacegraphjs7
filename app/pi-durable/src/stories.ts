@@ -69,7 +69,7 @@ export const STORIES: readonly Story[] = [
             { caption: '1 · usage document', shot: 'usage' },
             { caption: '2 · agent-event spans', shot: 'trace' },
             { caption: '3 · host documents', shot: 'docs' },
-            { caption: '4 · deferred state inspected', action: 'reveal', value: 'd:1:app.todos' },
+            { caption: '4 · code workshop artifacts', shot: 'code-mode' },
         ],
     },
     {
@@ -79,7 +79,7 @@ export const STORIES: readonly Story[] = [
             { caption: '1 · owner commits', shot: 'basic-turn' },
             { caption: '2 · observer stream', shot: 'basic-turn', observer: true },
             { caption: '3 · read-only boundary inspected', action: 'reveal', value: 'd:1:conversation' },
-            { caption: '4 · commit refused as read-only', action: 'prompt', value: 'must not commit' },
+            { caption: '4 · image fitted as a bounded plate', shot: 'images' },
         ],
     },
     {
