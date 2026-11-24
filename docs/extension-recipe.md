@@ -27,6 +27,7 @@ Gates before a new domain is considered shipped:
 1. `pnpm run test:conformance` — the model-level suite keeps node and edge identity on every backend.
 2. `pnpm run test:publish` — the domain is packed and imported from published bytes (agent is in the
    pack list alongside the original three).
-3. `pnpm run test:demo-atlas` — the benchmark demo still draws under the shared registry.
+3. `pnpm run test:demo-atlas` — the shared demo registry captures visual baselines.
+4. `pnpm run test:extension` — the generated host maps 1,000 generated nodes within its own benchmark budget, alongside the domain's conformance suite and the one-way dependency guard. The generated host is the benchmark subject; the shared registry is not involved.
 
 No renderer branch, no second position authority and no new published subpath are part of this recipe.

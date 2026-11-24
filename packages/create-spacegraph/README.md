@@ -14,7 +14,7 @@ The app generator writes `package.json`, `index.html`, `src/main.ts`, `tsconfig.
 the framework checkout, so the generated app consumes the same bytes a user installs. Set
 `SPACEGRAPHJS_SPEC` to override that range, for example to test against a local tarball.
 
-To add a domain plus a host with its conformance, spine, verify and vision checks:
+To add a domain plus a host with its conformance, benchmark, spine, verify and vision checks:
 
 ```bash
 pnpm dlx create-spacegraph-domain my-domain workflow

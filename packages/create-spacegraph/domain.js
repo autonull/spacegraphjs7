@@ -486,6 +486,62 @@ test('the hybrid shell is legible', async ({ page }) => {
     await expect(page.locator('[data-set-surface="hybrid"]')).toBeVisible();
 });
 `;
+files['host/tests/benchmark.test.ts'] = `import { describe, expect, test } from 'vitest';
+import type { KernelOp } from '@spacegraphjs/kernel';
+import { build{{Name}}View } from '../../domain/src/vocabulary';
+import { {{Name}}Adapter, foldOps } from '../../domain/src/fixture';
+
+const NODE_COUNT = 1000;
+const id = (index: number, part = 'node') => ['{{name}}', 'bench', part, String(index)].join(':');
+
+function workload() {
+    const ops: KernelOp[] = [];
+    const positions = new Map<string, { x: number; y: number; z: number }>();
+    for (let index = 0; index < NODE_COUNT; index += 1) {
+        const nodeId = id(index);
+        ops.push({
+            op: 'add-node',
+            node: {
+                id: nodeId,
+                kind: index === 0 ? 'state' : '{{kind}}',
+                label: '{{Name}} ' + index,
+                data: { status: 'complete' },
+            },
+        });
+        positions.set(nodeId, { x: (index % 40) * 200, y: Math.floor(index / 40) * 120, z: 0 });
+        if (index > 0) {
+            ops.push({
+                op: 'add-edge',
+                edge: {
+                    id: id(index, 'edge'),
+                    kind: 'sequence',
+                    source: id(index - 1),
+                    target: nodeId,
+                },
+            });
+        }
+    }
+    return { model: build{{Name}}View(foldOps(ops)), positions };
+}
+
+describe('{{name}} generated host benchmark', () => {
+    test('maps a thousand generated nodes within budget', () => {
+        const { model, positions } = workload();
+        const adapter = new {{Name}}Adapter({ cardBudget: 40 });
+        const options = { level: 'execution' as const, positions };
+
+        adapter.build(model, options);
+        const started = performance.now();
+        const render = adapter.build(model, options);
+        const elapsed = performance.now() - started;
+
+        expect(model.nodes).toHaveLength(NODE_COUNT);
+        expect(model.edges).toHaveLength(NODE_COUNT - 1);
+        expect(render.nodes.length).toBeGreaterThan(0);
+        expect(elapsed).toBeLessThan(1000);
+    });
+});
+`;
 
 for (const [relative, content] of Object.entries(files)) write(relative, fill(content));
 

@@ -4,7 +4,7 @@
 > landed and verified; see §6 for evidence. Publication is not planned, so no registry-mode work is
 > pending. Nothing is published, so the compatibility layer was removed: no aliases, no deprecation
 > gate and no published-surface snapshot. §7 lists the remaining non-local items and the ones
-> deliberately declined; §8 records the landed D4 vision-helper feature.
+> deliberately declined; §8 and §9 record the landed D4 vision-helper and D5 benchmark features.
 
 Purpose: SpaceGraphJS already has unusually broad mechanisms — three renderers, two framework
 bindings, four domain vocabularies, a layout catalogue, a plugin system and a vision loop. What it
@@ -169,7 +169,7 @@ instead of inventing a binding.
 | D2 | Removed: `docs/api-compatibility.json`, `docs/api-compatibility-review.md`, `script/check-compat.ts`, `script/upgrade-check.ts`, `script/surface.ts`, `test/fixtures/public-surface.json`; `check:compat`/`check:upgrade` dropped from `package.json:170`; aliases migrated in `src/core/Graph.ts`, `src/core/GraphQuery.ts`, `src/core/PluginManager.ts`, `src/core/constants.ts`, `src/SpaceGraph.ts`, `src/plugins/index.ts` | `pnpm check` | No gate blocks a removal; no alias, `@deprecated` shim or snapshot remains; all alias callers use canonical APIs | No compatibility alias kept for any symbol; E3 closed by deletion rather than next-minor flip |
 | D3 | `test/conformance.test.ts:1`; `docs/renderer-capability-matrix.md:1`; `test:conformance` (`package.json:209`); browser mount parity via `script/publish-check/consumer/browser.ts:1` | `pnpm run test:conformance && pnpm run test:publish` | 3 files / 12 tests on the same `MODEL`; packed-tarball browser check mounts both interactive adapters; matrix corrected (SpaceGraph zoom max 1) | No renderer branch; differences declared as capabilities only; no per-pixel claim |
 | D4 | `src/quality/index.ts:1` (`checkQuality`, `correctQuality`, DOM mirror / RTL / reduced-motion assertions); `./quality` subpath (`script/library-entries.ts:140`); `test/quality.test.ts:1`; `test/quality-a11y.test.ts:1`; quality section in `docs/QUICKSTART.md:142` | `pnpm exec vitest run test/quality.test.ts test/quality-a11y.test.ts` | 9 tests: defects scored, floor throws, bounded re-verified fixes, preferences never applied, mirror items / roles / tabindex / direction / motion checked | No default flip; preferences logged, not changed; no screenshot captured |
-| D5 | `docs/extension-recipe.md:1`; fourth domain in the published-byte pack list (`script/publish-check.ts:33`); `script/extension-check.ts:1` runs `create-spacegraph-domain` output; scaffold fixture fixed (`packages/create-spacegraph/domain.js:192,319`) | `pnpm run test:extension && pnpm run test:publish` | Generated domain passes the 10-case adapter conformance suite and its one-way dependency guard; four domains packed and imported from tarballs | No library special case added for a domain |
+| D5 | `docs/extension-recipe.md:1`; fourth domain in the published-byte pack list (`script/publish-check.ts:33`); `script/extension-check.ts:1` runs `create-spacegraph-domain` output; scaffold benchmark (`packages/create-spacegraph/domain.js` → `host/tests/benchmark.test.ts`); scaffold fixture fixed (`packages/create-spacegraph/domain.js:192,319`) | `pnpm run test:extension && pnpm run test:publish` | Generated domain passes the 10-case adapter conformance suite; generated host maps 1,000 nodes within budget; one-way dependency guard passes; four domains packed and imported from tarballs | No library special case; benchmark runs in the generated host, not the shared registry |
 | D6 | `docs/evidence/record.json:1`; `script/evidence.ts:1`; `check:evidence` / `check:evidence:write` (`package.json:175`) | `pnpm run check:evidence` | Nine entries migrated, source hash verified, decision/pair paths tracked or regenerable, no default field | No published subpath; human verdicts still external |
 
 Final verification in one pass: `pnpm exec tsc --noEmit -p tsconfig.json`, `pnpm test` (146 files /
@@ -183,16 +183,15 @@ as developer work.
 
 ## 7. Remaining work
 
-The developer-side foundations are now gates and the plan is complete. The D4 vision helpers from
-the original list are now landed under the feature plan in §8. The items below are optional, deferred
-or external; the "Reopen when" column names the condition that would turn one into work. None is met
-at this commit. Items deliberately declined are listed after the table.
+The developer-side foundations are now gates and the plan is complete. The D4 vision helpers and
+the D5 generated-host benchmark are landed under the feature notes in §8 and §9. The items below are
+deferred or external; the "Reopen when" column names the condition that would turn one into work.
+None is met at this commit. Items deliberately declined are listed after the table.
 
 | # | Item | Category | Blocker / why not now | Reopen when |
 | - | ---- | -------- | --------------------- | ----------- |
-| 1 | D5 generated-domain benchmark | Optional | `test:extension` runs the generated domain's conformance suite and one-way dependency guard; the benchmark demo uses the shared registry, not a scaffold-generated host | A scaffold-generated host benchmark is requested |
-| 2 | Local trace and replay | Deferred | Observation side of the loop; the measurement side (D4) is trustworthy, but traces stay local and opt-in | A separate feature plan for observation |
-| 3 | Human verdicts and recruitment | External | The nine evidence entries and the n ≥ 5 study remain pending; no default may flip from a screenshot alone | Study results and human verdicts are recorded |
+| 1 | Local trace and replay | Deferred | Observation side of the loop; the measurement side (D4) is trustworthy, but traces stay local and opt-in | A separate feature plan for observation |
+| 2 | Human verdicts and recruitment | External | The nine evidence entries and the n ≥ 5 study remain pending; no default may flip from a screenshot alone | Study results and human verdicts are recorded |
 
 ### Declined — not pending work
 
@@ -237,3 +236,28 @@ and a defective model, and each assertion's throw/pass path. `test/quality-a11y.
 Verified in one pass: `pnpm exec tsc --noEmit -p tsconfig.json` and `pnpm test` (147 files / 1071
 tests). No generated manifest, subpath or docs command changed, so the Tier 1 gate inputs are
 unchanged.
+
+---
+
+## 9. Feature note — D5 generated-host benchmark (2026-11-23)
+
+The shared `benchmark.html` draws 1,000 synthetic nodes under the demo registry's aliases, so it
+never exercises a scaffold-generated host. This feature makes the generated host the benchmark
+subject without committing generated output or adding a library special case.
+
+**Design.** `create-spacegraph-domain` emits `host/tests/benchmark.test.ts` alongside the existing
+host tests. It builds 1,000 domain nodes and 999 edges from the generated vocabulary, maps them with
+the generated adapter, warms up once, then asserts exact node/edge counts, a non-empty render model
+and a 1s budget. `extension-check.ts` now requires that file and runs it with the generated
+conformance suite under the repo's Vitest aliases. The temp workspace is still deleted afterwards.
+
+**Scope.** No registry change: registering a temp host would require committed generated output and
+a drift guard, and the generated host's `workspace:*` deps are not resolvable by demo Vite. No visual
+capture, no per-pixel claim, no default, no shared-registry change. The shared `test:demo-atlas`
+still covers visual baselines.
+
+**Verification.** `pnpm run verify:library` passes all six gates after the docs/plan edits;
+`test:extension` runs 11 generated tests (10 conformance + 1 benchmark) plus the boundary guard.
+No generated registry or manifest changed.
+
+**Progress.** Landed: scaffold template, extension gate, recipe/README/CHANGELOG corrections, plan.

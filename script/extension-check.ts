@@ -1,6 +1,6 @@
 // D5 gate: generate a fourth domain and host through create-spacegraph-domain, then run the
-// generated conformance suite and one-way dependency guard. The scaffold must prove itself, not just
-// describe a recipe.
+// generated conformance suite, the generated host's benchmark and the one-way dependency guard. The
+// scaffold must prove itself, not just describe a recipe.
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -25,6 +25,7 @@ const required = [
     'host/src/spine.ts',
     'host/tests/spine.test.ts',
     'host/tests/vision.spec.ts',
+    'host/tests/benchmark.test.ts',
     'host/scripts/verify.ts',
 ];
 
@@ -51,14 +52,14 @@ export default {
     test: {
         environment: 'jsdom',
         pool: 'vmThreads',
-        include: ['domain/src/conformance.test.ts'],
+        include: ['domain/src/conformance.test.ts', 'host/tests/benchmark.test.ts'],
         globals: false,
     },
 };
 `,
     );
 
-    console.log('\nconformance: the generated domain passes the shared adapter suite');
+    console.log('\nconformance and benchmark: the generated domain and host pass their suites');
     execFileSync(resolve(root, 'node_modules/.bin/vitest'), ['run', '--config', config], {
         cwd: root,
         stdio: 'inherit',
@@ -75,7 +76,7 @@ export default {
         throw new Error('generated adapter no longer marks the structural node as chrome');
     }
 
-    console.log('\nextension check passed: generated domain and host satisfy the recipe');
+    console.log('\nextension check passed: generated domain and host pass conformance, benchmark and boundary gates');
 } finally {
     rmSync(workspace, { recursive: true, force: true });
 }

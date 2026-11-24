@@ -7,6 +7,7 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Added
 
+- **Generated-host benchmark (TODO11 D5):** `create-spacegraph-domain` now emits `host/tests/benchmark.test.ts`, which maps 1,000 generated nodes within budget; `test:extension` runs it beside the conformance suite and the one-way dependency guard. No shared-registry or committed generated output, no library special case.
 - **Vision helpers (TODO11 D4):** `spacegraphVision(spec, options)` returns a non-throwing graded quality report with `passed`, and `visionAssert(spec, options)` exposes test assertions for overlap, labels, edges, DOM budget, accessibility and the score floor. Both ship through `spacegraphjs/quality` and reuse `checkQuality`; no Playwright or build-plugin dependency, no autofix, no default. The stale README/CONTRIBUTING claims about a Vite plugin are corrected.
 - **Chapter packing (general library):** `chapterPacking(ids, { card, gap?, columns?, viewport?, previous? })` packs a small set of host-defined chapter cards, caps columns to the viewport and preserves cells from `previous` when new ids stream in. Pi's chapters view uses it; `app/demo/second-host.ts` proves the same helper with non-agent ids.
 - **Pi single-row chrome:** the proof affordance is now a pulldown that groups presets, experiments and recorded comparisons, and the attention readout moved from the top bar into a bottom status strip beside the evidence line. All control ids and data attributes stay unchanged.
