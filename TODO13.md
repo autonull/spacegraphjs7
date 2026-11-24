@@ -42,11 +42,25 @@
 
 | ID | Work | Exit evidence |
 | -- | ---- | ------------- |
-| A0 | Confirm the installed Pi AI 1.6.0 llama.cpp / llamacpp-embedded provider: import path, factory signature, model id, auth semantics, required env, and whether the WASM build needs threads or a worker. Record the exact shape in this plan before coding. | A0 note with exact imports and a one-paragraph boot recipe |
-| A1 | Add `PI_DURABLE_PROVIDER=local` (alias `llamacpp`) to `src/server.ts`. Resolve `PI_DURABLE_MODEL_PATH` to a GGUF file, default to the 0.8B Qwen file when present, and read `PI_DURABLE_MODEL`/`PI_DURABLE_MODEL_CTX`/`PI_DURABLE_MODEL_MAX_TOKENS`. Skip faux seeding and fixture answers in local mode. Dynamic-import the provider so faux startup stays light. | Server boots offline with no key; health reports `provider: local`, `providerMode: live`, `model`, `modelPath`, no `providerError` |
+| A0 | Done. Pi AI 1.6.0 has **no** in-process GGUF provider; `llamacpp-embedded` is not published and not installed. Use `createProvider` + `openAICompletionsApi()` against an external `llama-server`. Keyless auth must still resolve `{ auth: { apiKey: 'local' } }` for the completions API. | This row: exact imports and boot recipe below |
+| A1 | Add `PI_DURABLE_PROVIDER=local` (alias `llamacpp`) to `src/server.ts`. Validate `PI_DURABLE_MODEL_PATH`, connect through `createProvider` + `openAICompletionsApi()` to `PI_DURABLE_MODEL_URL` (default `http://127.0.0.1:9931/v1`), with `PI_DURABLE_MODEL`, `PI_DURABLE_MODEL_CTX` and `PI_DURABLE_MODEL_MAX_TOKENS`. Skip faux seeding and fixture answers in local mode. Import the completions API dynamically so faux startup stays light. | Server boots offline with no key; health reports `provider: local`, `providerMode: live`, `model`, `modelPath`, `baseUrl`, no `providerError` |
 | A2 | Typed errors: missing GGUF path, unreadable file, unsupported provider, and timeouts become `no-provider` / `model-unavailable` with a recovery string, never a bare stack. Named scenarios stay offline in local mode. | Keyless/missing-file paths covered by offline tests; live prompt covered by A3 |
 | A3 | Smoke test: isolated server process, local 0.8B GGUF, one short prompt (`"Reply with exactly: ready."`), assert a committed assistant entry and a non-empty answer within a generous timeout. No screenshot, no API key, no network. Skip only when the model file is absent, with a visible skip reason. | `tests/local-model.spec.ts` passes (or reports a concrete missing-file skip) |
 | A4 | Document local mode in the app README and plan progress: env table, first-call cost, expected RAM, and why it is not a visual gate. | Commands and env names exist; `verify` guard stays green |
+
+**A0 boot recipe (landed).**
+
+```bash
+llama-server -m /home/me/gguf/Qwen_Qwen3.5-0.8B-Q4_K_M.gguf \
+  --host 127.0.0.1 --port 9931 -c 2048 -ngl 0 --reasoning off
+PI_DURABLE_PROVIDER=local \
+PI_DURABLE_MODEL_PATH=/home/me/gguf/Qwen_Qwen3.5-0.8B-Q4_K_M.gguf \
+PI_DURABLE_MODEL_URL=http://127.0.0.1:9931/v1 \
+  pnpm --filter pi-durable dev
+```
+
+`--reasoning off` matters: Qwen3.5 spends its whole token budget on `reasoning_content` otherwise and
+returns an empty `content`. The test starts its own server on port 9932 with that flag.
 
 Stop rule: if the installed provider cannot load the GGUF without a network fetch or native rebuild,
 record the exact failure and keep faux as the default; do not add a compatibility shim.
@@ -145,7 +159,7 @@ The live model smoke test is separately invoked and its skip reason is reported.
 
 | Stream | State | Evidence |
 | ------ | ----- | -------- |
-| A — local model smoke | Proposed | A0 not started |
+| A — local model smoke | Landed | `PI_DURABLE_PROVIDER=local` with OpenAI-compatible `llama-server`; `tests/local-model.spec.ts` passes with the 0.8B Qwen GGUF (13 s); README env table updated |
 | B — visual detail and representations | Proposed | No code changed |
 | C — deferred surfaces | Proposed | No code changed |
 

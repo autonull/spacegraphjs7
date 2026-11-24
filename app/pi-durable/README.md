@@ -26,7 +26,11 @@ No provider, key or fixture command is needed: the default Harness uses a faux p
 storage in the gitignored `.pi-durable/` directory. `PI_DURABLE_PROVIDER=openai` opts into a live
 OpenAI model with `OPENAI_API_KEY` and an optional `PI_DURABLE_MODEL`; it skips faux fixture seeding,
 reports its mode in `/api/health`, and returns a typed `no-provider` error without a key. Named
-scenarios stay offline in that mode.
+scenarios stay offline in that mode. `PI_DURABLE_PROVIDER=local` connects through Pi AI's
+OpenAI-compatible provider to a local `llama-server` (no key, no network); start it with, for example,
+`llama-server -m /home/me/gguf/Qwen_Qwen3.5-0.8B-Q4_K_M.gguf --host 127.0.0.1 --port 9931 -c 2048
+-ngl 0 --reasoning off`, then set `PI_DURABLE_MODEL_URL=http://127.0.0.1:9931/v1`. The smoke test
+(`tests/local-model.spec.ts`) starts its own server on port 9932 and skips when the GGUF is absent.
 
 ## First-run journey
 
@@ -73,9 +77,14 @@ a verdict.
 | `PI_DURABLE_LOCAL_FEED` | off in dev | Marks the browser harness as a local fixture run |
 | `PI_DURABLE_STORAGE` | `jsonl` | `jsonl`, `memory` or `sqlite` store |
 | `PI_DURABLE_DIR` | `.pi-durable` | JSONL directory; an isolated directory is used by the restart test |
-| `PI_DURABLE_PROVIDER` | `faux` | `faux` (default) or `openai` (opt-in live mode) |
-| `PI_DURABLE_MODEL` | `gpt-4o-mini` | Model id for `openai` mode; faux mode always uses `faux-1` |
-| `OPENAI_API_KEY` | unset | Required when `PI_DURABLE_PROVIDER=openai`; otherwise prompts fail with typed `no-provider` |
+| `PI_DURABLE_PROVIDER` | `faux` | `faux` (default), `openai` or `local` / `llamacpp` (live modes) |
+| `PI_DURABLE_MODEL` | `gpt-4o-mini` / `local-model` | Model id for live modes; faux mode always uses `faux-1` |
+| `OPENAI_API_KEY` | unset | Required for `openai`; otherwise prompts fail with typed `no-provider` |
+| `PI_DURABLE_MODEL_PATH` | unset | GGUF path for `local` mode, validated at boot (`model-unavailable` if unreadable) |
+| `PI_DURABLE_MODEL_URL` | `http://127.0.0.1:9931/v1` | OpenAI-compatible endpoint served by a local `llama-server` |
+| `PI_DURABLE_MODEL_CTX` | `2048` | Context window for the local model |
+| `PI_DURABLE_MODEL_MAX_TOKENS` | `256` | Maximum generated tokens for the local model |
+| `PI_DURABLE_TEST_GGUF` | 0.8B Qwen path | GGUF used by the offline local-model smoke test |
 | `PI_DURABLE_FAUX_SEED` | `fixed` | Keeps screenshot answers deterministic |
 | `PI_DURABLE_SERVER_PORT` | `8788` | Node server port |
 | `PI_DURABLE_WEB_PORT` | `5176` | Vite port |

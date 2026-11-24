@@ -1,6 +1,8 @@
+import { existsSync } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { resolve } from 'node:path';
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
+import { createProvider, type Model } from '@earendil-works/pi-ai';
 import { createModels } from '@earendil-works/pi-ai/models';
 import { fauxAssistantMessage, fauxProvider } from '@earendil-works/pi-ai/providers/faux';
 import {
@@ -29,11 +31,19 @@ const STORAGE = process.env.PI_DURABLE_STORAGE ?? 'jsonl';
 const DIR = resolve(process.cwd(), process.env.PI_DURABLE_DIR ?? '.pi-durable');
 const SEED = process.env.PI_DURABLE_FAUX_SEED ?? 'fixed';
 const PROVIDER = process.env.PI_DURABLE_PROVIDER ?? 'faux';
-const MODEL = process.env.PI_DURABLE_MODEL ?? 'gpt-4o-mini';
-const LIVE = PROVIDER === 'openai';
-const PROVIDER_ERROR = LIVE && !process.env.OPENAI_API_KEY
+const OPENAI = PROVIDER === 'openai';
+const LOCAL = PROVIDER === 'local' || PROVIDER === 'llamacpp';
+const LIVE = OPENAI || LOCAL;
+const MODEL = process.env.PI_DURABLE_MODEL ?? (OPENAI ? 'gpt-4o-mini' : 'local-model');
+const MODEL_PATH = process.env.PI_DURABLE_MODEL_PATH;
+const MODEL_URL = process.env.PI_DURABLE_MODEL_URL ?? 'http://127.0.0.1:9931/v1';
+const CONTEXT_WINDOW = Number(process.env.PI_DURABLE_MODEL_CTX ?? 2048);
+const MAX_TOKENS = Number(process.env.PI_DURABLE_MODEL_MAX_TOKENS ?? 256);
+const PROVIDER_ERROR = OPENAI && !process.env.OPENAI_API_KEY
     ? { error: 'no-provider', recovery: 'set OPENAI_API_KEY or unset PI_DURABLE_PROVIDER' }
-    : undefined;
+    : LOCAL && MODEL_PATH && !existsSync(MODEL_PATH)
+      ? { error: 'model-unavailable', recovery: 'set PI_DURABLE_MODEL_PATH to a readable GGUF or omit it when llama-server is already running' }
+      : undefined;
 const Approval = defineSignal({ name: 'durable.approval', version: 1, schema: obj({ allow: bool() }) });
 const APPROVAL_KEY = 'approve';
 
@@ -74,12 +84,34 @@ const ApprovalTask = defineTask<ApprovalInput, ApprovalState, ApprovalResult>({
 const faux = fauxProvider();
 if (!LIVE) faux.setResponses([fauxAssistantMessage(answerFor('What can this workspace show?'))]);
 const models = createModels();
-if (LIVE && !PROVIDER_ERROR) {
+if (OPENAI && !PROVIDER_ERROR) {
     const { openaiProvider } = await import('@earendil-works/pi-ai/providers/openai');
     models.setProvider(openaiProvider());
+} else if (LOCAL && !PROVIDER_ERROR) {
+    const { openAICompletionsApi } = await import('@earendil-works/pi-ai/api/openai-completions.lazy');
+    const model: Model<'openai-completions'> = {
+        id: MODEL,
+        name: MODEL,
+        api: 'openai-completions',
+        provider: 'llamacpp',
+        baseUrl: MODEL_URL,
+        reasoning: false,
+        input: ['text'],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: CONTEXT_WINDOW,
+        maxTokens: MAX_TOKENS,
+    };
+    models.setProvider(createProvider({
+        id: 'llamacpp',
+        name: 'Local llama.cpp',
+        baseUrl: MODEL_URL,
+        auth: { apiKey: { name: 'Local llama.cpp', resolve: async () => ({ auth: { apiKey: 'local' } }) } },
+        models: [model],
+        api: openAICompletionsApi(),
+    }));
 } else models.setProvider(faux.provider);
 const agentModel = LIVE && !PROVIDER_ERROR
-    ? { provider: 'openai', modelId: MODEL }
+    ? { provider: LOCAL ? 'llamacpp' : 'openai', modelId: MODEL }
     : { provider: 'faux', modelId: 'faux-1' };
 const registry = createRegistry();
 registry.install(defineExtension({ name: 'durable-workspace', tasks: [ApprovalTask] }));
@@ -193,9 +225,10 @@ const text = (value: unknown): string => (typeof value === 'string' ? value : ''
 const health = () => ({
     ok: true,
     storage: STORAGE,
-    provider: LIVE ? 'openai' : 'faux',
+    provider: LOCAL ? 'local' : OPENAI ? 'openai' : 'faux',
     providerMode: LIVE ? 'live' : 'faux',
     model: LIVE ? MODEL : 'faux-1',
+    ...(LOCAL ? { modelPath: MODEL_PATH ?? null, baseUrl: MODEL_URL } : {}),
     ...(PROVIDER_ERROR ? { providerError: PROVIDER_ERROR } : {}),
     conversations: conversations.size,
     sleepingTasks: tasks.filter((task) => task.state.status === 'sleeping').length,
