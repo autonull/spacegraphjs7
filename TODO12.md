@@ -577,4 +577,6 @@ temp directory. Visual evidence is tracked pairs only; no human verdict was writ
    enters `review.json` automatically.
 
 All non-deferred work in §2–§12 is landed and gated. Stop rule unchanged: a scenario that cannot be
-deterministic is dropped, not papered over.
+deterministic is dropped, not papered over. Follow-on work — a local GGUF smoke test, richer visual
+evidence and the formerly deferred surfaces — is planned in [`TODO13.md`](TODO13.md) rather than
+widening this plan.
