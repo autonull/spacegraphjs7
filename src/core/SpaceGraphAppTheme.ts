@@ -7,7 +7,7 @@ import {
     setupSearchHUD,
 } from './SpaceGraphAppHUD';
 
-export function setupDefaultHUD(app: SpaceGraphApp, theme: any) {
+function setupDefaultHUD(app: SpaceGraphApp, theme: any) {
     if (typeof document === 'undefined') return;
 
     app.hud.removeElement('app-title-card');

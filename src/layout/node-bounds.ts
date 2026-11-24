@@ -12,7 +12,7 @@ export const diagonalRadius = (
 export const DEFAULT_NODE_BOUNDS: NodeBounds = { width: 200, height: 100, depth: 1 };
 
 /** Bounds declared by a node's data or class, before any render-dependent fallback. */
-export function declaredNodeBounds(node: {
+function declaredNodeBounds(node: {
     data?: unknown;
     size?: unknown;
 }): NodeBounds | undefined {

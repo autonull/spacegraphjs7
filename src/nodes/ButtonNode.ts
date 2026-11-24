@@ -78,11 +78,7 @@ export class ButtonNode extends WidgetNode {
     }
 
     protected createLabelContent(ctx: CanvasRenderingContext2D, text: string): void {
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 32px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(text, this._width, this._height);
+        this.drawLabelText(ctx, text, 'bold 32px Arial');
     }
 
     protected getLabelText(): string {

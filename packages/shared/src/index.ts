@@ -109,17 +109,11 @@ export type {
 
 // Animations
 export type { SpringConfig, TransitionConfig } from './animations';
-export { springPresets, transitionPresets, useSpring, useTransition } from './animations';
+export { springPresets, transitionPresets, useSpring } from './animations';
 
 // Keyboard
 export type { KeyboardShortcut } from './keyboard';
-export {
-    useKeyboardShortcuts,
-    useArrowNavigation,
-    useFocusTrap,
-    createGraphKeyboardHandler,
-    matchShortcut,
-} from './keyboard';
+export { useKeyboardShortcuts, matchShortcut } from './keyboard';
 
 // Tokens
 export type { DesignTokens } from './tokens';
@@ -130,21 +124,15 @@ export { cx, cn, styleVar, generateId, fixedSize, absolutePosition } from './css
 
 // Portal
 export type { PortalProps } from './portal';
-export { Portal, usePortal } from './portal';
+export { Portal } from './portal';
 
 // Hooks
 export {
-    useClickOutside,
     useResizeObserver,
-    useIntersectionObserver,
-    useMediaQuery,
     useToggle,
     useControlledValue,
     useDebounce,
-    useThrottledCallback,
     useLocalStorage,
-    useElementSize,
-    useSyncedState,
 } from './hooks';
 
 // Utils

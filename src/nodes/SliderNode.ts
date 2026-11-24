@@ -146,12 +146,14 @@ export class SliderNode extends WidgetNode {
         return 0x333333;
     }
 
-    protected createLabelContent(ctx: CanvasRenderingContext2D, _text: string): void {
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 20px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(this.formatValue(this.value), this._width / 2, this._height / 2);
+    protected createLabelContent(ctx: CanvasRenderingContext2D): void {
+        this.drawLabelText(
+            ctx,
+            this.formatValue(this.value),
+            'bold 20px Arial',
+            this._width / 2,
+            this._height / 2,
+        );
     }
 
     protected getLabelText(): string {

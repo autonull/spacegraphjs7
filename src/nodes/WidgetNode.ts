@@ -156,6 +156,20 @@ export abstract class WidgetNode extends Node {
         this.labelMaterial.map = new CanvasTexture(this.drawLabel(this.getLabelText()));
     }
 
+    protected drawLabelText(
+        ctx: CanvasRenderingContext2D,
+        text: string,
+        font: string,
+        x = this._width,
+        y = this._height,
+    ): void {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = font;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, x, y);
+    }
+
     /** The canvas the label text is drawn on, at twice the widget's size. */
     private drawLabel(text: string): HTMLCanvasElement {
         const canvas = document.createElement('canvas');

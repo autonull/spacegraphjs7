@@ -87,12 +87,14 @@ export class ToggleNode extends WidgetNode {
         return this.getHoverColor();
     }
 
-    protected createLabelContent(ctx: CanvasRenderingContext2D, _text: string): void {
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(this._value ? 'ON' : 'OFF', this._width / 2, this._height / 2);
+    protected createLabelContent(ctx: CanvasRenderingContext2D): void {
+        this.drawLabelText(
+            ctx,
+            this._value ? 'ON' : 'OFF',
+            'bold 16px Arial',
+            this._width / 2,
+            this._height / 2,
+        );
     }
 
     protected getLabelText(): string {

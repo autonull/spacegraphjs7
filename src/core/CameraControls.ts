@@ -82,7 +82,7 @@ const MIN_ORTHO_ZOOM = 0.01;
 const MAX_ORTHO_ZOOM = 100;
 
 /** T1.8: how far past the fitted frame the orthographic camera may travel before the scene empties. */
-export const ORTHO_ZOOM_SPAN = { out: 1 / 3, in: 2.5 };
+const ORTHO_ZOOM_SPAN = { out: 1 / 3, in: 2.5 };
 
 // Module-level cached vectors - shared across all instances (frame-local, not instance-local)
 const _camRight = new Vector3();
