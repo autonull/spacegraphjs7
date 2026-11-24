@@ -145,8 +145,18 @@ Errors are typed (`no-provider`, `unknown-conversation`, `run_failed`, `turn_lim
   captioned with their recorded kind, and the rail carries a status/edge legend.
 - `src/attention.ts` — `ScaleDomain` samples landmarks into continuous attention weights; a low
   weight mutes a fact, it never deletes it.
-- `src/lens.ts` — one command grammar for view, landmark, time, tab, layout and node lookup.
-- `src/address.ts` / `src/chapters.ts` — compact permalink codec and the hooks behind scrubbable plates.
+- `src/octaves.ts` — one power-of-two size ladder (`8 … 512`) driven by committed role and the
+  attention sample. `sizeForOctave` feeds the adapter's CSS width/height, the renderer footprint and
+  layout collision, so the DOM and the canvas agree. Bands are `dot`, `chip`, `card`, `panel` and
+  `monument`; focus raises a node to at least the card band without moving it.
+- `src/edge-style.ts` — recorded edge kinds map to the renderer's solid/dashed/dotted and confidence
+  channels. Colour stays theme-owned because the renderer contract has no edge-tone field.
+- `src/provenance.ts` — "why is this here?" reads the folded kernel and entry log; it reports commit
+  sequence, source entry, order neighbours, view facet and edge kinds without inventing a cause.
+- `src/lens.ts` — one command grammar for view, landmark, time, tab, layout, find, `focus <id>` and
+  `why`.
+- `src/address.ts` / `src/chapters.ts` — compact permalink codec (including the focused node) and
+  the hooks behind scrubbable plates.
 - `src/shots.ts` — shot catalog; `?shot=<id>` reproduces each state from pure data.
 
 The shared pipeline lives in `app/pi-kit` (ops/demux, `TabRegistry`, session/workspace state, scope

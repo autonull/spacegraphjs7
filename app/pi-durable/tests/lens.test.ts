@@ -9,6 +9,8 @@ describe('Lens command grammar', () => {
         ['tab 2', { kind: 'tab', value: '2' }],
         ['layout radial', { kind: 'layout', value: 'radial' }],
         ['find Paris', { kind: 'find', value: 'paris' }],
+        ['focus d:1:task:2', { kind: 'focus', value: 'd:1:task:2' }],
+        ['why', { kind: 'why' }],
         ['g d', { kind: 'view', value: 'docs' }],
     ])('parses %s', (query, expected) => {
         expect(parseLens(query)).toEqual(expected);

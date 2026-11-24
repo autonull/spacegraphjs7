@@ -3,7 +3,7 @@ import { decodeAddress, encodeAddress, type Address } from '../src/address';
 
 const address: Address = {
     s: '2', shot: 'fork-tabs', view: 'diff', rung: 'passage',
-    layout: 'radial', asOf: 3, zoom: 1.25,
+    layout: 'radial', asOf: 3, zoom: 1.25, focus: 'd:1:task:2',
 };
 
 describe('deep-link codec', () => {

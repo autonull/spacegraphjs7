@@ -220,14 +220,31 @@ Playwright and Strobe. Run each gate once per change set; recapture once with
 
 | Stream | Phase | State | Evidence |
 | ------ | ----- | ----- | -------- |
-| O — octave sizing | 1 | Proposed | Ladder, role table and guards defined above; no code landed. |
-| W — wayfinding fundamentals | 1 | Proposed | Focused address, small-band access, live detail and provenance defined above. |
-| H — HUD minimisation | 1 | Proposed | Icon rail, compact badges, command bar, presentation mode and drawer defined above. |
-| I — information add-ons | 2 | Proposed | Full-text Lens, time scrub, change digest and instrument panel defined above. |
-| C0/C3 — ergonomics, part one | 2 | Proposed | View history, palette polish, shortcuts and overlay defined above. |
-| E — engagement add-ons | 3 | Proposed | Follow thread, focus lens, guided routes, pulse, callouts and stagger defined above. |
-| C1/C2 — ergonomics, part two | 3 | Proposed | Compare mode and muting filters defined above. |
-| G — evidence | all | Proposed | Full ladder, 11 tracked images and a fresh Strobe handle pending. |
+| O — octave sizing | 1 | Landed, with two caveats below | `src/octaves.ts` and `src/edge-style.ts` are the two new authorities. `src/host.ts` replaces `IMPORTANCE_SIZE`/`sizeOf`; one `sizeForOctave` call feeds CSS width/height, adapter `nodeSizeFn`, `RenderNode` footprint and `ScopeSpec.nodes[].size`; the octave bucket is in `#scopeKey`. `representation()` reports per-node octaves and band counts. Cards carry `data-octave`, `data-band`, `aria-label` and `title`. Five CSS bands and recorded-kind edge styles are live. `tests/octaves.test.ts` (6 tests) and `tests/octaves.spec.ts` (4 tests, two viewports) pass. |
+| W — wayfinding fundamentals | 1 | Landed W0 + W3; W1/W2 partial | `Address.focus` round-trips through `permalink()`, `compactAddress()`, `applyPermalink()` and `applyAddress()`; Lens gained `focus <id>` and `why`; `reveal()`/`focus()` refresh so a focused dot reaches at least the card band. `src/provenance.ts` derives commit sequence, source entry, order neighbours, facet and edge kinds; the inspector renders a "why is this here?" section. `tests/provenance.test.ts` (2), `tests/provenance.spec.ts` (2), extended `address.test.ts` and `lens.test.ts` pass. Remaining live treatments are listed in §14. |
+| H — HUD minimisation | 1 | Not started | Icon rail, drawer, compact badges, Lens command bar, presentation mode and narrow breakpoint are still the 330px rail described in §0. Blocking phase gate; see §14 for the coordinated test migration it needs. |
+| I — information add-ons | 2 | Proposed | Blocked by the phase-1 gate. Full-text Lens is partly satisfied by the existing `rankedSearch` body search; filters, scrubber UI, digest and instrument panel are not built. |
+| C0/C3 — ergonomics, part one | 2 | Proposed | Blocked by the phase-1 gate. View history and the shortcut overlay are not built. |
+| E — engagement add-ons | 3 | Proposed | Blocked by the phase-1 gate. No follow thread, focus lens, routes, pulse, callouts or stagger yet. |
+| C1/C2 — ergonomics, part two | 3 | Proposed | Blocked by the phase-1 gate. Compare mode and muting filters are not built. |
+| G — evidence | all | Partial | Full ladder run on this change set: `typecheck`, `test` (76 passed), `verify`, `test:e2e` (39/39), `build`. The E2E screenshot specs rewrote the four heroes and seven plates to match the new ladder, but no `.prev` pairs or contact sheet were made; `shots:all` and Strobe were not run because phase 1 is incomplete. |
 
-Update this table at the end of each change set with the exact commands and results. Keep TODO13 as
-the record of the landed atlas; record new work here only.
+### Verification evidence for this change set
+
+- `pnpm --filter pi-durable typecheck` — clean.
+- `pnpm --filter pi-durable test` — 13 files, 76 tests passed.
+- `pnpm --filter pi-durable verify` — guard passed.
+- `SG_DURABLE_PORT=<free> PI_DURABLE_SERVER_PORT=<free> pnpm --filter pi-durable test:e2e` — 39 passed. Port `5176` was occupied, so free ports were used as §11 directs. Two first-run failures (a three-size fixture assertion and an overwritten `why` announcement) were fixed and their specs re-run green; no test was retried to green.
+
+## 14. Remaining work and decisions
+
+1. **Finish phase 1 (H).** Narrow `main` at `index.html:46` to a ≤64px icon strip; group Views, Rung, Lens, Controls, Legend and Glossary behind icon buttons with `aria-label`/`title`; add the collapsible drawer, compact header chips, `Shift+F` presentation mode, inline SVG icons and the ≤900px slide-out. This is a coordinated migration, not a CSS-only change: `tests/a11y.spec.ts`, `first-run.spec.ts`, `lens.spec.ts`, `rungs.spec.ts`, `representations.spec.ts`, `detail.spec.ts`, `chapters.spec.ts`, `stories.spec.ts` and `observer-ui.spec.ts` click rail controls directly and must be moved to the accessible names/drawer paths. Do not drop a control or its text equivalent.
+2. **Edge colour caveat (O4).** `edgeStyleForKind` reports a semantic `tone`, but `RenderEdge` has no colour/tone field and `edgeStyleFor` only reads `confidence`/`style`. Amber for waits, vermilion for retries and cyan for boundaries are therefore **not painted**; the stop rule at §4 was applied instead of adding a second contract. Decide whether to add an edge-tone channel to the renderer (a cross-package change) or accept theme-owned edge colour permanently.
+3. **Size-count caveat (O3).** Screen-space card widths collapse under `renderer.fit()` zoom, so the E2E gate asserts ≥4 distinct `data-octave` values and ≥3 bands rather than four distinct pixel widths. The ladder itself is exact in `tests/octaves.test.ts`. If a fixed-camera shot is needed for pixel-width proof, add one with `fit: false` rather than relaxing the zoom model.
+4. **Wayfinding treatments (W1/W2).** Small-band hover and the accessible name use `title`/`aria-label` on the card. The clock glyph, failure rule, boundary survey rule, deferred fold and nested-workshop brackets are CSS-only partial treatments; a clock, survey rule and fold for *edges* need DOM attributes on edges, which the renderer contract does not expose. Either expose `data-*` on edges or keep these as node-only treatments.
+5. **Focus band from canvas clicks.** `renderer.on('nodeClick')` calls `select()` directly; only `reveal()`/`focus()` (Lens, permalink, story plates) currently refresh so the focus band grows a dot. Route canvas clicks through the same path if click-to-raise is required.
+6. **Formal recapture and measure (G).** The E2E run rewrote the eleven tracked PNGs because the visible ladder changed; they have no `.prev` pairs or refreshed contact sheet yet. After H lands and a phase-1 gate is green, run `shots:all` with `PI_DURABLE_FAUX_SEED=fixed` to create the pairs and contact sheet, then re-run Strobe with the §11 recipe. No verdict has been written.
+7. **Phases 2 and 3.** Land I/C0/C3 only after the full phase-1 ladder passes, then E/C1/C2. Each row in §6–§9 is still unimplemented; the H0 drawer is the prerequisite home for their widgets.
+
+Keep TODO13 as the record of the landed atlas; record new work here only.
+

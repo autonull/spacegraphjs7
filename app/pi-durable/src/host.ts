@@ -11,14 +11,17 @@ import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import { ZoomBands, type ScaleSample } from 'spacegraphjs/zoom';
 import { decodeAddress, encodeAddress, type Address } from './address';
-import { chapterCaptions, chapterFrames } from './chapters';
+import { edgeStyleForKind } from './edge-style';
 import {
     attentionWeights,
     createScaleDomain,
     sampleForRung,
     ZOOM_RANGE,
 } from './attention';
+import { chapterCaptions, chapterFrames } from './chapters';
 import { LAYOUT_NAMES, LENS_HELP, parseLens, type LayoutName } from './lens';
+import { bandForOctave, octaveFor, sizeForOctave, type OctaveBand } from './octaves';
+import { provenanceFor } from './provenance';
 import {
     buildScopes,
     TabRegistry,
@@ -57,18 +60,13 @@ const THEME: RenderTheme = {
 };
 
 type Importance = 'hero' | 'medium' | 'compact';
-type ImportanceSize = Readonly<Record<Importance, readonly [number, number]>>;
 
 type DurableNode = AdapterNode & {
     readonly role?: string;
     readonly importance: Importance;
+    readonly octave: number;
+    readonly band: OctaveBand;
     readonly data?: Readonly<Record<string, unknown>>;
-};
-
-const IMPORTANCE_SIZE: ImportanceSize = {
-    hero: [280, 120],
-    medium: [190, 72],
-    compact: [110, 40],
 };
 
 const VIEW_LABELS: Readonly<Record<ViewName, string>> = {
@@ -76,11 +74,12 @@ const VIEW_LABELS: Readonly<Record<ViewName, string>> = {
     trace: 'spans', docs: 'documents', transcript: 'entries',
 };
 
-const ATTENTION_MAPPING = mappingFor(['size', 'opacity', 'labelDensity'], {
-    size: [0.94, 1.08],
+const ATTENTION_MAPPING = mappingFor(['opacity', 'labelDensity'], {
     opacity: [0.78, 1],
     labelDensity: [0.6, 1],
 });
+
+const FACT_SAMPLE = sampleForRung(createScaleDomain(), 'fact');
 
 const LAYOUT_STRATEGIES: Readonly<Record<LayoutName, NonNullable<ScopeSpec['strategy']>>> = {
     grid: 'grid', radial: 'force', timeline: 'tree',
@@ -91,11 +90,11 @@ const BUDGET_WEIGHTS: Readonly<Record<string, number>> = {
     message: 300, action: 100, artifact: 50, state: 20, config: 10, pending: 10,
 };
 
-const sizeOf = (node: DurableNode): readonly [number, number] => {
-    const [width, height] = IMPORTANCE_SIZE[node.importance];
-    const attention = typeof node.data?.['attention'] === 'number' ? node.data['attention'] : 0.5;
-    const scale = 0.94 + attention * 0.12;
-    return [Math.round(width * scale), Math.round(height * scale)];
+const sizeForNode = (node: DurableNode): readonly [number, number] => {
+    const size = node.data?.['size'];
+    if (Array.isArray(size) && size.length === 2 && typeof size[0] === 'number' && typeof size[1] === 'number')
+        return [size[0], size[1]];
+    return sizeForOctave(octaveFor(node, FACT_SAMPLE));
 };
 
 const GLOSSARY: Readonly<Record<string, string>> = {
@@ -172,7 +171,8 @@ const cardTemplate = (node: DurableNode): string => {
         : '';
     const attention = typeof node.data?.['attention'] === 'number' ? node.data['attention'].toFixed(2) : '0.50';
     const workshop = typeof node.data?.['workshop'] === 'string' ? node.data['workshop'] : '';
-    return `<div class="durable-card ${node.importance}" data-kind="${escapeHTML(node.kind)}" data-status="${escapeHTML(node.status)}" data-importance="${node.importance}" data-attention="${attention}"${workshop ? ` data-workshop="${escapeHTML(workshop)}"` : ''}${diff ? ` data-diff="${diff}"` : ''}>${workshop ? `<span class="card-workshop">${escapeHTML(workshop)}</span>` : ''}<span class="card-label">${escapeHTML(labelForNode(node))}${status}</span>${summary ? `<span class="card-summary">${escapeHTML(summary)}</span>` : ''}${image}</div>`;
+    const name = `${labelForNode(node)}${summary ? ` — ${summary}` : ''}`;
+    return `<div class="durable-card ${node.importance} band-${node.band}" data-kind="${escapeHTML(node.kind)}" data-status="${escapeHTML(node.status)}" data-importance="${node.importance}" data-attention="${attention}" data-octave="${node.octave.toFixed(2)}" data-band="${node.band}" aria-label="${escapeHTML(name)}" title="${escapeHTML(name)}"${workshop ? ` data-workshop="${escapeHTML(workshop)}"` : ''}${diff ? ` data-diff="${diff}"` : ''}>${workshop ? `<span class="card-workshop">${escapeHTML(workshop)}</span>` : ''}<span class="card-label">${escapeHTML(labelForNode(node))}${status}</span>${summary ? `<span class="card-summary">${escapeHTML(summary)}</span>` : ''}${image}</div>`;
 };
 
 const el = <T extends HTMLElement = HTMLElement>(id: string): T => {
@@ -211,13 +211,21 @@ export class DurableHost {
             duration: node.data?.['durationMs'] ?? null,
             importance: node.importance,
             style: {
-                width: `${sizeOf(node)[0]}px`,
-                height: `${sizeOf(node)[1]}px`,
+                width: `${sizeForNode(node)[0]}px`,
+                height: `${sizeForNode(node)[1]}px`,
             },
         }),
-        extraEdgeData: (edge) => ({ label: EDGE_LABELS[edge.kind] ?? edge.kind }),
+        extraEdgeData: (edge) => {
+            const style = edgeStyleForKind(edge.kind);
+            return {
+                label: style.caption ? EDGE_LABELS[edge.kind] ?? edge.kind : undefined,
+                style: style.style,
+                confidence: style.confidence,
+                data: { edgeTone: style.tone, edgeWeight: style.confidence === 'explicit' ? 2 : 1 },
+            };
+        },
     }, {
-        nodeSizeFn: sizeOf,
+        nodeSizeFn: sizeForNode,
         renderCardTemplate: cardTemplate,
     });
     #status: { readonly provider: string; readonly storage: string; readonly tasks: number } = {
@@ -359,22 +367,30 @@ export class DurableHost {
             status: String(node.data?.['status'] ?? ''),
             role: String(node.data?.['role'] ?? node.kind),
             importance: 'medium',
+            octave: 0,
+            band: 'card',
             data: node.data,
         };
         const links = kernel.edges
             .filter((edge) => edge.source === id || edge.target === id)
             .map((edge) => EDGE_LABELS[edge.kind] ?? edge.kind);
-        el('inspector').innerHTML = `<strong>${escapeHTML(labelForNode(durable))}</strong><br>${escapeHTML(node.kind)} · ${escapeHTML(String(node.data?.['status'] ?? 'committed'))}${summaryForNode(durable) ? `<br>${escapeHTML(summaryForNode(durable))}` : ''}<br><code>${escapeHTML(node.id)}</code>${links.length ? `<br>links: ${escapeHTML([...new Set(links)].join(', '))}` : ''}`;
+        const provenance = provenanceFor(tab, id);
+        const why = provenance
+            ? `<br><br>why is this here?<br>commit ${provenance.sequence} · source ${escapeHTML(provenance.source)}${provenance.at ? ` · at ${new Date(provenance.at).toISOString().slice(0, 16)}Z` : ''}${provenance.predecessor ? `<br>after ${escapeHTML(provenance.predecessor)}` : ''}${provenance.successor ? `<br>before ${escapeHTML(provenance.successor)}` : ''}<br>facet ${escapeHTML(provenance.facets.join(', '))}<br>edges ${escapeHTML(provenance.edgeKinds.join(', '))}`
+            : '';
+        el('inspector').innerHTML = `<strong>${escapeHTML(labelForNode(durable))}</strong><br>${escapeHTML(node.kind)} · ${escapeHTML(String(node.data?.['status'] ?? 'committed'))}${summaryForNode(durable) ? `<br>${escapeHTML(summaryForNode(durable))}` : ''}<br><code>${escapeHTML(node.id)}</code>${links.length ? `<br>links: ${escapeHTML([...new Set(links)].join(', '))}` : ''}${why}`;
     }
 
     reveal(id: string): void {
         this.select(id);
+        this.refresh();
         this.renderer.focus(id);
         this.announce(`Revealed ${id}`);
     }
 
     focus(id: string): void {
         this.select(id);
+        this.refresh();
         this.renderer.focus(id);
     }
 
@@ -416,13 +432,18 @@ export class DurableHost {
                         status: String(node.data?.['status'] ?? ''),
                         role: String(node.data?.['role'] ?? node.kind),
                         importance: this.#importanceOf(node),
+                        octave: 0,
+                        band: 'card',
                         data: { ...node.data, attention: weights.get(node.id) ?? 0 },
                     };
-                    return {
+                    const octave = octaveFor(durable, this.#sample, tab.view.focus);
+                    const sized: DurableNode = {
                         ...durable,
-                        label: labelForNode(durable),
-                        summary: summaryForNode(durable),
+                        octave,
+                        band: bandForOctave(octave),
+                        data: { ...durable.data, octave, size: sizeForOctave(octave) },
                     };
+                    return { ...sized, label: labelForNode(sized), summary: summaryForNode(sized) };
                 }),
                 edges: presented.edges.map((edge) => ({
                     id: edge.id,
@@ -571,6 +592,16 @@ export class DurableHost {
         if (command.kind === 'asOf') this.setAsOf(command.value);
         if (command.kind === 'tab') return this.setTab(command.value);
         if (command.kind === 'layout') this.setLayout(command.value);
+        if (command.kind === 'focus') this.reveal(command.value);
+        if (command.kind === 'why') {
+            const tab = this.registry.active();
+            const id = tab?.view.selection;
+            const provenance = tab && id ? provenanceFor(tab, id) : undefined;
+            this.announce(provenance
+                ? `${id} came from commit ${provenance.sequence} via ${provenance.source}`
+                : 'Select a node to ask why it is here');
+            return true;
+        }
         if (command.kind === 'help') this.toggleHelp(true);
         if (command.kind === 'find') {
             const model: GraphViewData = {
@@ -578,7 +609,8 @@ export class DurableHost {
                     id: node.id,
                     label: `${labelForNode({
                         id: node.id, kind: node.kind, label: node.label ?? node.id,
-                        status: String(node.data?.['status'] ?? ''), importance: this.#importanceOf(node), data: node.data,
+                        status: String(node.data?.['status'] ?? ''), importance: this.#importanceOf(node),
+                        octave: 0, band: 'card', data: node.data,
                     })} ${dataText(node)}`,
                     kind: node.kind,
                     status: String(node.data?.['status'] ?? ''),
@@ -660,6 +692,7 @@ export class DurableHost {
         if (this.#layoutName !== 'grid') params.set('layout', this.#layoutName);
         if (this.#asOf !== undefined) params.set('asOf', String(this.#asOf));
         if (this.#seed !== 'fixed') params.set('seed', this.#seed);
+        if (tab?.view.focus) params.set('focus', tab.view.focus);
         const viewport = this.renderer.getViewport?.();
         if (viewport) params.set('zoom', viewport.zoom.toFixed(3));
         return `${location.pathname}?${params.toString()}`;
@@ -680,6 +713,7 @@ export class DurableHost {
             layout: layout && LAYOUT_NAMES.includes(layout as LayoutName) ? layout as LayoutName : undefined,
             asOf: params.has('asOf') && Number.isFinite(asOf) ? asOf : undefined,
             zoom: params.has('zoom') && Number.isFinite(zoom) ? zoom : undefined,
+            focus: params.get('focus') ?? undefined,
         });
     }
 
@@ -693,6 +727,7 @@ export class DurableHost {
             layout: this.#layoutName === 'grid' ? undefined : this.#layoutName,
             asOf: this.#asOf,
             zoom: viewport?.zoom,
+            focus: this.registry.active()?.view.focus,
         };
     }
 
@@ -706,8 +741,10 @@ export class DurableHost {
             const viewport = this.renderer.getViewport?.();
             if (viewport) this.renderer.setViewport({ zoom: address.zoom, center: viewport.center });
         }
-        if (address.s && this.registry.get(address.s)) return this.setTab(address.s);
-        return false;
+        const tabID = address.s;
+        const tabApplied = tabID !== undefined && this.registry.get(tabID) !== undefined && this.setTab(tabID);
+        if (address.focus) this.reveal(address.focus);
+        return tabApplied || Boolean(address.focus);
     }
 
     compactAddress(): string {
@@ -773,20 +810,31 @@ export class DurableHost {
                 this.setView(name as ViewName);
                 return true;
             },
-            representation: () => ({
-                view: this.#viewName,
-                nodes: this.#presented.nodes.length,
-                omitted: this.#omitted,
-                edgeKinds: this.#presented.edges.map((edge) => edge.kind),
-                edgeLabels: [...this.#edgeLabels],
-                laneLabels: [...this.#laneNames],
-                axisLabels: [...this.#axisNames],
-                importance: this.#presented.nodes.reduce<Record<string, number>>((counts, node) => {
-                    const tier = this.#importanceOf(node);
-                    counts[tier] = (counts[tier] ?? 0) + 1;
-                    return counts;
-                }, {}),
-            }),
+            representation: () => {
+                const focus = this.registry.active()?.view.focus;
+                const octaves = this.#presented.nodes.map((node) => octaveFor(node, this.#sample, focus));
+                return {
+                    view: this.#viewName,
+                    nodes: this.#presented.nodes.length,
+                    omitted: this.#omitted,
+                    edgeKinds: this.#presented.edges.map((edge) => edge.kind),
+                    edgeLabels: [...this.#edgeLabels],
+                    laneLabels: [...this.#laneNames],
+                    axisLabels: [...this.#axisNames],
+                    importance: this.#presented.nodes.reduce<Record<string, number>>((counts, node) => {
+                        const tier = this.#importanceOf(node);
+                        counts[tier] = (counts[tier] ?? 0) + 1;
+                        return counts;
+                    }, {}),
+                    octaves: Object.fromEntries(this.#presented.nodes.map((node, index) =>
+                        [node.id, Number(octaves[index]!.toFixed(2))])),
+                    bands: octaves.reduce<Record<string, number>>((counts, octave) => {
+                        const band = bandForOctave(octave);
+                        counts[band] = (counts[band] ?? 0) + 1;
+                        return counts;
+                    }, {}),
+                };
+            },
             layout: () => ({
                 view: this.#viewName,
                 nodes: this.#simulation.positions.size,
@@ -834,7 +882,10 @@ export class DurableHost {
         const contains: ScopeEdge[] = placed
             .filter((edge) => CONTAINMENT.has(edge.kind))
             .map((edge, index) => ({ id: `contains-${index}`, source: edge.source, target: edge.target, kind: 'contains' }));
-        const key = `${this.#layoutName}|${nodes.map((node) => node.id).join(',')}|${placed.map((edge) => edge.id).join(',')}`;
+        const focus = this.registry.active()?.view.focus;
+        const octaves = nodes.map((node) => octaveFor(node, this.#sample, focus));
+        const buckets = octaves.map(bandForOctave).join(',');
+        const key = `${this.#layoutName}|${buckets}|${nodes.map((node) => node.id).join(',')}|${placed.map((edge) => edge.id).join(',')}`;
         if (key !== this.#scopeKey || !this.#scopes) {
             this.#scopes = buildScopes(nodes, contains, 300);
             this.#scopeKey = key;
@@ -843,7 +894,12 @@ export class DurableHost {
         const spec: ScopeSpec = {
             id: 'root',
             strategy: LAYOUT_STRATEGIES[this.#layoutName],
-            nodes: nodes.map((node, index) => ({ id: node.id, lane: this.#viewName, row: index })),
+            nodes: nodes.map((node, index) => ({
+                id: node.id,
+                lane: this.#viewName,
+                row: index,
+                size: sizeForOctave(octaves[index]!),
+            })),
             edges: placed,
         };
         this.#simulation.setSpecs([spec]);

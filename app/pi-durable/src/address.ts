@@ -10,6 +10,7 @@ export type Address = {
     readonly layout?: LayoutName;
     readonly asOf?: number;
     readonly zoom?: number;
+    readonly focus?: string;
 };
 
 const number = (value: string | undefined): number | undefined => {
@@ -24,6 +25,7 @@ export const encodeAddress = (address: Address): string => {
         ['layout', address.layout],
         ['asOf', address.asOf === undefined ? undefined : String(address.asOf)],
         ['zoom', address.zoom === undefined ? undefined : address.zoom.toFixed(3)],
+        ['focus', address.focus],
     ];
     return btoa(pairs.filter((pair): pair is readonly [string, string] => Boolean(pair[1]))
         .map(([key, value]) => `${key}=${value}`).join('&'))
@@ -41,7 +43,7 @@ export const decodeAddress = (value: string | null | undefined): Address | undef
             if (key === 'view' && VIEW_NAMES.includes(raw as ViewName)) address.view = raw;
             else if (key === 'rung' && isRung(raw)) address.rung = raw;
             else if (key === 'layout' && LAYOUT_NAMES.includes(raw as LayoutName)) address.layout = raw;
-            else if (key === 's' || key === 'shot') address[key] = raw;
+            else if (key === 's' || key === 'shot' || key === 'focus') address[key] = raw;
             else if (key === 'asOf' || key === 'zoom') {
                 const parsed = number(raw);
                 if (parsed === undefined) return undefined;

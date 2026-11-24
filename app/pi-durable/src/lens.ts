@@ -10,6 +10,8 @@ export type LensCommand =
     | { readonly kind: 'tab'; readonly value: string }
     | { readonly kind: 'layout'; readonly value: LayoutName }
     | { readonly kind: 'find'; readonly value: string }
+    | { readonly kind: 'focus'; readonly value: string }
+    | { readonly kind: 'why' }
     | { readonly kind: 'help' };
 
 export const LAYOUT_NAMES: readonly LayoutName[] = ['grid', 'radial', 'timeline'];
@@ -35,8 +37,10 @@ export const parseLens = (query: string): LensCommand | undefined => {
     if (verb === 'tab' && value) return { kind: 'tab', value };
     if (verb === 'layout') return LAYOUT_NAMES.includes(value as LayoutName) ? { kind: 'layout', value: value as LayoutName } : undefined;
     if ((verb === 'find' || verb === 'f') && value) return { kind: 'find', value };
+    if (verb === 'focus' && value) return { kind: 'focus', value };
+    if (verb === 'why') return { kind: 'why' };
     if (verb === 'help' || verb === '?') return { kind: 'help' };
     return undefined;
 };
 
-export const LENS_HELP = 'view <name> · rung <landmark> · as of <seq> · tab <id> · layout <grid|radial|timeline> · find <text>';
+export const LENS_HELP = 'view <name> · rung <landmark> · as of <seq> · tab <id> · layout <grid|radial|timeline> · find <text> · focus <id> · why';
