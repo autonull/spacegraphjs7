@@ -1,4 +1,4 @@
-import { buildOctree, computeBarnesHutForce, type BarnesHutConfig } from './octree';
+import { addRepulsion, buildOctree, computeBarnesHutForce, type BarnesHutConfig } from './octree';
 import { DEFAULT_NODE_PADDING, diagonalRadius } from './node-bounds';
 
 /** The force placement's vocabulary: what pulls a box towards another one. */
@@ -175,21 +175,12 @@ export class ForceCore {
                     const dz = a.position.z - b.position.z;
                     const distSq = dx * dx + dy * dy + dz * dz;
                     const dist = Math.sqrt(distSq) || 0.001;
-
-                    // Per-pair minimum distance based on node sizes
                     const minDist = (radii.get(a.id) ?? 0) + (radii.get(b.id) ?? 0);
-                    const effectiveDistSq = Math.max(distSq, minDist * minDist);
-
-                    const repulsion = this.#repulsion / effectiveDistSq;
-                    const force = Math.min(repulsion, maxForce);
-                    const fx = (dx / dist) * force;
-                    const fy = (dy / dist) * force;
-                    const fz = (dz / dist) * force;
 
                     const forceA = forces.get(a.id)!;
                     const forceB = forces.get(b.id)!;
-                    forceA.x += fx; forceA.y += fy; forceA.z += fz;
-                    forceB.x -= fx; forceB.y -= fy; forceB.z -= fz;
+                    addRepulsion(forceA, dx, dy, dz, distSq, dist, this.#repulsion, minDist, maxForce);
+                    addRepulsion(forceB, -dx, -dy, -dz, distSq, dist, this.#repulsion, minDist, maxForce);
                 }
             }
         }

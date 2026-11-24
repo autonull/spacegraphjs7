@@ -181,4 +181,3 @@ const byId = new Map(DEMOS.map((entry) => [entry.id, entry]));
 
 export const demoEntry = (id: string) => byId.get(id);
 export const demoPath = (id: string) => '/' + (byId.get(id)?.path ?? id + '.html');
-export const demoCategory = (id: string) => byId.get(id)?.category ?? 'core';

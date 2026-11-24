@@ -49,7 +49,6 @@ import {
     OUTCOME_COLUMNS,
     searchableFields,
     summaryConfig,
-    type BuildAdapter,
     type BuildLevel,
     type BuildModel,
     type BuildNode,
@@ -178,7 +177,6 @@ export interface MirrorState {
 /** What a capability is allowed to read. The gallery never touches the DOM. */
 export interface CapabilityContext {
     readonly model: BuildModel;
-    readonly adapter: BuildAdapter;
     readonly controller: GraphController;
     readonly theme: RenderTheme;
     readonly level: BuildLevel;

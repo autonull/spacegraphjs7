@@ -219,38 +219,20 @@ function GraphToolbarViewControls(props: GraphToolbarViewControlsProps): JSX.Ele
     const renderIcon = Icon ?? createIconRenderer();
     const PopoverComponent = Popover ?? createPopoverRenderer();
 
+    const menu = compact
+        ? { slot: 'graph-toolbar-overflow', label: i18n.t('ui.toolbar.more'), icon: 'outline-dots' }
+        : { slot: 'graph-toolbar-view', label: i18n.t('ui.toolbar.view'), icon: 'outline-sliders' };
+
     return (
-        <>
-            {compact ? (
-                <ToolbarMenu
-                    slot="graph-toolbar-overflow"
-                    label={i18n.t('ui.toolbar.more')}
-                    icon="outline-dots"
-                >
-                    <GraphToolbarViewControlsInner
-                        {...rest}
-                        i18n={i18n}
-                        Icon={renderIcon}
-                        Popover={PopoverComponent}
-                    />
-                    <GraphToolbarCommandControlsInner {...rest} i18n={i18n} Icon={renderIcon} />
-                </ToolbarMenu>
-            ) : (
-                <ToolbarMenu
-                    slot="graph-toolbar-view"
-                    label={i18n.t('ui.toolbar.view')}
-                    icon="outline-sliders"
-                >
-                    <GraphToolbarViewControlsInner
-                        {...rest}
-                        i18n={i18n}
-                        Icon={renderIcon}
-                        Popover={PopoverComponent}
-                    />
-                    <GraphToolbarCommandControlsInner {...rest} i18n={i18n} Icon={renderIcon} />
-                </ToolbarMenu>
-            )}
-        </>
+        <ToolbarMenu {...menu}>
+            <GraphToolbarViewControlsInner
+                {...rest}
+                i18n={i18n}
+                Icon={renderIcon}
+                Popover={PopoverComponent}
+            />
+            <GraphToolbarCommandControlsInner {...rest} i18n={i18n} Icon={renderIcon} />
+        </ToolbarMenu>
     );
 }
 
@@ -406,18 +388,17 @@ interface GraphRendererStatusProps {
 function GraphRendererStatus(props: GraphRendererStatusProps): JSX.Element {
     const { renderer, compact, onSplitView, onBack, endInset, i18n, Icon } = props;
     const renderIcon = Icon ?? createIconRenderer();
+    const rendererLabel =
+        renderer && i18n.t('ui.toolbar.renderer', { renderer: RENDERER_LABELS[renderer] });
 
     return (
         <div
             class="ml-auto flex items-center gap-2"
             style={endInset ? { 'padding-inline-end': endInset } : undefined}
         >
-            {!compact && renderer && (
-                <span
-                    class="text-12-regular text-text-weak"
-                    title={i18n.t('ui.toolbar.renderer', { renderer: RENDERER_LABELS[renderer] })}
-                >
-                    {i18n.t('ui.toolbar.renderer', { renderer: RENDERER_LABELS[renderer] })}
+            {!compact && rendererLabel && (
+                <span class="text-12-regular text-text-weak" title={rendererLabel}>
+                    {rendererLabel}
                 </span>
             )}
             {onSplitView &&

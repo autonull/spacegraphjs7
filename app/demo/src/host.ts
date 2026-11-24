@@ -284,7 +284,6 @@ export class DemoHost {
     context(theme: RenderTheme, extra: Partial<CapabilityContext> = {}): CapabilityContext {
         return {
             model: this.model,
-            adapter: this.adapter,
             controller: this.controller,
             theme,
             level: this.level,

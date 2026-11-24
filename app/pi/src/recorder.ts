@@ -45,7 +45,6 @@ export const ERGO_SIGNALS = [
     'wrong-turn',
     'answer',
 ] as const;
-export type ErgoSignal = (typeof ERGO_SIGNALS)[number];
 
 export const ergonomicCounters = (
     recording: SessionRecording,

@@ -27,7 +27,7 @@ export { default as layoutForceDemo } from './layout/layout-force.js';
 export { default as layoutGridDemo } from './layout/layout-grid.js';
 export { default as layoutDemo } from './layout/layout.js';
 export { default as multiAgentWorkflowDemo } from './rendering/multi-agent-workflow.js';
-export { default as nodeBoxselectDemo } from './interaction/node-boxselect.js';
+export { default as nodeBoxSelectDemo } from './interaction/node-boxselect.js';
 export { default as nodeDragDemo } from './interaction/node-drag.js';
 export { default as nodeGroupDemo } from './layout/node-group.js';
 export { default as nodeHtmlDemo } from './rendering/node-html.js';

@@ -27,35 +27,6 @@ export class HUDDOMFactory {
         });
     }
 
-    static createButton(label: string, onClick?: () => void): HTMLButtonElement {
-        const button = DOMUtils.createElement('button', {
-            style: HUD_STYLES.button as Partial<CSSStyleDeclaration>,
-        }) as HTMLButtonElement;
-
-        button.textContent = label;
-        button.type = 'button';
-
-        if (onClick) {
-            button.addEventListener('click', onClick);
-        }
-
-        button.onmouseenter = () => {
-            button.style.background = '#334155';
-        };
-        button.onmouseleave = () => {
-            button.style.background = 'transparent';
-        };
-
-        return button;
-    }
-
-    static createOverlay(id: string, zIndex: string): HTMLElement {
-        const overlay = this.createContainer(id);
-        overlay.style.zIndex = zIndex;
-        overlay.style.inset = '0';
-        return overlay;
-    }
-
     static appendToRenderer(sg: SpaceGraph, element: HTMLElement): void {
         sg.renderer.renderer.domElement.parentElement?.appendChild(element);
     }
@@ -79,14 +50,5 @@ export class HUDDOMFactory {
 
     static getElementById(id: string): HTMLElement | null {
         return document.getElementById(id);
-    }
-
-    static createTextElement(
-        content: string,
-        tagName: keyof HTMLElementTagNameMap = 'span',
-    ): HTMLElement {
-        const element = DOMUtils.createElement(tagName);
-        element.textContent = content;
-        return element;
     }
 }

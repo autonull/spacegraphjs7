@@ -194,7 +194,7 @@ function getChildIndex(cell: OctreeNode, x: number, y: number, z: number): numbe
     return index;
 }
 
-const addRepulsion = (
+export const addRepulsion = (
     force: { x: number; y: number; z: number },
     dx: number,
     dy: number,

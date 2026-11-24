@@ -28,6 +28,21 @@ export type GraphStatusBarProps = {
     group?: { collapsed: boolean; onToggle: () => void; onCollapseOthers: () => void };
 };
 
+const StatusButton = (props: {
+    slot: string;
+    label: string;
+    onClick: () => void;
+}): JSX.Element => (
+    <button
+        type="button"
+        data-slot={props.slot}
+        class="rounded-sm px-1.5 py-0.5 text-text-base hover:bg-surface-base-hover"
+        onClick={props.onClick}
+    >
+        {props.label}
+    </button>
+);
+
 /**
  * B1 — the selection is a set, not a click. Every verb is pure over the selected ids, so the bar
  * never owns state: it names what the reader can do with what they are holding.
@@ -47,47 +62,32 @@ export const GraphStatusBar = (props: GraphStatusBarProps): JSX.Element => {
                     {i18n.plural('ui.sessionGraph.status.count', rest.count)}
                 </span>
                 <div class="flex items-center gap-1">
-                    <button
-                        type="button"
-                        data-slot="graph-status-frame"
-                        class="rounded-sm px-1.5 py-0.5 text-text-base hover:bg-surface-base-hover"
+                    <StatusButton
+                        slot="graph-status-frame"
+                        label={i18n.t('ui.sessionGraph.status.frame')}
                         onClick={() => rest.onFrame()}
-                    >
-                        {i18n.t('ui.sessionGraph.status.frame')}
-                    </button>
-                    <button
-                        type="button"
-                        data-slot="graph-status-keep-only"
-                        class="rounded-sm px-1.5 py-0.5 text-text-base hover:bg-surface-base-hover"
+                    />
+                    <StatusButton
+                        slot="graph-status-keep-only"
+                        label={i18n.t('ui.sessionGraph.status.keepOnly')}
                         onClick={() => rest.onKeepOnly()}
-                    >
-                        {i18n.t('ui.sessionGraph.status.keepOnly')}
-                    </button>
-                    <button
-                        type="button"
-                        data-slot="graph-status-copy-paths"
-                        class="rounded-sm px-1.5 py-0.5 text-text-base hover:bg-surface-base-hover"
+                    />
+                    <StatusButton
+                        slot="graph-status-copy-paths"
+                        label={i18n.t('ui.sessionGraph.status.copyPaths')}
                         onClick={() => rest.onCopyPaths()}
-                    >
-                        {i18n.t('ui.sessionGraph.status.copyPaths')}
-                    </button>
-                    <button
-                        type="button"
-                        data-slot="graph-status-export"
-                        class="rounded-sm px-1.5 py-0.5 text-text-base hover:bg-surface-base-hover"
+                    />
+                    <StatusButton
+                        slot="graph-status-export"
+                        label={i18n.t('ui.sessionGraph.status.exportSubset')}
                         onClick={() => rest.onExportSubset()}
-                    >
-                        {i18n.t('ui.sessionGraph.status.exportSubset')}
-                    </button>
+                    />
                     <Show when={rest.onAddNote}>
-                        <button
-                            type="button"
-                            data-slot="graph-status-add-note"
-                            class="rounded-sm px-1.5 py-0.5 text-text-base hover:bg-surface-base-hover"
+                        <StatusButton
+                            slot="graph-status-add-note"
+                            label={i18n.t('ui.sessionGraph.note.add')}
                             onClick={() => rest.onAddNote?.()}
-                        >
-                            {i18n.t('ui.sessionGraph.note.add')}
-                        </button>
+                        />
                     </Show>
                     <Show when={rest.compare}>
                         {(compare) => (
@@ -124,14 +124,11 @@ export const GraphStatusBar = (props: GraphStatusBarProps): JSX.Element => {
                                             : 'ui.sessionGraph.status.collapseGroup',
                                     )}
                                 </button>
-                                <button
-                                    type="button"
-                                    data-slot="graph-status-group-others"
-                                    class="rounded-sm px-1.5 py-0.5 text-text-base hover:bg-surface-base-hover"
+                                <StatusButton
+                                    slot="graph-status-group-others"
+                                    label={i18n.t('ui.sessionGraph.status.collapseOthers')}
                                     onClick={() => group().onCollapseOthers()}
-                                >
-                                    {i18n.t('ui.sessionGraph.status.collapseOthers')}
-                                </button>
+                                />
                             </>
                         )}
                     </Show>

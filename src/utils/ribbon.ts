@@ -2,8 +2,6 @@ import { clamp01, lerp } from './math';
 
 export const RIBBON_WIDTH_DEFAULTS = { weight: 0.5, minRadius: 1, maxRadius: 8 } as const;
 
-export type RibbonCurve = 'linear' | 'sqrt' | 'smoothstep';
-
 const finite = (value: unknown, fallback: number): number => {
     if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
     if (typeof value === 'string' && value.trim() !== '') {
