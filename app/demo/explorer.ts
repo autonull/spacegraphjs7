@@ -15,6 +15,7 @@ import {
     type ConfigValue,
 } from '@spacegraphjs/config';
 import { libraryManifest } from '@spacegraphjs/config/library';
+import { exportGraph } from '@spacegraphjs/export';
 import { sampleDepth, type DepthAxis, type DepthMode } from 'spacegraphjs/depth';
 import { cartesianMatrix, type CaptureMatrix } from 'spacegraphjs/experiments';
 import {
@@ -33,6 +34,7 @@ import {
     type WorldPolicy,
 } from 'spacegraphjs/world';
 import {
+    DEFAULT_THEME,
     supportsEmphasis,
     type EmphasisChannel,
     type RendererCapabilities,
@@ -345,6 +347,7 @@ let motionPlayback: MotionPlayback | undefined;
 let motionFrameHandle = 0;
 let lastMotionVerb: ConfigValue | undefined = 'none';
 let lastMotionTime = 0;
+let currentModel: RenderModel | undefined;
 const cameraRegistry = new CameraVerbRegistry();
 const WORLD_CAPABILITIES: WorldCapabilities = { sceneFeatures: [], sensory: [] };
 const RECORDING_CAMERA_ADAPTER: CameraAdapter = {
@@ -725,6 +728,7 @@ function render(): void {
     );
     const built = graphModel(result.state);
     const leftSalience = lastSalience;
+    currentModel = built.model;
     leftNodeCount = built.model.nodes.length;
     leftGraph.setModel(built.model);
     syncWidgets(built, result.state);
@@ -758,6 +762,15 @@ element('compare').addEventListener('click', () => {
     compare = !compare;
     render();
 });
+for (const format of ['svg', 'json', 'html'] as const) {
+    element(`export-${format}`).addEventListener('click', () => {
+        if (currentModel)
+            exportGraph(format, currentModel, {
+                theme: DEFAULT_THEME,
+                sessionTitle: 'Configuration explorer',
+            });
+    });
+}
 element('left-graph').addEventListener('click', (event) => {
     const group = (event.target as Element).closest<SVGGElement>('[data-node-id]');
     if (!group) return;

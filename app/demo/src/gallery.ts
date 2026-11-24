@@ -22,11 +22,15 @@ import { Navigation } from 'spacegraphjs/navigation';
 import { computeFocusOverlay, FOCUS_OPACITY_STOPS } from '@spacegraphjs/overlays';
 import {
     collapseGroups,
+    filterByEdgeKind,
+    filterByKind,
+    filterByTime,
     graphContentHash,
     spatialMemoryKey,
     readSpatialMemory,
     writeSpatialMemory,
     decodeSpatialMemory,
+    Kernel,
     type SpatialMemoryStore,
     type SpatialMemoryRecord,
 } from '@spacegraphjs/kernel';
@@ -791,6 +795,43 @@ export const CAPABILITIES: readonly Capability[] = [
                 `outside BFS range: ${outside.length} nodes dimmed to 0.15`,
                 `distances: ${distances.join(', ')}`,
                 `stops: ${FOCUS_OPACITY_STOPS.join(', ')}`,
+            ];
+        },
+    },
+    {
+        id: 'kernel-filters',
+        title: 'Kernel projections',
+        modules: ['@spacegraphjs/kernel'],
+        summary: 'Project a kernel by time window, node kind, and edge kind.',
+        run: (context) => {
+            const model = context.model;
+            const kernel = new Kernel({
+                nodes: model.nodes.map((node, index) => ({
+                    id: node.id,
+                    kind: node.kind,
+                    label: node.label,
+                    data: { time: index },
+                })),
+                edges: model.edges.map((edge) => ({
+                    id: edge.id,
+                    kind: edge.kind,
+                    source: edge.source,
+                    target: edge.target,
+                })),
+                hyperedges: [],
+            });
+            const until = Math.floor(model.nodes.length / 2);
+            const timed = filterByTime(kernel, { from: 0, to: until });
+            const kinds = [...new Set(kernel.nodes.map((node) => node.kind))].slice(0, 2);
+            const byKind = filterByKind(kernel, kinds);
+            const edgeKinds = [...new Set(kernel.edges.map((edge) => edge.kind))].slice(0, 2);
+            const byEdgeKind = filterByEdgeKind(kernel, edgeKinds);
+
+            return [
+                `kernel: ${kernel.nodes.length} nodes, ${kernel.edges.length} edges`,
+                `time [0..${until}]: ${timed.nodes.length} nodes, ${timed.edges.length} edges`,
+                `node kinds [${kinds.join(',')}]: ${byKind.nodes.length} nodes`,
+                `edge kinds [${edgeKinds.join(',')}]: ${byEdgeKind.edges.length} edges`,
             ];
         },
     },

@@ -16,6 +16,7 @@
         "@spacegraphjs/agent": "workspace:*",
         "@spacegraphjs/cytoscape-renderer": "workspace:*",
         "@spacegraphjs/data": "workspace:*",
+        "@spacegraphjs/export": "workspace:*",
         "@spacegraphjs/filesystem": "workspace:*",
         "@spacegraphjs/kernel": "workspace:*",
         "@spacegraphjs/overlays": "workspace:*",

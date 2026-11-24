@@ -17,9 +17,10 @@
         <div id="container"></div>
         <script type="module">
             import { SpaceGraph } from '@src/index.ts';
+            import { spacegraphVision } from 'spacegraphjs/quality';
 
             try {
-                const graph = await SpaceGraph.create('#container', {
+                const spec = {
                     nodes: [
                         {
                             id: 'a',
@@ -48,11 +49,33 @@
                         { id: 'e2', source: 'b', target: 'c', type: 'CurvedEdge' },
                         { id: 'e3', source: 'c', target: 'a', type: 'FlowEdge' },
                     ],
-                });
+                };
+                const graph = await SpaceGraph.create('#container', spec);
 
                 graph.fitView(200, 1.5);
 
                 window._sg = graph;
+                const report = spacegraphVision(spec);
+                const panel = document.createElement('pre');
+                panel.id = 'quality-report';
+                panel.textContent =
+                    `quality ${report.score}/100 · ${report.grade} · ` +
+                    `${report.passed ? 'pass' : 'below floor'}\n` +
+                    (report.issues.length
+                        ? report.issues.map((issue) => `• ${issue.message}`).join('\n')
+                        : 'no issues');
+                Object.assign(panel.style, {
+                    position: 'absolute',
+                    top: '12px',
+                    left: '12px',
+                    margin: '0',
+                    padding: '8px 12px',
+                    background: 'rgba(0, 0, 0, 0.7)',
+                    color: '#e2e8f0',
+                    font: '12px/1.5 system-ui, sans-serif',
+                    whiteSpace: 'pre-wrap',
+                });
+                document.body.appendChild(panel);
                 console.log('✓ Verification graph rendered with', graph.graph.nodes.size, 'nodes');
 
                 window.addEventListener('beforeunload', () => graph.dispose());

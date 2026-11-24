@@ -290,6 +290,9 @@ importers:
       '@spacegraphjs/data':
         specifier: workspace:*
         version: link:../../packages/domain/data
+      '@spacegraphjs/export':
+        specifier: workspace:*
+        version: link:../../packages/export
       '@spacegraphjs/filesystem':
         specifier: workspace:*
         version: link:../../packages/domain/filesystem

@@ -46,6 +46,10 @@ export default defineConfig({
                 find: /^@spacegraphjs\/search$/,
                 replacement: resolve(workspace, 'packages/search/dist/index.js'),
             },
+            {
+                find: /^@spacegraphjs\/export$/,
+                replacement: resolve(workspace, 'packages/export/src/export.ts'),
+            },
             ...[
                 'adapter',
                 'config',
