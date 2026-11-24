@@ -3,7 +3,7 @@ import type { Position } from './placement';
 export type LayoutBounds = { min: Position; max: Position };
 export type CenterBounds = LayoutBounds & { center: Position; size: [number, number, number] };
 
-const ZERO_BOUNDS: LayoutBounds = { min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 } };
+export const ZERO_BOUNDS: LayoutBounds = { min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 } };
 
 /** Build the min/max/centre/size view from six extents. */
 export const boundsFromExtents = (

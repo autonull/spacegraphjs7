@@ -29,7 +29,7 @@ import {
 const isFiniteVector = (vector: THREE.Vector3): boolean =>
     isFinite(vector.x) && isFinite(vector.y) && isFinite(vector.z);
 
-const DEFAULT_EDGE_DATA: EdgeData = Object.freeze({
+export const DEFAULT_EDGE_DATA: EdgeData = Object.freeze({
     color: EdgeColors.DEFAULT,
     thickness: Defaults.EDGE_THICKNESS,
     thicknessInstanced: Defaults.INSTANCED_THICKNESS,

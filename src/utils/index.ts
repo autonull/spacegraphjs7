@@ -81,7 +81,7 @@ export {
     type PointPlane,
     type RingOptions,
 } from './points';
-export { ribbonWidth, RIBBON_WIDTH_DEFAULTS } from './ribbon';
+export { ribbonWidth, RIBBON_WIDTH_DEFAULTS, type RibbonCurve } from './ribbon';
 // Performance utilities
 export { batch, measure } from './performance';
 // Projection helpers

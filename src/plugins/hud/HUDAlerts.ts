@@ -55,10 +55,11 @@ export class HUDAlerts extends HUDElement {
             } as Partial<CSSStyleDeclaration>,
         });
 
-        alert.innerHTML = `
-            <span style="font-size: 18px">${variantStyle.icon}</span>
-            <span style="flex: 1">${message}</span>
-        `;
+        const icon = HUDDOMFactory.createTextElement(variantStyle.icon);
+        HUDDOMFactory.applyStyles(icon, { fontSize: '18px' });
+        const text = HUDDOMFactory.createTextElement(message);
+        HUDDOMFactory.applyStyles(text, { flex: '1' });
+        alert.append(icon, text);
 
         this.element.appendChild(alert);
         HUDDOMFactory.fadeIn(alert);

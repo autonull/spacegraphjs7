@@ -1,4 +1,4 @@
-export { MermaidNode, type MermaidNodeData } from './MermaidNode';
+export { createMermaidNode, MermaidNode, type MermaidNodeData } from './MermaidNode';
 export type {
     DiagramEdge,
     DiagramFormat,

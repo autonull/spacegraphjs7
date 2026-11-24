@@ -27,7 +27,7 @@ type VisionWindow = Window & {
     __pi?: { visionLoop?: () => VisionLoopProbe };
 };
 
-class VisionAssert {
+export class VisionAssert {
     constructor(private page: Page) {}
 
     /** The strategy actually used by the captured scene, for an honest capture record. */

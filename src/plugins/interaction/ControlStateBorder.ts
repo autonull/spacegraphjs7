@@ -13,7 +13,7 @@ export interface ControlStateStyle {
     opacity?: number;
 }
 
-const STATE_STYLES: Record<ControlState, ControlStateStyle> = {
+export const STATE_STYLES: Record<ControlState, ControlStateStyle> = {
     normal: { borderColor: 'transparent', borderWidth: 0, borderStyle: 'solid', animation: 'none' },
     focus: { borderColor: '#8B5CF6', borderWidth: 2, borderStyle: 'solid', animation: 'none' },
     hovered: { borderColor: '#8B5CF6', borderWidth: 2, borderStyle: 'dashed', animation: 'pulse' },
@@ -36,7 +36,7 @@ const STATE_STYLES: Record<ControlState, ControlStateStyle> = {
     },
 };
 
-const getBorderStyles = (state: ControlState): ControlStateStyle =>
+export const getBorderStyles = (state: ControlState): ControlStateStyle =>
     STATE_STYLES[state] ?? STATE_STYLES.normal;
 
 export const applyControlStateStyles = (

@@ -1,6 +1,7 @@
 // P4.1. Pure easing curves: the gsap-equivalent set shared with representation playback plus analytic
 // spring responses. No gsap, DOM or wall clock dependency.
 
+import { springPresets } from '@spacegraphjs/shared';
 import { REPRESENTATION_EASINGS } from '../representations/playback';
 
 export interface SpringConfig {
@@ -9,13 +10,8 @@ export interface SpringConfig {
     readonly mass: number;
 }
 
-/** Numeric copies of the spring presets hosts already pass to their UI hooks. */
-export const SPRING_PRESETS = {
-    gentle: { stiffness: 120, damping: 14, mass: 1 },
-    smooth: { stiffness: 180, damping: 17, mass: 1 },
-    snappy: { stiffness: 280, damping: 22, mass: 1 },
-    bouncy: { stiffness: 400, damping: 20, mass: 1 },
-} as const satisfies Record<string, SpringConfig>;
+/** The shared spring presets, re-exported for core consumers. */
+export const SPRING_PRESETS = springPresets;
 
 /** A normalized damped-spring step response. Overshoot is deliberate; hosts clamp the output channel. */
 export function springEasing(config: SpringConfig): (t: number) => number {

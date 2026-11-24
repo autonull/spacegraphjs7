@@ -2,6 +2,8 @@ import { clamp01, lerp } from './math';
 
 export const RIBBON_WIDTH_DEFAULTS = { weight: 0.5, minRadius: 1, maxRadius: 8 } as const;
 
+export type RibbonCurve = 'linear' | 'sqrt' | 'smoothstep';
+
 const finite = (value: unknown, fallback: number): number => {
     if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
     if (typeof value === 'string' && value.trim() !== '') {
@@ -31,10 +33,11 @@ export const ribbonWidth = (
         finite(Array.isArray(radius) ? radius[1] : data?.maxRadius, defaults.maxRadius),
     );
     const weight = clamp01(finite(data?.weight, defaults.weight));
+    const curve = data?.widthCurve as RibbonCurve | undefined;
     const shaped =
-        data?.widthCurve === 'sqrt'
+        curve === 'sqrt'
             ? Math.sqrt(weight)
-            : data?.widthCurve === 'smoothstep'
+            : curve === 'smoothstep'
               ? weight * weight * (3 - 2 * weight)
               : weight;
     return lerp(min, max, shaped);

@@ -153,12 +153,8 @@ export class HUDPlugin extends BaseSystemPlugin {
     }
 
     private createContainer(): void {
-        this.container = HUDDOMFactory.createContainer(
-            'spacegraph-hud',
-            'spacegraph-hud-container',
-        );
-        this.container.style.inset = '0';
-        this.container.style.zIndex = HUD_ZINDEX.HUD;
+        this.container = HUDDOMFactory.createOverlay('spacegraph-hud', HUD_ZINDEX.HUD);
+        this.container.className = 'spacegraph-hud-container';
         HUDDOMFactory.appendToRenderer(this.sg, this.container);
     }
 

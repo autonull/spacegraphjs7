@@ -2,11 +2,37 @@
  * Common React/Solid hooks for SpaceGraphJS components.
  */
 
-import { createSignal, createEffect, onCleanup } from 'solid-js';
+import { createSignal, createEffect, onCleanup, onMount } from 'solid-js';
 import type { Accessor } from 'solid-js';
 
 const resolveUpdater = <T>(next: T, current: T): T =>
     typeof next === 'function' ? (next as (prev: T) => T)(current) : next;
+
+/**
+ * Hook for detecting clicks outside an element.
+ * @param element - Ref to the element
+ * @param onClickOutside - Callback when click occurs outside
+ * @param enabled - Whether the detection is active
+ */
+export function useClickOutside(
+    element: () => HTMLElement | undefined,
+    onClickOutside: () => void,
+    enabled: Accessor<boolean> = () => true,
+): void {
+    createEffect(() => {
+        if (!enabled()) return;
+
+        const handleClick = (event: MouseEvent) => {
+            const el = element();
+            if (el && !el.contains(event.target as Node)) {
+                onClickOutside();
+            }
+        };
+
+        document.addEventListener('mousedown', handleClick);
+        onCleanup(() => document.removeEventListener('mousedown', handleClick));
+    });
+}
 
 /**
  * Hook for observing element resize.
@@ -39,6 +65,57 @@ export function useResizeObserver(
         observer.observe(el);
         onCleanup(() => observer?.disconnect());
     });
+}
+
+/**
+ * Hook for observing element intersection (visibility).
+ * @param element - Ref to the element
+ * @param onIntersect - Callback with intersection ratio
+ * @param options - IntersectionObserver options
+ */
+export function useIntersectionObserver(
+    element: () => HTMLElement | undefined,
+    onIntersect: (ratio: number) => void,
+    options: IntersectionObserverInit = {},
+): void {
+    createEffect(() => {
+        const el = element();
+        if (!el) return;
+
+        let observer: IntersectionObserver | null = null;
+
+        observer = new IntersectionObserver(
+            (entries) => {
+                for (const entry of entries) {
+                    onIntersect(entry.intersectionRatio);
+                }
+            },
+            { threshold: [0, 0.25, 0.5, 0.75, 1], ...options },
+        );
+
+        observer.observe(el);
+        onCleanup(() => observer?.disconnect());
+    });
+}
+
+/**
+ * Hook for matching media queries.
+ * @param query - Media query string
+ * @returns Whether the query matches
+ */
+export function useMediaQuery(query: string): Accessor<boolean> {
+    const [matches, setMatches] = createSignal(false);
+
+    onMount(() => {
+        const mediaQuery = window.matchMedia(query);
+        setMatches(mediaQuery.matches);
+
+        const handler = (event: MediaQueryListEvent) => setMatches(event.matches);
+        mediaQuery.addEventListener('change', handler);
+        onCleanup(() => mediaQuery.removeEventListener('change', handler));
+    });
+
+    return matches;
 }
 
 /**
@@ -103,6 +180,46 @@ export function useDebounce<T>(value: Accessor<T>, delay: number): Accessor<T> {
 }
 
 /**
+ * Hook for throttling a callback.
+ * @param callback - Function to throttle
+ * @param delay - Throttle delay in ms
+ * @returns Throttled function
+ */
+export function useThrottledCallback<T extends (...args: unknown[]) => void>(
+    callback: T,
+    delay: number,
+): T {
+    let lastCall = 0;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let lastArgs: unknown[] | null = null;
+
+    const throttled = ((...args: unknown[]) => {
+        const now = Date.now();
+        lastArgs = args;
+
+        if (now - lastCall >= delay) {
+            lastCall = now;
+            callback(...args);
+        } else if (!timeoutId) {
+            timeoutId = setTimeout(
+                () => {
+                    lastCall = Date.now();
+                    timeoutId = null;
+                    if (lastArgs) callback(...lastArgs);
+                },
+                delay - (now - lastCall),
+            );
+        }
+    }) as T;
+
+    onCleanup(() => {
+        if (timeoutId) clearTimeout(timeoutId);
+    });
+
+    return throttled;
+}
+
+/**
  * Hook for reading a value from localStorage with SSR safety.
  * @param key - Storage key
  * @param defaultValue - Default value
@@ -136,4 +253,53 @@ export function useLocalStorage<T>(
     };
 
     return [value, setStoredValue];
+}
+
+/**
+ * Hook for measuring element dimensions.
+ * @param element - Ref to the element
+ * @returns { width, height }
+ */
+export function useElementSize(
+    element: () => HTMLElement | undefined,
+): Accessor<{ width: number; height: number }> {
+    const [size, setSize] = createSignal({ width: 0, height: 0 });
+
+    useResizeObserver(element, (width, height) => {
+        setSize({ width, height });
+    });
+
+    return size;
+}
+
+/**
+ * Creates a signal that syncs with a prop when it changes.
+ * Useful for lifting state up while maintaining local control.
+ * @param prop - Prop accessor
+ * @param onChange - Callback when local value changes
+ * @returns [value, setValue]
+ */
+export function useSyncedState<T>(
+    prop: Accessor<T | undefined>,
+    onChange: (value: T) => void,
+): [Accessor<T>, (value: T) => void] {
+    const [localValue, setLocalValue] = createSignal<T>(prop() as T);
+    let synced = true;
+
+    createEffect(() => {
+        const newProp = prop();
+        if (newProp !== undefined && !synced) {
+            setLocalValue(newProp as Exclude<T, Function>);
+        }
+        synced = true;
+    });
+
+    const setValue = (next: T) => {
+        synced = false;
+        const newValue = resolveUpdater(next, localValue());
+        setLocalValue(newValue as Exclude<T, Function>);
+        onChange(newValue);
+    };
+
+    return [localValue, setValue];
 }

@@ -17,6 +17,13 @@ export {
     isDimmed,
     FOCUS_OPACITY_STOPS,
 } from './focus';
+export { useFocusOverlay, type UseFocusOverlayOptions } from './useFocusOverlay';
+export {
+    useGroupCollapse,
+    type UseGroupCollapseOptions,
+    type UseGroupCollapseReturn,
+    type GraphBand,
+} from './useGroupCollapse';
 export {
     createAnnotationStore,
     withAnnotations,
@@ -30,6 +37,7 @@ export {
     type GraphViewDataLike,
     type WithAnnotationsResult,
 } from './annotations';
+export { useAnnotations, type UseAnnotationsOptions, type UseAnnotationsReturn } from './useAnnotations';
 export {
     createManualPositionsManager,
     type ManualPositions,
@@ -38,3 +46,4 @@ export {
     type ManualPositionsConfig,
     type ManualPositionsManager,
 } from './manual-positions';
+export { useManualPositions, type UseManualPositionsOptions, type UseManualPositionsReturn } from './useManualPositions';

@@ -193,3 +193,26 @@ export class MermaidNode extends HtmlNode {
         });
     }
 }
+
+export function createMermaidNode(
+    sg: SpaceGraph,
+    id: string,
+    label: string,
+    shape: MermaidNodeShape,
+    position: [number, number, number],
+    themeColors: string[],
+    nodeIndex: number,
+): MermaidNode {
+    return new MermaidNode(sg, {
+        id,
+        type: 'MermaidNode',
+        label,
+        position,
+        data: {
+            shape,
+            label,
+            themeColors,
+            nodeIndex,
+        },
+    });
+}
