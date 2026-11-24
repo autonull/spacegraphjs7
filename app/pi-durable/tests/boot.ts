@@ -20,7 +20,7 @@ export const openPanel = async (page: Page, section = 'views'): Promise<void> =>
 
 const SECTION_NAMES: Readonly<Record<string, string>> = {
     views: 'Views', rung: 'Landmarks', inspector: 'Inspector',
-    controls: 'Controls', legend: 'Legend', glossary: 'Glossary',
+    controls: 'Controls', legend: 'Legend', glossary: 'Glossary', insights: 'Insights',
 };
 
 export const settle = async (page: Page): Promise<void> => {

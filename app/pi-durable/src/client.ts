@@ -3,6 +3,7 @@ import { demuxOp, TabRegistry, type KernelOp } from 'pi-kit';
 import { getJSON, postJSON, type ConversationInfo, type Health, type Scenario } from './api';
 import { decodeAddress } from './address';
 import { DurableHost } from './host';
+import { lensCompletions } from './lens';
 import { localFeed } from './local-feed';
 import { replayFeed } from './replay';
 import { isRung } from './rungs';
@@ -25,6 +26,19 @@ const registry = new TabRegistry();
 const host = new DurableHost(registry, offline, shot, seed, initialRung);
 const el = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
 if (observer) el('app').dataset['observer'] = 'true';
+
+const initialID = scenario ?? shot ?? replayID ?? (asOf === undefined ? undefined : 'time-travel') ?? 'basic-turn';
+let selectedID = initialID;
+host.setFeedID(initialID);
+if (params.get('instruments') === '1') {
+    el('app').dataset['instruments'] = 'true';
+    el('instruments-block').hidden = false;
+}
+host.onScrub = (seq) => {
+    host.loadFeed(seq === undefined
+        ? replayID ? replayFeed(replayID, seed) : localFeed(shot, seed, selectedID)
+        : asOfFeed(selectedID, seq));
+};
 if (asOf !== undefined) host.setAsOf(asOf);
 
 let localOrdinal = 0;
@@ -154,12 +168,16 @@ const bindCatalog = (): void => {
                         const tier = SCENARIOS.find((entry) => entry.id === scenario.id)?.tier ?? 'Core';
                         if (offline || tier === 'Next') {
                             history.replaceState(null, '', `?scenario=${scenario.id}`);
+                            selectedID = scenario.id;
+                            host.setFeedID(scenario.id);
                             host.loadFeed(localFeed(undefined, seed, scenario.id));
                             host.applyShot(scenario.id);
                             host.setStatus({ provider: 'local feed', storage: 'fixture', tasks: SCENARIOS.find((entry) => entry.id === scenario.id)?.tasks.length ?? 0 });
                         } else {
                             const result = await postJSON<{ id: string }>(`/api/scenarios/${scenario.id}/load`);
                             if (!registry.get(result.id)) registry.add(result.id);
+                            selectedID = scenario.id;
+                            host.setFeedID(scenario.id);
                             host.setTab(result.id);
                         }
                         catalog.hidden = true;
@@ -175,10 +193,33 @@ const bindCatalog = (): void => {
 };
 
 const bindLens = (): void => {
+    const input = el<HTMLInputElement>('lens-input');
+    const history: string[] = [];
+    let cursor = -1;
+    host.lensHistorySource = () => history;
     el<HTMLFormElement>('lens-form').addEventListener('submit', (event) => {
         event.preventDefault();
-        const input = el<HTMLInputElement>('lens-input');
-        if (host.lens(input.value)) input.value = '';
+        const query = input.value.trim();
+        if (!query) return;
+        history.push(query);
+        cursor = history.length;
+        if (host.lens(query)) input.value = '';
+    });
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowUp' && history.length) {
+            event.preventDefault();
+            cursor = Math.max(0, cursor - 1);
+            input.value = history[cursor]!;
+        } else if (event.key === 'ArrowDown' && history.length) {
+            event.preventDefault();
+            cursor = Math.min(history.length, cursor + 1);
+            input.value = history[cursor] ?? '';
+        } else if (event.key === 'Tab') {
+            const [completion] = lensCompletions(input.value);
+            if (!completion) return;
+            event.preventDefault();
+            input.value = completion;
+        }
     });
 };
 
@@ -227,6 +268,73 @@ const togglePresentation = (on?: boolean): void => {
     host.announce(next ? 'Presentation mode — Shift+F to exit' : 'Presentation exited');
 };
 
+type KeyBinding = {
+    readonly keys: string;
+    readonly label: string;
+    readonly match: (event: KeyboardEvent) => boolean;
+    readonly run: (event: KeyboardEvent) => void;
+    readonly whileTyping?: boolean;
+};
+
+const plain = (key: string) => (event: KeyboardEvent): boolean =>
+    !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && event.key === key;
+
+const closePriority = (): void => {
+    if (!el('help').hidden) host.toggleHelp(false);
+    else if (!el('catalog').hidden) el('catalog').hidden = true;
+    else if (!el('drawer').hidden) closeDrawer();
+    else if (el('app').dataset['railOpen'] === 'true') toggleRailMenu(false);
+};
+
+const focusSelection = (): void => {
+    const focus = host.address().focus;
+    if (focus) host.focus(focus);
+    else host.announce('Select a node to focus it');
+};
+
+const switchTab = (event: KeyboardEvent): void => {
+    const tabs = registry.list();
+    const index = tabs.findIndex((tab) => tab.id === registry.activeID());
+    const delta = event.key === ']' ? 1 : -1;
+    host.setTab(tabs[(index + delta + tabs.length) % tabs.length]!.id);
+};
+
+const KEY_BINDINGS: readonly KeyBinding[] = [
+    { keys: 'Ctrl/⌘ K', label: 'Open Lens', whileTyping: true,
+      match: (event) => (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k',
+      run: () => el<HTMLInputElement>('lens-input').focus() },
+    { keys: 'Esc', label: 'Close panels', whileTyping: true,
+      match: (event) => event.key === 'Escape', run: closePriority },
+    { keys: 'Alt+← / →', label: 'View history back and forward', whileTyping: true,
+      match: (event) => event.altKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight'),
+      run: (event) => { if (event.key === 'ArrowLeft') host.historyBack(); else host.historyForward(); } },
+    { keys: '/', label: 'Focus prompt', match: plain('/'), run: () => el<HTMLInputElement>('prompt-input').focus() },
+    { keys: '?', label: 'Show shortcuts',
+      match: (event) => event.key === '?' && !event.ctrlKey && !event.metaKey && !event.altKey,
+      run: () => host.toggleHelp() },
+    { keys: 'Shift+F', label: 'Presentation mode',
+      match: (event) => event.shiftKey && !event.ctrlKey && !event.metaKey && event.key.toLowerCase() === 'f',
+      run: () => togglePresentation() },
+    { keys: 'g', label: 'Cycle views', match: plain('g'), run: () => host.cycleView() },
+    { keys: 'f', label: 'Focus selection', match: plain('f'), run: focusSelection },
+    { keys: '0', label: 'Reset view', match: plain('0'), run: () => host.resetView() },
+    { keys: '[ / ]', label: 'Switch tabs',
+      match: (event) => event.key === '[' || event.key === ']', run: switchTab },
+];
+
+const renderShortcuts = (): void => {
+    el('help-shortcuts').replaceChildren(...KEY_BINDINGS.map((binding) => {
+        const row = document.createElement('div');
+        row.className = 'shortcut';
+        const keys = document.createElement('kbd');
+        keys.textContent = binding.keys;
+        const label = document.createElement('span');
+        label.textContent = binding.label;
+        row.append(keys, label);
+        return row;
+    }));
+};
+
 const bindPanelChrome = (): void => {
     for (const button of document.querySelectorAll<HTMLButtonElement>('#rail .rail-icon')) {
         button.addEventListener('click', () => {
@@ -261,43 +369,18 @@ const bindChrome = (): void => {
         void navigator.clipboard?.writeText(link)?.catch(() => {});
         host.announce('Permalink copied');
     });
+    el<HTMLInputElement>('time-scrub').addEventListener('change', (event) =>
+        host.scrubTo(Number((event.target as HTMLInputElement).value)));
+    el('time-present').addEventListener('click', () => host.scrubTo(undefined));
+    renderShortcuts();
     document.addEventListener('keydown', (event) => {
         const target = event.target as HTMLElement;
         const typing = target.tagName === 'INPUT' || target.tagName === 'SELECT';
-        if (event.key === 'Escape') {
-            if (!el('help').hidden) host.toggleHelp(false);
-            else if (!el('catalog').hidden) el('catalog').hidden = true;
-            else if (!el('drawer').hidden) closeDrawer();
-            else if (el('app').dataset['railOpen'] === 'true') toggleRailMenu(false);
+        for (const binding of KEY_BINDINGS) {
+            if (!binding.match(event) || (typing && !binding.whileTyping)) continue;
+            event.preventDefault();
+            binding.run(event);
             return;
-        }
-        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-            event.preventDefault();
-            el<HTMLInputElement>('lens-input').focus();
-            return;
-        }
-        if (typing) return;
-        if (event.key === '/') {
-            event.preventDefault();
-            el<HTMLInputElement>('prompt-input').focus();
-        } else if (event.key === '?') {
-            host.toggleHelp();
-        } else if (event.shiftKey && event.key.toLowerCase() === 'f') {
-            event.preventDefault();
-            togglePresentation();
-        } else if (event.key === 'g') {
-            host.cycleView();
-        } else if (event.key === 'f') {
-            const focus = host.address().focus;
-            if (focus) host.focus(focus);
-            else host.announce('Select a node to focus it');
-        } else if (event.key === '0') {
-            host.resetView();
-        } else if (event.key === '[' || event.key === ']') {
-            const tabs = registry.list();
-            const index = tabs.findIndex((tab) => tab.id === registry.activeID());
-            const delta = event.key === ']' ? 1 : -1;
-            host.setTab(tabs[(index + delta + tabs.length) % tabs.length]!.id);
         }
     });
 };

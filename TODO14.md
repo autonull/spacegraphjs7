@@ -1,11 +1,12 @@
 # TODO14 — Octave atlas: hierarchy, wayfinding and depth
 
-> **Status: phase 1 landed (2026-11-24); phases 2–3 proposed.** TODO13 landed the durable atlas: continuous attention, one Lens,
+> **Status: phases 1 and 2 landed (2026-11-24); phase 3 proposed.** TODO13 landed the durable atlas: continuous attention, one Lens,
 > a landmark trail and compact address, scrubbable story plates, two workshops, and budget/spatial
-> grace. Its captures pass the gates, but the graph still reads as a field of similarly sized
-> rectangles, the rail competes with the canvas, and a visitor cannot answer "what am I looking at,
-> why is it here, and how do I get back?" This plan fixes those fundamentals first, then adds
-> engagement and depth. It opens a new plan instead of growing TODO13 past its stop rule.
+> grace. Phase 1 fixed the fundamentals — octave sizing, focused address and provenance, and a
+> minimal icon rail — and phase 2 added depth inside that one drawer: full-text filtered Lens, a
+> time scrubber, change digest, instruments behind `?instruments=1`, discrete view history and
+> shortcut-aware Lens completion. Phase 3 (motion and engagement) is still proposed. This plan
+> opens a new record instead of growing TODO13 past its stop rule.
 
 ## 0. Baseline
 
@@ -186,7 +187,8 @@ strobe record 'http://localhost:<port>/?shot=basic-turn' --headless --for 6s --p
 ```
 
 When port `5176` is occupied, set `SG_DURABLE_PORT` and `PI_DURABLE_SERVER_PORT` to free ports for
-Playwright and Strobe. Run each gate once per change set; recapture once with
+Playwright and Strobe. Never use `8801` for `PI_DURABLE_SERVER_PORT`: `local-model.spec.ts` binds its
+own server there. Run each gate once per change set; recapture once with
 `PI_DURABLE_FAUX_SEED=fixed`.
 
 ## 12. Open questions and risks
@@ -224,11 +226,11 @@ Playwright and Strobe. Run each gate once per change set; recapture once with
 | O — octave sizing | 1 | Landed, with two caveats below | Node boxes now also honour the core `nodesAreaDensity` hint (below); measured coverage rose from 0.38% of the stage to 8.5% with all ten basic-turn nodes visible. | `src/octaves.ts` and `src/edge-style.ts` are the two new authorities. `src/host.ts` replaces `IMPORTANCE_SIZE`/`sizeOf`; one `sizeForOctave` call feeds CSS width/height, adapter `nodeSizeFn`, `RenderNode` footprint and `ScopeSpec.nodes[].size`; the octave bucket is in `#scopeKey`. `representation()` reports per-node octaves and band counts. Cards carry `data-octave`, `data-band`, `aria-label` and `title`. Five CSS bands and recorded-kind edge styles are live. `tests/octaves.test.ts` (6 tests) and `tests/octaves.spec.ts` (4 tests, two viewports) pass. Every `renderer.fit()` now passes `minScale: 1`, so a fit never shrinks a world unit below one CSS pixel; unreadable content is panned instead of shrunk. This fixes the tiny-node screenshot without a second contract. |
 | W — wayfinding fundamentals | 1 | Landed W0 + W3; W1/W2 partial; organization added (§14.9) | `Address.focus` round-trips through `permalink()`, `compactAddress()`, `applyPermalink()` and `applyAddress()`; Lens gained `focus <id>` and `why`; `reveal()`/`focus()` refresh so a focused dot reaches at least the card band. `src/provenance.ts` derives commit sequence, source entry, order neighbours, facet and edge kinds; the inspector renders a "why is this here?" section. `tests/provenance.test.ts` (2), `tests/provenance.spec.ts` (2), extended `address.test.ts` and `lens.test.ts` pass. Recorded edges now also form subgraph frames and rung-scoped card captions (§14.9); `tests/detail.spec.ts` gained a gate. Remaining live treatments are listed in §14. |
 | H — HUD minimisation | 1 | Landed H0–H6 | `index.html` now has a 56px icon rail with eight inline-SVG controls, a collapsible `#drawer` holding Views, Landmarks, Inspector, Controls, Legend and Glossary, icon+count header badges, and a Lens command bar over the canvas with the `Ctrl/⌘ K` hint. `src/client.ts` binds rail icons, focus restore, Esc priority, `Shift+F` presentation mode, `f` focus selection and `0` reset; `src/host.ts` sets the view/rung badges and adds `resetView`. Header/footer/rail hide in presentation mode and the canvas keeps the full grid. At 900px the rail slides out from the header menu. No control, accessible name or text equivalent was dropped. `tests/a11y.spec.ts` gained icon-name/tabbability, rail-width, presentation and narrow-drawer gates; `tests/boot.ts` gained `openPanel`; `first-run.spec.ts` and `stories.spec.ts` use the new paths. |
-| I — information add-ons | 2 | Proposed | Blocked by the phase-1 gate. Full-text Lens is partly satisfied by the existing `rankedSearch` body search; filters, scrubber UI, digest and instrument panel are not built. |
-| C0/C3 — ergonomics, part one | 2 | Proposed | Blocked by the phase-1 gate. View history and the shortcut overlay are not built. |
-| E — engagement add-ons | 3 | Proposed | Blocked by the phase-1 gate. No follow thread, focus lens, routes, pulse, callouts or stagger yet. |
-| C1/C2 — ergonomics, part two | 3 | Proposed | Blocked by the phase-1 gate. Compare mode and muting filters are not built. |
-| G — evidence | all | Phase 1 complete; phase 3 measurement pending | Full ladder green on this change set: `typecheck`, `test` (76 passed), `verify`, `test:e2e` (41/41), `build`, `bun run check`. `shots:all` ran with `PI_DURABLE_FAUX_SEED=fixed`: four heroes and seven plates recaptured with `.prev` pairs and a refreshed `docs/screenshots/pi-durable-index.html`. Strobe is deferred to the end of phase 3 per G2; no verdict was written. |
+| I — information add-ons | 2 | Landed I0–I3 | `src/digest.ts` and `src/instruments.ts` are the new pure authorities. `parseLens` reads `status:`/`kind:` filters and `find` matches committed text via `rankedSearch` in stable id order. The Insights drawer holds a `?asOf` scrubber with one tick per committed entry, a `diffKernels` digest and an instrument panel gated by `?instruments=1`. `tests/digest.test.ts` (3), `tests/instruments.test.ts` (2), extended `tests/lens.test.ts` and `tests/insights.spec.ts` (2) pass. |
+| C0/C3 — ergonomics, part one | 2 | Landed | `DurableHost` keeps an explicit `Address` stack with back/forward on `Alt+←`/`Alt+→`, separate from browser history and never touching committed data. `src/client.ts` derives every `?` overlay row from one `KEY_BINDINGS` table; Lens keeps query history (`↑`/`↓`) and completes prefixes on `Tab`. `tests/history.spec.ts` and the extended `tests/a11y.spec.ts` pass. |
+| E — engagement add-ons | 3 | Proposed | Blocked until the phase-2 gate is recorded below. No follow thread, focus lens, routes, pulse, callouts or stagger yet. |
+| C1/C2 — ergonomics, part two | 3 | Proposed | Blocked until the phase-2 gate is recorded below. Compare mode and muting filters are not built. |
+| G — evidence | all | Phases 1 and 2 complete; phase 3 measurement pending | Full ladder green on this change set: `typecheck`, `test` (84 passed), `verify`, `test:e2e` (46/46), `verify:visual` (5/5), `build`, `bun run check`. Phase 1 recaptured eleven PNGs with `PI_DURABLE_FAUX_SEED=fixed` and a refreshed contact sheet. Phase 2 changed chrome only, so no recapture per G0 and the "no new PNGs unless a view changes shape" gate. Strobe is deferred to the end of phase 3 per G2; no verdict was written. |
 
 ### Verification evidence for phase 1 (this change set)
 
@@ -242,6 +244,17 @@ Playwright and Strobe. Run each gate once per change set; recapture once with
 - `PI_DURABLE_FAUX_SEED=fixed pnpm --filter pi-durable shots:all` — 4 heroes + 7 plates recaptured with `.prev` pairs and a refreshed contact sheet.
 - Iteration failures were fixed at the cause (presentation exit selector, narrow-viewport grid min-width, a floating permalink assertion) and re-run green; no test was retried to green without a change.
 
+### Verification evidence for phase 2 (this change set)
+
+- `pnpm --filter pi-durable typecheck` — clean.
+- `pnpm --filter pi-durable test` — 15 files, 84 tests passed (8 new).
+- `pnpm --filter pi-durable verify` — guard passed; no new dependency, and the README documents the insights dial and every new shortcut.
+- `SG_DURABLE_PORT=5190 PI_DURABLE_SERVER_PORT=8803 pnpm --filter pi-durable test:e2e` — 46/46 passed. Never set `PI_DURABLE_SERVER_PORT=8801`: `local-model.spec.ts` starts its own server on that port.
+- `SG_DURABLE_PORT=5189 PI_DURABLE_SERVER_PORT=8802 pnpm --filter pi-durable verify:visual` — 5/5 passed.
+- `pnpm --filter pi-durable build` — static bundle built.
+- `bun run check` — root lint and types clean.
+- Iteration found two wrong expected values in the new tests (entry 2 adds `1-first`, and an async fit can move the rung band) and two real defects (a stale digest DOM update after `setAsOf`, and `.badge` overriding the `hidden` attribute). All four were fixed at the cause; no test was retried to green without a change.
+
 ## 14. Remaining work and decisions
 
 1. ~~**Finish phase 1 (H).**~~ Landed. The rail is a 56px icon strip, all six sections live in one collapsible drawer, header badges are icon+count chips, and the Lens is a canvas command bar. `openPanel()` in `tests/boot.ts` opens the drawer through its accessible rail icon; only `a11y.spec.ts`, `first-run.spec.ts` and `stories.spec.ts` needed migration because the other specs assert DOM attributes/text, which work on hidden subtrees. No control or text equivalent was dropped.
@@ -250,9 +263,21 @@ Playwright and Strobe. Run each gate once per change set; recapture once with
 4. **Wayfinding treatments (W1/W2).** Small-band hover and the accessible name use `title`/`aria-label` on the card. The clock glyph, failure rule, boundary survey rule, deferred fold and nested-workshop brackets are CSS-only partial treatments; a clock, survey rule and fold for *edges* need DOM attributes on edges, which the renderer contract does not expose. Either expose `data-*` on edges or keep these as node-only treatments.
 5. **Focus band from canvas clicks.** `renderer.on('nodeClick')` calls `select()` directly; only `reveal()`/`focus()` (Lens, permalink, story plates) currently refresh so the focus band grows a dot. Route canvas clicks through the same path if click-to-raise is required.
 6. **Formal recapture and measure (G).** ~~Recapture pending.~~ `shots:all` ran with `PI_DURABLE_FAUX_SEED=fixed` after the phase-1 gate went green: eleven tracked PNGs, each with a `.prev` pair, and a refreshed contact sheet. No verdict has been written. Strobe remains for the end of phase 3 (G2), with headless frame/GPU refusals stated rather than hidden.
-7. **Phases 2 and 3.** Land I/C0/C3 only after the full phase-1 ladder passes, then E/C1/C2. Each row in §6–§9 is still unimplemented; the H0 drawer is the prerequisite home for their widgets.
+7. ~~**Phase 2.**~~ Landed I0–I3 and C0/C3 behind the phase-1 gate; the H0 drawer hosts time, digest and instruments. **Phase 3 remains.** Land E/C1/C2 only after the phase-2 gate recorded above. Every row in §8–§9 is still unimplemented; §15 orders them and names the renderer decisions to settle first.
 8. **Node-area density (core ability, landed; tuning open).** `src/layout/node-area-density.ts` exposes `solveNodeAreaDensity`, which iteratively approximates a `nodesAreaDensity` target with one uniform scale; `ErgonomicsOptions` accepts the same hint. pi-durable feeds it from `NODES_AREA_DENSITY = 0.32` with `maxScale: 8`, then uses `solveErgonomicLayout` positions as scope targets and grows CSS/renderer/layout sizes together. HTML cards now fill their renderer boxes (`#canvas .spacegraph-html-node` is a flex column), which was the other half of the tiny-node problem. Achieved coverage is 8.5%, not the 32% hint: collision slack, the 3-column cap and the `minScale` floor keep the graph legible instead of tiling it. Raising the hint further crowds `900×700`; treat 8–12% as the working band and revisit only with a density measurement in the gate.
 9. **Subgraphs and ZUI detail (landed; deeper work open).** A rung is a zoom landmark, not a hyperedge; groups are graph facts. `#groupFrom(kernel)` derives subgraphs only from recorded edges — `owns`/`delegates`/`fork`/`forkedFrom`/`contains` for owners, `sleeps-on`/`waiting.on` for waits, and `orders`/`checkpoint` BFS for a conversation's thread — and emits them through a `DurableAdapter` subclass of the adapter's `buildBands` seam as `shape:'group'` frames with `label · count` captions. `HIERARCHY` was narrowed so order and signal edges never become groups. Cards add a `detail` caption chosen by the current rung: cosmos none, territory group/count, passage `step n/m`, fact top edge-kind counts, grain committed fields. The ZUI changes representation, never the kernel. Next: fold nested scopes into parent frames with `setPolicy({band})`, use the unused per-rung `kinds`/`edges` sets for emphasis (muting, not hiding), and add group-level counts for tasks/forks at territory.
+
+## 15. Phase 3 — remaining work and decisions
+
+The phase-2 ladder is green, so the next change set is phase 3. Land one gate at a time; do not cherry-pick a delight ahead of a solved interaction.
+
+1. **Resolve the carried contracts first.** Decide item 2 (add an edge-tone channel to the renderer or accept theme-owned edge colour permanently), item 4 (`data-*` on edges or node-only status treatments), and item 5 (route canvas `nodeClick` through `focus()`). E0/E1 need only recorded edges and `applyModelEmphasis`; add no second camera, model or hidden filter.
+2. **E0/E1 — thread and focus lens.** Camera glide along recorded edge kinds with `Esc` restore; double-click mutes unrelated nodes without changing ids or edge counts. Prove monotonic attention and unchanged node/edge ids.
+3. **E2/E3 — routes and pulse.** Drive next/prev from existing chapter-scrub frames with one committed-fact caption per step; add the text ticker first so reduced motion never loses the signal, then the hairline ripple.
+4. **E4/C2 — callouts and muting.** Count only committed data for the three drawer callouts; implement kind/status chips through the representation hook so filters dim rather than remove nodes, edges or documents.
+5. **C1 — compare mode.** Pin one kernel and diff it against the selection; rely on `diffKernels` so added/removed ids come only from the two kernels.
+6. **E5 and G2 — motion and measurement.** Stagger only eased band changes through `createRenderClock`, keep the camera per tab, then re-run Strobe with the TODO13 recipe and record the handle and numbers here.
+7. **G0/G1 — final evidence.** Run the full ladder once, recapture only views whose shape changed, keep the gallery at eleven tracked PNGs with `.prev` pairs, and write no verdict.
 
 Keep TODO13 as the record of the landed atlas; record new work here only.
 

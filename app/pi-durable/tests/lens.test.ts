@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseLens } from '../src/lens';
+import { lensCompletions, parseLens } from '../src/lens';
 
 describe('Lens command grammar', () => {
     it.each([
@@ -9,6 +9,8 @@ describe('Lens command grammar', () => {
         ['tab 2', { kind: 'tab', value: '2' }],
         ['layout radial', { kind: 'layout', value: 'radial' }],
         ['find Paris', { kind: 'find', value: 'paris' }],
+        ['find Paris status:complete kind:message', { kind: 'find', value: 'paris', status: 'complete', nodeKind: 'message' }],
+        ['f durable status:failed', { kind: 'find', value: 'durable', status: 'failed' }],
         ['focus d:1:task:2', { kind: 'focus', value: 'd:1:task:2' }],
         ['why', { kind: 'why' }],
         ['g d', { kind: 'view', value: 'docs' }],
@@ -21,5 +23,12 @@ describe('Lens command grammar', () => {
         expect(parseLens('view nowhere')).toBeUndefined();
         expect(parseLens('rung nebula')).toBeUndefined();
         expect(parseLens('layout spiral')).toBeUndefined();
+    });
+
+    it('completes prefixes from the command vocabulary', () => {
+        expect(lensCompletions('')).toContain('view');
+        expect(lensCompletions('vi')).toEqual(['view']);
+        expect(lensCompletions('ru')).toContain('rung');
+        expect(lensCompletions('zzz')).toEqual([]);
     });
 });

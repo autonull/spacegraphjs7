@@ -55,7 +55,7 @@ test('icon rail keeps every control named, tabbable and off hover only', async (
     await page.setViewportSize({ width: 1600, height: 1000 });
     const errors = await boot(page, '?shot=basic-turn');
     const icons = page.locator('#rail .rail-icon');
-    expect(await icons.count()).toBe(8);
+    expect(await icons.count()).toBe(9);
     for (let index = 0; index < (await icons.count()); index++) {
         const icon = icons.nth(index);
         await expect(icon).toHaveAttribute('aria-label', /\S/);
@@ -67,6 +67,18 @@ test('icon rail keeps every control named, tabbable and off hover only', async (
     expect(width).toBeLessThanOrEqual(64);
     const stage = await page.locator('#stage').evaluate((node) => node.getBoundingClientRect().width);
     expect(stage / 1600).toBeGreaterThanOrEqual(0.7);
+    expect(errors).toEqual([]);
+});
+
+test('shortcut overlay lists the real bindings behind every control', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await page.keyboard.press('?');
+    await expect(page.locator('#help')).toBeVisible();
+    const text = await page.locator('#help-shortcuts').innerText();
+    for (const label of ['Ctrl/⌘ K', 'Shift+F', 'Alt+← / →', 'Esc', 'g', 'f', '0'])
+        expect(text).toContain(label);
+    await page.locator('#help-close').click();
+    await expect(page.locator('#help')).toBeHidden();
     expect(errors).toEqual([]);
 });
 

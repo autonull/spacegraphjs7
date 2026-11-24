@@ -192,12 +192,15 @@ Pin 1.6.0; the API changes without notice between releases.
 
 The canvas owns the frame. A 56px icon rail holds the controls; their text lives in `aria-label`,
 `title`, the announcer and one collapsible panel opened from the rail. The panel is the home for
-views, landmarks, inspector, controls, legend and glossary. At 900px and below the rail slides out
-from the header menu. `Shift+F` toggles presentation mode, `f` focuses the selected node, `0` resets
-the view, and `Esc` closes the panel and restores focus to its icon.
+views, landmarks, inspector, controls, legend, glossary and insights. The insights panel carries a
+time scrubber with one tick per committed entry, a change digest from `diffKernels`, and an instrument
+panel behind `?instruments=1`. At 900px and below the rail slides out from the header menu. `Shift+F`
+toggles presentation mode, `f` focuses the selected node, `0` resets the view, `Alt+←`/`Alt+→` walk
+discrete view history, `Ctrl/⌘ K` opens the Lens, `?` lists every binding, and `Esc` closes the panel
+and restores focus to its icon. Lens keeps query history (`↑`/`↓`) and completes command prefixes on `Tab`.
 
 Icons are decorative inline SVG `<symbol>` definitions in `index.html` — survey mark, views grid,
-landmark rungs, lens, inspector, controls sliders, legend rules, glossary book, tasks checkbox,
-documents, signal bars, menu, close and presentation screen. Theme tokens own their colour; there is
-no icon font or new dependency. The same survey grammar is used by the header badges and the Lens
-command bar over the canvas.
+landmark rungs, lens, inspector, controls sliders, legend rules, glossary book, insights dial, tasks
+checkbox, documents, signal bars, menu, close and presentation screen. Theme tokens own their colour;
+there is no icon font or new dependency. The same survey grammar is used by the header badges and the
+Lens command bar over the canvas.

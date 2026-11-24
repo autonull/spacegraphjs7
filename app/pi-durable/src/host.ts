@@ -7,7 +7,7 @@ import {
     type AdapterPosition,
     type BandTemplate,
 } from '@spacegraphjs/adapter';
-import { applyNodeBudget, diffKernels, Kernel, SpatialIndex2D } from '@spacegraphjs/kernel';
+import { applyNodeBudget, diffKernels, Kernel, SessionKernel, SpatialIndex2D } from '@spacegraphjs/kernel';
 import { createRenderClock, DEFAULT_THEME, type RenderModel, type RenderNode, type RenderTheme } from '@spacegraphjs/renderer';
 import { rankedSearch } from '@spacegraphjs/search';
 import type { GraphViewData } from '@spacegraphjs/shared';
@@ -26,7 +26,9 @@ import {
     ZOOM_RANGE,
 } from './attention';
 import { chapterCaptions, chapterFrames } from './chapters';
-import { LAYOUT_NAMES, LENS_HELP, parseLens, type LayoutName } from './lens';
+import { digestKernels, type Digest } from './digest';
+import { instrumentsFor, type Instruments } from './instruments';
+import { LAYOUT_NAMES, lensCompletions, LENS_HELP, parseLens, type LayoutName } from './lens';
 import { bandForOctave, octaveFor, sizeForOctave, type OctaveBand } from './octaves';
 import { provenanceFor } from './provenance';
 import {
@@ -43,10 +45,10 @@ import type { Feed } from './local-feed';
 import { localFeed } from './local-feed';
 import { replayFeed } from './replay';
 import { isRung, RUNGS, type Rung } from './rungs';
-import { VIEW_NAMES, type ViewName } from './scenarios';
+import { scenarioByID, scenarioOps, VIEW_NAMES, type ViewName } from './scenarios';
 import { shotById } from './shots';
 import { storyByID, type Story } from './stories';
-import { asOfFeed } from './time-travel';
+import { asOfFeed, snapshotsOf } from './time-travel';
 
 /** A fit never shrinks a world unit below this many CSS pixels; unreadable content is panned instead. */
 const FIT_MIN_SCALE = 0.85;
@@ -359,6 +361,10 @@ export class DurableHost {
     #fitted = false;
     #shot: string | undefined;
     #story: Story | undefined;
+    #feedID = '';
+    #history: readonly Address[] = [];
+    #historyCursor = -1;
+    #suppressHistory = false;
     #seed: string;
     #presented: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } = {
         nodes: [], edges: [],
@@ -378,6 +384,8 @@ export class DurableHost {
 
     onFork: (() => Promise<void>) | undefined;
     onApprove: (() => Promise<void>) | undefined;
+    onScrub: ((seq?: number) => void) | undefined;
+    lensHistorySource: (() => readonly string[]) | undefined;
 
     constructor(registry: TabRegistry, offline = false, shot?: string, seed = 'fixed', rung?: Rung) {
         this.registry = registry;
@@ -411,6 +419,7 @@ export class DurableHost {
         this.bindChrome();
         this.#ready = true;
         this.refresh();
+        this.#recordHistory();
         this.renderer.fit(undefined, FIT_OPTIONS);
     }
 
@@ -451,6 +460,7 @@ export class DurableHost {
         if (view?.selection) this.renderer.setSelection([view.selection]);
         this.refresh();
         this.announce(`Switched to conversation ${id}`);
+        this.#recordHistory();
         return true;
     }
 
@@ -609,6 +619,7 @@ export class DurableHost {
         }
         this.renderTabs();
         this.renderStatus();
+        this.renderInsights();
         this.renderTasks(kernel.nodes);
         this.renderTimeline(kernel.nodes, kernel.edges);
         this.renderView();
@@ -628,6 +639,7 @@ export class DurableHost {
         requestAnimationFrame(() => this.renderer.fit(undefined, FIT_OPTIONS));
         this.renderView();
         this.announce(`${name} view`);
+        this.#recordHistory();
     }
 
     setRung(rung: Rung): boolean {
@@ -638,6 +650,7 @@ export class DurableHost {
         this.#bands.feedNormalized(RUNGS.findIndex((entry) => entry.id === rung) / RUNGS.length);
         this.#sample = sampleForRung(this.#scale, rung);
         this.renderRungs();
+        this.#recordHistory();
         if (!this.#ready) return true;
         const viewport = this.renderer.getViewport?.();
         if (viewport && !this.#offline) {
@@ -654,6 +667,7 @@ export class DurableHost {
         this.#layoutName = name;
         this.refresh();
         this.announce(`Layout ${name}`);
+        this.#recordHistory();
     }
 
     zoomBy(factor: number): void {
@@ -672,6 +686,138 @@ export class DurableHost {
         this.#rungPinned = false;
         this.renderer.fit(undefined, FIT_OPTIONS);
         this.announce('View reset');
+    }
+
+    setFeedID(id: string): void {
+        this.#feedID = id;
+        this.renderTime();
+    }
+
+    #snapshot(): Address {
+        const address = this.address();
+        return {
+            ...address,
+            view: address.view ?? 'graph',
+            rung: address.rung ?? 'fact',
+            layout: address.layout ?? 'grid',
+        };
+    }
+
+    #recordHistory(): void {
+        if (this.#suppressHistory) return;
+        const current = this.#history[this.#historyCursor];
+        const snapshot = this.#snapshot();
+        if (current && encodeAddress(current) === encodeAddress(snapshot)) return;
+        this.#history = [...this.#history.slice(0, this.#historyCursor + 1), snapshot];
+        this.#historyCursor = this.#history.length - 1;
+    }
+
+    history(): readonly Address[] {
+        return this.#history;
+    }
+
+    historyIndex(): number {
+        return this.#historyCursor;
+    }
+
+    historyBack(): boolean {
+        if (this.#historyCursor <= 0) return false;
+        this.#historyCursor -= 1;
+        this.applyAddress(this.#history[this.#historyCursor]!);
+        this.announce(`History ${this.#historyCursor + 1} of ${this.#history.length}`);
+        return true;
+    }
+
+    historyForward(): boolean {
+        if (this.#historyCursor >= this.#history.length - 1) return false;
+        this.#historyCursor += 1;
+        this.applyAddress(this.#history[this.#historyCursor]!);
+        this.announce(`History ${this.#historyCursor + 1} of ${this.#history.length}`);
+        return true;
+    }
+
+    scrubTo(seq?: number): boolean {
+        if (!this.onScrub) return false;
+        this.onScrub(seq);
+        this.setAsOf(seq);
+        this.announce(seq === undefined ? 'Returned to present' : `Read-only view as of entry ${seq}`);
+        return true;
+    }
+
+    digest(): Digest | undefined {
+        const tab = this.registry.active();
+        const scenario = scenarioByID(this.#feedID);
+        if (!tab || !scenario) return undefined;
+        const snapshots = snapshotsOf(scenario);
+        const current = Math.min(this.#asOf ?? snapshots.length, snapshots.length);
+        if (current <= 1) return undefined;
+        const baseline = snapshots.find((snapshot) => snapshot.seq === current - 1)!;
+        const before = new SessionKernel({
+            entries: scenarioOps({ ...scenario, view: baseline.view })
+                .map((op, index) => ({ id: `base-${index}`, op })),
+        }).state();
+        return digestKernels(before, tabKernel(tab), current - 1);
+    }
+
+    instruments(): Instruments {
+        const focus = this.registry.active()?.view.focus;
+        return instrumentsFor({
+            bands: this.#presented.nodes.map((node) => bandForOctave(octaveFor(node, this.#sample, focus))),
+            weights: Object.fromEntries(this.#attention),
+            edgeKinds: this.#presented.edges.map((edge) => edge.kind),
+            omitted: this.#omitted,
+        });
+    }
+
+    private renderInsights(): void {
+        this.renderTime();
+        if (el('app').dataset['drawerOpen'] !== 'insights') return;
+        this.renderDigest();
+        if (el('app').dataset['instruments'] === 'true') this.renderInstruments();
+    }
+
+    private renderTime(): void {
+        const scenario = scenarioByID(this.#feedID);
+        const snapshots = scenario ? snapshotsOf(scenario) : [];
+        const slider = el<HTMLInputElement>('time-scrub');
+        slider.min = '1';
+        slider.max = String(Math.max(1, snapshots.length));
+        slider.value = String(Math.max(1, Math.min(this.#asOf ?? snapshots.length, snapshots.length)));
+        slider.disabled = snapshots.length === 0;
+        el('time-ticks').replaceChildren(...snapshots.map((snapshot) => {
+            const option = document.createElement('option');
+            option.value = String(snapshot.seq);
+            option.label = String(snapshot.seq);
+            return option;
+        }));
+        el('time-badge').textContent = this.#asOf === undefined ? 'present' : `as of ${this.#asOf} / ${snapshots.length}`;
+    }
+
+    private renderDigest(): void {
+        const digest = this.digest();
+        el('digest').textContent = digest?.summary ?? 'No committed history to compare.';
+    }
+
+    private renderInstruments(): void {
+        const panel = this.instruments();
+        const rows: readonly (readonly [string, string])[] = [
+            ...Object.entries(panel.octaves).map(([band, count]) => [`band ${band}`, String(count)] as const),
+            ...Object.entries(panel.edgeKinds).map(([kind, count]) => [`edge ${kind}`, String(count)] as const),
+            ['omitted', String(panel.omitted)] as const,
+            ...Object.entries(panel.weights).map(([id, weight]) => [id, weight.toFixed(2)] as const),
+        ];
+        el('instruments').replaceChildren(...rows.map(([label, value]) => {
+            const row = document.createElement('div');
+            row.className = 'row';
+            const name = document.createElement('span');
+            name.className = 'label';
+            name.textContent = label;
+            const count = document.createElement('span');
+            count.className = 'value';
+            count.textContent = value;
+            row.append(name, count);
+            return row;
+        }));
     }
 
     regrade(): void {
@@ -725,11 +871,13 @@ export class DurableHost {
         if (seq === undefined) {
             el('app').removeAttribute('data-asof');
             badge.hidden = true;
-            return;
+        } else {
+            el('app').dataset['asof'] = String(seq);
+            badge.textContent = `as of ${seq}`;
+            badge.hidden = false;
         }
-        el('app').dataset['asof'] = String(seq);
-        badge.textContent = `as of ${seq}`;
-        badge.hidden = false;
+        this.renderInsights();
+        this.#recordHistory();
     }
 
     /** One command line steers view, landmark, time, tab, layout and node lookup. */
@@ -772,7 +920,12 @@ export class DurableHost {
                     id: edge.id, source: edge.source, target: edge.target, kind: edge.kind,
                 })),
             };
-            const [hit] = rankedSearch(model, command.value);
+            const matches = rankedSearch(model, command.value)
+                .filter((node) =>
+                    (!command.status || String(node.data?.['status'] ?? '') === command.status)
+                    && (!command.nodeKind || node.kind === command.nodeKind))
+                .sort((a, b) => a.id.localeCompare(b.id));
+            const [hit] = matches;
             if (!hit) {
                 this.announce(`No committed node matches ${command.value}`);
                 return false;
@@ -780,6 +933,7 @@ export class DurableHost {
             this.reveal(hit.id);
         }
         this.announce(`Lens ${query}`);
+        this.#recordHistory();
         return true;
     }
 
@@ -884,6 +1038,7 @@ export class DurableHost {
     }
 
     applyAddress(address: Address): boolean {
+        this.#suppressHistory = true;
         if (address.shot) this.applyShot(address.shot);
         if (address.view) this.setView(address.view);
         if (address.rung) this.setRung(address.rung);
@@ -896,6 +1051,7 @@ export class DurableHost {
         const tabID = address.s;
         const tabApplied = tabID !== undefined && this.registry.get(tabID) !== undefined && this.setTab(tabID);
         if (address.focus) this.reveal(address.focus);
+        this.#suppressHistory = false;
         return tabApplied || Boolean(address.focus);
     }
 
@@ -931,6 +1087,16 @@ export class DurableHost {
                 .map((entry) => entry.id),
             lens: (query: string) => this.lens(query),
             lensHelp: () => LENS_HELP,
+            lensCompletions: (prefix: string) => lensCompletions(prefix),
+            lensHistory: () => this.lensHistorySource?.() ?? [],
+            history: () => this.#history,
+            historyIndex: () => this.#historyCursor,
+            historyBack: () => this.historyBack(),
+            historyForward: () => this.historyForward(),
+            setFeedID: (id: string) => this.setFeedID(id),
+            scrubTo: (seq?: number) => this.scrubTo(seq),
+            digest: () => this.digest(),
+            instruments: () => this.instruments(),
             attention: () => ({
                 stop: this.#sample.stop,
                 position: this.#sample.position,
