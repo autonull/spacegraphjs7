@@ -104,20 +104,21 @@ export class SecondHost {
     #policyLayers: PolicyLayers = {};
 
     constructor(analyzers?: VisionLoopAnalyzers) {
-        const host = this;
+        const settled = () => this.#settled;
+        const energy = () => this.#energy;
         const simulation: PlaySimulation = {
             setInstant: (value) => {
-                if (value) host.#settled = true;
+                if (value) this.#settled = true;
             },
             settle: () => {
-                host.#settled = true;
-                host.#energy = 0;
+                this.#settled = true;
+                this.#energy = 0;
             },
             get settled() {
-                return host.#settled;
+                return settled();
             },
             get energy() {
-                return host.#energy;
+                return energy();
             },
         };
         this.playSession = createPhysicsPlaySession({
