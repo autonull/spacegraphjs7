@@ -18,6 +18,7 @@ import { openNodeJsonlStorage } from '@earendil-works/pi-durable/storage/jsonl/n
 import { bool, obj } from '@earendil-works/pi-schema';
 import { KernelCodec, SessionKernel } from '@spacegraphjs/kernel';
 import { encodeOp, opID, type KernelOp } from 'pi-kit';
+import { SCENARIOS } from './scenarios';
 import { forkOps, translateTasks, translateView, type DurableTask, type DurableView } from './translator';
 
 export const escapeXML = (value: string): string =>
@@ -25,7 +26,7 @@ export const escapeXML = (value: string): string =>
 
 const PORT = Number(process.env.PI_DURABLE_SERVER_PORT ?? 8788);
 const STORAGE = process.env.PI_DURABLE_STORAGE ?? 'jsonl';
-const DIR = resolve(process.cwd(), '.pi-durable');
+const DIR = resolve(process.cwd(), process.env.PI_DURABLE_DIR ?? '.pi-durable');
 const SEED = process.env.PI_DURABLE_FAUX_SEED ?? 'fixed';
 const Approval = defineSignal({ name: 'durable.approval', version: 1, schema: obj({ allow: bool() }) });
 const APPROVAL_KEY = 'approve';
@@ -81,7 +82,6 @@ const conversations = new Map<string, Conversation>();
 const views = new Map<string, DurableView>();
 let tasks: readonly DurableTask[] = [];
 let approvalTaskID: TaskId<ApprovalResult> | undefined;
-const submissions = new Map<string, string>();
 
 function answerFor(text: string): string {
     const seed = SEED === 'fixed' ? '' : ` [${SEED}]`;
@@ -135,7 +135,6 @@ const seed = async (conversation: Conversation, question: string, requestID: str
         { type: 'input', content: question, requestId: requestID },
         BACKGROUND_CONTEXT,
     );
-    submissions.set(requestID, idOf(conversation));
     const settled = await submission.wait(BACKGROUND_CONTEXT);
     if (settled.status === 'done' && settled.type === 'input' && settled.answer !== undefined) {
         await conversation.commit((tx) => tx.entry(AssistantEntry, settled.answer!), BACKGROUND_CONTEXT);
@@ -235,13 +234,6 @@ const routes: Record<string, (request: IncomingMessage, response: ServerResponse
     },
 };
 
-const SCENARIOS = [
-    { id: 'basic-turn', question: 'Capital of France?', description: 'One provider-free answer' },
-    { id: 'sleeping-approval', question: 'Allow the sleeping task to wake?', description: 'A parked approval task' },
-    { id: 'fork-tabs', question: 'Fork here', description: 'Two tabs with independent state' },
-    { id: 'resumed', question: 'Capital of France?', description: 'A retried request id with no duplicate answer' },
-];
-
 const server = createServer(async (request, response) => {
     const url = new URL(request.url ?? '/', `http://127.0.0.1:${PORT}`);
     try {
@@ -284,10 +276,9 @@ const server = createServer(async (request, response) => {
             if (!prompt) return json(response, 400, { error: 'empty-prompt', recovery: 'type a question' });
             const requestID = text(body.requestId) || crypto.randomUUID();
             const mode = text(body.mode) === 'followUp' ? 'followUp' : 'steer';
-            if (submissions.has(requestID)) {
+            if (await storage.submissionByRequest(Number(id) as never, requestID, BACKGROUND_CONTEXT)) {
                 return json(response, 200, { status: 'duplicate', requestId: requestID });
             }
-            submissions.set(requestID, id);
             faux.appendResponses([fauxAssistantMessage(answerFor(prompt))]);
             const submission = await conversation.submit(
                 { type: 'input', content: prompt, requestId: requestID, whenBusy: mode },

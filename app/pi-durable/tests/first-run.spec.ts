@@ -38,26 +38,57 @@ test('nine-step first run works offline', async ({ page }) => {
     expect(errors).toEqual([]);
 });
 
+test('tasks and timeline are two scoped placements of one kernel', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    const graph = await call<{ view: string; nodes: number }>(page, 'layout');
+    expect(graph.view).toBe('graph');
+    await page.click('#view-switch [data-view="tasks"]');
+    const tasks = await call<{ view: string; nodes: number }>(page, 'layout');
+    expect(tasks.view).toBe('tasks');
+    await expect(page.locator('#tasks')).toHaveAttribute('data-active', '');
+    await page.click('#view-switch [data-view="timeline"]');
+    const timeline = await call<{ view: string; nodes: number }>(page, 'layout');
+    expect(timeline.view).toBe('timeline');
+    expect(timeline.nodes).toBeGreaterThan(0);
+    expect(tasks.nodes).toBeLessThan(graph.nodes);
+    await expect(page.locator('#timeline')).toHaveAttribute('data-active', '');
+    expect(errors).toEqual([]);
+});
+
+test('scenario URLs boot a named fixture without a server', async ({ page }) => {
+    const errors = await boot(page, '?scenario=typed-errors');
+    await expect(page.locator('#announcer')).toContainText('typed-errors');
+    expect(await call<string>(page, 'viewName')).toBe('graph');
+    expect(await call<number>(page, 'ops')).toBeGreaterThan(4);
+    await page.goto('/?scenario=compaction');
+    await page.waitForFunction(() => (window as { __durable?: { ready?: () => boolean } }).__durable?.ready?.() === true);
+    expect(await call<string>(page, 'viewName')).toBe('timeline');
+    expect(errors).toEqual([]);
+});
+
 test('a seeded prompt and a retried request id produce one answer', async ({ page, request }) => {
     const errors = await boot(page);
     const health = await (await request.get('/api/health')).json();
     expect(health).toMatchObject({ ok: true, storage: 'jsonl', provider: 'faux' });
+    const created = await (await request.post('/api/conversations', { data: { agent: 'faux-1' } })).json();
+    const id = created.id as string;
+    const requestId = `resume-check-${crypto.randomUUID()}`;
     const first = await (
-        await request.post('/api/conversations/1/prompt', {
-            data: { text: 'Capital of France?', requestId: 'resume-check-1', mode: 'steer' },
+        await request.post(`/api/conversations/${id}/prompt`, {
+            data: { text: 'Capital of France?', requestId, mode: 'steer' },
         })
     ).json();
     expect(first.status).toBe('accepted');
     const retry = await (
-        await request.post('/api/conversations/1/prompt', {
-            data: { text: 'Capital of France?', requestId: 'resume-check-1', mode: 'steer' },
+        await request.post(`/api/conversations/${id}/prompt`, {
+            data: { text: 'Capital of France?', requestId, mode: 'steer' },
         })
     ).json();
     expect(retry.status).toBe('duplicate');
     await expect
         .poll(async () => {
             const exported = (await (
-                await request.get('/api/export?format=md&id=1')
+                await request.get(`/api/export?format=md&id=${id}`)
             ).body()) as Buffer | null;
             return exported?.toString().match(/Paris\./g)?.length ?? 0;
         })

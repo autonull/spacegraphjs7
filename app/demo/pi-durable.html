@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SpaceGraphJS — durable sessions as a workspace</title>
+        <meta
+            name="description"
+            content="A provider-free Pi Durable demo: navigate committed sessions, tasks, forks and timelines as one spatial workspace."
+        />
+        <style>
+            :root {
+                color-scheme: dark;
+                font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+                background: #0c0c10;
+                color: #f5f5f7;
+                line-height: 1.55;
+            }
+            * { box-sizing: border-box; }
+            body { margin: 0; }
+            a { color: #7dd3fc; text-decoration: none; }
+            a:hover { text-decoration: underline; }
+            .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+            header { padding: 72px 0 40px; border-bottom: 1px solid #262630; }
+            h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.05; margin: 0 0 16px; }
+            .lede { font-size: 18px; max-width: 700px; }
+            section { padding: 48px 0; border-bottom: 1px solid #262630; }
+            h2 { font-size: 24px; margin: 0 0 12px; }
+            .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+            figure { margin: 0; }
+            img { width: 100%; border: 1px solid #262630; border-radius: 12px; display: block; }
+            figcaption { font-size: 14px; color: #a1a1aa; margin-top: 8px; }
+            pre { padding: 16px; overflow: auto; border-radius: 12px; background: #16161d; border: 1px solid #262630; }
+            code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+            footer { padding: 32px 0 56px; color: #a1a1aa; font-size: 14px; }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="wrap">
+                <h1>Durable sessions, mapped.</h1>
+                <p class="lede">
+                    Pi Durable commits conversation state to storage. This private workspace consumer
+                    folds those commits into one kernel per tab and places them as a graph, a task
+                    tree, or an ordered timeline. No provider, API key, or flagship default changes.
+                </p>
+            </div>
+        </header>
+
+        <section>
+            <div class="wrap">
+                <h2>Run it locally</h2>
+                <pre><code>pnpm install
+pnpm --filter pi-durable dev      # http://localhost:5176
+pnpm --filter pi-durable verify:fast
+pnpm --filter pi-durable shots:all</code></pre>
+                <p>
+                    Full commands, scenarios and API routes live in the
+                    <a href="../../app/pi-durable/README.md">app README</a>.
+                </p>
+            </div>
+        </section>
+
+        <section>
+            <div class="wrap">
+                <h2>One kernel, three placements</h2>
+                <div class="shots">
+                    <figure>
+                        <img src="./pi-durable/basic-turn.png" alt="A committed faux answer in the graph" />
+                        <figcaption>A provider-free turn: user, run and assistant nodes linked by order edges.</figcaption>
+                    </figure>
+                    <figure>
+                        <img src="./pi-durable/fork-tabs.png" alt="Two forked conversations open as tabs" />
+                        <figcaption>A fork is a recorded edge, not an inferred cause; each tab keeps its own view state.</figcaption>
+                    </figure>
+                    <figure>
+                        <img src="./pi-durable/task-graph.png" alt="Task ownership and wait edges" />
+                        <figcaption>The task view scopes owners, waits and sleep signals from the same kernel.</figcaption>
+                    </figure>
+                    <figure>
+                        <img src="./pi-durable/timeline.png" alt="Committed transcript in order" />
+                        <figcaption>The timeline scopes the same folded kernel along its order edges.</figcaption>
+                    </figure>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div class="wrap">
+                <a href="./">Back to the demo gallery</a> ·
+                <a href="../../docs/screenshots/README.md">Screenshot catalog</a> ·
+                Source: <code>app/pi-durable</code>
+            </div>
+        </footer>
+    </body>
+</html>

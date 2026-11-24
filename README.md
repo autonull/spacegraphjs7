@@ -222,14 +222,16 @@ rail are on-demand drawers and all surfaces use square corners, so the canvas ke
 A second private consumer, [`app/pi-durable/`](app/pi-durable/README.md), renders durable Pi sessions
 as a navigable workspace: one server-owned Harness, one SSE stream, per-conversation kernels and a tab
 switcher that restores state instead of remounting a run. It runs with a faux provider and no API key,
-and ships tracked screenshots as soon as its Core runs.
+and ships tracked screenshots as soon as its Core runs. The same folded kernel has three scoped
+placements — graph, task tree and timeline — and `?scenario=<id>` opens one named Core or Next case.
 
 ![Durable workspace](docs/screenshots/pi-durable/basic-turn.png)
 
 ```
 pnpm --filter pi-durable dev           # provider-free durable demo
 pnpm --filter pi-durable verify:fast   # types, fold tests and browser journey
-pnpm --filter pi-durable shots:focus   # four tracked, vision-gated shots
+pnpm --filter pi-durable shots:focus   # four tracked, vision-gated Core shots
+pnpm --filter pi-durable shots:all     # every Core and Next scenario shot
 ```
 
 Both hosts are private workspace consumers. SpaceGraphJS itself knows neither Pi nor either host's

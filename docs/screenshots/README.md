@@ -52,9 +52,9 @@ same state in a browser; no screenshot script encodes a special camera path.
 
 ## Curated Pi Durable shots
 
-`app/pi-durable/src/shots.ts` names four Core shots. Each `?shot=<id>` boots the same deterministic
-local feed, so no capture script carries a private camera path. `SG_DURABLE_SHOTS` redirects output;
-`SG_DURABLE_SHOT` filters ids.
+`app/pi-durable/src/shots.ts` derives its catalog from `src/scenarios.ts`. Each `?shot=<id>` boots the
+same deterministic local feed, so no capture script carries a private camera path. `SG_DURABLE_SHOTS`
+redirects output; `SG_DURABLE_SHOT` filters ids.
 
 | File | Shot | Question |
 | ---- | ---- | -------- |
@@ -62,11 +62,29 @@ local feed, so no capture script carries a private camera path. `SG_DURABLE_SHOT
 | `pi-durable/sleeping-approval.png` | `sleeping-approval` | Can I see why a task sleeps and wake it? |
 | `pi-durable/fork-tabs.png` | `fork-tabs` | Can two conversations stay open with independent state? |
 | `pi-durable/resumed.png` | `resumed` | Does a retried request id produce one answer? |
+| `pi-durable/task-graph.png` | `task-graph` | Can I see committed task owners and waits? |
+| `pi-durable/timeline.png` | `timeline` | Can I read the committed transcript in order? |
+| `pi-durable/typed-errors.png` | `typed-errors` | Does a run failure offer a recovery action? |
+| `pi-durable/busy-inbox.png` | `busy-inbox` | Can steers queue while a run is busy? |
+| `pi-durable/extension-section.png` | `extension-section` | Can an extension add sections and hooks? |
+| `pi-durable/tool-call.png` | `tool-call` | Does a tool result become an action node? |
+| `pi-durable/system-prompt.png` | `system-prompt` | Are instructions a committed entry? |
+| `pi-durable/agent-settings.png` | `agent-settings` | Can a tab keep its own agent? |
+| `pi-durable/configure.png` | `configure` | Can settings round-trip through the session? |
+| `pi-durable/environment.png` | `environment` | Is the execution environment inspectable? |
+| `pi-durable/reload-extension.png` | `reload-extension` | Can an installed extension be replaced? |
+| `pi-durable/reset-handoff.png` | `reset-handoff` | Does a handoff keep its boundary id? |
+| `pi-durable/compaction.png` | `compaction` | Can a compacted transcript stay navigable? |
+| `pi-durable/agent-events.png` | `agent-events` | Are span events kept off the causal graph? |
+| `pi-durable/subagent-report.png` | `subagent-report` | Does a child report back to its owner? |
+| `pi-durable/checkout-children.png` | `checkout-children` | Can child tasks restart or abort independently? |
+| `pi-durable/app-state.png` | `app-state` | Can host state be shown without becoming a fact? |
+| `pi-durable/usage.png` | `usage` | Can token usage be inspected offline? |
 
-Two Phase 2 shots (`task-graph`, `timeline`) share the same catalog. Recapture with
-`pnpm --filter pi-durable shots:focus`; `scripts/shot.ts` copies prior images to gitignored `.prev`
-pairs and writes `pi-durable-index.html`, a local studio with a kept/rejected selector. Verdicts stay
-in the browser until a human pastes them into a review file.
+Recapture the first four with `pnpm --filter pi-durable shots:focus`, the two scoped placements with
+`shots:phase2`, or all rows with `shots:all`. `scripts/shot.ts` copies prior images to gitignored
+`.prev` pairs and writes `pi-durable-index.html`, a local studio with a kept/rejected selector.
+Verdicts stay in the browser until a human pastes them into a review file.
 
 ## Regenerate and iterate
 

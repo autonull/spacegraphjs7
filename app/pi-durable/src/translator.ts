@@ -17,6 +17,10 @@ export type DurableTaskState = {
     readonly until?: number;
     readonly signals?: readonly { readonly signal: string; readonly key: string }[];
     readonly on?: readonly (string | number)[];
+    readonly outcome?: string;
+    readonly attempt?: number;
+    readonly failFast?: boolean;
+    readonly mode?: string;
 };
 
 export type DurableTask = {
@@ -25,6 +29,9 @@ export type DurableTask = {
     readonly conversationId?: string | number;
     readonly owner?: string | number;
     readonly background?: boolean;
+    readonly delegates?: readonly (string | number)[];
+    readonly retryOf?: string | number;
+    readonly reportBack?: string | number;
     readonly state: DurableTaskState;
 };
 
@@ -165,6 +172,12 @@ const docOps = (conversationID: string | number, docs: Readonly<Record<string, J
         'pi.agent': 'config',
         'pi.provider': 'config',
         'pi.live': 'run',
+        'pi.settings': 'config',
+        'pi.env': 'config',
+        'pi.extension': 'config',
+        'pi.instructions': 'config',
+        'pi.error': 'config',
+        'pi.trace': 'state',
     };
     return Object.entries(docs).flatMap(([kind, doc]) => {
         if (kind === 'pi.inbox') {
@@ -179,14 +192,21 @@ const docOps = (conversationID: string | number, docs: Readonly<Record<string, J
                 });
             });
         }
-        if (!(kind in kinds)) return [];
-        return [
-            addNode(`${prefix}:${kind.replace('pi.', '')}`, kinds[kind]!, kind, {
-                runId: String(conversationID),
-                status: 'complete',
-                json: JSON.stringify(doc).slice(0, 400),
-            }),
-        ];
+        const nodeKind = kinds[kind] ?? 'artifact';
+        const known = kind in kinds;
+        const status = kind === 'pi.error' ? 'failed' : known ? 'complete' : 'deferred';
+        const data: Record<string, JsonValue> = {
+            runId: String(conversationID),
+            status,
+            json: JSON.stringify(doc).slice(0, 400),
+        };
+        if (!known) data.deferred = true;
+        if (kind === 'pi.trace') data.trace = doc;
+        if (kind === 'pi.error' && doc && typeof doc === 'object' && !Array.isArray(doc)) {
+            if ('reason' in doc) data.error = doc.reason;
+            if ('recovery' in doc) data.recovery = doc.recovery;
+        }
+        return [addNode(`${prefix}:${kind.replace(/^pi\./, '')}`, nodeKind, kind, data)];
     });
 };
 
@@ -209,6 +229,12 @@ const taskOps = (conversationID: string | number, tasks: readonly DurableTask[])
         };
         if (task.state.until !== undefined) data.until = task.state.until;
         if (task.state.signals) data.signals = task.state.signals.map((signal) => signal.key).join(',');
+        if (task.state.outcome !== undefined) data.outcome = task.state.outcome;
+        if (task.state.attempt !== undefined) data.attempt = task.state.attempt;
+        if (task.state.failFast !== undefined) data.failFast = task.state.failFast;
+        if (task.state.mode !== undefined) data.mode = task.state.mode;
+        if (task.background !== undefined) data.background = task.background;
+        if (task.reportBack !== undefined) data.reportBack = task.reportBack;
         const ops: KernelOp[] = [addNode(id, 'task', `Task ${task.id}`, data)];
         if (task.owner !== undefined)
             ops.push(addEdge('owns', `${prefix}:task:${task.owner}`, id));
@@ -216,8 +242,20 @@ const taskOps = (conversationID: string | number, tasks: readonly DurableTask[])
             for (const on of task.state.on)
                 ops.push(addEdge('waiting.on', id, `${prefix}:task:${on}`));
         if (task.state.signals)
-            for (const signal of task.state.signals)
+            for (const signal of task.state.signals) {
+                ops.push(addNode(`${prefix}:signal:${signal.key}`, 'pending', `Signal ${signal.key}`, {
+                    runId: String(conversationID),
+                    status: 'pending',
+                    signal: signal.signal,
+                    key: signal.key,
+                }));
                 ops.push(addEdge('sleeps-on', id, `${prefix}:signal:${signal.key}`));
+            }
+        if (task.delegates)
+            for (const child of task.delegates)
+                ops.push(addEdge('delegates', id, `${prefix}:task:${child}`));
+        if (task.retryOf !== undefined)
+            ops.push(addEdge('retry', id, `${prefix}:task:${task.retryOf}`));
         return ops;
     });
 };
@@ -239,6 +277,20 @@ export const translateView = (
         ...docOps(conversationID, view.docs ?? {}),
         ...taskOps(conversationID, tasks),
     ];
+    for (const entry of view.entries) {
+        if (entryNodeKind(entry) !== 'boundary') continue;
+        const boundaryID = entryNodeID(prefix, entry);
+        const index = ops.findIndex((op) => op.op === 'add-node' && op.node.id === boundaryID);
+        if (index >= 0) ops.splice(index, 1);
+        ops.push(addNode(boundaryID, 'boundary', entry.kind, {
+            runId: String(conversationID),
+            status: 'complete',
+            reason: entry.kind,
+            ...(entry.head === undefined ? {} : { head: entry.head }),
+        }));
+        if (entry.head !== undefined)
+            ops.push(addEdge('checkpoint', boundaryID, `${prefix}:entry:${String(entry.head)}`));
+    }
     let previous = `${prefix}:conversation`;
     for (const entry of view.entries) {
         const id = entryNodeID(prefix, entry);

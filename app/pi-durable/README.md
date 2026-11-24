@@ -15,6 +15,8 @@ pnpm --filter pi-durable dev          # server 8788 + Vite 5176 → http://local
 pnpm --filter pi-durable check:fast   # types + translator/fold/tab tests
 pnpm --filter pi-durable verify:fast  # check:fast + browser journey
 pnpm --filter pi-durable shots:focus  # four Core shots + before/after pairs
+pnpm --filter pi-durable shots:phase2 # task-graph and timeline shots
+pnpm --filter pi-durable shots:all    # every Core and Next scenario shot
 pnpm --filter pi-durable verify:visual
 pnpm --filter pi-durable verify       # dependency and docs allowlist guard
 pnpm --filter pi-durable build        # static bundle, boots from the local feed
@@ -42,6 +44,24 @@ storage in the gitignored `.pi-durable/` directory.
 
 Keyboard traversal, a roving-tabindex ARIA tablist with RTL arrows, live announcements, 44px
 targets, glossary tooltips and a narrow layout are part of the gate, not polish.
+`tests/a11y.spec.ts` checks all of them; `tests/resume.spec.ts` stops and restarts a server on an
+isolated JSONL directory to prove recovery without a duplicate answer.
+
+## Scenarios and URL state
+
+`?scenario=<id>` boots one named fixture without a server; `?shot=<id>` does the same and selects the
+shot's view. `src/scenarios.ts` is the single catalog: each row names a `Core` or `Next` coverage row
+from the plan, a deterministic view, tasks, expected stable ids and the test that guards it. `?s=<tab>`
+restores the active tab; `?seed=<name>` varies faux answers for capture runs.
+
+The four Core shots are `basic-turn`, `sleeping-approval`, `fork-tabs` and `resumed`. Phase 2 adds
+`task-graph` and `timeline`, two placements of the same folded kernel: the first scopes ownership and
+wait edges, the second scopes the `orders` chain. Neither adds a renderer branch. The remaining
+shots demonstrate one `Next` row each: busy inbox, extension sections, tool calls, system prompts,
+per-conversation agents, settings, environment, reload, reset/handoff, compaction, agent-event traces,
+subagent reports, child tasks, host-owned documents, usage and typed errors. `pnpm --filter
+pi-durable shots:all` captures every one; the contact sheet keeps before/after pairs without writing
+a verdict.
 
 ## Environment
 
@@ -49,6 +69,7 @@ targets, glossary tooltips and a narrow layout are part of the gate, not polish.
 | -------- | ------- | ------- |
 | `PI_DURABLE_LOCAL_FEED` | off in dev | Marks the browser harness as a local fixture run |
 | `PI_DURABLE_STORAGE` | `jsonl` | `jsonl`, `memory` or `sqlite` store |
+| `PI_DURABLE_DIR` | `.pi-durable` | JSONL directory; an isolated directory is used by the restart test |
 | `PI_DURABLE_PROVIDER` | `faux` | Provider mode reported by health; faux is the only Core provider |
 | `PI_DURABLE_FAUX_SEED` | `fixed` | Keeps screenshot answers deterministic |
 | `PI_DURABLE_SERVER_PORT` | `8788` | Node server port |
@@ -79,10 +100,11 @@ Errors are typed (`no-provider`, `unknown-conversation`, `run_failed`, `turn_lim
   storage, routes and the single SSE stream.
 - `src/translator.ts` — pure `Durable view → AgentEvent → KernelOp` translation. Stable ids,
   one node per fact, no inferred cause.
+- `src/scenarios.ts` — one deterministic fixture per coverage row, with expected ids and tests.
 - `src/local-feed.ts` — deterministic ops for the built page and every shot.
 - `src/client.ts` — one `EventSource` demultiplexed on `lastEventId`; DOM and keyboard binding.
-- `src/host.ts` — one renderer restored from the active tab's kernel and view state; tasks and
-  timeline are two DOM placements of that same folded kernel.
+- `src/host.ts` — one renderer restored from the active tab's kernel and view state; kit `buildScopes`
+  feeds one `ScopeSimulation`, which places the graph, tasks and timeline views of that same kernel.
 - `src/shots.ts` — shot catalog; `?shot=<id>` reproduces each state from pure data.
 
 The shared pipeline lives in `app/pi-kit` (ops/demux, `TabRegistry`, session/workspace state, scope

@@ -3,11 +3,13 @@ import { demuxOp, TabRegistry, type KernelOp } from 'pi-kit';
 import { getJSON, postJSON, type ConversationInfo, type Health, type Scenario } from './api';
 import { DurableHost } from './host';
 import { localFeed } from './local-feed';
+import { SCENARIOS } from './scenarios';
 
 const params = new URLSearchParams(location.search);
 const shot = params.get('shot') ?? undefined;
+const scenario = params.get('scenario') ?? undefined;
 const seed = params.get('seed') ?? 'fixed';
-const offline = Boolean(shot) || params.get('offline') === '1';
+const offline = Boolean(shot) || Boolean(scenario) || params.get('offline') === '1';
 const registry = new TabRegistry();
 const host = new DurableHost(registry, offline, shot, seed);
 const el = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -118,14 +120,9 @@ const bindCatalog = (): void => {
     el('catalog-button').addEventListener('click', async () => {
         const catalog = el('catalog');
         catalog.hidden = !catalog.hidden;
-        if (catalog.hidden || catalog.childElementCount > 1) return;
+        if (catalog.hidden || el('scenario-list').childElementCount > 0) return;
         const scenarios: readonly Scenario[] = offline
-            ? [
-                  { id: 'basic-turn', question: 'Capital of France?', description: 'One provider-free answer' },
-                  { id: 'sleeping-approval', question: 'Approve a task', description: 'A parked approval task' },
-                  { id: 'fork-tabs', question: 'Fork here', description: 'Two tabs with independent state' },
-                  { id: 'resumed', question: 'Retry a request id', description: 'No duplicate answer' },
-              ]
+            ? SCENARIOS.map((entry) => ({ id: entry.id, question: entry.question, description: entry.description }))
             : await getJSON<readonly Scenario[]>('/api/scenarios');
         el('scenario-list').replaceChildren(
             ...scenarios.map((scenario) => {
@@ -135,9 +132,12 @@ const bindCatalog = (): void => {
                 button.textContent = `${scenario.id} — ${scenario.description}`;
                 button.addEventListener('click', async () => {
                     try {
-                        if (offline) {
-                            host.loadFeed(localFeed(scenario.id, seed));
+                        const tier = SCENARIOS.find((entry) => entry.id === scenario.id)?.tier ?? 'Core';
+                        if (offline || tier === 'Next') {
+                            history.replaceState(null, '', `?scenario=${scenario.id}`);
+                            host.loadFeed(localFeed(undefined, seed, scenario.id));
                             host.applyShot(scenario.id);
+                            host.setStatus({ provider: 'local feed', storage: 'fixture', tasks: SCENARIOS.find((entry) => entry.id === scenario.id)?.tasks.length ?? 0 });
                         } else {
                             const result = await postJSON<{ id: string }>(`/api/scenarios/${scenario.id}/load`);
                             if (!registry.get(result.id)) registry.add(result.id);
@@ -166,7 +166,7 @@ const bindChrome = (): void => {
     el('permalink-button').addEventListener('click', () => {
         const link = new URL(host.permalink(), location.href).href;
         history.replaceState(null, '', link);
-        void navigator.clipboard?.writeText(link);
+        void navigator.clipboard?.writeText(link)?.catch(() => {});
         host.announce('Permalink copied');
     });
     document.addEventListener('keydown', (event) => {
@@ -196,9 +196,10 @@ const bindChrome = (): void => {
 
 const connect = async (): Promise<void> => {
     if (offline) {
-        host.loadFeed(localFeed(shot, seed));
-        host.setStatus({ provider: 'local feed', storage: 'fixture', tasks: 1 });
-        if (shot) host.applyShot(shot);
+        const selected = scenario ?? shot ?? 'basic-turn';
+        host.loadFeed(localFeed(shot, seed, selected));
+        host.setStatus({ provider: 'local feed', storage: 'fixture', tasks: SCENARIOS.find((entry) => entry.id === selected)?.tasks.length ?? 0 });
+        host.applyShot(selected);
         return;
     }
     try {

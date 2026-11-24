@@ -2,14 +2,19 @@ import { agentDomain } from '@spacegraphjs/agent';
 import { VocabularyAdapter, type AdapterNode } from '@spacegraphjs/adapter';
 import { DEFAULT_THEME, type RenderTheme } from '@spacegraphjs/renderer';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
+import { ScopeSimulation, type ScopeSpec } from 'spacegraphjs/layout';
 import {
+    buildScopes,
     TabRegistry,
     tabKernel,
     toneOf,
     type KernelOp,
+    type ScopeEdge,
+    type ScopeNode,
     type ViewState,
 } from 'pi-kit';
 import type { Feed } from './local-feed';
+import { shotById } from './shots';
 
 const THEME: RenderTheme = {
     ...DEFAULT_THEME,
@@ -43,6 +48,10 @@ const GLOSSARY: Readonly<Record<string, string>> = {
     fork: 'A new conversation starting at an existing entry.',
     signal: 'A typed value delivered to a sleeping task to wake it.',
 };
+
+const TASK_KINDS = new Set(['conversation', 'run', 'task', 'pending']);
+const TIMELINE_KINDS = new Set(['conversation', 'run', 'message', 'boundary', 'state', 'action']);
+const CONTAINMENT = new Set(['orders', 'owns', 'waiting.on', 'sleeps-on', 'delegates', 'retry', 'checkpoint', 'fork', 'forkedFrom']);
 
 const el = <T extends HTMLElement = HTMLElement>(id: string): T => {
     const node = document.getElementById(id);
@@ -89,6 +98,10 @@ export class DurableHost {
     #fitted = false;
     #shot: string | undefined;
     #seed: string;
+    readonly #simulation = new ScopeSimulation({
+        instant: true,
+        layout: { seed: 7, strategy: 'grid', gap: 240, depthStep: 170, nodePadding: 28 },
+    });
 
     onFork: (() => Promise<void>) | undefined;
     onApprove: (() => Promise<void>) | undefined;
@@ -185,12 +198,7 @@ export class DurableHost {
         if (!tab) return;
         const kernel = tabKernel(tab);
         const view = agentDomain.build(kernel);
-        const positions = new Map(
-            view.nodes.map((node, index) => [
-                node.id,
-                { x: (index % 4) * 250, y: Math.floor(index / 4) * 140, z: 0 },
-            ]),
-        );
+        const positions = this.#layout(view.nodes, view.edges);
         const model = this.#adapter.build(
             {
                 nodes: view.nodes.map((node): DurableNode => ({
@@ -233,7 +241,10 @@ export class DurableHost {
     }
 
     setView(name: 'graph' | 'tasks' | 'timeline'): void {
+        if (name === this.#viewName) return;
         this.#viewName = name;
+        this.refresh();
+        requestAnimationFrame(() => this.renderer.fit());
         this.renderView();
         this.announce(`${name} view`);
     }
@@ -244,8 +255,8 @@ export class DurableHost {
 
     applyShot(id: string): void {
         this.#shot = id;
-        if (id === 'task-graph') this.setView('tasks');
-        if (id === 'timeline') this.setView('timeline');
+        const rail = shotById(id)?.rail ?? 'graph';
+        this.setView(rail === 'tasks' || rail === 'timeline' ? rail : 'graph');
         this.announce(`Shot ${id}`);
     }
 
@@ -286,6 +297,12 @@ export class DurableHost {
                 return { ok: true };
             },
             viewport: () => this.renderer.getViewport?.() ?? { zoom: 1, center: [0, 0, 0] },
+            viewName: () => this.#viewName,
+            layout: () => ({
+                view: this.#viewName,
+                nodes: this.#simulation.positions.size,
+                first: [...this.#simulation.positions.values()][0] ?? null,
+            }),
             vision: () => this.vision(),
             offline: () => this.#offline,
             shot: () => this.#shot ?? null,
@@ -316,6 +333,56 @@ export class DurableHost {
         }
         const params = new URLSearchParams({ format, id: tab.id });
         location.assign(`/api/export?${params.toString()}`);
+    }
+
+    /** One position authority: kit scopes define targets; the simulation owns the current frame. */
+    #layout(
+        nodes: readonly ScopeNode[],
+        edges: readonly ScopeEdge[],
+    ): ReadonlyMap<string, { readonly x: number; readonly y: number; readonly z: number }> {
+        const scoped = this.#viewData(nodes, edges);
+        const ids = new Set(scoped.nodes.map((node) => node.id));
+        const placed = scoped.edges.filter((edge) => ids.has(edge.source) && ids.has(edge.target));
+        const contains: ScopeEdge[] = placed
+            .filter((edge) => CONTAINMENT.has(edge.kind))
+            .map((edge, index) => ({ id: `contains-${index}`, source: edge.source, target: edge.target, kind: 'contains' }));
+        const scopes = buildScopes(scoped.nodes, contains, 260);
+        const spec: ScopeSpec = {
+            id: 'root',
+            strategy: 'grid',
+            nodes: scoped.nodes.map((node, index) => ({ id: node.id, lane: this.#viewName, row: index })),
+            edges: placed,
+        };
+        this.#simulation.setSpecs([spec]);
+        this.#simulation.setLayoutTargets(new Map(
+            scopes.map((scope) => [
+                `root/${scope.id}`,
+                { x: scope.position[0], y: scope.position[1], z: scope.position[2] },
+            ]),
+        ));
+        this.#simulation.settle();
+        return new Map(
+            [...this.#simulation.view().positions].map(([qualified, position]) => [
+                qualified.slice('root/'.length),
+                position,
+            ]),
+        );
+    }
+
+    /** Two placements of the same folded kernel: tasks show ownership, timeline shows order. */
+    #viewData(
+        nodes: readonly ScopeNode[],
+        edges: readonly ScopeEdge[],
+    ): { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } {
+        if (this.#viewName === 'graph') return { nodes, edges };
+        const kinds = this.#viewName === 'tasks'
+            ? TASK_KINDS
+            : TIMELINE_KINDS;
+        const ids = new Set(nodes.filter((node) => kinds.has(node.kind)).map((node) => node.id));
+        return {
+            nodes: nodes.filter((node) => ids.has(node.id)),
+            edges: edges.filter((edge) => ids.has(edge.source) && ids.has(edge.target)),
+        };
     }
 
     private renderTabs(): void {

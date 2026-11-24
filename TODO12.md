@@ -1,10 +1,11 @@
 # TODO12 — Pi Durable sessions as a navigable workspace
 
-> **Status: Phase 1 Core landed (2026-11-24).** The runnable app, shared kit, server adapter,
-> translator, tabs, four tracked Core shots, docs and guards are in place. Phase 2 (Next scenarios,
-> tasks/timeline shots) and the last Phase 3 gates remain; see §13. This adds a second private
-> workspace consumer for `@earendil-works/pi-durable`. No published surface, renderer contract,
-> default in `app/pi`, or human verdict (ADR 0008) changes.
+> **Status: Core + Next landed, Phase 3 gates closed (2026-11-24).** The runnable app, shared kit,
+> server adapter, translator, tabs, two scoped placements, 22 named scenarios with tracked shots,
+> a11y/restart/coverage gates, docs and guards are in place; see §13. Only §11 deferred items and an
+> opt-in real provider remain. This adds a second private workspace consumer for
+> `@earendil-works/pi-durable`. No published surface, renderer contract, default in `app/pi`, or
+> human verdict (ADR 0008) changes.
 
 Purpose: `app/pi` renders one in-memory coding-agent run. It cannot show a session that survives a
 restart, contains forks or delegated conversations, parks a tool on a sleep or signal, compacts a
@@ -358,6 +359,8 @@ storage conformance suite.
 
 ## 8. Execution (three phases)
 
+Status: all three phases landed; §13 records the evidence and the deviations.
+
 **Phase 1 — Working Core, with screenshots (M).** K1, A1, R1, R2, T1, S1 and the Core part of G1.
 Copy the flagship's scaffolding; keep the shell's first paint non-empty from a local kernel feed. Open
 one Harness with `fauxProvider`, write the translator against a captured commit stream, then wire the
@@ -394,11 +397,12 @@ pnpm --filter pi verify:fast             # flagship unchanged
 pnpm run check                           # canonical root lint and types
 ```
 
-CI assertions: a `Core` row in §2 without a scenario and test fails; the first-run spec fails if any
-of the nine steps cannot be completed locally; the a11y spec fails on a tab without `aria-selected`,
-a missing live announcement or a dead control; `shots:focus` fails if a Core shot is missing or has no
-`.prev` pair on a re-capture. Tests run from package directories with injected clocks; visual evidence
-is tracked pairs only.
+CI assertions: `tests/scenarios.test.ts` checks that every `Core` row in `CORE_COVERAGE` names a
+scenario and an existing test; the first-run spec fails if any of the nine steps cannot be completed
+locally; the a11y spec fails on a tab without `aria-selected`, a missing live announcement, a dead
+control or an off-screen control at narrow width; `shots:focus` fails if a Core shot is missing or has
+no `.prev` pair on a re-capture. Tests run from package directories with isolated storage and no
+fixed sleeps; visual evidence is tracked pairs only.
 
 ---
 
@@ -506,62 +510,69 @@ uses a NOOP span — a real span is needed for `pi.durable.*` telemetry (a Next 
 
 ## 13. Progress and remaining work (2026-11-24)
 
-### Landed in Phase 1
+### Landed
 
 | Item | State | Evidence |
 | ---- | ----- | -------- |
-| K1 — `app/pi-kit` | Done | `ops.ts` (encode/decode/demux/opID), `session.ts` (`TabRegistry`, `SessionKernel`, `WorkspaceKernel`), `scopes.ts`, `theme.ts`, `fixtures.ts`; zero Pi imports. `app/pi/src/ops.ts` re-exports the kit. |
-| A1 — app scaffold | Done | `app/pi-durable` with configs, `index.html`, two-server dev script, Vite proxy at 5176→8788, Playwright servers, static build from the local feed. |
-| R1 — server adapter | Done | `src/server.ts` opens one Harness over JSONL/Memory with faux models and a registered sleeping approval task; Core routes and one SSE stream are live. Health reports provider, storage and recovered tasks. |
-| R2 — translator | Done | `src/translator.ts` maps view/ops → `AgentEvent[]` → idempotent `KernelOp[]` with stable `d:<id>:…` ids, dedupe by id, and only recorded link kinds. Fold and idempotency tests pass. |
-| T1 — tabs | Done | `TabRegistry` holds one `SessionKernel` and view state per tab; fork, permalink, active-tab restore, RTL tablist, one renderer. |
-| S1 — shots | Done | Four Core PNGs tracked in `docs/screenshots/pi-durable/`, `.prev` pairs, contact sheet, `shots:focus`/`shots:all`/`shots:watch`; `?shot=<id>` boots pure feed data. |
-| G1 (Core) — gates | Done | Translator/fold/tab vitest, nine-step offline journey, resume/duplicate request id, vision gate, dependency/docs guard, build, root `check`, flagship `verify:fast`. |
-| D1 (partial) — docs | Done | App README with embedded shots, root README thumbnail and commands, `app/pi` README kit note, `SPACEGRAPH_OS.md` §4, screenshot table, `PLAN/INDEX.md` entry, ADRs 0017/0018, narrow docs allowlist in both guards. |
+| K1 — `app/pi-kit` | Done | `ops.ts`, `session.ts` (`TabRegistry`, `SessionKernel`, `WorkspaceKernel`), `scopes.ts`, `theme.ts`, `fixtures.ts`; zero Pi imports. `app/pi/src/ops.ts` re-exports the kit. |
+| A1 — app scaffold | Done | `app/pi-durable` configs, `index.html`, two-server dev script, Vite proxy 5176→8788, Playwright webServers, static build from the local feed. |
+| R1 — server adapter | Done | One Harness, JSONL/Memory, faux models, registered sleeping approval task, all §5.2 Core routes, one SSE stream, typed errors, storage-backed request-id dedupe across restart. |
+| R2 — translator | Done | Pure view/ops → `AgentEvent[]` → idempotent `KernelOp[]`; stable `d:<id>:…` ids, dedupe, recorded links only. Adds boundaries with `head`/`checkpoint`, delegate/retry edges, trace-as-data, typed errors and deferred docs. |
+| T1 — tabs | Done | `TabRegistry` per-tab kernel/view state, fork, permalink, active-tab restore, RTL tablist, one renderer. |
+| S1 — shots | Done | 22 tracked PNGs + `.prev` pairs and a gitignored contact sheet; `shots:focus`, `shots:phase2`, `shots:all`, `shots:watch`; `?shot=<id>` is pure data. |
+| X1 — scoped placements | Done | One `ScopeSimulation` is the position authority; kit `buildScopes` supplies targets for graph, tasks and timeline views of the same folded kernel. `task-graph` and `timeline` shots are tracked. |
+| C1 — scenario pack | Done | `src/scenarios.ts` holds one deterministic fixture per §2 row: Core plus 15 Next cases, each with expected stable ids, a URL state, a vitest case and a shot. No bespoke panel per capability. |
+| U1 / G1 — gates | Done | `tests/a11y.spec.ts` (roving tabindex, RTL arrows, live announcements, no dead control, narrow viewport), `tests/resume.spec.ts` (real stop/restart on an isolated JSONL dir), `CORE_COVERAGE` assertion, vision gate, dependency/docs guard, build, root `check`. |
+| D1 — docs | Done | App README (scenarios, URL state, scoped placements), root README, `app/pi` README, `SPACEGRAPH_OS.md` §4, 22-row screenshot table, `PLAN/INDEX.md`, ADRs 0017/0018, narrow docs allowlist in both guards, `app/demo/pi-durable.html` landing page. |
 
 ### Verification results
 
 ```text
-pnpm --filter pi-durable check:fast      11 tests passed
-pnpm --filter pi-durable test:e2e         first-run journey + resume + vision + 4 shots passed
-pnpm --filter pi-durable shots:focus     4 PNGs + .prev pairs; vision score > 0.5
+pnpm --filter pi-durable check:fast      35 tests passed (translator, tabs, scenarios)
+pnpm --filter pi-durable test:e2e        31 passed (9 journey/a11y/resume/vision + 22 shots)
 pnpm --filter pi-durable verify          dependency / docs allowlist guard passed
 pnpm --filter pi-durable build           static bundle built
 pnpm run check                           all package typechecks passed
-pnpm --filter pi verify:fast             181 tests + 20 browser tests passed
 ```
 
-Local note: ports 5175 and 5176 were already occupied by unrelated Vite processes, so browser gates
-ran with `SG_PI_PORT=5195` and `SG_DURABLE_PORT=5186` (`PI_DURABLE_WEB_PORT=5186`). The default ports
-in the configs are unchanged. `pnpm --filter pi verify` (not `verify:fast`) still fails on
-pre-existing `app/pi` references in docs outside the new allowlist; that failure predates this work
-and was not widened.
+A11y and resume failures found during verification were fixed at their source: the catalog guard now
+checks `#scenario-list` instead of the wrapper child count, clipboard denial is swallowed, the narrow
+footer wraps, request-id dedupe uses `Storage.submissionByRequest`, and the e2e server gets a fresh
+JSONL directory per run. `pnpm --filter pi verify:fast` was not re-run: this change set touches no
+flagship file, and root `check` typechecks `app/pi`. `pnpm --filter pi verify` (not `verify:fast`) still
+fails on pre-existing `app/pi` references in docs outside the new allowlist; that predates this work.
+
+Local note: port 5176 was occupied by an unrelated Vite process, so browser gates used
+`SG_DURABLE_PORT=5186`; defaults in the configs are unchanged. The restart test uses port 8799 and a
+temp directory. Visual evidence is tracked pairs only; no human verdict was written.
 
 ### Deliberate deviations from the original layout
 
 - `src/tabs.ts` and `src/views/*` were not created: the registry lives in `app/pi-kit/src/session.ts`
-  and the tasks/timeline placements are rendered by `src/host.ts`. No behavior was dropped.
-- The first cut uses a deterministic grid position per node. `ScopeSimulation`/`computeGraphLayout`
-  and the kit's `buildScopes` are available but not wired; this keeps one position authority and a
-  stable first paint.
+  and the three placements are rendered by `src/host.ts`. No behavior was dropped.
+- Scopes are deterministic targets, not animated motion: `ScopeSimulation` runs with `instant: true`
+  so shots are stable without a clock. `computeGraphLayout` stays app/pi-local; the kit's
+  `buildScopes` supplies the tree targets.
+- Next scenarios are offline URL fixtures (`?scenario=<id>`). `/api/scenarios` lists them, but only
+  Core cases seed a real faux conversation through `POST /api/scenarios/:id/load`; the client routes
+  Next cases to the local feed so no committed fact is faked.
 - `PI_DURABLE_LOCAL_FEED` is documented but is not a server switch: faux + JSONL is already
-  provider-free. `?shot=<id>` and `?offline=1` select the pure local feed in the browser.
+  provider-free. `?shot=<id>`, `?scenario=<id>` and `?offline=1` select the pure local feed in the
+  browser.
 - Real provider opt-in (`PI_DURABLE_PROVIDER=openai` + key) is not implemented; health reports `faux`.
 - `vision()` is a deterministic DOM/canvas score, not an ONNX model verdict. No human verdict was written.
+- The demo landing page embeds four PNG copies under `public/pi-durable/`; the catalog remains tracked
+  in `docs/screenshots/pi-durable/`.
 
-### Remaining work (next session)
+### Remaining work
 
-1. **X1** — place tasks and timeline as two scoped layouts of the same kernel (use `buildScopes` and
-   `ScopeSimulation`), then capture and track `task-graph` and `timeline` shots. Keep labels legible.
-2. **C1** — add the `Next` scenarios one at a time from §2: busy inbox, hooks/wraps/tasks, settings,
-   compaction/reset, subagents, child tasks, host docs, usage and errors. Each needs one pinned
-   scenario, one URL state, one test and a shot; no bespoke panel per capability.
-3. **U1 / G1 (rest)** — dedicated a11y spec (roving tabindex, RTL arrows, live announcements, dead
-   controls), full nine-step Playwright restart scenario (stop/restart the server between steps 6–7),
-   CI assertion that every `Core` row in §2 has a scenario and a test, and a real provider opt-in path.
-4. **D1 (rest)** — `app/demo/pi-durable.html` landing page embedding the gallery, plus the final
-   screenshot README links after Phase 2 shots exist. Keep the docs allowlist narrow.
-5. **Deferred** — see §11: code mode, images, hosted Harness/readOnly observer, time travel, recorder
-   and human verdicts. Do not add them to the working Core.
+1. **Real provider opt-in** — add `PI_DURABLE_PROVIDER=openai` plus key handling behind a typed
+   `no-provider` error, with a live smoke test outside CI. It cannot be verified offline and upstream
+   1.6.0 provider APIs churn, so keep it in its own change set rather than add a shim here.
+2. **§11 deferred** — code mode, images, hosted Harness / `readOnly` observer, `snapshotAsOf` time
+   travel, recorder/replay and custom storage conformance. None blocks the working Core.
+3. **Human verdicts** — external gate on new shot pairs and the flagship's pending pairs; no verdict
+   enters `review.json` automatically.
 
-Stop rule unchanged: a scenario that cannot be deterministic is dropped, not papered over.
+All non-deferred work in §2–§12 is landed and gated. Stop rule unchanged: a scenario that cannot be
+deterministic is dropped, not papered over.
