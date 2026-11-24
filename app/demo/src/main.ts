@@ -16,7 +16,7 @@ import { AccessibilityLayer } from 'spacegraphjs/a11y';
 import type { DepthMode } from 'spacegraphjs/depth';
 import { Navigation } from 'spacegraphjs/navigation';
 import { ScopedOverlay, extractSubgraph, renderCodeDiff } from 'spacegraphjs/overlays';
-import { computeFocusOverlay, type FocusOverlay } from '@spacegraphjs/overlays';
+import { computeFocusOverlay, getFocusOpacity, type FocusOverlay } from '@spacegraphjs/overlays';
 import { elementGetter, renderTrail as paintTrail, round } from './dom';
 import { CAPABILITIES, type Capability } from './gallery';
 import { DemoHost } from './host';
@@ -76,12 +76,6 @@ function readTheme(): RenderTheme {
 function select(ids: readonly string[]) {
     host.select(ids);
     renderer?.setSelection(ids);
-}
-
-function renderTrail(): void {
-    paintTrail(el('trail'), host.controller.trail, () => host.controller.back(), (id) =>
-        select([id]),
-    );
 }
 
 function viewportOf() {
@@ -209,36 +203,19 @@ function closeDiff() {
 function applyFocusOverlay(model: RenderModel, overlay: FocusOverlay | undefined): RenderModel {
     if (!overlay) return model;
 
-    // LERP from minBrightness (dimmed) to 1.0 (selected)
-    // minBrightness = 0.5 - readable but clearly distinct from selected (1.0)
-    const minBrightness = 0.5;
-    const maxDistance = 3;
-
-    const brightnessForDistance = (distance: number | undefined): number => {
-        if (distance === 0) return 1.0; // selected - full brightness
-        if (distance === undefined) return minBrightness; // outside BFS range
-        if (distance > maxDistance) return minBrightness;
-        // LERP: minBrightness + (1 - minBrightness) * (1 - distance / maxDistance)
-        return minBrightness + (1 - minBrightness) * (1 - distance / maxDistance);
-    };
-
     return {
         ...model,
         nodes: model.nodes.map((node) => {
-            const distance = overlay.get(node.id);
-            const brightness = brightnessForDistance(distance);
-            if (brightness >= 1) return node;
-
-            // Apply uniform brightness via filter - dims background, text, border equally
-            const existingStyle = (node.data?.style as Record<string, string> | undefined) ?? {};
+            const opacity = getFocusOpacity(overlay.get(node.id) ?? Infinity);
+            if (opacity === 1) return node;
             return {
                 ...node,
                 data: {
                     ...node.data,
                     style: {
-                        ...existingStyle,
-                        filter: `brightness(${brightness})`,
-                        opacity: String(brightness), // also set opacity for consistent layering
+                        ...((node.data?.style as Record<string, string> | undefined) ?? {}),
+                        filter: `brightness(${opacity})`,
+                        opacity: String(opacity),
                     },
                 },
             };
@@ -272,7 +249,9 @@ function paint() {
     mirror?.setSelected(host.controller.selection);
 
     el('state').textContent = `${host.view} · ${host.level} · ${host.depth} · ${rendererID}`;
-    renderTrail();
+    paintTrail(el('trail'), host.controller.trail, () => host.controller.back(), (id) =>
+        select([id]),
+    );
     renderMinimap();
 }
 
@@ -330,12 +309,13 @@ function runCapability(capability: Capability) {
         host.select(capability.select);
     }
 
+    const context = host.context(readTheme(), {
+        rendererName: rendererName(),
+        capabilities: renderer?.capabilities,
+    });
+
     // Compute focus overlay for the focus capability
     if (capability.id === 'focus') {
-        const context = host.context(readTheme(), {
-            rendererName: rendererName(),
-            capabilities: renderer?.capabilities,
-        });
         currentFocusOverlay = computeFocusOverlay({
             model: context.model,
             selection: context.selection,
@@ -349,15 +329,7 @@ function runCapability(capability: Capability) {
     paint();
     if (reframed) fitCamera();
 
-    renderEvidence(
-        capability,
-        capability.run(
-            host.context(readTheme(), {
-                rendererName: rendererName(),
-                capabilities: renderer?.capabilities,
-            }),
-        ),
-    );
+    renderEvidence(capability, capability.run(context));
 
     if (capability.overlay) openOverlay(capability.overlay);
     if (capability.diff) openDiff();

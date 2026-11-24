@@ -632,7 +632,7 @@ export const CAPABILITIES: readonly Capability[] = [
                     summary?: string;
                     data?: Record<string, unknown>;
                 }>;
-                edges: any[];
+                edges: BuildModel['edges'];
                 turns?: string[];
                 activeTurn?: string;
             };

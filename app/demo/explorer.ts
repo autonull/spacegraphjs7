@@ -577,10 +577,7 @@ function renderAxes(result: ReturnType<typeof negotiate>): void {
             button.dataset.axis = axis.id;
             button.dataset.value = value;
             button.setAttribute('aria-pressed', String(left.get(axis.id) === value));
-            button.addEventListener('click', () => {
-                left = left.set(axis.id, value);
-                render();
-            });
+            button.addEventListener('click', () => setAxis(axis.id, value));
             values.append(button);
         }
         field.append(values);
@@ -750,18 +747,34 @@ function render(): void {
     renderDiff();
 }
 
-element('randomize').addEventListener('click', () => {
+function setAxis(axis: string, value: string): ConfigValue | undefined {
+    left = left.set(axis, value);
+    render();
+    return left.get(axis);
+}
+function randomizeAll(): void {
     left = randomize(space, seededRandom(Date.now()));
     render();
-});
-element('reset').addEventListener('click', () => {
+}
+function resetAll(): void {
     left = resetToBaseline(space);
     render();
-});
-element('compare').addEventListener('click', () => {
-    compare = !compare;
+}
+function setCompare(enabled: boolean): void {
+    compare = enabled;
     render();
-});
+}
+function applyPresetByID(id: string): boolean {
+    const preset = EXAMPLE_PRESETS.find((entry) => entry.id === id);
+    if (!preset) return false;
+    left = applyPreset(space, preset, left);
+    render();
+    return true;
+}
+
+element('randomize').addEventListener('click', randomizeAll);
+element('reset').addEventListener('click', resetAll);
+element('compare').addEventListener('click', () => setCompare(!compare));
 for (const format of ['svg', 'json', 'html'] as const) {
     element(`export-${format}`).addEventListener('click', () => {
         if (currentModel)
@@ -788,31 +801,12 @@ window.__explorer = {
     axes: () => space.ids(),
     config: () => left.toRecord(),
     effective: () => effective(left).toRecord(),
-    set: (axis, value) => {
-        left = left.set(axis, value);
-        render();
-        return left.get(axis);
-    },
-    randomize: () => {
-        left = randomize(space, seededRandom(Date.now()));
-        render();
-    },
-    reset: () => {
-        left = resetToBaseline(space);
-        render();
-    },
-    compare: (enabled) => {
-        compare = enabled;
-        render();
-    },
+    set: setAxis,
+    randomize: randomizeAll,
+    reset: resetAll,
+    compare: setCompare,
     presets: () => EXAMPLE_PRESETS.map((preset) => preset.id),
-    applyPreset: (id) => {
-        const preset = EXAMPLE_PRESETS.find((entry) => entry.id === id);
-        if (!preset) return false;
-        left = applyPreset(space, preset, left);
-        render();
-        return true;
-    },
+    applyPreset: applyPresetByID,
     hash: () => left.toHash(),
     source: () => left.get('source'),
     nodes: () => [leftNodeCount, rightNodeCount],

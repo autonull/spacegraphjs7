@@ -486,12 +486,16 @@ export class PiHost {
         return () => this.#policyListeners.delete(listener);
     }
 
-    setKnob(id: string, value: string | number | boolean, layer: PolicyLayer = 'panel'): boolean {
-        if (!POLICY_SCHEMA.knobs.some((knob) => knob.id === id)) return false;
-        this.#policyLayers = withLayer(POLICY_SCHEMA, this.#policyLayers, layer, { [id]: value });
+    #commitPolicy(): void {
         this.#resolved = resolvePolicy(POLICY_SCHEMA, this.#policyLayers);
         this.applyPolicy();
         this.paint();
+    }
+
+    setKnob(id: string, value: string | number | boolean, layer: PolicyLayer = 'panel'): boolean {
+        if (!POLICY_SCHEMA.knobs.some((knob) => knob.id === id)) return false;
+        this.#policyLayers = withLayer(POLICY_SCHEMA, this.#policyLayers, layer, { [id]: value });
+        this.#commitPolicy();
         const event = policyChange(id, layer, this.#resolved);
         for (const listener of this.#policyListeners) listener(event);
         this.recordEvent('policy:change', { id, source: layer, value: String(value) });
@@ -500,17 +504,16 @@ export class PiHost {
 
     setPolicyLayer(layer: PolicyLayer, values: PolicyVector): void {
         this.#policyLayers = { ...this.#policyLayers, [layer]: { ...values } };
-        this.#resolved = resolvePolicy(POLICY_SCHEMA, this.#policyLayers);
-        this.applyPolicy();
-        this.paint();
+        this.#commitPolicy();
     }
 
     /** Apply a named bundle through existing setters; the preset stays one command away. */
     applyUIPreset(id: string | null | undefined): UIPreset | undefined {
         const applied = applyUIPreset(id, this);
-        if (applied) this.#uiPresetID = applied.id;
-        this.setContinuity(Boolean(applied?.flags?.continuity));
-        this.setFieldTargets(Boolean(applied?.flags?.fieldTargets));
+        if (!applied) return undefined;
+        this.#uiPresetID = applied.id;
+        this.setContinuity(Boolean(applied.flags?.continuity));
+        this.setFieldTargets(Boolean(applied.flags?.fieldTargets));
         if (applied?.chrome === 'readable') this.toggleRail(false);
         if (applied?.chrome !== 'menus') {
             document.body.dataset.menusOpen = 'false';
@@ -534,9 +537,7 @@ export class PiHost {
         const panel = { ...this.#policyLayers.panel };
         for (const id of ids) delete panel[id];
         this.#policyLayers = { ...this.#policyLayers, panel };
-        this.#resolved = resolvePolicy(POLICY_SCHEMA, this.#policyLayers);
-        this.applyPolicy();
-        this.paint();
+        this.#commitPolicy();
     }
 
     recordEvent(
@@ -1060,9 +1061,12 @@ export class PiHost {
                 const background =
                     this.#octavePalette && this.#graphLayout === 'octaves'
                         ? OCTAVE_PALETTE[
-                              Math.min(
-                                  -(this.#octaveScales?.get(node.id)?.octave ?? 0),
-                                  OCTAVE_PALETTE.length - 1,
+                              Math.max(
+                                  0,
+                                  Math.min(
+                                      -(this.#octaveScales?.get(node.id)?.octave ?? 0),
+                                      OCTAVE_PALETTE.length - 1,
+                                  ),
                               )
                           ]
                         : cardBg;
