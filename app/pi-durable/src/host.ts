@@ -1,5 +1,6 @@
 import { agentDomain } from '@spacegraphjs/agent';
 import { VocabularyAdapter, type AdapterNode } from '@spacegraphjs/adapter';
+import { diffKernels, Kernel } from '@spacegraphjs/kernel';
 import { DEFAULT_THEME, type RenderTheme } from '@spacegraphjs/renderer';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { ScopeSimulation, type ScopeSpec } from 'spacegraphjs/layout';
@@ -14,6 +15,7 @@ import {
     type ViewState,
 } from 'pi-kit';
 import type { Feed } from './local-feed';
+import { VIEW_NAMES, type ViewName } from './scenarios';
 import { shotById } from './shots';
 
 const THEME: RenderTheme = {
@@ -34,9 +36,24 @@ const THEME: RenderTheme = {
     focus: '#f2bd70',
 };
 
+type Importance = 'hero' | 'medium' | 'compact';
+type ImportanceSize = Readonly<Record<Importance, readonly [number, number]>>;
+
 type DurableNode = AdapterNode & {
     readonly role?: string;
+    readonly importance: Importance;
     readonly data?: Readonly<Record<string, unknown>>;
+};
+
+const IMPORTANCE_SIZE: ImportanceSize = {
+    hero: [280, 120],
+    medium: [190, 72],
+    compact: [110, 40],
+};
+
+const VIEW_LABELS: Readonly<Record<ViewName, string>> = {
+    graph: 'facts', tasks: 'owners', timeline: 'order', diff: 'delta',
+    trace: 'spans', docs: 'documents', transcript: 'entries',
 };
 
 const GLOSSARY: Readonly<Record<string, string>> = {
@@ -51,6 +68,7 @@ const GLOSSARY: Readonly<Record<string, string>> = {
 
 const TASK_KINDS = new Set(['conversation', 'run', 'task', 'pending']);
 const TIMELINE_KINDS = new Set(['conversation', 'run', 'message', 'boundary', 'state', 'action']);
+const TRANSCRIPT_KINDS = new Set(['message', 'boundary', 'state', 'action']);
 const CONTAINMENT = new Set(['orders', 'owns', 'waiting.on', 'sleeps-on', 'delegates', 'retry', 'checkpoint', 'fork', 'forkedFrom']);
 
 const NODE_LABELS: Readonly<Record<string, string>> = {
@@ -78,6 +96,10 @@ const summaryForNode = (node: DurableNode): string => {
     const parts: string[] = [];
     const text = dataText(node);
     if (text) parts.push(short(text));
+    const diff = node.data?.['diff'];
+    if (typeof diff === 'string') parts.push(diff);
+    const trace = node.data?.['trace'];
+    if (typeof trace === 'string') parts.push(`span ${short(trace, 48)}`);
     const role = node.data?.['role'];
     if (typeof role === 'string' && role !== node.kind) parts.push(role);
     if (node.status) parts.push(node.status);
@@ -94,6 +116,13 @@ const summaryForNode = (node: DurableNode): string => {
     const recovery = node.data?.['recovery'];
     if (typeof recovery === 'string') parts.push(`recovery ${short(recovery, 40)}`);
     return parts.join(' · ');
+};
+
+const cardTemplate = (node: DurableNode): string => {
+    const summary = summaryForNode(node);
+    const status = node.status ? `<span class="card-status">${escapeHTML(node.status)}</span>` : '';
+    const diff = typeof node.data?.['diff'] === 'string' ? String(node.data['diff']) : '';
+    return `<div class="durable-card ${node.importance}" data-kind="${escapeHTML(node.kind)}" data-status="${escapeHTML(node.status)}" data-importance="${node.importance}"${diff ? ` data-diff="${diff}"` : ''}><span class="card-label">${escapeHTML(labelForNode(node))}${status}</span>${summary ? `<span class="card-summary">${escapeHTML(summary)}</span>` : ''}</div>`;
 };
 
 const el = <T extends HTMLElement = HTMLElement>(id: string): T => {
@@ -127,24 +156,41 @@ export class DurableHost {
             settled: 'success',
             done: 'success',
         },
-        extraNodeData: (node) => ({ text: dataText(node), duration: node.data?.['durationMs'] ?? null }),
+        extraNodeData: (node) => ({
+            text: dataText(node),
+            duration: node.data?.['durationMs'] ?? null,
+            importance: node.importance,
+            style: {
+                width: `${IMPORTANCE_SIZE[node.importance][0]}px`,
+                height: `${IMPORTANCE_SIZE[node.importance][1]}px`,
+            },
+        }),
         extraEdgeData: (edge) => ({ label: EDGE_LABELS[edge.kind] ?? edge.kind }),
+    }, {
+        nodeSizeFn: (node: DurableNode) => IMPORTANCE_SIZE[node.importance],
+        renderCardTemplate: cardTemplate,
     });
     #status: { readonly provider: string; readonly storage: string; readonly tasks: number } = {
         provider: 'local feed',
         storage: 'fixture',
         tasks: 0,
     };
-    #viewName: 'graph' | 'tasks' | 'timeline' = 'graph';
+    #viewName: ViewName = 'graph';
     #ready = false;
     #offline = false;
     #edgeCount = 0;
     #fitted = false;
     #shot: string | undefined;
     #seed: string;
+    #presented: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } = {
+        nodes: [], edges: [],
+    };
+    #laneNames: readonly string[] = [];
+    #axisNames: readonly string[] = [];
+    #edgeLabels: readonly string[] = [];
     readonly #simulation = new ScopeSimulation({
         instant: true,
-        layout: { seed: 7, strategy: 'grid', gap: 240, depthStep: 170, nodePadding: 28 },
+        layout: { seed: 7, strategy: 'grid', gap: 300, depthStep: 170, nodePadding: 28 },
     });
 
     onFork: (() => Promise<void>) | undefined;
@@ -228,6 +274,7 @@ export class DurableHost {
             label: node.label,
             status: String(node.data?.['status'] ?? ''),
             role: String(node.data?.['role'] ?? node.kind),
+            importance: 'medium',
             data: node.data,
         };
         const links = kernel.edges
@@ -256,17 +303,22 @@ export class DurableHost {
         const tab = this.registry.active();
         if (!tab) return;
         const kernel = tabKernel(tab);
-        const view = agentDomain.build(kernel);
-        const positions = this.#layout(view.nodes, view.edges);
+        const presented = this.#presentation(agentDomain.build(kernel), kernel, tab.view.focus);
+        const positions = this.#layout(presented.nodes, presented.edges);
+        const labels = this.#labels(presented, positions);
+        this.#presented = presented;
+        this.#laneNames = labels.laneLabels.map((lane) => lane.label);
+        this.#axisNames = labels.axisLabels.map((axis) => axis.label);
         const model = this.#adapter.build(
             {
-                nodes: view.nodes.map((node): DurableNode => {
+                nodes: presented.nodes.map((node): DurableNode => {
                     const durable: DurableNode = {
                         id: node.id,
                         kind: node.kind,
-                        label: node.label,
+                        label: node.label ?? node.id,
                         status: String(node.data?.['status'] ?? ''),
                         role: String(node.data?.['role'] ?? node.kind),
+                        importance: this.#importanceOf(node),
                         data: node.data,
                     };
                     return {
@@ -275,18 +327,19 @@ export class DurableHost {
                         summary: summaryForNode(durable),
                     };
                 }),
-                edges: view.edges.map((edge) => ({
+                edges: presented.edges.map((edge) => ({
                     id: edge.id,
                     source: edge.source,
                     target: edge.target,
                     kind: edge.kind,
                 })),
             },
-            { level: 'execution', positions, focus: tab.view.focus, cardBudget: 30 },
+            { level: 'execution', positions, focus: tab.view.focus, cardBudget: 30, ...labels },
         );
         this.renderer.setModel(model);
         this.#edgeCount = model.edges.length;
-        if (!this.#fitted && view.nodes.length) {
+        this.#edgeLabels = model.edges.flatMap((edge) => (edge.label ? [edge.label] : []));
+        if (!this.#fitted && presented.nodes.length) {
             this.#fitted = true;
             requestAnimationFrame(() => this.renderer.fit());
         }
@@ -301,11 +354,10 @@ export class DurableHost {
     opsCount = 0;
 
     cycleView(): void {
-        const names = ['graph', 'tasks', 'timeline'] as const;
-        this.setView(names[(names.indexOf(this.#viewName) + 1) % names.length]!);
+        this.setView(VIEW_NAMES[(VIEW_NAMES.indexOf(this.#viewName) + 1) % VIEW_NAMES.length]!);
     }
 
-    setView(name: 'graph' | 'tasks' | 'timeline'): void {
+    setView(name: ViewName): void {
         if (name === this.#viewName) return;
         this.#viewName = name;
         this.refresh();
@@ -321,7 +373,7 @@ export class DurableHost {
     applyShot(id: string): void {
         this.#shot = id;
         const rail = shotById(id)?.rail ?? 'graph';
-        this.setView(rail === 'tasks' || rail === 'timeline' ? rail : 'graph');
+        this.setView(VIEW_NAMES.includes(rail) ? rail : 'graph');
         this.announce(`Shot ${id}`);
     }
 
@@ -363,6 +415,19 @@ export class DurableHost {
             },
             viewport: () => this.renderer.getViewport?.() ?? { zoom: 1, center: [0, 0, 0] },
             viewName: () => this.#viewName,
+            representation: () => ({
+                view: this.#viewName,
+                nodes: this.#presented.nodes.length,
+                edgeKinds: this.#presented.edges.map((edge) => edge.kind),
+                edgeLabels: [...this.#edgeLabels],
+                laneLabels: [...this.#laneNames],
+                axisLabels: [...this.#axisNames],
+                importance: this.#presented.nodes.reduce<Record<string, number>>((counts, node) => {
+                    const tier = this.#importanceOf(node);
+                    counts[tier] = (counts[tier] ?? 0) + 1;
+                    return counts;
+                }, {}),
+            }),
             layout: () => ({
                 view: this.#viewName,
                 nodes: this.#simulation.positions.size,
@@ -405,17 +470,16 @@ export class DurableHost {
         nodes: readonly ScopeNode[],
         edges: readonly ScopeEdge[],
     ): ReadonlyMap<string, { readonly x: number; readonly y: number; readonly z: number }> {
-        const scoped = this.#viewData(nodes, edges);
-        const ids = new Set(scoped.nodes.map((node) => node.id));
-        const placed = scoped.edges.filter((edge) => ids.has(edge.source) && ids.has(edge.target));
+        const ids = new Set(nodes.map((node) => node.id));
+        const placed = edges.filter((edge) => ids.has(edge.source) && ids.has(edge.target));
         const contains: ScopeEdge[] = placed
             .filter((edge) => CONTAINMENT.has(edge.kind))
             .map((edge, index) => ({ id: `contains-${index}`, source: edge.source, target: edge.target, kind: 'contains' }));
-        const scopes = buildScopes(scoped.nodes, contains, 260);
+        const scopes = buildScopes(nodes, contains, 300);
         const spec: ScopeSpec = {
             id: 'root',
             strategy: 'grid',
-            nodes: scoped.nodes.map((node, index) => ({ id: node.id, lane: this.#viewName, row: index })),
+            nodes: nodes.map((node, index) => ({ id: node.id, lane: this.#viewName, row: index })),
             edges: placed,
         };
         this.#simulation.setSpecs([spec]);
@@ -434,20 +498,138 @@ export class DurableHost {
         );
     }
 
-    /** Two placements of the same folded kernel: tasks show ownership, timeline shows order. */
-    #viewData(
-        nodes: readonly ScopeNode[],
-        edges: readonly ScopeEdge[],
+    /** Every placement reads the same folded kernel; only the selected data facet changes. */
+    #presentation(
+        view: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] },
+        kernel: Kernel,
+        focus: string | undefined,
     ): { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } {
-        if (this.#viewName === 'graph') return { nodes, edges };
+        const data = this.#viewData(view, kernel);
+        const heroes = this.#heroIDs(data.nodes);
+        if (focus) heroes.add(focus);
+        return {
+            nodes: data.nodes.map((node) => ({
+                ...node,
+                data: { ...node.data, importance: heroes.has(node.id) ? 'hero' : this.#importanceOf(node) },
+            })),
+            edges: data.edges,
+        };
+    }
+
+    #heroIDs(nodes: readonly ScopeNode[]): Set<string> {
+        const heroes = new Set<string>();
+        for (const node of nodes) {
+            if (node.kind === 'conversation' || node.kind === 'run') heroes.add(node.id);
+            if (node.kind === 'message' && node.data?.['role'] === 'assistant') heroes.add(node.id);
+            if (node.kind === 'boundary' && node.data?.['head'] !== undefined) heroes.add(node.id);
+        }
+        return heroes;
+    }
+
+    #importanceOf(node: ScopeNode): Importance {
+        const declared = node.data?.['importance'];
+        if (declared === 'hero' || declared === 'medium' || declared === 'compact') return declared;
+        const status = String(node.data?.['status'] ?? '');
+        if (node.kind === 'task' && ['active', 'running', 'streaming', 'sleeping', 'waiting'].includes(status))
+            return 'hero';
+        return ['message', 'action', 'boundary', 'task', 'pending'].includes(node.kind) ? 'medium' : 'compact';
+    }
+
+    #viewData(
+        view: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] },
+        kernel: Kernel,
+    ): { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } {
+        const { nodes, edges } = view;
+        if (this.#viewName === 'graph') return view;
+        if (this.#viewName === 'trace') return { nodes: this.#traceNodes(view), edges: [] };
+        if (this.#viewName === 'docs')
+            return { nodes: nodes.filter((node) => typeof node.data?.['doc'] === 'string'), edges: [] };
+        if (this.#viewName === 'diff') return this.#diffData(view, kernel);
         const kinds = this.#viewName === 'tasks'
             ? TASK_KINDS
-            : TIMELINE_KINDS;
+            : this.#viewName === 'transcript'
+                ? TRANSCRIPT_KINDS
+                : TIMELINE_KINDS;
         const ids = new Set(nodes.filter((node) => kinds.has(node.kind)).map((node) => node.id));
         return {
             nodes: nodes.filter((node) => ids.has(node.id)),
-            edges: edges.filter((edge) => ids.has(edge.source) && ids.has(edge.target)),
+            edges: edges.filter((edge) => ids.has(edge.source) && ids.has(edge.target)
+                && (this.#viewName !== 'transcript' || ['orders', 'checkpoint'].includes(edge.kind))),
         };
+    }
+
+    #traceNodes(view: { readonly nodes: readonly ScopeNode[] }): readonly ScopeNode[] {
+        const spans = view.nodes.flatMap((node) => {
+            const trace = node.data?.['trace'];
+            if (!trace || typeof trace !== 'object' || Array.isArray(trace) || !('spans' in trace)) return [];
+            const values = (trace as { readonly spans?: unknown }).spans;
+            if (!Array.isArray(values)) return [];
+            return values
+                .filter((span): span is string => typeof span === 'string')
+                .map((span, index): ScopeNode => ({
+                    id: `${node.id}:span:${index}`,
+                    kind: 'state',
+                    label: span,
+                    data: { status: 'complete', trace: span, importance: 'compact' },
+                }));
+        });
+        return spans.length ? spans : view.nodes.filter((node) => node.data?.['trace'] !== undefined);
+    }
+
+    /** Diff nodes and edges come only from the two kernels; the view invents no causal link. */
+    #diffData(
+        view: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] },
+        kernel: Kernel,
+    ): { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } {
+        const peer = this.registry.list().find((tab) => tab.id !== this.registry.activeID());
+        const diff = diffKernels(peer ? tabKernel(peer) : new Kernel(), kernel);
+        const added = new Set([...diff.nodes.added, ...diff.nodes.changed].map((node) => node.id));
+        const nodes: ScopeNode[] = [
+            ...view.nodes
+                .filter((node) => added.has(node.id))
+                .map((node) => ({ ...node, data: { ...node.data, diff: 'added' } })),
+            ...diff.nodes.removed.map((node): ScopeNode => ({
+                id: node.id,
+                kind: node.kind,
+                label: node.label,
+                data: { ...node.data, status: 'removed', diff: 'removed' },
+            })),
+        ];
+        const delta = new Map<string, 'added' | 'removed'>();
+        for (const edge of diff.edges.added) delta.set(edge.id, 'added');
+        for (const edge of diff.edges.removed) if (!delta.has(edge.id)) delta.set(edge.id, 'removed');
+        const ids = new Set(nodes.map((node) => node.id));
+        return {
+            nodes,
+            edges: [
+                ...view.edges.filter((edge) => delta.get(edge.id) === 'added'),
+                ...diff.edges.removed,
+            ].filter((edge) => ids.has(edge.source) && ids.has(edge.target)),
+        };
+    }
+
+    #labels(
+        presented: { readonly nodes: readonly ScopeNode[] },
+        positions: ReadonlyMap<string, { readonly x: number; readonly y: number; readonly z: number }>,
+    ): {
+        readonly laneLabels: readonly { id: string; label: string; y: number; anchorNodeId?: string }[];
+        readonly axisLabels: readonly { id: string; label: string; x: number; y: number; role: 'row' | 'column' }[];
+    } {
+        const first = presented.nodes[0];
+        if (!first) return { laneLabels: [], axisLabels: [] };
+        const y = positions.get(first.id)?.y ?? 0;
+        const laneLabels = this.#viewName === 'diff'
+            ? ['added', 'removed'].flatMap((kind) => {
+                  const anchor = presented.nodes.find((node) => node.data?.['diff'] === kind);
+                  return anchor
+                      ? [{ id: kind, label: kind, y: positions.get(anchor.id)?.y ?? y, anchorNodeId: anchor.id }]
+                      : [];
+              })
+            : [{ id: this.#viewName, label: VIEW_LABELS[this.#viewName], y, anchorNodeId: first.id }];
+        const axisLabels = this.#viewName === 'timeline' || this.#viewName === 'transcript'
+            ? [{ id: 'order', label: 'committed order', x: 0, y: y - 90, role: 'column' as const }]
+            : [];
+        return { laneLabels, axisLabels };
     }
 
     private renderTabs(): void {
@@ -580,7 +762,7 @@ export class DurableHost {
 
     private bindChrome(): void {
         for (const button of document.querySelectorAll<HTMLButtonElement>('#view-switch button'))
-            button.addEventListener('click', () => this.setView(button.dataset['view'] as 'graph' | 'tasks' | 'timeline'));
+            button.addEventListener('click', () => this.setView(button.dataset['view'] as ViewName));
         el('help-close').addEventListener('click', () => this.toggleHelp(false));
     }
 

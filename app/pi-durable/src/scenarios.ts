@@ -7,7 +7,10 @@ import {
 } from './translator';
 
 export type ScenarioTier = 'Core' | 'Next';
-export type ViewName = 'graph' | 'tasks' | 'timeline';
+export type ViewName = 'graph' | 'tasks' | 'timeline' | 'diff' | 'trace' | 'docs' | 'transcript';
+export const VIEW_NAMES: readonly ViewName[] = [
+    'graph', 'tasks', 'timeline', 'diff', 'trace', 'docs', 'transcript',
+];
 
 export type Scenario = {
     readonly id: string;
@@ -287,6 +290,47 @@ export const SCENARIOS: readonly Scenario[] = [
             'pi.error': { reason: 'turn_limit', recovery: 'raise maxTurns and retry' },
         }), test: 'scenarios.test.ts',
         expected: { nodes: ['d:1:error'], edges: ['orders'] },
+    }),
+    scenario({
+        id: 'diff', title: 'Tab diff', question: 'What changed between this tab and its peer?',
+        description: 'A child tab compared with its parent through diffKernels.', tier: 'Next',
+        row: 'More Conversations and Forks', rail: 'diff', fork: true,
+        view: base('2', 'Capital of France?', 'Paris.'), test: 'representations.spec.ts',
+        expected: { nodes: ['d:2:fork'], edges: ['fork', 'forkedFrom'] },
+    }),
+    scenario({
+        id: 'trace', title: 'Trace facet', question: 'Can spans be read without inventing causes?',
+        description: 'pi.durable spans shown as a trace facet with no edges.', tier: 'Next',
+        row: 'Agent Events', rail: 'trace',
+        view: base('1', 'Trace the run', 'Traced.', {
+            'pi.trace': { spans: ['pi.durable.tool.call', 'pi.durable.llm.stream', 'pi.durable.session.prompt'] },
+        }), test: 'representations.spec.ts',
+        expected: { nodes: ['d:1:trace'], edges: ['orders'] },
+    }),
+    scenario({
+        id: 'docs', title: 'Documents', question: 'Can built-in and host documents stay distinct?',
+        description: 'Documents rendered as committed or deferred, never as facts.', tier: 'Next',
+        row: 'Design Documents', rail: 'docs',
+        view: base('1', 'Inspect documents', 'Inspected.', {
+            'pi.inbox': { items: [] },
+            'app.todos': { items: [{ id: 't1', text: 'Review draft', done: false }] },
+        }), test: 'representations.spec.ts',
+        expected: { nodes: ['d:1:usage', 'd:1:app.todos', 'd:1:agent'], edges: ['orders'] },
+    }),
+    scenario({
+        id: 'transcript', title: 'Transcript', question: 'Can the committed transcript carry boundaries and heads?',
+        description: 'Ordered entries with compact text, a tool result and a checkpoint.',
+        tier: 'Next', row: 'Watching a Conversation', rail: 'transcript',
+        view: {
+            ...base('1', 'Compact this transcript', 'Compacted.'),
+            entries: [
+                message('1-user', 'user', 'Compact this transcript'),
+                tool('1-tool', 'read'),
+                boundary('1-compact', 'pi.compaction', '1-user'),
+                message('1-answer', 'assistant', 'Compacted.'),
+            ],
+        }, test: 'representations.spec.ts',
+        expected: { nodes: ['d:1:tool:1-tool', 'd:1:entry:1-compact'], edges: ['orders', 'checkpoint'] },
     }),
 ];
 

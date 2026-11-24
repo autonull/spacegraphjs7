@@ -198,6 +198,7 @@ const docOps = (conversationID: string | number, docs: Readonly<Record<string, J
         const data: Record<string, JsonValue> = {
             runId: String(conversationID),
             status,
+            doc: kind,
             json: JSON.stringify(doc).slice(0, 400),
         };
         if (!known) data.deferred = true;

@@ -1,5 +1,5 @@
 import { findShotByID } from 'spacegraphjs/experiments';
-import { SCENARIOS, type ScenarioTier } from './scenarios';
+import { SCENARIOS, type ScenarioTier, type ViewName } from './scenarios';
 
 export type Shot = {
     readonly id: string;
@@ -15,7 +15,7 @@ export type Shot = {
     readonly fit?: boolean;
     readonly octave?: number;
     readonly zoom?: number;
-    readonly rail?: string;
+    readonly rail?: ViewName;
 };
 
 /** `?shot=<id>` boots pure scenario data, so a shot never encodes a private camera path. */

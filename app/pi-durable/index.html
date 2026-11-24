@@ -71,12 +71,25 @@
             .action { min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 8px;
                 background: var(--panel-2); }
             .action.primary { background: var(--accent); border-color: var(--accent); color: #06141a; font-weight: 700; }
-            #view-switch { display: flex; gap: 4px; margin-bottom: 10px; }
-            #view-switch button { flex: 1; min-height: 40px; padding: 0 8px; font-size: 12px;
+            #view-switch { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+            #view-switch button { flex: 1 1 28%; min-height: 40px; padding: 0 6px; font-size: 11px;
                 border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); color: var(--muted); }
             #view-switch button[aria-selected="true"] { color: var(--text); border-color: var(--accent); }
             #tasks, #timeline { display: none; }
             #tasks[data-active], #timeline[data-active] { display: block; }
+            .durable-card { display: flex; flex-direction: column; gap: 4px; box-sizing: border-box;
+                border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2);
+                color: var(--text); font-family: inherit; line-height: 1.35; }
+            .durable-card.hero { width: 280px; padding: 18px 20px; font-size: 16px;
+                box-shadow: inset 3px 0 var(--accent); }
+            .durable-card.medium { width: 190px; padding: 10px 12px; font-size: 13px; }
+            .durable-card.compact { width: 110px; padding: 5px 8px; font-size: 11px; color: var(--muted); }
+            .durable-card[data-status="deferred"] { border-style: dashed; }
+            .durable-card[data-diff="added"] { border-color: var(--ok); }
+            .durable-card[data-diff="removed"] { border-color: var(--error); border-style: dashed; opacity: .75; }
+            .durable-card .card-label { font-weight: 600; }
+            .durable-card .card-summary { opacity: .72; }
+            .durable-card .card-status { margin-left: 6px; font-size: .8em; opacity: .7; font-weight: 400; }
             footer { display: flex; gap: 10px; align-items: flex-end; padding: 12px 16px;
                 border-top: 1px solid var(--line); background: var(--panel); }
             #prompt-form { display: flex; flex: 1; min-width: 0; gap: 8px; align-items: flex-end; }
@@ -126,7 +139,11 @@
                         <div id="view-switch">
                             <button type="button" data-view="graph" aria-selected="true">Graph</button>
                             <button type="button" data-view="tasks" aria-selected="false">Tasks</button>
-                            <button type="button" data-view="timeline" aria-selected="false">Timeline</button>
+                            <button type="button" data-view="timeline" aria-selected="false">Time</button>
+                            <button type="button" data-view="diff" aria-selected="false">Diff</button>
+                            <button type="button" data-view="trace" aria-selected="false">Trace</button>
+                            <button type="button" data-view="docs" aria-selected="false">Docs</button>
+                            <button type="button" data-view="transcript" aria-selected="false">Text</button>
                         </div>
                         <div id="tasks"></div>
                         <div id="timeline"></div>
