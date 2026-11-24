@@ -159,33 +159,50 @@ Exit: tracked gallery shrinks, `shots:all` green, each composite has 3–4 legib
 total screenshot bytes drop versus the current 22 PNGs, and `docs/screenshots/README.md` plus the
 demo landing page list stories instead of retired single frames.
 
-## 3b. Stream D — the Durable Atlas: an iconic fractal ZUI
+## 3b. Stream D — the Durable Atlas: a continuous fractal ZUI
 
 Ambition: turn the workspace from a diagnostic panel into a navigable instrument. One folded kernel,
-five zoom rungs, one visual grammar, no new renderer contract. The signature is a **survey mark** —
-nested squares turned 45°, drawn from theme tokens in SVG/CSS — used in the brand, the overview and
-the focus reticle. It is original to this app; the Pi Agent demo's glass/glow language stays out.
+one continuous attention field, one visual grammar, no new renderer contract. The signature is a
+**survey mark** — nested squares turned 45°, drawn from theme tokens in SVG/CSS — used in the brand,
+the overview and the focus reticle. It is original to this app; the Pi Agent demo's glass/glow
+language stays out. Landmarks (`cosmos … grain`) are names we give places along the field, never
+modes that swap the model.
 
 **Design canon**
 
-- Rungs are places, not filters. Zoom changes what a committed fact means at that scale; it never invents an edge or hides committed truth.
+- Attention is continuous. Zoom, focus, recency and salience contribute weights; node size, label detail, edge emphasis and opacity interpolate. A coarse view mutes evidence; it never deletes a committed fact or invents an edge.
+- Landmarks are addresses, not filters. `ZoomBands` supplies thresholds, captions, keyboard jumps and permalinks — not representation swaps. `ScaleDomain.sample()` owns interpolation.
 - Ink and vellum: deep ink ground, muted panels, cyan survey lines, amber waits, vermilion failures. Flat surfaces, hairline rules, small-caps captions, monospaced ids. No glass, no glow.
-- One authority: kit scopes own targets, the simulation owns the current frame, the adapter owns level-of-detail, the host owns rung semantics, theme tokens own colour.
-- Motion is an eased dive and surface with a crossfade between rungs; reduced motion falls back to an instant cut. No parallax jitter, no bounce.
-- Every rung is legible at 900×700 and 1600×1000, mirrored under RTL, and reachable by keyboard.
+- One authority: kit scopes own targets, the simulation owns the current frame, the adapter owns level-of-detail, the host owns attention semantics, theme tokens own colour.
+- Motion is an eased morph through `representationChanges` and `createRenderClock`; reduced motion cuts instantly. No parallax jitter, no bounce.
+- Controls stay quiet: one Lens command handles view, landmark, time and tab. Everything is reachable at 900×700 and 1600×1000, mirrored under RTL, and keyboard first.
 
-| ID | Rung or capability | Design | Exit evidence |
-| -- | ------------------ | ------ | ------------- |
-| D1 | Five named rungs | `cosmos` (whole workspace), `territory` (conversations/tasks), `passage` (turns), `fact` (entries/edges), `grain` (raw document fields). Use `spacegraphjs/zoom` `ZoomBands` with hysteresis over `normalizeZoom(zoom, range)`; `src/rungs.ts` keeps rung policy in host data. `deriveZoom` and `representationLayers` remain the library routes for deeper LOD. | `?rung=<name>` states; `tests/rungs.spec.ts` asserts fewer nodes at `cosmos` than `fact`, a permalink that round-trips the rung, and that a zoom gesture changes rung. |
-| D2 | Dive and surface | Wheel/pinch and double-click arm semantic zoom; `zoomBy` and the rung switch drive explicit dives. Next: `ScaleDomain.sample()` and `representationChanges` for eased rung crossfades, with reduced-motion cutting instantly. Camera stays per tab in `ViewState`. | Keyboard + pointer Playwright test; focus state survives tab switch; no renderer contract field. |
-| D3 | Survey overview | A corner survey plate draws folded positions and a viewport reticle; click or arrow keys pan. Native `Navigation.project`/`GraphMinimap` is the refinement path; the first slice stays host-owned SVG. | Overview test: reticle tracks viewport; click changes centre; RTL mirrors the gutter. |
-| D4 | Trail and address | Breadcrumb `cosmos › territory › passage › fact` doubles as a copyable permalink; `?rung=` and `?s=` round-trip. | Permalink test; reload restores rung, tab and camera. |
-| D5 | Atlas plates | Story composites become engraved plates: numbered captions, the survey mark, a scale bar, and a rung legend. Four heroes stay full-resolution. | Seven plates recaptured; contact sheet shows plates; no new standalone PNGs. |
+**Relaxations that improve usability**
+
+| Relaxation | Benefit | Guard |
+| ---------- | ------- | ----- |
+| Replace the 7 view buttons and 5 landmark buttons with one **Lens** command (`view diff`, `rung fact`, `as of 2`, `tab 2`) using `rankedSearch`/`parseNavigation`. | Less chrome; one place to steer attention. | URL state stays explicit and copyable. |
+| Make landmarks continuous, as above; remove `rungView` hard filtering from the first slice. | Smooth attention flow; no visual jumps. | Stable ids; no new edge kinds; committed truth never hidden. |
+| Show observer/as-of controls **disabled with a typed reason** instead of hiding them. | Users discover what exists and why it is unavailable. | Commits still return typed `read-only`; no silent failure. |
+| Treat layout as intent in data: `?layout=grid\|radial\|timeline` feeds `ScopeSimulation` specs. | Users reshape evidence without a renderer change. | One position authority per frame. |
+| Let captions, lane labels and edge labels obey the same attention weight. | Clean at cosmos scale, complete at grain scale. | Text comes from committed `data`. |
+| Turn story composites into **scrubbable chapters**; the PNG is the printed plate and the hooks are the film. | One artifact serves evidence and exploration. | Frames stay pure `?shot`/hook state; no private camera path. |
+| Generalise observer discovery: the owner advertises `observerURL`, viewers read `/api/observer`. | Any viewer can join; no baked-in port. | One writer, many readers. |
+| Negotiate code mode/images with `Manifest`/`negotiate` instead of ad-hoc env branches. | Cleaner opt-in and capability-aware clients. | Default provider-free paint stays light. |
+
+| ID | Capability | Design | Exit evidence |
+| -- | ---------- | ------ | ------------- |
+| D1 | Continuous field and landmarks | `ScaleDomain.sample()` maps normalized zoom to interpolated importance and transition duration; salience and `applyEmphasis` grade size, label and edge weight. `ZoomBands` names landmarks for captions, URLs and keyboard jumps. Replace the provisional `rungView` filter with weights. | Tests assert monotonic attention change between landmarks, stable ids and unchanged edge kinds; `?rung=` remains a copyable address. |
+| D2 | Lens navigation | Wheel/pinch and double-click arm zoom; one Lens command handles `view`, `rung`, `as of`, `tab` and `layout`. `representationChanges` + `createRenderClock` morph appearance; reduced motion cuts. Camera stays per tab in `ViewState`. | Keyboard + command-palette Playwright test; focus state survives tab switch; no renderer contract field. |
+| D3 | Survey overview | Corner survey plate with viewport reticle and click/arrow pan; refine to native `Navigation.project`/`GraphMinimap`. | Reticle tracks viewport; click changes centre; RTL mirrors the gutter. |
+| D4 | Trail and address | Breadcrumb `cosmos › territory › passage › fact` plus `?rung=`, `?s=` and optional deep-link codec round-trip. | Permalink test restores landmark, tab, view and camera. |
+| D5 | Chapters and plates | Story composites become engraved, scrubbable plates: numbered captions, survey mark, scale bar and landmark legend. Four heroes stay full-resolution. | Seven plates recaptured; a chapter scrub test drives the same hooks; no new standalone PNGs. |
 | D6 | Workshop and plate surfaces | C1 code mode reads as nested workshops (program → calls → artifacts). C2 images read as bounded plate insets inside a fact card. Both keep the ink/vellum grammar. | `code-mode` and `images` story frames; tests assert action/artifact nodes and image data only. |
-| D7 | Performance and grace | Fractal culling by rung via `rungView`, cached fold and scope targets, `applyNodeBudget`/`SpatialIndex2D` for larger kernels, dynamic imports for code mode/images. Cold paint under two seconds with no provider. | Strobe measurement recorded; reduced-motion and no-provider paths green. |
+| D7 | Performance and grace | Continuous culling by attention weight, cached fold and scope targets, `applyNodeBudget`/`SpatialIndex2D` for larger kernels, dynamic imports for code mode/images. Cold paint under two seconds with no provider. | Strobe measurement recorded; reduced-motion and no-provider paths green. |
 
-Stop rule: if a rung needs a new renderer contract field or a second owner, keep the rung as a host
-data facet and report the gap instead of adding a parallel camera or panel.
+Stop rule: if a capability needs a new renderer contract field or a second owner, negotiate it through
+`Manifest`/`negotiate` or report the gap. Do not add a parallel camera, a second model or a hidden
+filter that drops committed truth.
 
 ## 4. Stream C — deferred surfaces from TODO12 §11
 
@@ -229,9 +246,9 @@ The live model smoke test is separately invoked and its skip reason is reported.
   field appears necessary, stop and propose it instead of adding one silently.
 - Code mode and images may pull heavy optional packages; keep them behind dynamic imports so the
   provider-free default still paints in under two seconds.
-- D rungs must be host data facets over the same folded kernel. If a rung needs a second camera, another renderer contract field or a competing owner, stop and report the gap.
+- D attention must stay a host data facet over the same folded kernel. Landmarks are addresses on a continuous field; if a behavior needs a second camera, another renderer contract field or a competing owner, negotiate or report the gap.
 - The survey mark is drawn from theme tokens, not a bitmap, so light/dark and custom themes stay consistent; RTL mirrors the overview gutter without mirroring node ids.
-- Fractal culling must never drop committed truth: a coarse rung summarises, it does not delete edges from the fold.
+- Continuous culling must never drop committed truth: low attention shrinks and mutes evidence, it does not delete edges or hide documents from the fold.
 - Human verdicts on new pairs remain an external gate; this plan never writes one.
 
 ## 7. Progress
@@ -241,7 +258,7 @@ The live model smoke test is separately invoked and its skip reason is reported.
 | A — local model smoke | Landed | `PI_DURABLE_PROVIDER=local` with OpenAI-compatible `llama-server`; `tests/local-model.spec.ts` passes with the 0.8B Qwen GGUF (13 s); README env table updated |
 | B — visual detail and representations | Landed | B1/B2: friendly labels, per-card summaries, edge captions, legend, richer inspector; `tests/detail.spec.ts`. B1b/B3: importance tiers (`hero`/`medium`/`compact`) from committed `data`, `nodeSizeFn` + card template, lane/axis captions, four re-placements (`diff`, `trace`, `docs`, `transcript`), `tests/representations.spec.ts`. B4: seven tracked composites in `docs/screenshots/pi-durable/stories/`, four Core heroes retained, 18 near-duplicate Next PNGs retired (gallery 2.4 MB → 1.2 MB), `tests/stories.spec.ts`, `shots:stories` and `--composite`, contact sheet/docs/landing page updated. Frames are captured at 1600×1000 and drawn into 800×500 grid cells: the lower viewport made the mobile rail dominate the frame. Gates 2026-11-24: `pnpm check:fast` (39 tests), `pnpm verify`, `pnpm build`, `pnpm verify:visual` (5 tests), `pnpm shots:all` (4 heroes + 6 stories), root `pnpm run check` all green. |
 | C — deferred surfaces | In progress | C3/C4/C5/C6 landed 2026-11-24: observer process (`PI_DURABLE_OBSERVER=1`, `/events/observe`, typed `read-only`, `tests/observer.test.ts`, `tests/observer-ui.spec.ts`); `?asOf=<seq>` snapshots with badge (`tests/time-travel.test.ts`, `tests/time-travel.spec.ts`); deferred `app.replay` recorder/replay (`tests/replay.test.ts`); upstream `registerStorageConformance` for memory, custom delegating adapter, JSONL and SQLite behind `PI_DURABLE_CONFORMANCE=1` (`tests/storage-conformance.test.ts`). Seven composites now include `resume-journey` as-of/replay frames and a new `host-boundary` story. Gates: `pnpm check:fast` (48 vitest tests), `pnpm verify`, `pnpm shots:stories` (7 composites), `pnpm test:e2e` (30 tests), `pnpm verify:visual`, root `pnpm run check` green. Playwright starts the observer on `PI_DURABLE_SERVER_PORT + 12` so spawn-based tests keep their own ports. C1/C2 remain proposed; see the stop-rule note below. |
-| D — iconic fractal ZUI | In progress | D1/D3 first slice landed: survey-mark brand, five-rung switch/permalink, `ZoomBands` zoom-driven rungs, host-data `rungView` filters, corner survey plate with click/arrow pan (`src/rungs.ts`, `src/host.ts`, `tests/rungs.spec.ts`). Native library routes identified for the rest: `ScaleDomain`/`representationChanges` (D2), `Navigation.project`/`GraphMinimap` (D3 polish), `applyNodeBudget`/`SpatialIndex2D` (D7). D2 crossfade, D4 deep-link codec, D5 plate restyling, D6 C1/C2 surfaces and D7 strobe remain. Both missing C dependencies are cached for one offline install. First-slice gates: `pnpm check:fast` (48 vitest tests), `pnpm verify`, `pnpm build`, `pnpm test:e2e` (30 tests, including `rungs.spec.ts`), `pnpm shots:focus`, root `pnpm run check` all green. |
+| D — iconic fractal ZUI | In progress | Provisional first slice landed: survey-mark brand, five-landmark switch/permalink, `ZoomBands` zoom-driven landmarks, corner survey plate with click/arrow pan (`src/rungs.ts`, `src/host.ts`, `tests/rungs.spec.ts`). **Superseded by the continuous-field decision in §3b:** `rungView` hard filtering and the 12 separate switch buttons are temporary; D1/D2 replace them with `ScaleDomain` attention weights and one Lens command. Native library routes identified: `ScaleDomain`/`representationChanges`/`createRenderClock` (D1/D2), `Navigation.project`/`GraphMinimap` (D3), `rankedSearch`/`parseNavigation` (D2 Lens), `applyNodeBudget`/`SpatialIndex2D` (D7). D4 deep links, D5 scrubbable plates, D6 C1/C2 surfaces and D7 strobe remain. Both missing C dependencies are cached for one offline install. First-slice gates: `pnpm check:fast` (48 vitest tests), `pnpm verify`, `pnpm build`, `pnpm test:e2e` (30 tests), `pnpm shots:focus`, root `pnpm run check` all green. |
 
 C1/C2 dependency gap, since closed: `createCodemodeExtension` is exported from
 `@earendil-works/pi-durable/codemode`, but its required `CodemodeSandbox` comes from
