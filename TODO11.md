@@ -5,6 +5,8 @@
 > pending. Nothing is published, so the compatibility layer was removed: no aliases, no deprecation
 > gate and no published-surface snapshot. §7 lists the remaining non-local items and the ones
 > deliberately declined; §8 and §9 record the landed D4 vision-helper and D5 benchmark features.
+> Re-verified 2026-11-24: all six `verify:library` gates and the 1,071-test unit suite pass. No local
+> implementation work remains; §7 holds only deferred/external items whose preconditions are unmet.
 
 Purpose: SpaceGraphJS already has unusually broad mechanisms — three renderers, two framework
 bindings, four domain vocabularies, a layout catalogue, a plugin system and a vision loop. What it
@@ -172,12 +174,15 @@ instead of inventing a binding.
 | D5 | `docs/extension-recipe.md:1`; fourth domain in the published-byte pack list (`script/publish-check.ts:33`); `script/extension-check.ts:1` runs `create-spacegraph-domain` output; scaffold benchmark (`packages/create-spacegraph/domain.js` → `host/tests/benchmark.test.ts`); scaffold fixture fixed (`packages/create-spacegraph/domain.js:192,319`) | `pnpm run test:extension && pnpm run test:publish` | Generated domain passes the 10-case adapter conformance suite; generated host maps 1,000 nodes within budget; one-way dependency guard passes; four domains packed and imported from tarballs | No library special case; benchmark runs in the generated host, not the shared registry |
 | D6 | `docs/evidence/record.json:1`; `script/evidence.ts:1`; `check:evidence` / `check:evidence:write` (`package.json:175`) | `pnpm run check:evidence` | Nine entries migrated, source hash verified, decision/pair paths tracked or regenerable, no default field | No published subpath; human verdicts still external |
 
-Final verification in one pass: `pnpm exec tsc --noEmit -p tsconfig.json`, `pnpm test` (146 files /
-1064 tests) and `pnpm run verify:library` (six gates: docs lint, quickstart, conformance, extension,
+Final verification in one pass: `pnpm exec tsc --noEmit -p tsconfig.json`, `pnpm test` (147 files /
+1,071 tests) and `pnpm run verify:library` (six gates: docs lint, quickstart, conformance, extension,
 generated, paths). `check:paths` read a doc deleted with the compatibility layer, so
 `script/check-paths.ts` now skips markdown no longer in the worktree; that gate passed after the fix.
 No test or gate was retried to green without a code fix. No human verdict or study result is recorded
 as developer work.
+
+Re-verification 2026-11-24: `pnpm run verify:library` (all six gates) and `pnpm test` (147 files /
+1,071 tests) pass with no drift. The plan is complete; no builder action remains.
 
 ---
 
@@ -186,12 +191,13 @@ as developer work.
 The developer-side foundations are now gates and the plan is complete. The D4 vision helpers and
 the D5 generated-host benchmark are landed under the feature notes in §8 and §9. The items below are
 deferred or external; the "Reopen when" column names the condition that would turn one into work.
-None is met at this commit. Items deliberately declined are listed after the table.
+None is met at this commit, so no item below is actionable in the current session — each needs its
+own precondition satisfied first. Items deliberately declined are listed after the table.
 
-| # | Item | Category | Blocker / why not now | Reopen when |
-| - | ---- | -------- | --------------------- | ----------- |
-| 1 | Local trace and replay | Deferred | Observation side of the loop; the measurement side (D4) is trustworthy, but traces stay local and opt-in | A separate feature plan for observation |
-| 2 | Human verdicts and recruitment | External | The nine evidence entries and the n ≥ 5 study remain pending; no default may flip from a screenshot alone | Study results and human verdicts are recorded |
+| # | Item | Category | Blocker / why not now | Reopen when | First step |
+| - | ---- | -------- | --------------------- | ----------- | ---------- |
+| 1 | Local trace and replay | Deferred | Observation side of the loop; the measurement side (D4) is trustworthy, but traces stay local and opt-in | A separate feature plan for observation | Write that plan: define a local, opt-in trace format and a replay reader before any library change |
+| 2 | Human verdicts and recruitment | External | The nine evidence entries and the n ≥ 5 study remain pending; no default may flip from a screenshot alone | Study results and human verdicts are recorded | Record verdicts in `docs/evidence/record.json` via `check:evidence:write`; only then reconsider defaults |
 
 ### Declined — not pending work
 
