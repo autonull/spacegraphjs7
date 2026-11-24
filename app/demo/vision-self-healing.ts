@@ -1,4 +1,10 @@
-import { ForceLayout, InteractionPlugin, SpaceGraph, VisionOverlayPlugin } from 'spacegraphjs';
+import {
+    ForceLayout,
+    HUDPlugin,
+    InteractionPlugin,
+    SpaceGraph,
+    VisionOverlayPlugin,
+} from 'spacegraphjs';
 
 async function init() {
     const container = document.getElementById('container')!;
@@ -67,6 +73,8 @@ async function init() {
     // Register plugins
     sg.pluginManager.register('interaction', new InteractionPlugin());
     sg.pluginManager.register('force', new ForceLayout());
+    const hud = new HUDPlugin();
+    sg.pluginManager.register('hud', hud);
 
     const visionOverlay = new VisionOverlayPlugin();
     sg.pluginManager.register('vision-overlay', visionOverlay);
@@ -74,6 +82,7 @@ async function init() {
     // Initialize plugins manually since they were added after SpaceGraph.create()
     console.log('Initializing plugins...');
     await sg.pluginManager.initAll();
+    hud.showAlert({ message: 'Vision monitoring active', variant: 'info', duration: 4000 });
     console.log('Plugins initialized.');
 
     sg.render();
