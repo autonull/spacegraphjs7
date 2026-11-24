@@ -1,60 +1,78 @@
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { SHOTS } from '../src/shots';
+import { HERO_SHOTS } from '../src/shots';
+import { STORIES } from '../src/stories';
 
 const root = resolve(import.meta.dirname, '..');
 const args = process.argv.slice(2);
 const watch = args.includes('--watch') || args.includes('-w');
 const sheetOnly = args.includes('--sheet');
+const storiesOnly = args.includes('stories') || args.includes('--composite');
 const requested = (args.find((arg) => !arg.startsWith('-')) ?? 'all').split(',').filter(Boolean);
-const out = resolve(root, '../../docs/screenshots');
+const out = process.env.SG_DURABLE_SHOTS ?? resolve(root, '../../docs/screenshots');
 mkdirSync(out, { recursive: true });
 
-const valid = requested[0] === 'all' ? SHOTS : SHOTS.filter((shot) => requested.includes(shot.id));
-if (!valid.length || (requested[0] !== 'all' && valid.length !== requested.length)) {
+const heroIDs = HERO_SHOTS.map((shot) => shot.id);
+const storyIDs = STORIES.map((story) => story.id);
+const known = new Set([...heroIDs, ...storyIDs]);
+if (requested[0] !== 'all' && requested[0] !== 'stories' && requested.some((id) => !known.has(id))) {
     console.error(`Unknown shot: ${requested.join(',')}`);
     process.exit(1);
 }
+
+const heroes = requested[0] === 'all' ? heroIDs : storiesOnly ? [] : requested.filter((id) => heroIDs.includes(id));
+const stories = requested[0] === 'all' || storiesOnly
+    ? requested[0] === 'stories' && requested.length > 1 ? requested.slice(1) : storyIDs
+    : requested.filter((id) => storyIDs.includes(id));
 
 const reviewFile = resolve(out, 'pi-durable-review.json');
 const review = existsSync(reviewFile) ? (JSON.parse(readFileSync(reviewFile, 'utf8')) as Record<string, { verdict?: string }>) : {};
 const escape = (value: string): string =>
     value.replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char]!);
 
+const play = (spec: string, env: Record<string, string>): boolean =>
+    spawnSync('pnpm', ['exec', 'playwright', 'test', '--config', 'playwright.config.ts', spec], {
+        cwd: root,
+        env: { ...process.env, ...env },
+        stdio: 'inherit',
+    }).status === 0;
+
+const backup = (files: readonly string[]): void => {
+    for (const file of files) if (existsSync(file)) copyFileSync(file, `${file}.prev`);
+};
+
 const capture = (): boolean => {
-    for (const shot of SHOTS) {
-        const file = resolve(out, shot.file);
-        if (existsSync(file)) copyFileSync(file, `${file}.prev`);
+    const env = { ...process.env, SG_DURABLE_SHOTS: out, PI_DURABLE_FAUX_SEED: 'fixed' };
+    if (heroes.length) {
+        backup(heroes.map((id) => resolve(out, `pi-durable/${id}.png`)));
+        if (!play('tests/screenshots.spec.ts', { ...env, SG_DURABLE_SHOT: heroes.join(',') })) return false;
     }
-    const env = {
-        ...process.env,
-        SG_DURABLE_SHOTS: out,
-        SG_DURABLE_SHOT: requested[0] === 'all' ? '' : requested.join(','),
-        PI_DURABLE_FAUX_SEED: 'fixed',
-    };
-    return (
-        spawnSync(
-            'pnpm',
-            ['exec', 'playwright', 'test', '--config', 'playwright.config.ts', 'tests/screenshots.spec.ts', '--grep', 'shot:'],
-            { cwd: root, env, stdio: 'inherit' },
-        ).status === 0
-    );
+    if (stories.length) {
+        backup(stories.map((id) => resolve(out, `pi-durable/stories/${id}.png`)));
+        if (!play('tests/stories.spec.ts', { ...env, SG_DURABLE_STORY: stories.join(',') })) return false;
+    }
+    return true;
+};
+
+const card = (id: string, file: string, title: string, question: string): string => {
+    const path = resolve(out, file);
+    if (!existsSync(path)) return '';
+    const stamp = Math.round(statSync(path).mtimeMs);
+    const previous = resolve(out, `${file}.prev`);
+    const pair = existsSync(previous)
+        ? `<div class="pair"><img class="prev" src="${file}.prev?v=${stamp}" alt="${title} previous"><img src="${file}?v=${stamp}" alt="${title}"></div>`
+        : `<img src="${file}?v=${stamp}" alt="${title}">`;
+    const selected = (verdict: string): string => (review[id]?.verdict === verdict ? ' selected' : '');
+    return `<figure>${pair}<figcaption><b>${escape(title)}</b><br><code>${id}</code> · ${escape(question)}</figcaption>
+    <div class="review" data-shot="${id}"><select data-verdict><option value="">—</option><option value="kept"${selected('kept')}>kept</option><option value="rejected"${selected('rejected')}>rejected</option></select><textarea rows="1" placeholder="review note"></textarea></div></figure>`;
 };
 
 const sheet = (): void => {
-    const cards = SHOTS.map((shot) => {
-        const file = resolve(out, shot.file);
-        if (!existsSync(file)) return '';
-        const stamp = Math.round(statSync(file).mtimeMs);
-        const previous = resolve(out, `${shot.file}.prev`);
-        const pair = existsSync(previous)
-            ? `<div class="pair"><img class="prev" src="${shot.file}.prev?v=${stamp}" alt="${shot.title} previous"><img src="${shot.file}?v=${stamp}" alt="${shot.title}"></div>`
-            : `<img src="${shot.file}?v=${stamp}" alt="${shot.title}">`;
-        const selected = (verdict: string): string => (review[shot.id]?.verdict === verdict ? ' selected' : '');
-        return `<figure>${pair}<figcaption><b>${escape(shot.title)}</b><br><code>${shot.id}</code> · ${escape(shot.question)}</figcaption>
-        <div class="review" data-shot="${shot.id}"><select data-verdict><option value="">—</option><option value="kept"${selected('kept')}>kept</option><option value="rejected"${selected('rejected')}>rejected</option></select><textarea rows="1" placeholder="review note"></textarea></div></figure>`;
-    }).join('\n');
+    const cards = [
+        ...HERO_SHOTS.map((shot) => card(shot.id, shot.file, shot.title, shot.question)),
+        ...STORIES.map((story) => card(story.id, story.file, story.title, story.question)),
+    ].join('\n');
     writeFileSync(
         resolve(out, 'pi-durable-index.html'),
         `<!doctype html><html><head><meta charset="utf-8">${watch ? '<meta http-equiv="refresh" content="4">' : ''}<title>Pi Durable — screenshot studio</title>
@@ -77,12 +95,16 @@ else process.exit(1);
 console.log(`\nScreenshot studio: file://${resolve(out, 'pi-durable-index.html')}`);
 
 if (watch && !sheetOnly) {
-    let previous = SHOTS.map((shot) => statSync(resolve(out, shot.file)).mtimeMs).join('|');
+    const tracked = [...HERO_SHOTS.map((shot) => shot.file), ...STORIES.map((story) => story.file)];
+    let previous = tracked.map((file) => {
+        const path = resolve(out, file);
+        return existsSync(path) ? statSync(path).mtimeMs : 0;
+    }).join('|');
     const poll = (): void => {
         setTimeout(() => {
-            const next = SHOTS.map((shot) => {
-                const file = resolve(out, shot.file);
-                return existsSync(file) ? statSync(file).mtimeMs : 0;
+            const next = tracked.map((file) => {
+                const path = resolve(out, file);
+                return existsSync(path) ? statSync(path).mtimeMs : 0;
             }).join('|');
             if (next !== previous) {
                 previous = next;

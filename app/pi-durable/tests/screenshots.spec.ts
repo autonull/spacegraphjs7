@@ -1,29 +1,14 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { SHOTS, type Shot } from '../src/shots';
-import { call } from './boot';
+import { HERO_SHOTS, type Shot } from '../src/shots';
+import { call, settle } from './boot';
 
 const OUT = process.env.SG_DURABLE_SHOTS ?? resolve(import.meta.dirname, '../../../docs/screenshots');
 mkdirSync(OUT, { recursive: true });
 
 const requested = process.env.SG_DURABLE_SHOT?.split(',').map((id) => id.trim()).filter(Boolean);
-const shots: readonly Shot[] = requested?.length ? SHOTS.filter((shot) => requested.includes(shot.id)) : SHOTS;
-
-const settle = async (page: Page): Promise<void> => {
-    await page.waitForFunction(() => {
-        const api = (window as unknown as { __durable?: { viewport: () => { zoom: number } } }).__durable;
-        if (!api?.viewport) return false;
-        const state = window as unknown as { sgKey?: string; sgStable?: number };
-        const key = String(api.viewport().zoom.toFixed(3));
-        if (state.sgKey === key) state.sgStable = (state.sgStable ?? 0) + 1;
-        else {
-            state.sgKey = key;
-            state.sgStable = 1;
-        }
-        return state.sgStable >= 3;
-    }, undefined, { timeout: 8_000, polling: 120 });
-};
+const shots: readonly Shot[] = requested?.length ? HERO_SHOTS.filter((shot) => requested.includes(shot.id)) : HERO_SHOTS;
 
 for (const shot of shots) {
     test(`shot: ${shot.id} — ${shot.title}`, async ({ page }) => {

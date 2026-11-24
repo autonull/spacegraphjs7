@@ -63,7 +63,7 @@ pnpm --filter pi-durable shots:all</code></pre>
 
         <section>
             <div class="wrap">
-                <h2>One kernel, three placements</h2>
+                <h2>One kernel, many views</h2>
                 <div class="shots">
                     <figure>
                         <img src="./pi-durable/basic-turn.png" alt="A committed faux answer in the graph" />
@@ -74,12 +74,12 @@ pnpm --filter pi-durable shots:all</code></pre>
                         <figcaption>A fork is a recorded edge, not an inferred cause; each tab keeps its own view state.</figcaption>
                     </figure>
                     <figure>
-                        <img src="./pi-durable/task-graph.png" alt="Task ownership and wait edges" />
-                        <figcaption>The task view scopes owners, waits and sleep signals from the same kernel.</figcaption>
+                        <img src="./pi-durable/stories/task-wake.png" alt="A sleeping approval waking across four frames" />
+                        <figcaption>Four frames show a sleeping approval, the Approve action, its settled task and the task in context.</figcaption>
                     </figure>
                     <figure>
-                        <img src="./pi-durable/timeline.png" alt="Committed transcript in order" />
-                        <figcaption>The timeline scopes the same folded kernel along its order edges.</figcaption>
+                        <img src="./pi-durable/stories/inspect-flow.png" alt="Usage, traces and document views across four frames" />
+                        <figcaption>Usage, agent-event spans and deferred host documents are facets of one folded kernel.</figcaption>
                     </figure>
                 </div>
             </div>

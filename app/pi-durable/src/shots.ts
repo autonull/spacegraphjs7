@@ -32,4 +32,5 @@ export const SHOTS: readonly Shot[] = SCENARIOS.map((entry) => ({
 
 export const shotById = (id: string | null | undefined): Shot | undefined => findShotByID(SHOTS, id);
 
-export const CORE_SHOTS = SHOTS.filter((shot) => shot.tier === 'Core').slice(0, 4);
+const HERO_IDS = new Set(['basic-turn', 'sleeping-approval', 'fork-tabs', 'resumed']);
+export const HERO_SHOTS = SHOTS.filter((shot) => HERO_IDS.has(shot.id));

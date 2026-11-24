@@ -17,7 +17,7 @@
         "shot": "tsx scripts/shot.ts",
         "shots:all": "tsx scripts/shot.ts all",
         "shots:focus": "tsx scripts/shot.ts basic-turn,sleeping-approval,fork-tabs,resumed",
-        "shots:phase2": "tsx scripts/shot.ts task-graph,timeline",
+        "shots:stories": "tsx scripts/shot.ts stories",
         "shots:watch": "tsx scripts/shot.ts --watch"
     },
     "dependencies": {

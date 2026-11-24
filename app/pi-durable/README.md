@@ -14,9 +14,9 @@ pnpm install
 pnpm --filter pi-durable dev          # server 8788 + Vite 5176 → http://localhost:5176
 pnpm --filter pi-durable check:fast   # types + translator/fold/tab tests
 pnpm --filter pi-durable verify:fast  # check:fast + browser journey
-pnpm --filter pi-durable shots:focus  # four Core shots + before/after pairs
-pnpm --filter pi-durable shots:phase2 # task-graph and timeline shots
-pnpm --filter pi-durable shots:all    # every Core and Next scenario shot
+pnpm --filter pi-durable shots:focus  # four Core heroes + before/after pairs
+pnpm --filter pi-durable shots:stories # six story composites
+pnpm --filter pi-durable shots:all    # heroes + stories
 pnpm --filter pi-durable verify:visual
 pnpm --filter pi-durable verify       # dependency and docs allowlist guard
 pnpm --filter pi-durable build        # static bundle, boots from the local feed
@@ -61,14 +61,14 @@ shot's view. `src/scenarios.ts` is the single catalog: each row names a `Core` o
 from the plan, a deterministic view, tasks, expected stable ids and the test that guards it. `?s=<tab>`
 restores the active tab; `?seed=<name>` varies faux answers for capture runs.
 
-The four Core shots are `basic-turn`, `sleeping-approval`, `fork-tabs` and `resumed`. Phase 2 adds
-`task-graph` and `timeline`, two placements of the same folded kernel: the first scopes ownership and
-wait edges, the second scopes the `orders` chain. Neither adds a renderer branch. The remaining
-shots demonstrate one `Next` row each: busy inbox, extension sections, tool calls, system prompts,
-per-conversation agents, settings, environment, reload, reset/handoff, compaction, agent-event traces,
-subagent reports, child tasks, host-owned documents, usage and typed errors. `pnpm --filter
-pi-durable shots:all` captures every one; the contact sheet keeps before/after pairs without writing
-a verdict.
+Four Core heroes are tracked at full resolution: `basic-turn`, `sleeping-approval`, `fork-tabs` and
+`resumed`. Six story composites replace the wall of near-duplicate `Next` frames: `turn-flow`,
+`task-wake`, `fork-journey`, `resume-journey`, `inspect-flow` and `child-flow`. Each story captures
+four states from pure `?shot`/`?scenario` state through `window.__durable` hooks, then composes them
+in a browser canvas. Views `diff`, `trace`, `docs` and `transcript` re-place the same folded kernel
+and are represented inside those stories, not as new renderer contracts. `pnpm --filter pi-durable
+shots:all` captures heroes and stories; the contact sheet keeps before/after pairs without writing a
+verdict.
 
 ## Environment
 
@@ -89,7 +89,8 @@ a verdict.
 | `PI_DURABLE_SERVER_PORT` | `8788` | Node server port |
 | `PI_DURABLE_WEB_PORT` | `5176` | Vite port |
 | `SG_DURABLE_SHOTS` | `docs/screenshots` | Screenshot output directory |
-| `SG_DURABLE_SHOT` | all | Comma-separated shot ids |
+| `SG_DURABLE_SHOT` | heroes | Comma-separated hero shot ids |
+| `SG_DURABLE_STORY` | all | Comma-separated story ids |
 
 ## Server API (Core)
 

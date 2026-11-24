@@ -12,6 +12,21 @@ export const boot = async (page: Page, query = ''): Promise<string[]> => {
     return errors;
 };
 
+export const settle = async (page: Page): Promise<void> => {
+    await page.waitForFunction(() => {
+        const api = (window as unknown as { __durable?: { viewport: () => { zoom: number } } }).__durable;
+        if (!api?.viewport) return false;
+        const state = window as unknown as { sgKey?: string; sgStable?: number };
+        const key = String(api.viewport().zoom.toFixed(3));
+        if (state.sgKey === key) state.sgStable = (state.sgStable ?? 0) + 1;
+        else {
+            state.sgKey = key;
+            state.sgStable = 1;
+        }
+        return state.sgStable >= 3;
+    }, undefined, { timeout: 8_000, polling: 120 });
+};
+
 export const call = async <T>(page: Page, name: string, ...args: unknown[]): Promise<T> =>
     page.evaluate(
         ({ name, args }) => {

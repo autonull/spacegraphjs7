@@ -415,6 +415,11 @@ export class DurableHost {
             },
             viewport: () => this.renderer.getViewport?.() ?? { zoom: 1, center: [0, 0, 0] },
             viewName: () => this.#viewName,
+            setView: (name: string) => {
+                if (!VIEW_NAMES.includes(name as ViewName)) return false;
+                this.setView(name as ViewName);
+                return true;
+            },
             representation: () => ({
                 view: this.#viewName,
                 nodes: this.#presented.nodes.length,

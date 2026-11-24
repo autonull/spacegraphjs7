@@ -52,39 +52,30 @@ same state in a browser; no screenshot script encodes a special camera path.
 
 ## Curated Pi Durable shots
 
-`app/pi-durable/src/shots.ts` derives its catalog from `src/scenarios.ts`. Each `?shot=<id>` boots the
-same deterministic local feed, so no capture script carries a private camera path. `SG_DURABLE_SHOTS`
-redirects output; `SG_DURABLE_SHOT` filters ids.
+`app/pi-durable/src/shots.ts` derives its URL catalog from `src/scenarios.ts`. Each `?shot=<id>` boots
+the same deterministic local feed, so no capture script carries a private camera path. Four Core
+heroes stay at full resolution; `src/stories.ts` defines six composites that show a sequence of
+motion instead of one near-duplicate frame per scenario. `SG_DURABLE_SHOTS` redirects output,
+`SG_DURABLE_SHOT` filters heroes and `SG_DURABLE_STORY` filters stories.
 
-| File | Shot | Question |
-| ---- | ---- | -------- |
+| File | Shot or story | Question |
+| ---- | ------------- | -------- |
 | `pi-durable/basic-turn.png` | `basic-turn` | Can I finish a chat turn with no provider and no API key? |
 | `pi-durable/sleeping-approval.png` | `sleeping-approval` | Can I see why a task sleeps and wake it? |
 | `pi-durable/fork-tabs.png` | `fork-tabs` | Can two conversations stay open with independent state? |
 | `pi-durable/resumed.png` | `resumed` | Does a retried request id produce one answer? |
-| `pi-durable/task-graph.png` | `task-graph` | Can I see committed task owners and waits? |
-| `pi-durable/timeline.png` | `timeline` | Can I read the committed transcript in order? |
-| `pi-durable/typed-errors.png` | `typed-errors` | Does a run failure offer a recovery action? |
-| `pi-durable/busy-inbox.png` | `busy-inbox` | Can steers queue while a run is busy? |
-| `pi-durable/extension-section.png` | `extension-section` | Can an extension add sections and hooks? |
-| `pi-durable/tool-call.png` | `tool-call` | Does a tool result become an action node? |
-| `pi-durable/system-prompt.png` | `system-prompt` | Are instructions a committed entry? |
-| `pi-durable/agent-settings.png` | `agent-settings` | Can a tab keep its own agent? |
-| `pi-durable/configure.png` | `configure` | Can settings round-trip through the session? |
-| `pi-durable/environment.png` | `environment` | Is the execution environment inspectable? |
-| `pi-durable/reload-extension.png` | `reload-extension` | Can an installed extension be replaced? |
-| `pi-durable/reset-handoff.png` | `reset-handoff` | Does a handoff keep its boundary id? |
-| `pi-durable/compaction.png` | `compaction` | Can a compacted transcript stay navigable? |
-| `pi-durable/agent-events.png` | `agent-events` | Are span events kept off the causal graph? |
-| `pi-durable/subagent-report.png` | `subagent-report` | Does a child report back to its owner? |
-| `pi-durable/checkout-children.png` | `checkout-children` | Can child tasks restart or abort independently? |
-| `pi-durable/app-state.png` | `app-state` | Can host state be shown without becoming a fact? |
-| `pi-durable/usage.png` | `usage` | Can token usage be inspected offline? |
+| `pi-durable/stories/turn-flow.png` | `turn-flow` | How does a prompt become a durable answer? |
+| `pi-durable/stories/task-wake.png` | `task-wake` | How does a sleeping approval settle? |
+| `pi-durable/stories/fork-journey.png` | `fork-journey` | How does a child conversation inherit a boundary? |
+| `pi-durable/stories/resume-journey.png` | `resume-journey` | Does a resumed turn keep its boundary and answer? |
+| `pi-durable/stories/inspect-flow.png` | `inspect-flow` | Can usage, traces and host documents stay distinct? |
+| `pi-durable/stories/child-flow.png` | `child-flow` | How do child tasks and failures read as durable facts? |
 
-Recapture the first four with `pnpm --filter pi-durable shots:focus`, the two scoped placements with
-`shots:phase2`, or all rows with `shots:all`. `scripts/shot.ts` copies prior images to gitignored
-`.prev` pairs and writes `pi-durable-index.html`, a local studio with a kept/rejected selector.
-Verdicts stay in the browser until a human pastes them into a review file.
+Recapture the heroes with `pnpm --filter pi-durable shots:focus`, the composites with
+`shots:stories`, or both with `shots:all`. A story captures four states from pure shot state in one
+page, then composes them into a 1600×1000 canvas with captions. `scripts/shot.ts` copies prior images
+to gitignored `.prev` pairs and writes `pi-durable-index.html`, a local studio with a kept/rejected
+selector. Verdicts stay in the browser until a human pastes them into a review file.
 
 ## Regenerate and iterate
 
