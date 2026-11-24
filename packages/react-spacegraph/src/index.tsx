@@ -31,7 +31,6 @@ export const GraphView = (props: GraphViewProps): ReactElement => {
             binding.dispose();
             if (bindingRef.current === binding) bindingRef.current = null;
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {

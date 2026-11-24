@@ -105,122 +105,64 @@ export function checkQuality(model: QualityModel, options: QualityOptions = {}):
     const ids = new Set(nodes.map((node) => node.id));
     const points = nodes.map((node) => point(node.position));
     const issues: QualityIssue[] = [];
+    const issue = (code: QualityCode, nodeIds: readonly string[], message: string, autofix = false) =>
+        issues.push({ code, nodeIds, message, autofix });
 
     for (let first = 0; first < nodes.length; first += 1) {
         for (let second = first + 1; second < nodes.length; second += 1) {
             const a = points[first]!;
             const b = points[second]!;
             if (Math.hypot(a[0] - b[0], a[1] - b[1]) < overlapDistance) {
-                issues.push({
-                    code: 'overlap',
-                    nodeIds: [nodes[first]!.id, nodes[second]!.id],
-                    message: `${nodes[first]!.id} and ${nodes[second]!.id} overlap at this zoom`,
-                    autofix: true,
-                });
+                const from = nodes[first]!.id;
+                const to = nodes[second]!.id;
+                issue('overlap', [from, to], `${from} and ${to} overlap at this zoom`, true);
             }
         }
     }
 
     for (const node of nodes) {
-        if (!node.label) {
-            issues.push({
-                code: 'missing-label',
-                nodeIds: [node.id],
-                message: `${node.id} has no accessible label`,
-                autofix: true,
-            });
-        }
+        if (!node.label) issue('missing-label', [node.id], `${node.id} has no accessible label`, true);
     }
 
     const domNodes = nodes.filter(isDomNode).length;
-    if (domNodes > maxDomNodes) {
-        issues.push({
-            code: 'dom-budget',
-            nodeIds: [],
-            message: `${domNodes} DOM cards exceed the ${maxDomNodes}-card budget`,
-            autofix: false,
-        });
-    }
+    if (domNodes > maxDomNodes)
+        issue('dom-budget', [], `${domNodes} DOM cards exceed the ${maxDomNodes}-card budget`);
 
     for (const edge of model.edges ?? []) {
-        if (!edge.source || !edge.target || !ids.has(edge.source) || !ids.has(edge.target)) {
-            issues.push({
-                code: 'edge-endpoint',
-                nodeIds: [edge.source ?? '', edge.target ?? ''].filter(Boolean),
-                message: `${edge.id ?? 'edge'} does not connect two visible nodes`,
-                autofix: false,
-            });
-        }
+        if (!edge.source || !edge.target || !ids.has(edge.source) || !ids.has(edge.target))
+            issue(
+                'edge-endpoint',
+                [edge.source ?? '', edge.target ?? ''].filter(Boolean),
+                `${edge.id ?? 'edge'} does not connect two visible nodes`,
+            );
     }
 
-    for (const preference of options.preferences ?? []) {
-        issues.push({
-            code: 'preference',
-            nodeIds: [],
-            message: `${preference} is a preference; log a human decision under ADR 0008`,
-            autofix: false,
-        });
-    }
+    for (const preference of options.preferences ?? [])
+        issue('preference', [], `${preference} is a preference; log a human decision under ADR 0008`);
 
     if (options.dom) {
         const mirror = [...options.dom.querySelectorAll('[data-id]')];
-        if (mirror.length === 0) {
-            issues.push({
-                code: 'a11y-mirror',
-                nodeIds: [],
-                message: 'no hidden DOM mirror items were supplied',
-                autofix: false,
-            });
-        }
+        if (mirror.length === 0) issue('a11y-mirror', [], 'no hidden DOM mirror items were supplied');
         for (const node of nodes) {
             const item = mirror.find((element) => element.getAttribute('data-id') === node.id);
             if (!item) {
-                issues.push({
-                    code: 'a11y-missing-item',
-                    nodeIds: [node.id],
-                    message: `${node.id} is absent from the DOM mirror`,
-                    autofix: false,
-                });
+                issue('a11y-missing-item', [node.id], `${node.id} is absent from the DOM mirror`);
                 continue;
             }
-            if (!item.getAttribute('role') && item.tagName !== 'LI') {
-                issues.push({
-                    code: 'a11y-role',
-                    nodeIds: [node.id],
-                    message: `${node.id} has no role in the DOM mirror`,
-                    autofix: false,
-                });
-            }
-            if (item.getAttribute('tabindex') === null) {
-                issues.push({
-                    code: 'a11y-tabindex',
-                    nodeIds: [node.id],
-                    message: `${node.id} is not keyboard reachable`,
-                    autofix: false,
-                });
-            }
+            if (!item.getAttribute('role') && item.tagName !== 'LI')
+                issue('a11y-role', [node.id], `${node.id} has no role in the DOM mirror`);
+            if (item.getAttribute('tabindex') === null)
+                issue('a11y-tabindex', [node.id], `${node.id} is not keyboard reachable`);
         }
         const root = options.dom as Element;
         const direction = root.getAttribute?.('dir') ?? options.dom.querySelector('[dir]')?.getAttribute('dir');
-        if (options.direction && direction && direction !== options.direction) {
-            issues.push({
-                code: 'direction-mismatch',
-                nodeIds: [],
-                message: `DOM direction is ${direction}, expected ${options.direction}`,
-                autofix: false,
-            });
-        }
+        if (options.direction && direction && direction !== options.direction)
+            issue('direction-mismatch', [], `DOM direction is ${direction}, expected ${options.direction}`);
         const reduced =
             root.getAttribute?.('data-reduced-motion') ??
             options.dom.querySelector('[data-reduced-motion]')?.getAttribute('data-reduced-motion');
-        if (options.reducedMotion === true && reduced !== 'true') {
-            issues.push({
-                code: 'motion-mismatch',
-                nodeIds: [],
-                message: 'reduced motion is requested but the host does not declare it',
-                autofix: false,
-            });
-        }
+        if (options.reducedMotion === true && reduced !== 'true')
+            issue('motion-mismatch', [], 'reduced motion is requested but the host does not declare it');
     }
 
     const score = Math.max(0, 100 - issues.reduce((total, issue) => total + WEIGHTS[issue.code], 0));

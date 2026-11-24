@@ -4,23 +4,13 @@
  */
 
 import type { JSX } from 'solid-js';
-import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shared/popover';
+import {
+    DefaultPopover,
+    type PopoverComponent,
+    type PopoverProps,
+} from '@spacegraphjs/shared/popover';
 
-export interface ToolbarMenuProps {
-    /** Unique slot identifier for testing. */
-    slot: string;
-    /** Label for accessibility. */
-    label: string;
-    /** Icon name for the trigger button. */
-    icon: string;
-    /** Current value to display (optional). */
-    value?: string;
-    /** Slot for the value display (optional). */
-    valueSlot?: string;
-    /** Alignment of the popover content. */
-    align?: 'start' | 'end';
-    /** Children content. */
-    children: JSX.Element;
+export interface ToolbarMenuProps extends Omit<PopoverProps, 'open' | 'onOpenChange'> {
     /** Custom popover component (optional). */
     Popover?: PopoverComponent;
 }
@@ -32,7 +22,7 @@ export interface ToolbarMenuProps {
 export function ToolbarMenu(props: ToolbarMenuProps): JSX.Element {
     const { slot, label, icon, value, valueSlot, align = 'start', children, Popover } = props;
 
-    const PopoverComponent = Popover ?? createPopoverRenderer();
+    const PopoverComponent = Popover ?? DefaultPopover;
 
     return (
         <PopoverComponent
