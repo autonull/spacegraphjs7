@@ -211,9 +211,12 @@ The live model smoke test is separately invoked and its skip reason is reported.
 | B — visual detail and representations | Landed | B1/B2: friendly labels, per-card summaries, edge captions, legend, richer inspector; `tests/detail.spec.ts`. B1b/B3: importance tiers (`hero`/`medium`/`compact`) from committed `data`, `nodeSizeFn` + card template, lane/axis captions, four re-placements (`diff`, `trace`, `docs`, `transcript`), `tests/representations.spec.ts`. B4: six tracked composites in `docs/screenshots/pi-durable/stories/`, four Core heroes retained, 18 near-duplicate Next PNGs retired (gallery 2.4 MB → 1.2 MB), `tests/stories.spec.ts`, `shots:stories` and `--composite`, contact sheet/docs/landing page updated. Frames are captured at 1600×1000 and drawn into 800×500 grid cells: the lower viewport made the mobile rail dominate the frame. Gates 2026-11-24: `pnpm check:fast` (39 tests), `pnpm verify`, `pnpm build`, `pnpm verify:visual` (5 tests), `pnpm shots:all` (4 heroes + 6 stories), root `pnpm run check` all green. |
 | C — deferred surfaces | Proposed | No code changed |
 
-Next change set: Stream C, starting with the storage-only surfaces (C4 `asOf`, C5 recorder/replay,
-C6 storage conformance) before the optional Pi packages in C1/C2 and the observer process in C3. C4
-and C5 extend the existing `resume-journey` composite; they do not add standalone PNGs.
+Next change set: Stream C. C4 (`snapshotAsOf`) and C6 (`registerStorageConformance`) exist in the
+installed Pi Durable 1.6.0 typings; C5 is pure local-feed logic. C1/C2 helpers (`createCodemodeExtension`,
+`createNodePhotonImages`, `CodemodeSandbox`) are absent from the installed Pi AI 1.6.0 typings, so
+the §4 stop rule applies: record that exact gap and split those surfaces into their own change set
+instead of adding a shim. C3 needs a second owner process and stays separate. C4/C5 extend the
+existing `resume-journey` composite; neither adds a standalone PNG.
 
 Update this table at the end of each change set with the exact commands and results. Keep TODO12 as
 the record of the landed Core; record new work here only.
