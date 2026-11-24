@@ -152,6 +152,9 @@ Errors are typed (`no-provider`, `unknown-conversation`, `run_failed`, `turn_lim
   `monument`; focus raises a node to at least the card band without moving it. The core
   `solveNodeAreaDensity` hint scales the whole ladder uniformly so nodes cover a useful share of the
   stage; `solveErgonomicLayout` supplies compact positions that the simulation still owns.
+- `src/host.ts` — `#groupFrom` turns recorded owner, wait and `orders` edges into subgraph frames via
+  the adapter's band seam; each rung adds a different committed-detail caption to the cards. Zooming
+  changes representation, never the kernel or its edge set.
 - `src/edge-style.ts` — recorded edge kinds map to the renderer's solid/dashed/dotted and confidence
   channels. Colour stays theme-owned because the renderer contract has no edge-tone field.
 - `src/provenance.ts` — "why is this here?" reads the folded kernel and entry log; it reports commit

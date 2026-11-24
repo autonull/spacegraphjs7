@@ -129,6 +129,12 @@
             #tasks, #timeline { display: none; }
             #tasks[data-active], #timeline[data-active] { display: block; }
             #canvas .spacegraph-html-node { display: flex !important; flex-direction: column; }
+            #canvas .spacegraph-group-node { border: 0 !important; background: transparent !important;
+                box-shadow: none !important; border-radius: 0 !important; }
+            .durable-band { width: 100%; height: 100%; box-sizing: border-box; pointer-events: none;
+                border: 1px dashed color-mix(in srgb, var(--line) 80%, transparent); border-radius: 10px; position: relative; }
+            .durable-band span { position: absolute; top: 6px; left: 8px; font-size: 11px;
+                text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
             .durable-card { display: flex; flex-direction: column; justify-content: center; gap: 4px;
                 width: 100%; height: 100%; box-sizing: border-box; overflow: hidden;
                 border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2);
@@ -148,6 +154,8 @@
             .durable-card[data-diff="removed"] { border-color: var(--error); border-style: dashed; opacity: .75; }
             .durable-card .card-label { font-weight: 600; }
             .durable-card .card-summary { opacity: .72; }
+            .durable-card .card-detail { font: 10px ui-monospace, monospace; opacity: .6;
+                letter-spacing: .02em; }
             .durable-card .card-status { margin-left: 6px; font-size: .8em; opacity: .7; font-weight: 400; }
             .durable-card .card-workshop { font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
                 color: var(--accent); opacity: .85; }
