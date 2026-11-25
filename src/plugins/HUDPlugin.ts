@@ -164,7 +164,9 @@ export class HUDPlugin extends BaseSystemPlugin {
         this.on('edge:added', () => this.updateNodeCount());
         this.on('edge:removed', () => this.updateNodeCount());
         this.on('selection:changed', (e) => this.updateSelection(e));
+        this.on('projection:change', () => this.updateCamera());
         this.on('fractal:level-change', (e: any) => this.updateFractalLevel(e));
+        this.on('fractal:transition-progress', (p: number) => this.updateFractalProgress(p));
     }
 
     private updateNodeCount(): void {

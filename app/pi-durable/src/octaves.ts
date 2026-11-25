@@ -57,3 +57,9 @@ export const octaveFor = (node: OctaveTarget, sample: ScaleSample, focus?: strin
     );
     return node.id && node.id === focus ? Math.max(FOCUS_OCTAVE, octave) : octave;
 };
+
+export const octaveSizeFor = (
+    node: OctaveTarget,
+    sample: ScaleSample,
+    focus?: string,
+): readonly [number, number] => sizeForOctave(octaveFor(node, sample, focus));

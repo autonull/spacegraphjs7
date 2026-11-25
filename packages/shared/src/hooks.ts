@@ -69,46 +69,6 @@ export function useDebounce<T>(value: Accessor<T>, delay: number): Accessor<T> {
 }
 
 /**
- * Hook for throttling a callback.
- * @param callback - Function to throttle
- * @param delay - Throttle delay in ms
- * @returns Throttled function
- */
-export function useThrottledCallback<T extends (...args: unknown[]) => void>(
-    callback: T,
-    delay: number,
-): T {
-    let lastCall = 0;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    let lastArgs: unknown[] | null = null;
-
-    const throttled = ((...args: unknown[]) => {
-        const now = Date.now();
-        lastArgs = args;
-
-        if (now - lastCall >= delay) {
-            lastCall = now;
-            callback(...args);
-        } else if (!timeoutId) {
-            timeoutId = setTimeout(
-                () => {
-                    lastCall = Date.now();
-                    timeoutId = null;
-                    if (lastArgs) callback(...lastArgs);
-                },
-                delay - (now - lastCall),
-            );
-        }
-    }) as T;
-
-    onCleanup(() => {
-        if (timeoutId) clearTimeout(timeoutId);
-    });
-
-    return throttled;
-}
-
-/**
  * Hook for reading a value from localStorage with SSR safety.
  * @param key - Storage key
  * @param defaultValue - Default value

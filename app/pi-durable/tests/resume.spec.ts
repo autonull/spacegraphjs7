@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { rmSync } from 'node:fs';
+import { exportURL } from '../src/api';
 import { startServer } from './server-process';
 
 const PORT = 8799;
 
 const answerCount = async (base: string): Promise<number> => {
-    const body = await (await fetch(`${base}/api/export?format=md&id=1`)).text();
+    const body = await (await fetch(`${base}${exportURL('md', '1')}`)).text();
     return body.match(/Paris\./g)?.length ?? 0;
 };
 

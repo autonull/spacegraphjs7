@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { EventEmitter } from '../src/core/EventEmitter';
 import { MinimapPlugin } from '../src/plugins/MinimapPlugin';
+import { ZoomBandsPlugin } from '../src/plugins/ZoomBandsPlugin';
 import { ZoomUIPlugin } from '../src/plugins/ZoomUIPlugin';
 
 interface FakeRenderer {
@@ -122,5 +123,21 @@ describe('L1.27 ZoomUIPlugin embedding', () => {
         expect(() =>
             sg.events.emit('fractal:level-change', { to: 2, label: 'Detail' }),
         ).not.toThrow();
+    });
+});
+
+describe('flight progress relay', () => {
+    it('forwards camera flight progress to the zoom chrome', () => {
+        const sg = { ...fakeSg(), zoom: 0 };
+        const plugin = new ZoomBandsPlugin();
+        plugin.init(sg as never, sg.graph as never, sg.events as never);
+
+        const progress: number[] = [];
+        sg.events.on('fractal:transition-progress', (value: number) => progress.push(value));
+        sg.events.emit('camera:fly:progress', 0.25);
+        sg.events.emit('camera:fly:progress', 1);
+
+        expect(progress).toEqual([0.25, 1]);
+        plugin.dispose();
     });
 });

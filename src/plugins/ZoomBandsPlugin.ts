@@ -31,6 +31,9 @@ export class ZoomBandsPlugin extends BaseSystemPlugin {
 
     protected onInit(): void {
         this.on('zoom:change', (event: { zoom: number }) => this.feed(event.zoom));
+        this.on('camera:fly:progress', (progress: number) =>
+            this.emit('fractal:transition-progress', progress),
+        );
         this.feed(this.sg.zoom, true);
     }
 

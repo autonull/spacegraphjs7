@@ -1191,6 +1191,9 @@ describe('Graph Serialization', () => {
         expect(sg2.graph.nodes.size).toBe(2);
         expect(sg2.graph.edges.size).toBe(1);
         expect(sg2.graph.nodes.get('a').position.x).toBe(10);
+        expect(
+            sg2.graph.nodes.get('b').position.distanceTo(sg2.graph.nodes.get('a').position),
+        ).toBeCloseTo(Math.hypot(30, 30, 30), 5);
     });
 
     it('keeps graphs isolated: an edge to a node in another instance is rejected', async () => {

@@ -38,3 +38,6 @@ export const postJSON = <T>(path: string, body: object = {}): Promise<T> =>
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),
     }).then((response) => parse<T>(response));
+
+export const exportURL = (format: string, id: string): string =>
+    `/api/export?${new URLSearchParams({ format, id })}`;

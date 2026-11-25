@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { exportURL } from '../src/api';
 import { startServer } from './server-process';
 
 const post = (base: string, path: string, body: object): Promise<Response> =>
@@ -24,7 +25,7 @@ describe('read-only observer', () => {
                 text: 'observer-visible', requestId: 'observer-1',
             });
             await waitFor(async () => {
-                const reply = await fetch(`${owner.base}/api/export?format=json&id=1`);
+                const reply = await fetch(`${owner.base}${exportURL('json', '1')}`);
                 const body = await reply.json() as { view?: { entries?: readonly { kind: string }[] } };
                 return body.view?.entries?.some((entry) => entry.kind === 'pi.assistant') ?? false;
             });

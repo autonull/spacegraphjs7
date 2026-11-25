@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { existsSync, rmSync } from 'node:fs';
+import { exportURL } from '../src/api';
 import { startLlamaServer, startServer } from './server-process';
 
 const MODEL_PATH = process.env.PI_DURABLE_TEST_GGUF ?? '/home/me/gguf/Qwen_Qwen3.5-0.8B-Q4_K_M.gguf';
@@ -35,7 +36,7 @@ test('a local llama.cpp model commits a real offline answer', async () => {
 
         await expect
             .poll(async () => {
-                const body = await (await fetch(`${server!.base}/api/export?format=md&id=${id}`)).text();
+                const body = await (await fetch(`${server!.base}${exportURL('md', id)}`)).text();
                 return /- pi\.assistant: (?!\[\]|"")/.test(body);
             }, { timeout: 180_000 })
             .toBe(true);

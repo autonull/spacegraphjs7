@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { exportURL } from '../src/api';
 import { boot, call, openPanel } from './boot';
 
 test('nine-step first run works offline', async ({ page }) => {
@@ -92,7 +93,7 @@ test('a seeded prompt and a retried request id produce one answer', async ({ pag
     await expect
         .poll(async () => {
             const exported = (await (
-                await request.get(`/api/export?format=md&id=${id}`)
+                await request.get(exportURL('md', id))
             ).body()) as Buffer | null;
             return exported?.toString().match(/Paris\./g)?.length ?? 0;
         })

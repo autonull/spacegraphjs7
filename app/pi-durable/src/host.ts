@@ -27,6 +27,7 @@ import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import { ZoomBands, type ScaleSample } from 'spacegraphjs/zoom';
 import { decodeAddress, encodeAddress, type Address } from './address';
+import { exportURL } from './api';
 import { edgeStyleForKind } from './edge-style';
 import {
     attentionWeights,
@@ -41,7 +42,7 @@ import { focusLens } from './focus';
 import { filterCounts, matchesFilter, type MuteFilter } from './filters';
 import { instrumentsFor, type Instruments } from './instruments';
 import { LAYOUT_NAMES, lensCompletions, LENS_HELP, parseLens, type LayoutName } from './lens';
-import { bandForOctave, octaveFor, sizeForOctave, type OctaveBand } from './octaves';
+import { bandForOctave, octaveFor, octaveSizeFor, sizeForOctave, type OctaveBand } from './octaves';
 import { provenanceFor } from './provenance';
 import {
     buildScopes,
@@ -193,7 +194,7 @@ const sizeForNode = (node: DurableNode): readonly [number, number] => {
     const size = node.data?.['size'];
     if (Array.isArray(size) && size.length === 2 && typeof size[0] === 'number' && typeof size[1] === 'number')
         return [size[0], size[1]];
-    return sizeForOctave(octaveFor(node, FACT_SAMPLE));
+    return octaveSizeFor(node, FACT_SAMPLE);
 };
 
 const GLOSSARY: Readonly<Record<string, string>> = {
@@ -709,7 +710,7 @@ export class DurableHost {
         const focus = tab.view.focus;
         const density = solveNodeAreaDensity({
             nodes: presented.nodes.map((node) => {
-                const [width, height] = sizeForOctave(octaveFor(node, this.#sample, focus));
+                const [width, height] = octaveSizeFor(node, this.#sample, focus);
                 return { width, height };
             }),
             viewport: {
@@ -1672,8 +1673,7 @@ export class DurableHost {
             URL.revokeObjectURL(url);
             return;
         }
-        const params = new URLSearchParams({ format, id: tab.id });
-        location.assign(`/api/export?${params.toString()}`);
+        location.assign(exportURL(format, tab.id));
     }
 
     /** One position authority: kit scopes define targets; the simulation owns the current frame. */
