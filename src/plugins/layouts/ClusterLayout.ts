@@ -9,8 +9,6 @@ export interface ClusterLayoutOptions extends LayoutOptions {
     clusterRadius?: number;
     /** Micro radius within a cluster. Optional: when unset, auto-computed from max member size + padding. */
     nodeRadius?: number;
-    /** Extra padding between nodes. Default: 20. */
-    nodePadding?: number;
 }
 
 export class ClusterLayout extends BaseLayout<ClusterLayoutOptions> {

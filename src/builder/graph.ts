@@ -217,11 +217,11 @@ export class GraphBuilder {
         return this;
     }
 
-    build(): GraphSpec {
+    build(): GraphSpec & Required<Pick<GraphSpec, 'nodes' | 'edges'>> {
         return { nodes: this.#nodes, edges: this.#edges };
     }
 
-    toSpec(): GraphSpec {
+    toSpec(): GraphSpec & Required<Pick<GraphSpec, 'nodes' | 'edges'>> {
         return this.build();
     }
 

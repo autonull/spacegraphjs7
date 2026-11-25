@@ -7,8 +7,6 @@ import { BaseLayout, type LayoutOptions } from './BaseLayout';
 export interface SpectralLayoutOptions extends LayoutOptions {
     scale: number;
     dimensions: number;
-    /** Extra padding between nodes for collision avoidance. Default: 20. */
-    nodePadding?: number;
     /** If true, run a post-pass to eliminate overlaps (30 passes). Default: true. */
     separateOverlaps?: boolean;
 }

@@ -1,16 +1,14 @@
 import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import { createIconPopover, type PopoverComponent } from '@spacegraphjs/shared/popover';
-import type { JSX } from 'solid-js';
+import type { ComponentProps, JSX } from 'solid-js';
 import { GraphQuestionsControl as ToolbarQuestionsControl } from '@spacegraphjs/toolbar';
 import { legacyI18n } from './legacy-i18n';
-export type GraphQuestionsControlProps = {
-    /** The i18n instance for translations. */
+export type GraphQuestionsControlProps = Omit<
+    ComponentProps<typeof ToolbarQuestionsControl>,
+    'i18n' | 'Popover'
+> & {
     i18n: I18n;
-    /** The icon component to use. */
-    Icon?: IconComponent;
-    /** Callback to dispatch a command. */
-    dispatchCommand?: (command: string) => void;
 };
 const legacyPopover = (Icon?: IconComponent): PopoverComponent => {
     const renderIcon = createIconRenderer(Icon);

@@ -110,8 +110,8 @@ export class HierarchyAnalyzer {
         }
 
         // BFS
-        while (queue.length > 0) {
-            const { id, level } = queue.shift()!;
+        for (let head = 0; head < queue.length; head++) {
+            const { id, level } = queue[head]!;
 
             // Ensure level array exists
             while (levels.length <= level) {

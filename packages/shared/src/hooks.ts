@@ -87,7 +87,7 @@ export function useLocalStorage<T>(
             return defaultValue;
         }
     };
-    const [value, setValue] = createSignal(initializer as unknown as T);
+    const [value, setValue] = createSignal<T>(initializer());
 
     const setStoredValue = (next: T) => {
         const newValue = resolveUpdater(next, value());

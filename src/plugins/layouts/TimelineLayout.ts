@@ -11,8 +11,6 @@ export interface TimelineLayoutOptions extends LayoutOptions {
     staggerLayout: boolean;
     /** Stagger amount. Optional: when unset, uses max node height + padding. */
     staggerAmount?: number;
-    /** Extra padding between nodes. Default: 20. */
-    nodePadding?: number;
 }
 
 export class TimelineLayout extends BaseLayout<TimelineLayoutOptions> {

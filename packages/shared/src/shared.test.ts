@@ -94,12 +94,15 @@ describe('shared hooks', () => {
         expect(debounced()).toBe(0);
     });
 
-    it('uses localStorage', () => {
-        // Test that the hook returns the correct types
-        const result = useLocalStorage('test-key-shared-' + Date.now(), 'default');
-        expect(result).toBeDefined();
-        expect(typeof result[0]).toBe('function'); // Accessor
-        expect(typeof result[1]).toBe('function'); // Setter
+    it('reads and writes localStorage values', () => {
+        const key = 'test-key-shared-' + Date.now();
+        localStorage.setItem(key, JSON.stringify('stored'));
+        const [value, setValue] = useLocalStorage(key, 'default');
+        expect(value()).toBe('stored');
+        setValue('next');
+        expect(value()).toBe('next');
+        expect(localStorage.getItem(key)).toBe(JSON.stringify('next'));
+        localStorage.removeItem(key);
     });
 
     it('reads the latest uncontrolled value from the accessor', () => {

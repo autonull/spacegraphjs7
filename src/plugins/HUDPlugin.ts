@@ -195,4 +195,26 @@ export class HUDPlugin extends BaseSystemPlugin {
         }
     }
 
+    private updateFractalProgress(progress: number): void {
+        let bar = document.getElementById('fractal-zoom-progress');
+        if (!bar) {
+            const indicator = document.querySelector('.fractal-level-indicator');
+            if (!indicator) return;
+            const track = document.createElement('div');
+            track.style.cssText =
+                'height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:10px;overflow:hidden';
+            bar = document.createElement('div');
+            bar.id = 'fractal-zoom-progress';
+            bar.style.cssText = 'height:100%;width:0;background:#8b5cf6;transition:width .1s ease';
+            track.appendChild(bar);
+            indicator.appendChild(track);
+        }
+        const progressBar = bar;
+        progressBar.style.width = `${progress * 100}%`;
+        if (progress >= 1 || progress <= 0) {
+            setTimeout(() => {
+                progressBar.style.width = '0%';
+            }, 200);
+        }
+    }
 }

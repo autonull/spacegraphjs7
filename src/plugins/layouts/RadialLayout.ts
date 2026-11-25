@@ -9,8 +9,6 @@ export interface RadialLayoutOptions extends LayoutOptions {
     radiusStep?: number;
     z: number;
     startAngle: number;
-    /** Extra padding between nodes. Default: 20. */
-    nodePadding?: number;
 }
 
 export class RadialLayout extends BaseLayout<RadialLayoutOptions> {

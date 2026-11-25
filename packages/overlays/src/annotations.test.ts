@@ -1,6 +1,7 @@
 // Tests for generic annotation storage and overlay.
 
 import { describe, it, expect, beforeEach } from "vitest";
+import { createRoot } from "solid-js";
 import {
     createAnnotationStore,
     withAnnotations,
@@ -8,6 +9,7 @@ import {
     type Annotation,
     type NoteNodePolicy,
 } from "./annotations";
+import { useAnnotations } from "./useAnnotations";
 
 describe("createAnnotationStore", () => {
     let store: ReturnType<typeof createAnnotationStore>;
@@ -210,5 +212,37 @@ describe("createDefaultNoteNodePolicy", () => {
         expect(noteNode.turnID).toBe("turn:t1");
         expect(noteNode.time).toBe(12345);
         expect(noteNode.data).toEqual({ noteID: "a1", target: "turn:t1" });
+    });
+});
+describe("useAnnotations note actions", () => {
+    it("edits, copies and deletes the note behind a note node", () => {
+        const store = createAnnotationStore({
+            a1: { id: "a1", target: "turn:t1", body: "Test note" },
+        });
+        const announcements: string[] = [];
+        const copied: string[] = [];
+        Object.defineProperty(navigator, "clipboard", {
+            configurable: true,
+            value: { writeText: (text: string) => copied.push(text) },
+        });
+        createRoot((dispose) => {
+            const annotations = useAnnotations({
+                store,
+                selection: () => [],
+                nodeLookup: () => undefined,
+                onAnnounce: (message) => announcements.push(message),
+                policy: createDefaultNoteNodePolicy(),
+            });
+            annotations.editNote("note:a1");
+            expect(annotations.editingNote()).toBe("a1");
+            expect(annotations.noteTarget()).toBe("turn:t1");
+            annotations.copyNote("note:a1");
+            expect(copied).toEqual(["Test note"]);
+            annotations.deleteNote("note:a1");
+            expect(store.getAnnotation("a1")).toBeUndefined();
+            expect(annotations.annotations.a1).toBeUndefined();
+            expect(announcements).toEqual(["Note copied", "Note deleted"]);
+            dispose();
+        });
     });
 });

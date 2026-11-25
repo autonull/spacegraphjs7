@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { EventEmitter } from '../src/core/EventEmitter';
+import { HUDPlugin } from '../src/plugins/HUDPlugin';
 import { MinimapPlugin } from '../src/plugins/MinimapPlugin';
 import { ZoomBandsPlugin } from '../src/plugins/ZoomBandsPlugin';
 import { ZoomUIPlugin } from '../src/plugins/ZoomUIPlugin';
@@ -139,5 +140,23 @@ describe('flight progress relay', () => {
 
         expect(progress).toEqual([0.25, 1]);
         plugin.dispose();
+    });
+});
+describe('HUD flight progress', () => {
+    it('shows the progress bar inside the zoom indicator', () => {
+        const sg = fakeSg();
+        sg.renderer.container.appendChild(sg.renderer.renderer.domElement);
+        const indicator = document.createElement('div');
+        indicator.className = 'fractal-level-indicator';
+        document.body.appendChild(indicator);
+        const plugin = new HUDPlugin();
+        plugin.init(sg as never, sg.graph as never, sg.events as never);
+        sg.events.emit('fractal:transition-progress', 0.4);
+        const bar = document.getElementById('fractal-zoom-progress') as HTMLElement;
+        expect(bar.parentElement?.parentElement).toBe(indicator);
+        expect(bar.style.width).toBe('40%');
+        plugin.dispose();
+        bar.remove();
+        indicator.remove();
     });
 });

@@ -7,8 +7,6 @@ export interface TreeLayoutOptions extends LayoutOptions {
     levelHeight?: number;
     /** Horizontal spacing between leaf nodes. Optional: when unset, auto-computed from node width + padding. */
     nodeSpacing?: number;
-    /** Extra padding between nodes. Default: 20. */
-    nodePadding?: number;
     orientation: string;
 }
 

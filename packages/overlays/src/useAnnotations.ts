@@ -117,21 +117,31 @@ export function useAnnotations<NodeID extends string>(
         closeNoteComposer();
     };
 
-    const editNote = (_nodeID: NodeID) => {
-        // The host needs to map nodeID to annotation ID
-        // This is typically done via the note node's data.noteID
-        openNoteComposer();
+    const annotationForNode = (nodeID: NodeID): Annotation | undefined =>
+        store
+            .getAnnotationIds()
+            .map((id) => store.getAnnotation(id))
+            .find((annotation) => annotation && policy.noteNodeID(annotation.id) === nodeID);
+
+    const editNote = (nodeID: NodeID) => {
+        const annotation = annotationForNode(nodeID);
+        if (!annotation) return;
+        setEditingNote(annotation.id);
+        setNoteTarget(() => annotation.target as NodeID);
     };
 
-    const deleteNote = (_nodeID: NodeID) => {
-        // The host needs to map nodeID to annotation ID
-        // This is typically done via the note node's data.noteID
+    const deleteNote = (nodeID: NodeID) => {
+        const annotation = annotationForNode(nodeID);
+        if (!annotation) return;
+        store.deleteAnnotation(annotation.id);
+        setAnnotations(produce((all: Annotations) => void delete all[annotation.id]));
         onAnnounce("Note deleted");
     };
 
-    const copyNote = (_nodeID: NodeID) => {
-        // The host needs to get the note body from the node
-        navigator.clipboard?.writeText("");
+    const copyNote = (nodeID: NodeID) => {
+        const annotation = annotationForNode(nodeID);
+        if (!annotation) return;
+        void navigator.clipboard?.writeText(annotation.body);
         onAnnounce("Note copied");
     };
 

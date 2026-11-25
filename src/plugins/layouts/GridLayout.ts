@@ -8,8 +8,6 @@ export interface GridLayoutOptions extends LayoutOptions {
     spacingX?: number;
     /** Vertical spacing. Optional: when unset, auto-computed from max node diagonal radius + nodePadding. */
     spacingY?: number;
-    /** Extra padding between nodes. Default: 20. */
-    nodePadding?: number;
     offsetX: number;
     offsetY: number;
 }

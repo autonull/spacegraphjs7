@@ -2,6 +2,8 @@ import type { RendererEventMap, Unsubscribe } from './index';
 
 export type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;
 
+const NO_HANDLERS: ReadonlySet<Handler<never>> = new Set();
+
 /**
  * The event bus every renderer adapter shares: a set of handlers per event, and the unsubscribe a
  * host gets back. One implementation, so the adapters agree on what an event does.
@@ -17,7 +19,7 @@ export class RendererEventBus {
     }
 
     emit<K extends keyof RendererEventMap>(event: K, payload: RendererEventMap[K]): void {
-        for (const handler of this.#handlers.get(event) ?? new Set<Handler<never>>()) {
+        for (const handler of this.#handlers.get(event) ?? NO_HANDLERS) {
             (handler as Handler<K>)(payload);
         }
     }

@@ -26,8 +26,6 @@ export interface ForceLayoutConfig extends LayoutConfig {
     randomize?: boolean;
     /** Random seed for deterministic randomization. Default: 42. */
     seed?: number;
-    /** Extra padding between nodes for collision avoidance. Default: 20. */
-    nodePadding?: number;
     /** Progress callback: fired each iteration with (iteration, total). */
     onProgress?: (iteration: number, total: number) => void;
     /** Use Barnes-Hut octree for O(n log n) repulsion on large graphs (auto-enabled for >100 nodes). */

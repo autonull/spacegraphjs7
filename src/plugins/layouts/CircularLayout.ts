@@ -7,8 +7,6 @@ export interface CircularLayoutOptions extends LayoutOptions {
     radiusX?: number;
     /** Y radius. Optional: when unset, auto-computed to ensure non-overlap. */
     radiusY?: number;
-    /** Extra padding between nodes. Default: 20. */
-    nodePadding?: number;
     startAngle: number;
     z: number;
 }

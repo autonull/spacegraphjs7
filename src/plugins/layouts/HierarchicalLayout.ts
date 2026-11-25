@@ -22,8 +22,6 @@ export interface HierarchicalLayoutOptions extends LayoutOptions {
     levelHeight?: number;
     /** Horizontal spacing between nodes. Optional: when unset, auto-computed from node width + padding. */
     nodeSpacing?: number;
-    /** Extra padding between nodes. Default: 20. */
-    nodePadding?: number;
     z: number;
     direction: string;
 }

@@ -183,7 +183,7 @@
         "LICENSE"
     ],
     "scripts": {
-        "check": "pnpm -r --if-present typecheck",
+        "check": "pnpm run typecheck:root && pnpm -r --if-present typecheck",
         "check:docs-commands": "tsx script/check-docs-commands.ts",
         "check:evidence": "tsx script/evidence.ts",
         "check:evidence:write": "tsx script/evidence.ts --write",
@@ -204,6 +204,7 @@
         "lint": "eslint 'src/**/*.{ts,js}' --ignore-pattern 'dist'",
         "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run test",
         "test": "vitest run",
+        "typecheck:root": "tsc --noEmit -p tsconfig.json",
         "test:all-demos": "pnpm run test:demo-errors && pnpm run test:screenshots",
         "test:behavioral": "playwright test test/interaction.spec.ts --reporter=list",
         "test:boundaries": "vitest run test/boundaries.test.ts",

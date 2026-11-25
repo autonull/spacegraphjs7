@@ -162,8 +162,8 @@ export class GraphAlgorithms {
         const queue: string[] = [];
         for (const [id, degree] of inDegree) if (degree === 0) queue.push(id);
         const result: Node[] = [];
-        while (queue.length > 0) {
-            const id = queue.shift()!;
+        for (let head = 0; head < queue.length; head++) {
+            const id = queue[head]!;
             const node = this.nodes.get(id);
             if (node) result.push(node);
             for (const target of outgoing.get(id) ?? []) {

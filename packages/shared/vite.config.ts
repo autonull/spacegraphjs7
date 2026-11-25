@@ -13,7 +13,6 @@ export default solidLibConfig(
         keyboard: 'src/keyboard.ts',
         tokens: 'src/tokens.ts',
         css: 'src/css.ts',
-        portal: 'src/portal.tsx',
         hooks: 'src/hooks.ts',
     },
     ['solid-js'],

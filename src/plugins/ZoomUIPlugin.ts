@@ -77,8 +77,6 @@ export class ZoomUIPlugin extends BaseSystemPlugin {
         if (this.config.showHint) this.showHint();
     }
 
-    onPreRender(_delta: number): void {}
-
     dispose(): void {
         super.dispose();
         if (this.hintTimer) clearTimeout(this.hintTimer);
