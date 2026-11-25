@@ -17,8 +17,11 @@ test('landmarks grade one kernel without dropping committed facts', async ({ pag
     expect(factNodes.nodes).toBe(cosmosNodes.nodes);
     expect(fact.weights['d:1:conversation']!).toBeLessThan(cosmos.weights['d:1:conversation']!);
 
+    const before = await call<{ zoom: number }>(page, 'viewport');
     await call(page, 'zoomBy', 16);
-    await expect.poll(() => call<string>(page, 'rung')).toBe('grain');
+    const after = await call<{ zoom: number }>(page, 'viewport');
+    expect(after.zoom).toBeGreaterThan(before.zoom);
+    expect(await call<string>(page, 'rung')).toBe('fact');
     await call(page, 'setRung', 'passage');
     expect(await call<string>(page, 'permalink')).toContain('rung=passage');
     expect(errors).toEqual([]);

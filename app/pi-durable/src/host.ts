@@ -25,16 +25,11 @@ import { Navigation, type MinimapProjection } from 'spacegraphjs/navigation';
 import { mountReading, readingOrder, type ReadingController, type ReadingNode } from 'spacegraphjs/reading';
 import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
-import { ZoomBands, type ScaleSample } from 'spacegraphjs/zoom';
+import { type ScaleSample } from 'spacegraphjs/zoom';
 import { decodeAddress, encodeAddress, type Address } from './address';
 import { exportURL } from './api';
 import { edgeStyleForKind } from './edge-style';
-import {
-    attentionWeights,
-    createScaleDomain,
-    sampleForRung,
-    ZOOM_RANGE,
-} from './attention';
+import { attentionWeights, createScaleDomain, sampleForRung } from './attention';
 import { calloutsFor, type Callout } from './callouts';
 import { chapterCaptions, chapterFrames } from './chapters';
 import { digestKernels, type Digest } from './digest';
@@ -71,6 +66,8 @@ import { storyByID, type Story } from './stories';
 import { threadFrom, type ThreadStep } from './thread';
 import { asOfFeed, snapshotsOf } from './time-travel';
 
+/** Zoom is a free camera control, independent of the explicit rung presets. */
+const FREE_ZOOM = { min: 0.01, max: 100 } as const;
 /** Core layout hint: how much of the surface the node boxes should cover. */
 const NODES_AREA_DENSITY = 0.6;
 const MAX_NODE_SIZE = 1024;
@@ -400,7 +397,7 @@ const detailFor = (
 
 export class DurableHost {
     readonly renderer = new SpaceGraphRenderer();
-    readonly viewOps = createViewportController(this.renderer, ZOOM_RANGE);
+    readonly viewOps = createViewportController(this.renderer, FREE_ZOOM);
     readonly registry: TabRegistry;
     readonly #announcer = createAnnouncer(el('announcer'));
     #groups: readonly DurableGroup[] = [];
@@ -462,16 +459,9 @@ export class DurableHost {
     };
     #viewName: ViewName = 'graph';
     #rung: Rung = 'fact';
-    #rungPinned = false;
     #layoutName: LayoutName = 'grid';
     #asOf: number | undefined;
     readonly #scale = createScaleDomain();
-    readonly #bands = new ZoomBands({
-        bands: RUNGS.map((rung, index) => ({
-            id: rung.id, min: index / RUNGS.length, max: (index + 1) / RUNGS.length, label: rung.label,
-        })),
-        hysteresis: 0.03,
-    });
     #sample: ScaleSample;
     #attention: ReadonlyMap<string, number> = new Map();
     #baseModel: RenderModel | undefined;
@@ -534,13 +524,7 @@ export class DurableHost {
         this.#shot = shot;
         this.#seed = seed;
         this.#rung = rung && isRung(rung) ? rung : this.#rung;
-        this.#rungPinned = rung !== undefined;
         this.#sample = sampleForRung(this.#scale, this.#rung);
-        this.#bands.onChange((change) => {
-            if (this.#rungPinned || !isRung(change.band)) return;
-            this.#rung = change.band;
-            this.renderRungs();
-        });
     }
 
     async mount(container: HTMLElement): Promise<void> {
@@ -548,8 +532,6 @@ export class DurableHost {
         this.renderer.on('nodeClick', ({ id }) => this.focus(id));
         this.renderer.on('nodeDoubleClick', ({ id }) => this.toggleFocusLens(id));
         this.renderer.on('viewportChange', ({ zoom, center }) => {
-            this.#bands.feed(zoom, ZOOM_RANGE);
-            this.#sample = this.#scale.feed(zoom);
             this.patchView({ camera: { zoom, center } });
             this.regrade();
             this.renderOverview();
@@ -823,9 +805,7 @@ export class DurableHost {
     setRung(rung: Rung): boolean {
         if (!isRung(rung)) return false;
         if (rung === this.#rung) return false;
-        this.#rungPinned = true;
         this.#rung = rung;
-        this.#bands.feedNormalized(RUNGS.findIndex((entry) => entry.id === rung) / RUNGS.length);
         this.#sample = sampleForRung(this.#scale, rung);
         this.renderRungs();
         this.#recordHistory();
@@ -849,16 +829,11 @@ export class DurableHost {
     }
 
     zoomBy(factor: number): void {
-        const zoom = this.viewOps.zoomBy(factor);
-        this.#rungPinned = false;
-        this.#bands.feed(zoom, ZOOM_RANGE);
-        this.#sample = this.#scale.feed(zoom);
-        this.#rungPinned = true;
+        this.viewOps.zoomBy(factor);
     }
 
     resetView(): void {
         this.setRung('fact');
-        this.#rungPinned = false;
         this.viewOps.fit(undefined, DEFAULT_FIT_OPTIONS);
         this.announce('View reset');
     }
@@ -2165,8 +2140,6 @@ export class DurableHost {
     }
 
     private bindChrome(): void {
-        for (const event of ['wheel', 'dblclick'] as const)
-            el('canvas').addEventListener(event, () => { this.#rungPinned = false; }, { passive: true });
         for (const button of document.querySelectorAll<HTMLButtonElement>('#view-switch button'))
             button.addEventListener('click', () => this.setView(button.dataset['view'] as ViewName));
         el('help-close').addEventListener('click', () => this.toggleHelp(false));
