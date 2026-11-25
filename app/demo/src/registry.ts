@@ -89,14 +89,10 @@ const pages: readonly Omit<DemoEntry, 'kind'>[] = [
     { id: 'simple-html', category: 'rendering', path: 'html/rendering/simple-html.html' },
     { id: 'alignment-test', category: 'smoke', path: 'html/smoke/alignment-test.html' },
     { id: 'benchmark', category: 'smoke', path: 'html/smoke/benchmark.html' },
-    { id: 'debug', category: 'smoke', path: 'html/smoke/debug.html' },
     { id: 'empty', category: 'smoke', path: 'html/smoke/empty.html' },
     { id: 'hardening', category: 'smoke', path: 'html/smoke/hardening.html' },
     { id: 'single-node', category: 'smoke', path: 'html/smoke/single-node.html' },
-    { id: 'test-direct', category: 'smoke', path: 'html/smoke/test-direct.html' },
-    { id: 'verification-fixed', category: 'smoke', path: 'html/smoke/verification-fixed.html' },
     { id: 'verification', category: 'smoke', path: 'html/smoke/verification.html' },
-    { id: 'working-test', category: 'smoke', path: 'html/smoke/working-test.html' },
 ];
 
 const demos: readonly Omit<DemoEntry, 'kind'>[] = [
