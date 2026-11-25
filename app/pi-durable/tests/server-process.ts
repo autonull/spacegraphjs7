@@ -33,7 +33,7 @@ export const startServer = async (
         detached: true,
         stdio: 'ignore',
     });
-    for (let attempt = 0; attempt < 100; attempt++) {
+    for (let attempt = 0; attempt < 400; attempt++) {
         try {
             if ((await fetch(`${base}/api/health`)).ok) {
                 return {
