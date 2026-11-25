@@ -1,3 +1,4 @@
+import { NODE_CHROME_COLORS } from './palette';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
@@ -91,7 +92,7 @@ export class TabContainerNode extends HtmlNode {
         tabBar.className = 'tab-container-header';
         Object.assign(tabBar.style, {
             display: 'flex',
-            backgroundColor: '#1a1a2e',
+            backgroundColor: NODE_CHROME_COLORS.deepSurface,
             borderBottom: '1px solid #333',
             padding: '4px 8px 0',
             gap: '2px',

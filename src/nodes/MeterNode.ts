@@ -1,3 +1,4 @@
+import { NODE_CHROME_COLORS } from './palette';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
@@ -39,7 +40,7 @@ export class MeterNode extends HtmlNode {
         this.thresholds = (data?.thresholds as MeterThreshold[]) ?? [
             { value: 80, color: '#ff6b6b' },
             { value: 60, color: '#ffeaa7' },
-            { value: 0, color: '#4ecdc4' },
+            { value: 0, color: NODE_CHROME_COLORS.accent },
         ];
 
         const wrapper = this.domElement;
@@ -61,6 +62,6 @@ export class MeterNode extends HtmlNode {
         for (const t of this.thresholds) {
             if (value >= t.value) return t.color;
         }
-        return '#4ecdc4';
+        return NODE_CHROME_COLORS.accent;
     }
 }

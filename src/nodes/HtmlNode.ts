@@ -1,3 +1,4 @@
+import { NODE_CHROME_COLORS } from './palette';
 import { Quaternion } from 'three';
 import { lodLevelAt, lodVisibility } from '../core/lod';
 import type { SpaceGraph } from '../SpaceGraph';
@@ -37,7 +38,7 @@ export class HtmlNode extends BaseContentNode {
     /** The dark input shared by the text and select controls. */
     protected static readonly CONTROL_INPUT_STYLE = {
         width: '100%',
-        backgroundColor: '#1a1a2e',
+        backgroundColor: NODE_CHROME_COLORS.deepSurface,
         color: '#fff',
         border: '1px solid #444',
         borderRadius: '4px',

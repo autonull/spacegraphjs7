@@ -1,15 +1,8 @@
-import { defineConfig } from '@playwright/test';
-
+import { browserSuite } from './script/playwright-config';
 const PORT = Number(process.env.SG_DEMO_PORT ?? 5173);
-
-export default defineConfig({
+export default browserSuite({
     testDir: './test/e2e',
-    testMatch: /.*\.spec\.ts/,
-    reporter: 'list',
-    use: {
-        headless: true,
-        baseURL: `http://localhost:${PORT}`,
-    },
+    port: PORT,
     webServer: {
         // The local vite, not `pnpm dlx`: the demo must build in CI without reaching for the registry.
         command: `pnpm exec vite --config app/demo/vite.config.ts --port ${PORT} --strictPort`,

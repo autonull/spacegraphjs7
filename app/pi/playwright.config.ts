@@ -1,17 +1,11 @@
-import { defineConfig } from '@playwright/test';
-
+import { browserSuite } from '../../script/playwright-config';
 const PORT = Number(process.env.SG_PI_PORT ?? 5175);
 const SERVER = Number(process.env.PI_SERVER_PORT ?? 8787);
-
-export default defineConfig({
+export default browserSuite({
     testDir: './tests',
-    testMatch: /.*\.spec\.ts/,
-    reporter: 'list',
+    port: PORT,
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`,
     retries: 0,
-    use: {
-        headless: true,
-        baseURL: process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`,
-    },
     webServer: [
         {
             command: 'pnpm exec tsx src/server.ts',

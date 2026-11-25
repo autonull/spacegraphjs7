@@ -1,3 +1,4 @@
+import { NODE_CHROME_COLORS } from './palette';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
@@ -56,7 +57,7 @@ export class ProgressBarNode extends HtmlNode {
         Object.assign(this.progressBar.style, {
             width: '100%',
             height: '8px',
-            backgroundColor: '#1a1a2e',
+            backgroundColor: NODE_CHROME_COLORS.deepSurface,
             borderRadius: '4px',
             overflow: 'hidden',
         });
@@ -64,7 +65,7 @@ export class ProgressBarNode extends HtmlNode {
         this.progressFill = DOMUtils.createElement('div');
         Object.assign(this.progressFill.style, {
             height: '100%',
-            backgroundColor: '#4ecdc4',
+            backgroundColor: NODE_CHROME_COLORS.accent,
             borderRadius: '4px',
             transition: 'width 0.3s ease',
         });

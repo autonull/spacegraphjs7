@@ -5,7 +5,7 @@ import { type AlertOptions, HUDAlerts } from './hud/HUDAlerts';
 import { HUDDOMFactory } from './hud/HUDDOMFactory';
 import { HUDPerformanceMetrics } from './hud/HUDPerformanceMetrics';
 import { HUDStatusBar } from './hud/HUDStatusBar';
-import { HUD_POSITIONS, HUD_ZINDEX } from './hud/HUDStyles';
+import { HUD_COLORS, HUD_POSITIONS, HUD_ZINDEX } from './hud/HUDStyles';
 import type { HUDElementOptions } from './hud/types';
 
 const logger = createLogger('HUDPlugin');
@@ -188,7 +188,7 @@ export class HUDPlugin extends BaseSystemPlugin {
         const indicator = document.getElementById('level-text');
         if (indicator) {
             indicator.textContent = data.label;
-            indicator.style.color = '#8b5cf6';
+            indicator.style.color = HUD_COLORS.primary;
             setTimeout(() => {
                 indicator.style.color = '#fff';
             }, 500);
@@ -205,7 +205,7 @@ export class HUDPlugin extends BaseSystemPlugin {
                 'height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:10px;overflow:hidden';
             bar = document.createElement('div');
             bar.id = 'fractal-zoom-progress';
-            bar.style.cssText = 'height:100%;width:0;background:#8b5cf6;transition:width .1s ease';
+            bar.style.cssText = `height:100%;width:0;background:${HUD_COLORS.primary};transition:width .1s ease`;
             track.appendChild(bar);
             indicator.appendChild(track);
         }

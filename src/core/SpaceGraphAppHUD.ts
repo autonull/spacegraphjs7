@@ -39,7 +39,7 @@ export function renderTitleCard(app: SpaceGraphApp, theme: any) {
     const titleCard = DOMUtils.createElement('div', {
         innerHTML: `
             <h1 style="font-size: 18px; margin: 0 0 8px 0; background: -webkit-linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${app.options.title}</h1>
-            ${app.options.description ? `<p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;">${app.options.description}</p>` : ''}
+            ${app.options.description ? `<p style="font-size: 12px; color: ${SECONDARY_TEXT_COLOR}; line-height: 1.5; margin: 0;">${app.options.description}</p>` : ''}
         `,
         style: {
             ...glassPanel(theme),
@@ -114,7 +114,7 @@ export function renderToolbar(app: SpaceGraphApp, theme: any) {
 
 function createStatBlock(label: string, id: string, value: string, color?: string): HTMLElement {
     return DOMUtils.createElement('div', {
-        innerHTML: `<span style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">${label}</span><span id="${id}" style="font-size: 16px; font-weight: 700;${color ? ` color: ${color};` : ''}">${value}</span>`,
+        innerHTML: `<span style="font-size: 10px; color: ${SECONDARY_TEXT_COLOR}; text-transform: uppercase;">${label}</span><span id="${id}" style="font-size: 16px; font-weight: 700;${color ? ` color: ${color};` : ''}">${value}</span>`,
         style: { display: 'flex', flexDirection: 'column', alignItems: 'center' },
     });
 }
@@ -350,7 +350,7 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: any) {
 
     const icon = DOMUtils.createElement('span', {
         textContent: '🔍',
-        style: { marginRight: '10px', fontSize: '14px', color: '#94a3b8' },
+        style: { marginRight: '10px', fontSize: '14px', color: SECONDARY_TEXT_COLOR },
     });
     container.appendChild(icon);
 

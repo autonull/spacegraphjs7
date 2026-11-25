@@ -1,3 +1,4 @@
+import { NODE_CHROME_COLORS } from './palette';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
@@ -15,7 +16,7 @@ export class ColorPickerNode extends HtmlNode {
     }
 
     getColor(): string {
-        return this.colorInput?.value ?? '#4ecdc4';
+        return this.colorInput?.value ?? NODE_CHROME_COLORS.accent;
     }
 
     setColor(color: string): this {
@@ -25,7 +26,7 @@ export class ColorPickerNode extends HtmlNode {
 
     private _setupColorPicker(): void {
         const data = this.data as SpaceGraphNodeData;
-        const color = (data?.color as string) ?? '#4ecdc4';
+        const color = (data?.color as string) ?? NODE_CHROME_COLORS.accent;
 
         const wrapper = this.domElement;
         Object.assign(wrapper.style, HtmlNode.CONTROL_WRAPPER_STYLE);

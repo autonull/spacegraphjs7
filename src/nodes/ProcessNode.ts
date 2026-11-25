@@ -1,3 +1,4 @@
+import { NODE_CHROME_COLORS } from './palette';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
@@ -42,7 +43,7 @@ export class ProcessNode extends BaseContentNode {
 
         const pidSpan = DOMUtils.createElement('span');
         pidSpan.textContent = `PID: ${pid}`;
-        pidSpan.style.color = '#94a3b8';
+        pidSpan.style.color = NODE_CHROME_COLORS.mutedText;
 
         header.appendChild(titleSpan);
         header.appendChild(pidSpan);

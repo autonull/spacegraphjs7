@@ -4,6 +4,12 @@
  */
 
 export type NodeTheme = 'dark' | 'light';
+/** Node chrome literals shared across node types; they do not vary with the light/dark theme. */
+export const NODE_CHROME_COLORS = {
+    deepSurface: '#1a1a2e',
+    accent: '#4ecdc4',
+    mutedText: '#94a3b8',
+} as const;
 
 export interface NodePalette {
     /** The card's own surface. */
@@ -41,7 +47,7 @@ export const NODE_PALETTE: Record<NodeTheme, NodePalette> = {
         border: '#334155',
         text: '#f8fafc',
         headerSurface: '#0f172a',
-        mutedText: '#94a3b8',
+        mutedText: NODE_CHROME_COLORS.mutedText,
         faintText: '#64748b',
         keyText: '#7dd3fc',
         gridLine: '#1e293b',
@@ -60,7 +66,7 @@ export const NODE_PALETTE: Record<NodeTheme, NodePalette> = {
         text: '#0f172a',
         headerSurface: '#f1f5f9',
         mutedText: '#64748b',
-        faintText: '#94a3b8',
+        faintText: NODE_CHROME_COLORS.mutedText,
         keyText: '#0284c7',
         gridLine: '#e2e8f0',
         canvasSurface: '#ffffff',

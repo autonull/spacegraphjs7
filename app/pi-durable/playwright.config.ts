@@ -1,23 +1,17 @@
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { defineConfig } from '@playwright/test';
-
+import { browserSuite } from '../../script/playwright-config';
 const PORT = Number(process.env.SG_DURABLE_PORT ?? process.env.PI_DURABLE_WEB_PORT ?? 5176);
 const SERVER = Number(process.env.PI_DURABLE_SERVER_PORT ?? 8788);
 const OBSERVER = SERVER + 12;
 const STORAGE = process.env.PI_DURABLE_DIR ?? mkdtempSync(join(tmpdir(), 'pi-durable-e2e-'));
-
-export default defineConfig({
+export default browserSuite({
     testDir: './tests',
-    testMatch: /.*\.spec\.ts/,
-    reporter: 'list',
+    port: PORT,
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`,
     retries: 0,
     timeout: 30_000,
-    use: {
-        headless: true,
-        baseURL: process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`,
-    },
     webServer: [
         {
             command: 'pnpm exec tsx src/server.ts',
