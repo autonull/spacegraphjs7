@@ -93,16 +93,9 @@ Node.ts:2         this.sg?.requestFrame?.();
 
 ## Medium-Term (Pass 4 — Architectural)
 
-### 5. `SpaceGraph.ts` — Controller Coupling
+### 5. `SpaceGraph.ts` — Controller Coupling ✅ DONE
 
-`setProjection`, `setDepth`, `setCardFacing`, `setZoom` all do similar renderer+cameraControls+event+commit pattern. Could unify:
-
-```typescript
-protected updateCameraState(fn: () => void): this {
-  fn();
-  return this.commitCamera();
-}
-```
+`setProjection`, `setDepth`, `setCardFacing`, `setZoom` share renderer+cameraControls+event+commit work through `updateCameraState()` and `commitCamera()`.
 
 ### 6. `safeClone` Usage Consistency
 
@@ -157,6 +150,6 @@ Currently a global singleton. Could inject into `Graph` constructor for better t
 
 ## Quick Wins for Next Session (15 min each)
 
-1. Standardize `safeClone` calls across 4 files
-2. Consolidate `SpaceGraph` camera update methods with `updateCameraState` helper
+1. ~~Standardize `safeClone` calls across 4 files~~ ✅ DONE in `Node`, `Edge` and `GraphSerialization`
+2. ~~Consolidate `SpaceGraph` camera update methods with `updateCameraState` helper~~ ✅ DONE
 3. Add contract version check to renderer registry (ADR-026) ✅ DONE in session-graph

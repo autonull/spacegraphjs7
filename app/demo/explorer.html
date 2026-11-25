@@ -99,6 +99,15 @@
                 max-height: calc(100vh - 32px);
                 overflow-y: auto;
             }
+            #axis-filter {
+                width: 100%;
+                margin-bottom: 10px;
+                padding: 6px 8px;
+                background: var(--surface);
+                color: inherit;
+                border: 1px solid var(--border);
+                font: inherit;
+            }
             #axes {
                 display: flex;
                 flex-direction: column;
@@ -222,6 +231,12 @@
         </header>
         <main>
             <section id="axes-column" aria-label="Configuration axes">
+                <input
+                    id="axis-filter"
+                    type="search"
+                    placeholder="Filter axes…"
+                    aria-label="Filter configuration axes"
+                />
                 <div id="axes"></div>
                 <fieldset>
                     <legend>Example presets</legend>

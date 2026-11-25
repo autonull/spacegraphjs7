@@ -581,15 +581,24 @@ const AXIS_LABELS: Readonly<Record<string, string>> = {
     shape: 'Node shape',
 };
 
+let axisQuery = '';
+
 function renderAxes(result: ReturnType<typeof negotiate>): void {
     const root = element('axes');
     root.replaceChildren();
+    const needle = axisQuery.trim().toLowerCase();
 
     for (const axis of space.axes) {
+        const label = AXIS_LABELS[axis.id] ?? axis.id;
+        if (
+            needle &&
+            !`${label} ${axis.id} ${axis.values.join(' ')}`.toLowerCase().includes(needle)
+        )
+            continue;
         const field = document.createElement('fieldset');
         field.title = axis.source;
         const legend = document.createElement('legend');
-        legend.textContent = AXIS_LABELS[axis.id] ?? axis.id;
+        legend.textContent = label;
         field.append(legend);
 
         const values = document.createElement('div');
@@ -796,6 +805,10 @@ function applyPresetByID(id: string): boolean {
     return true;
 }
 
+element<HTMLInputElement>('axis-filter').addEventListener('input', (event) => {
+    axisQuery = (event.target as HTMLInputElement).value;
+    renderAxes(negotiate(space, left, { capabilities, flags }));
+});
 element('randomize').addEventListener('click', randomizeAll);
 element('reset').addEventListener('click', resetAll);
 element('compare').addEventListener('click', () => setCompare(!compare));
