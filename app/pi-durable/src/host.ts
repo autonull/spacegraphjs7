@@ -80,7 +80,12 @@ const scaledSize = (octave: number, scale: number): readonly [number, number] =>
     ];
 };
 
-type FlowNode = { readonly id: string; readonly width: number; readonly height: number };
+type FlowNode = { readonly id: string; readonly kind: string; readonly width: number; readonly height: number };
+const FLOW_RANK: Readonly<Record<string, number>> = {
+    conversation: 0, run: 1, task: 2, boundary: 3, message: 4, action: 5,
+    artifact: 6, state: 7, config: 8, pending: 9,
+};
+const flowRank = (node: FlowNode): number => FLOW_RANK[node.kind] ?? 10;
 
 /** Serpentine flow along recorded edges: connected facts stay adjacent and no two cards overlap. */
 const flowPositions = (
@@ -103,7 +108,7 @@ const flowPositions = (
         if (node) order.push(node);
         for (const target of next.get(id) ?? []) visit(target);
     };
-    for (const node of nodes) visit(node.id);
+    for (const node of [...nodes].sort((a, b) => flowRank(a) - flowRank(b))) visit(node.id);
     const rowWidth = Math.max(1600, ...nodes.map((node) => node.width * 1.4));
     const gapX = 56;
     const gapY = 112;
@@ -291,7 +296,14 @@ const short = (value: string, max = 96): string =>
 const labelForNode = (node: DurableNode): string => {
     if (node.kind === 'task' && node.data?.['kind'] === 'durable.approval')
         return `Approval task ${String(node.data['taskId'] ?? '')}`.trim();
-    return NODE_LABELS[node.label] ?? node.label;
+    if (node.kind === 'message' || node.kind === 'action') {
+        const tool = node.data?.['toolName'];
+        const committed = dataText(node) || (typeof tool === 'string' ? `${tool}()` : '');
+        if (committed) return short(committed, 48);
+    }
+    const known = NODE_LABELS[node.label]
+        ?? Object.entries(NODE_LABELS).find(([key]) => node.label.startsWith(key))?.[1];
+    return known ?? node.label;
 };
 
 const summaryForNode = (node: DurableNode): string => {
@@ -368,8 +380,10 @@ const detailFor = (
             .map((key) => `${key} ${String(data[key])}`)
             .join(' · ');
     }
-    return [...counts].sort((a, b) => b[1] - a[1]).slice(0, 3)
-        .map(([kind, count]) => `${kind} ×${count}`).join(' · ');
+    const members = group?.members.length;
+    const kinds = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 2)
+        .map(([kind, count]) => `${kind} ×${count}`);
+    return [members ? `${members} recorded facts` : '', ...kinds].filter(Boolean).join(' · ');
 };
 
 const el = <T extends HTMLElement = HTMLElement>(id: string): T => {
@@ -1673,6 +1687,7 @@ export class DurableHost {
         const positions = flowPositions(
             nodes.map((node, index) => ({
                 id: node.id,
+                kind: node.kind,
                 width: scaledSize(octaves[index]!, this.#densityScale)[0],
                 height: scaledSize(octaves[index]!, this.#densityScale)[1],
             })),

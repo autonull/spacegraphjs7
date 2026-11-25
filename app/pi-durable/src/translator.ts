@@ -93,11 +93,14 @@ export const toAgentEvents = (view: DurableView): readonly AgentEvent[] => {
                 ...(at === undefined ? {} : { at }),
             });
         } else if (entryNodeKind(entry) === 'action') {
+            const declared = entry.data && typeof entry.data === 'object' && !Array.isArray(entry.data)
+                ? (entry.data as { toolName?: JsonValue }).toolName
+                : undefined;
             events.push({
                 type: 'action',
                 runId,
                 id: `tool:${entry.id}`,
-                toolName: entry.kind.replace(/^pi\./, ''),
+                toolName: typeof declared === 'string' ? declared : entry.kind.replace(/^pi\./, ''),
                 phase: 'end',
             });
         } else {
