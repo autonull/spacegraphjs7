@@ -2,3 +2,6 @@ export * from './ops';
 export * from './session';
 export * from './scopes';
 export * from './theme';
+export * from './dom';
+export * from './download';
+export * from './keyboard';

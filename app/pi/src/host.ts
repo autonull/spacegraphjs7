@@ -173,6 +173,7 @@ import {
 } from './shell';
 import { SHORTCUT_HELP } from './help';
 import { ChromeController, installPulldowns } from './chrome';
+import { downloadBlob } from '../../pi-kit/src/download';
 import { button, el, ensureChild, pruneChildren } from './dom';
 import { FocusLens } from './focus-lens';
 import {
@@ -214,14 +215,6 @@ const stateGlyph = (status: string): string => STATUS_GLYPH[status] ?? '·';
 
 export { el } from './dom';
 
-function downloadBlob(blob: Blob, filename: string): void {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
-}
 
 /**
  * Host-owned policy. The library never learns about Pi, prompts, lanes, levels or depth choices;

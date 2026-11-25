@@ -46,6 +46,10 @@ import { bandForOctave, octaveFor, octaveSizeFor, sizeForOctave, type OctaveBand
 import { provenanceFor } from './provenance';
 import {
     buildScopes,
+    dataText,
+    downloadBlob,
+    el,
+    escapeHTML,
     TabRegistry,
     tabKernel,
     toneOf,
@@ -393,17 +397,6 @@ const detailFor = (
     const kinds = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 2)
         .map(([kind, count]) => `${kind} ×${count}`);
     return [members ? `${members} recorded facts` : '', ...kinds].filter(Boolean).join(' · ');
-};
-
-const el = <T extends HTMLElement = HTMLElement>(id: string): T => {
-    const node = document.getElementById(id);
-    if (!node) throw new Error(`missing element #${id}`);
-    return node as T;
-};
-
-const dataText = (node: { readonly data?: Readonly<Record<string, unknown>> }): string => {
-    const text = node.data?.['text'];
-    return typeof text === 'string' ? text : '';
 };
 
 export class DurableHost {
@@ -1665,12 +1658,10 @@ export class DurableHost {
             const blob = new Blob([JSON.stringify({ tab: tab.id, view: tab.view, shot: this.#shot })], {
                 type: 'application/json',
             });
-            const url = URL.createObjectURL(blob);
-            const anchor = document.createElement('a');
-            anchor.href = url;
-            anchor.download = `conversation-${tab.id}.${format === 'json' ? 'json' : format === 'session' ? 'session.json' : format === 'svg' ? 'svg' : 'md'}`;
-            anchor.click();
-            URL.revokeObjectURL(url);
+            downloadBlob(
+                blob,
+                `conversation-${tab.id}.${format === 'json' ? 'json' : format === 'session' ? 'session.json' : format === 'svg' ? 'svg' : 'md'}`,
+            );
             return;
         }
         location.assign(exportURL(format, tab.id));
@@ -2223,8 +2214,3 @@ const textRow = (label: string): HTMLElement => {
     row.innerHTML = `<span class="label">${escapeHTML(label)}</span>`;
     return row;
 };
-
-const escapeHTML = (value: string): string =>
-    value.replace(/[&<>"']/g, (char) =>
-        char === '&' ? '&amp;' : char === '<' ? '&lt;' : char === '>' ? '&gt;' : char === '"' ? '&quot;' : '&#39;',
-    );

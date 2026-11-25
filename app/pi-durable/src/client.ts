@@ -1,6 +1,16 @@
 import { addEdge, addNode } from '@spacegraphjs/kernel';
 import { mountComposer, type ComposerController } from 'spacegraphjs/composer';
-import { demuxOp, TabRegistry, type KernelOp } from 'pi-kit';
+import {
+    demuxOp,
+    dispatchKeys,
+    el,
+    plainKey,
+    renderShortcuts as renderShortcutList,
+    shiftedKey,
+    TabRegistry,
+    type KeyBinding,
+    type KernelOp,
+} from 'pi-kit';
 import { entryIDFromNode } from './actions';
 import { getJSON, postJSON, type ConversationInfo, type Health, type Scenario } from './api';
 import { decodeAddress } from './address';
@@ -31,7 +41,6 @@ const offline = Boolean(shot) || Boolean(scenario) || Boolean(replayID)
     || asOf !== undefined || params.get('offline') === '1';
 const registry = new TabRegistry();
 const host = new DurableHost(registry, offline, shot, seed, initialRung);
-const el = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
 const readOnly = (action: string): boolean => {
     if (!observer && asOf === undefined) return false;
     host.announce(`read-only — ${action} through the owner server`);
@@ -344,19 +353,6 @@ const togglePresentation = (on?: boolean): void => {
     host.announce(next ? 'Presentation mode — Shift+F to exit' : 'Presentation exited');
 };
 
-type KeyBinding = {
-    readonly keys: string;
-    readonly label: string;
-    readonly match: (event: KeyboardEvent) => boolean;
-    readonly run: (event: KeyboardEvent) => void;
-    readonly whileTyping?: boolean;
-};
-
-const plain = (key: string) => (event: KeyboardEvent): boolean =>
-    !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && event.key === key;
-
-const shifted = (key: string) => (event: KeyboardEvent): boolean =>
-    !event.ctrlKey && !event.metaKey && !event.altKey && event.shiftKey && event.key.toLowerCase() === key;
 
 const closePriority = (): void => {
     if (host.threadActive()) {
@@ -395,39 +391,27 @@ const KEY_BINDINGS: readonly KeyBinding[] = [
     { keys: 'Alt+← / →', label: 'View history back and forward', whileTyping: true,
       match: (event) => event.altKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight'),
       run: (event) => { if (event.key === 'ArrowLeft') host.historyBack(); else host.historyForward(); } },
-    { keys: '/', label: 'Focus prompt', match: plain('/'), run: () => composer?.focus() },
+    { keys: '/', label: 'Focus prompt', match: plainKey('/'), run: () => composer?.focus() },
     { keys: '?', label: 'Show shortcuts',
       match: (event) => event.key === '?' && !event.ctrlKey && !event.metaKey && !event.altKey,
       run: () => host.toggleHelp() },
     { keys: 'Shift+F', label: 'Presentation mode',
       match: (event) => event.shiftKey && !event.ctrlKey && !event.metaKey && event.key.toLowerCase() === 'f',
       run: () => togglePresentation() },
-    { keys: 'g', label: 'Cycle views', match: plain('g'), run: () => host.cycleView() },
-    { keys: 'f', label: 'Focus selection', match: plain('f'), run: focusSelection },
-    { keys: '0', label: 'Reset view', match: plain('0'), run: () => host.resetView() },
-    { keys: 'm', label: 'Reset muting filters', match: plain('m'), run: () => host.resetFilters() },
-    { keys: 'e', label: 'Focus neighbourhood', match: plain('e'), run: () => host.toggleFocusLens() },
+    { keys: 'g', label: 'Cycle views', match: plainKey('g'), run: () => host.cycleView() },
+    { keys: 'f', label: 'Focus selection', match: plainKey('f'), run: focusSelection },
+    { keys: '0', label: 'Reset view', match: plainKey('0'), run: () => host.resetView() },
+    { keys: 'm', label: 'Reset muting filters', match: plainKey('m'), run: () => host.resetFilters() },
+    { keys: 'e', label: 'Focus neighbourhood', match: plainKey('e'), run: () => host.toggleFocusLens() },
     { keys: 'Ctrl+Enter', label: 'Cancel prompt', whileTyping: true,
       match: (event) => (event.ctrlKey || event.metaKey) && event.key === 'Enter',
       run: () => void cancelPrompt() },
-    { keys: 'Shift+R', label: 'Fork at selected entry', match: shifted('r'), run: () => void forkConversation() },
-    { keys: 'n', label: 'New conversation', match: plain('n'), run: () => void newConversation() },
+    { keys: 'Shift+R', label: 'Fork at selected entry', match: shiftedKey('r'), run: () => void forkConversation() },
+    { keys: 'n', label: 'New conversation', match: plainKey('n'), run: () => void newConversation() },
     { keys: '[ / ]', label: 'Switch tabs',
       match: (event) => event.key === '[' || event.key === ']', run: switchTab },
 ];
 
-const renderShortcuts = (): void => {
-    el('help-shortcuts').replaceChildren(...KEY_BINDINGS.map((binding) => {
-        const row = document.createElement('div');
-        row.className = 'shortcut';
-        const keys = document.createElement('kbd');
-        keys.textContent = binding.keys;
-        const label = document.createElement('span');
-        label.textContent = binding.label;
-        row.append(keys, label);
-        return row;
-    }));
-};
 
 const bindPanelChrome = (): void => {
     for (const button of document.querySelectorAll<HTMLButtonElement>('#rail .rail-icon')) {
@@ -502,17 +486,8 @@ const bindChrome = (): void => {
         else host.announce('Select a node to follow its thread');
     });
     el('thread-next').addEventListener('click', () => host.nextThreadStep());
-    renderShortcuts();
-    document.addEventListener('keydown', (event) => {
-        const target = event.target as HTMLElement;
-        const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
-        for (const binding of KEY_BINDINGS) {
-            if (!binding.match(event) || (typing && !binding.whileTyping)) continue;
-            event.preventDefault();
-            binding.run(event);
-            return;
-        }
-    });
+    renderShortcutList(el('help-shortcuts'), KEY_BINDINGS);
+    document.addEventListener('keydown', (event) => dispatchKeys(event, KEY_BINDINGS));
 };
 
 const connect = async (): Promise<void> => {
