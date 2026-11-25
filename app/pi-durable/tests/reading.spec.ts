@@ -21,3 +21,16 @@ test('transcript is a readable document with a graph backlink on every fact', as
     expect(await call<string>(page, 'viewName')).toBe('graph');
     expect(errors).toEqual([]);
 });
+
+test('reader sections are keyboard navigable', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    const sections = page.locator('#reader .reading-section');
+    await sections.first().focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(sections.nth(1)).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#reader')).toBeHidden();
+    expect(await call<string>(page, 'viewName')).toBe('graph');
+    expect(errors).toEqual([]);
+});

@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { readingHTML, readingOrder, type ReadingEdge, type ReadingNode } from '../src/reading';
+import {
+    readingHTML,
+    readingOrder,
+    readingTextHTML,
+    type ReadingEdge,
+    type ReadingNode,
+} from '../src/reading';
 
 const nodes: readonly ReadingNode[] = [
     { id: 'c', label: 'Third', text: 'third <fact>', meta: { role: 'assistant' } },
@@ -46,5 +52,22 @@ describe('readingHTML', () => {
         });
         expect(html).toContain('href="/?focus=a"');
         expect(html).not.toContain('href="#reading-');
+    });
+
+    it('renders a safe markdown subset and rejects unsafe links', () => {
+        const html = readingTextHTML('**bold** `code` [ok](https://example.test) [bad](javascript:alert) <script>');
+        expect(html).toContain('<strong>bold</strong>');
+        expect(html).toContain('<code>code</code>');
+        expect(html).toContain('<a href="https://example.test">ok</a>');
+        expect(html).not.toContain('javascript:');
+        expect(html).toContain('&lt;script&gt;');
+        expect(readingTextHTML('before\n```\nx < y\n```\nafter')).toContain('<pre><code>x &lt; y</code></pre>');
+    });
+
+    it('uses markdown formatting only when the host asks for it', () => {
+        const html = readingHTML(readingOrder([{ ...nodes[0]!, text: '**bold**' }], []));
+        expect(html).toContain('**bold**');
+        const markdown = readingHTML(readingOrder([{ ...nodes[0]!, text: '**bold**', format: 'markdown' }], []));
+        expect(markdown).toContain('<strong>bold</strong>');
     });
 });

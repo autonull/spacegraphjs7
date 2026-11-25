@@ -21,7 +21,7 @@ import type { GraphViewData } from '@spacegraphjs/shared';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { ScopeSimulation, solveNodeAreaDensity, type ScopeSpec } from 'spacegraphjs/layout';
 import { Navigation, type MinimapProjection } from 'spacegraphjs/navigation';
-import { readingHTML, readingOrder } from 'spacegraphjs/reading';
+import { mountReading, readingOrder, type ReadingController } from 'spacegraphjs/reading';
 import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import { ZoomBands, type ScaleSample } from 'spacegraphjs/zoom';
@@ -512,6 +512,7 @@ export class DurableHost {
     #density: { readonly scale: number; readonly measured: number; readonly target: number } = {
         scale: 1, measured: 0, target: NODES_AREA_DENSITY,
     };
+    #readerController: ReadingController | undefined;
     #mutedEdges = 0;
     #activeGroups = new Set<string>();
     #scopeKey = '';
@@ -2077,6 +2078,8 @@ export class DurableHost {
     private renderReader(kernel: Kernel): void {
         const reading = this.#viewName === 'transcript';
         const reader = el('reader');
+        this.#readerController?.destroy();
+        this.#readerController = undefined;
         reader.hidden = !reading;
         el('canvas').hidden = reading;
         if (!reading) return;
@@ -2090,6 +2093,7 @@ export class DurableHost {
                 id: node.id,
                 label: labelForNode(node),
                 text: dataText(node),
+                format: node.kind === 'message' ? 'markdown' as const : 'text' as const,
                 meta: {
                     ...(typeof role === 'string' ? { role } : {}),
                     ...(typeof status === 'string' ? { status } : {}),
@@ -2100,8 +2104,12 @@ export class DurableHost {
         const edges = kernel.edges
             .filter((edge) => ['orders', 'checkpoint'].includes(edge.kind) && ids.has(edge.source) && ids.has(edge.target))
             .map((edge) => ({ source: edge.source, target: edge.target }));
-        reader.innerHTML = readingHTML(readingOrder(nodes, edges), {
+        this.#readerController = mountReading(reader, readingOrder(nodes, edges), {
             title: `Conversation ${this.registry.active()?.id ?? ''} — transcript`,
+            onReveal: (id) => {
+                this.setView('graph');
+                this.reveal(id);
+            },
         });
     }
 
@@ -2145,14 +2153,6 @@ export class DurableHost {
             el('canvas').addEventListener(event, () => { this.#rungPinned = false; }, { passive: true });
         for (const button of document.querySelectorAll<HTMLButtonElement>('#view-switch button'))
             button.addEventListener('click', () => this.setView(button.dataset['view'] as ViewName));
-        el('reader').addEventListener('click', (event) => {
-            const element = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-node-id]');
-            const id = element?.dataset['nodeId'];
-            if (!id) return;
-            event.preventDefault();
-            this.setView('graph');
-            this.reveal(id);
-        });
         el('help-close').addEventListener('click', () => this.toggleHelp(false));
         el('survey').addEventListener('click', (event) => {
             const projection = this.#overviewProjection;

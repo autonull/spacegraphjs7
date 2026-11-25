@@ -68,6 +68,10 @@
             .reading-head h1 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: .04em; }
             .reading-sections { list-style: none; margin: 0; padding: 0; }
             .reading-section { padding: 16px 0; border-bottom: 1px solid var(--line); }
+            .reading-section:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
+            .reading-section code { font-family: ui-monospace, monospace; font-size: .9em; color: var(--accent); }
+            .reading-section pre { margin: 8px 0; padding: 10px; overflow: auto; border: 1px solid var(--line);
+                background: var(--panel); font-size: 12px; }
             .reading-section :is(h2, h3, h4, h5, h6) { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
             .reading-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
             .reading-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 10px 0 0; font: 11px ui-monospace, monospace; }
