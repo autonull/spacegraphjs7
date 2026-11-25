@@ -43,10 +43,10 @@ test('node-area density stays inside the measured working band', async ({ page }
             return rect.width * rect.height;
         }));
     const coverage = boxes.reduce((sum, area) => sum + area, 0) / (stage.width * stage.height);
-    expect(coverage).toBeGreaterThanOrEqual(0.07);
-    expect(coverage).toBeLessThanOrEqual(0.13);
+    expect(coverage).toBeGreaterThanOrEqual(0.20);
+    expect(coverage).toBeLessThanOrEqual(0.35);
     const density = await call<{ readonly scale: number; readonly measured: number; readonly target: number }>(page, 'density');
-    expect(density.target).toBeCloseTo(0.32);
+    expect(density.target).toBeCloseTo(0.6);
     expect(density.scale).toBeGreaterThan(1);
     expect(errors).toEqual([]);
 });

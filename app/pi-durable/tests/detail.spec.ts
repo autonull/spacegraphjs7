@@ -16,7 +16,13 @@ test('cards and inspector expose committed detail, not just kind labels', async 
     const representation = await call<{ laneLabels: string[]; edgeLabels: string[] }>(page, 'representation');
     expect(representation.laneLabels).toContain('facts');
     expect(representation.edgeLabels.length).toBeGreaterThan(0);
+    expect(representation.edgeLabels.some((label) => label.includes('order'))).toBe(true);
+    expect(representation.edgeLabels.some((label) => /^\S+\s/.test(label))).toBe(true);
+    await expect(page.locator('#canvas .card-glyph').first()).toBeVisible();
     await expect(page.locator('#canvas [data-lane]').first()).toBeVisible();
+    const heroLabel = page.locator('#canvas .durable-card.hero .card-label').first();
+    const labelSize = await heroLabel.evaluate((node) => parseFloat(getComputedStyle(node).fontSize));
+    expect(labelSize).toBeGreaterThanOrEqual(18);
 
     const cards = page.locator('#canvas .durable-card');
     const tiers = await cards.evaluateAll((nodes) => [...new Set(nodes.map((node) => (node as HTMLElement).dataset['importance']))]);

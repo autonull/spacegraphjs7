@@ -153,14 +153,21 @@ Errors are typed (`no-provider`, `unknown-conversation`, `run_failed`, `turn_lim
 - `src/octaves.ts` — one power-of-two size ladder (`8 … 512`) driven by committed role and the
   attention sample. `sizeForOctave` feeds the adapter's CSS width/height, the renderer footprint and
   layout collision, so the DOM and the canvas agree. Bands are `dot`, `chip`, `card`, `panel` and
-  `monument`; focus raises a node to at least the card band without moving it. The core
-  `solveNodeAreaDensity` hint scales the whole ladder uniformly so nodes cover a useful share of the
-  stage; `solveErgonomicLayout` supplies compact positions that the simulation still owns.
+  `monument`; focus raises a node to at least the card band without moving it. Landmark roles keep
+  the upper rungs of the ladder; message, action and artifact roles sit lower, so conversation, run
+  and task lead while attached detail stays present. Labels scale with the
+  band, and `dot` cards show a short first word while `title`, `aria-label` and the inspector keep the
+  full committed name. The core `solveNodeAreaDensity` hint scales the whole ladder uniformly so nodes
+  cover a useful share of the stage (target `0.6`, scale capped at `16`; the E2E gate holds measured
+  coverage at 20–35%). `solveErgonomicLayout` supplies compact positions that the simulation still
+  owns. Card type uses container units, so labels grow with the node instead of staying fixed-size.
 - `src/host.ts` — `#groupFrom` turns recorded owner, wait and `orders` edges into subgraph frames via
   the adapter's band seam; each rung adds a different committed-detail caption to the cards. Zooming
   changes representation, never the kernel or its edge set.
 - `src/edge-style.ts` — recorded edge kinds map to the renderer's solid/dashed/dotted and confidence
-  channels. Colour stays theme-owned because the renderer contract has no edge-tone field.
+  channels, a monochrome glyph in each caption, and arrowheads on directed kinds. Colour stays
+  theme-owned because the renderer contract has no edge-tone field. Cards carry a kind glyph from the
+  same flat icon grammar; neither changes the committed fold.
 - `src/provenance.ts` — "why is this here?" reads the folded kernel and entry log; it reports commit
   sequence, source entry, order neighbours, view facet and edge kinds without inventing a cause.
 - `src/lens.ts` — one command grammar for view, landmark, time, tab, layout, find, `focus <id>` and
@@ -209,8 +216,12 @@ chip cards reveal their full committed summary on hover, and keyboard focus rais
 band and writes the summary into the inspector without changing the fold. Muting dims facts without
 removing nodes, edges or documents, and `Esc` restores a thread or focus lens.
 
+The visual language is warm ink on vellum-dark: charcoal panels, hairline rules, square corners and
+an amber accent. Theme tokens own every colour on both the canvas and the chrome; no glass, glow,
+parallax or bounce is used.
+
 Icons are decorative inline SVG `<symbol>` definitions in `index.html` — survey mark, views grid,
 landmark rungs, lens, inspector, controls sliders, legend rules, glossary book, insights dial, tasks
 checkbox, documents, signal bars, menu, close and presentation screen. Theme tokens own their colour;
 there is no icon font or new dependency. The same survey grammar is used by the header badges and the
-Lens command bar over the canvas.
+Lens command form in the top menu bar, so no overlay cuts into the graph.

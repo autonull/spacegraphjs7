@@ -17,7 +17,7 @@ export type OctaveTarget = AttentionTarget & {
 const ROLE_OCTAVE: Readonly<Record<string, number>> = {
     conversation: 5, answer: 5, boundary: 5, fork: 5,
     run: 4, task: 4,
-    message: 3, action: 3, state: 3, user: 3, assistant: 3, 'nested call': 3,
+    message: 3.5, action: 3.5, state: 3.5, user: 3.5, assistant: 3.5, 'nested call': 3.5,
     artifact: 2, config: 2, doc: 2, plate: 2, image: 2,
     pending: 1, signal: 1, trace: 1, span: 1,
 };

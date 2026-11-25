@@ -19,7 +19,7 @@ import {
 import { rankedSearch } from '@spacegraphjs/search';
 import type { GraphViewData } from '@spacegraphjs/shared';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
-import { ScopeSimulation, solveErgonomicLayout, solveNodeAreaDensity, type ScopeSpec } from 'spacegraphjs/layout';
+import { ScopeSimulation, solveNodeAreaDensity, type ScopeSpec } from 'spacegraphjs/layout';
 import { Navigation, type MinimapProjection } from 'spacegraphjs/navigation';
 import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
@@ -63,10 +63,10 @@ import { threadFrom, type ThreadStep } from './thread';
 import { asOfFeed, snapshotsOf } from './time-travel';
 
 /** A fit never shrinks a world unit below this many CSS pixels; unreadable content is panned instead. */
-const FIT_MIN_SCALE = 0.85;
-const FIT_OPTIONS = { minScale: FIT_MIN_SCALE, padding: 100 } as const;
+const FIT_MIN_SCALE = 0.5;
+const FIT_OPTIONS = { minScale: FIT_MIN_SCALE, padding: 48 } as const;
 /** Core layout hint: how much of the surface the node boxes should cover. */
-const NODES_AREA_DENSITY = 0.32;
+const NODES_AREA_DENSITY = 0.6;
 const MAX_NODE_SIZE = 1024;
 /** Eased reveal delay per band; reduced motion bypasses the morph entirely. */
 const BAND_DELAY: Readonly<Record<string, number>> = {
@@ -80,22 +80,75 @@ const scaledSize = (octave: number, scale: number): readonly [number, number] =>
     ];
 };
 
+type FlowNode = { readonly id: string; readonly width: number; readonly height: number };
+
+/** Serpentine flow along recorded edges: connected facts stay adjacent and no two cards overlap. */
+const flowPositions = (
+    nodes: readonly FlowNode[],
+    edges: readonly { readonly source: string; readonly target: string }[],
+): ReadonlyMap<string, { readonly x: number; readonly y: number; readonly z: number }> => {
+    const byID = new Map(nodes.map((node) => [node.id, node] as const));
+    const next = new Map<string, string[]>();
+    for (const edge of edges) {
+        const targets = next.get(edge.source) ?? [];
+        if (!targets.includes(edge.target)) targets.push(edge.target);
+        next.set(edge.source, targets);
+    }
+    const order: FlowNode[] = [];
+    const seen = new Set<string>();
+    const visit = (id: string): void => {
+        if (seen.has(id)) return;
+        seen.add(id);
+        const node = byID.get(id);
+        if (node) order.push(node);
+        for (const target of next.get(id) ?? []) visit(target);
+    };
+    for (const node of nodes) visit(node.id);
+    const rowWidth = Math.max(1600, ...nodes.map((node) => node.width * 1.4));
+    const gapX = 56;
+    const gapY = 112;
+    const positions = new Map<string, { x: number; y: number; z: number }>();
+    let cursor = 0;
+    let rowTop = 0;
+    let rowHeight = 0;
+    let forward = true;
+    for (const node of order) {
+        if (cursor > 0 && cursor + node.width > rowWidth) {
+            cursor = 0;
+            rowTop += rowHeight + gapY;
+            rowHeight = 0;
+            forward = !forward;
+        }
+        const left = forward ? cursor : rowWidth - cursor - node.width;
+        positions.set(node.id, { x: left + node.width / 2, y: rowTop + node.height / 2, z: 0 });
+        cursor += node.width + gapX;
+        rowHeight = Math.max(rowHeight, node.height);
+    }
+    const xs = [...positions.values()].map((point) => point.x);
+    const ys = [...positions.values()].map((point) => point.y);
+    const centerX = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const centerY = (Math.min(...ys) + Math.max(...ys)) / 2;
+    return new Map([...positions].map(([id, point]) =>
+        [id, { x: point.x - centerX, y: point.y - centerY, z: 0 }] as const));
+};
+
 const THEME: RenderTheme = {
     ...DEFAULT_THEME,
-    background: '#0b1016',
-    surface: '#18232f',
-    surfaceMuted: '#121a24',
-    text: '#e8eef5',
-    textMuted: '#8da0b4',
-    border: '#263443',
-    accent: '#61d4e3',
-    success: '#74dba2',
-    warning: '#f2bd70',
-    error: '#f08383',
-    edge: '#3d5570',
-    edgeMuted: '#263443',
-    selection: '#61d4e3',
-    focus: '#f2bd70',
+    background: '#0f0e0c',
+    surface: '#191713',
+    surfaceMuted: '#14120f',
+    text: '#f2ede3',
+    textMuted: '#d8c9ad',
+    border: '#3a352c',
+    accent: '#d7a45f',
+    success: '#8fb98a',
+    warning: '#e2b169',
+    error: '#d98379',
+    edge: '#6a6254',
+    edgeMuted: '#3a352c',
+    selection: '#d7a45f',
+    focus: '#e2b169',
+    fontSize: 15,
 };
 
 type Importance = 'hero' | 'medium' | 'compact';
@@ -232,7 +285,7 @@ const EDGE_LABELS: Readonly<Record<string, string>> = {
     delegates: 'delegates', retry: 'retry', checkpoint: 'checkpoint', fork: 'fork', forkedFrom: 'forked from',
 };
 
-const short = (value: string, max = 72): string =>
+const short = (value: string, max = 96): string =>
     value.length > max ? `${value.slice(0, max)}…` : value;
 
 const labelForNode = (node: DurableNode): string => {
@@ -248,7 +301,7 @@ const summaryForNode = (node: DurableNode): string => {
     const diff = node.data?.['diff'];
     if (typeof diff === 'string') parts.push(diff);
     const trace = node.data?.['trace'];
-    if (typeof trace === 'string') parts.push(`span ${short(trace, 48)}`);
+    if (typeof trace === 'string') parts.push(`span ${short(trace, 64)}`);
     const role = node.data?.['role'];
     if (typeof role === 'string' && role !== node.kind) parts.push(role);
     if (node.status) parts.push(node.status);
@@ -263,10 +316,15 @@ const summaryForNode = (node: DurableNode): string => {
     const error = node.data?.['error'];
     if (typeof error === 'string') parts.push(`error ${error}`);
     const recovery = node.data?.['recovery'];
-    if (typeof recovery === 'string') parts.push(`recovery ${short(recovery, 40)}`);
+    if (typeof recovery === 'string') parts.push(`recovery ${short(recovery, 56)}`);
     const workshop = node.data?.['workshop'];
     if (typeof workshop === 'string') parts.push(workshop);
     return parts.join(' · ');
+};
+
+const NODE_GLYPHS: Readonly<Record<string, string>> = {
+    conversation: '▤', run: '⟳', message: '✎', action: '⚒', task: '◫', boundary: '⌁',
+    pending: '⋯', artifact: '▧', config: '⚙', state: '◌', band: '▭',
 };
 
 const cardTemplate = (node: DurableNode): string => {
@@ -281,7 +339,10 @@ const cardTemplate = (node: DurableNode): string => {
     const attention = typeof node.data?.['attention'] === 'number' ? node.data['attention'].toFixed(2) : '0.50';
     const workshop = typeof node.data?.['workshop'] === 'string' ? node.data['workshop'] : '';
     const name = `${labelForNode(node)}${summary ? ` — ${summary}` : ''}`;
-    return `<div class="durable-card ${node.importance} band-${node.band}" tabindex="0" data-kind="${escapeHTML(node.kind)}" data-status="${escapeHTML(node.status)}" data-importance="${node.importance}" data-attention="${attention}" data-octave="${node.octave.toFixed(2)}" data-band="${node.band}"${node.data?.['muted'] ? ' data-muted="true"' : ''}${node.data?.['pulse'] ? ' data-pulse="true"' : ''} aria-label="${escapeHTML(name)}" title="${escapeHTML(name)}"${workshop ? ` data-workshop="${escapeHTML(workshop)}"` : ''}${diff ? ` data-diff="${diff}"` : ''}>${workshop ? `<span class="card-workshop">[${escapeHTML(workshop)}]</span>` : ''}<span class="card-label">${escapeHTML(labelForNode(node))}${status}</span>${summary ? `<span class="card-summary">${escapeHTML(summary)}</span>` : ''}${detail ? `<span class="card-detail">${escapeHTML(detail)}</span>` : ''}${image}</div>`;
+    const label = labelForNode(node);
+    const shortLabel = label.split(/\s+/)[0] ?? label;
+    const glyph = NODE_GLYPHS[node.kind] ?? '·';
+    return `<div class="durable-card ${node.importance} band-${node.band}" tabindex="0" data-kind="${escapeHTML(node.kind)}" data-status="${escapeHTML(node.status)}" data-importance="${node.importance}" data-attention="${attention}" data-octave="${node.octave.toFixed(2)}" data-band="${node.band}"${node.data?.['muted'] ? ' data-muted="true"' : ''}${node.data?.['pulse'] ? ' data-pulse="true"' : ''} aria-label="${escapeHTML(name)}" title="${escapeHTML(name)}"${workshop ? ` data-workshop="${escapeHTML(workshop)}"` : ''}${diff ? ` data-diff="${diff}"` : ''}>${workshop ? `<span class="card-workshop">[${escapeHTML(workshop)}]</span>` : ''}<span class="card-short" aria-hidden="true">${escapeHTML(shortLabel)}</span><span class="card-label"><span class="card-glyph" aria-hidden="true">${glyph}</span>${escapeHTML(label)}${status}</span>${summary ? `<span class="card-summary">${escapeHTML(summary)}</span>` : ''}${detail ? `<span class="card-detail">${escapeHTML(detail)}</span>` : ''}${image}</div>`;
 };
 
 /** One committed kernel, different captions per landmark: zoom changes detail, never facts. */
@@ -307,7 +368,7 @@ const detailFor = (
             .map((key) => `${key} ${String(data[key])}`)
             .join(' · ');
     }
-    return [...counts].sort((a, b) => b[1] - a[1]).slice(0, 2)
+    return [...counts].sort((a, b) => b[1] - a[1]).slice(0, 3)
         .map(([kind, count]) => `${kind} ×${count}`).join(' · ');
 };
 
@@ -357,10 +418,14 @@ export class DurableHost {
         extraEdgeData: (edge) => {
             const style = edgeStyleForKind(edge.kind);
             return {
-                label: style.caption ? EDGE_LABELS[edge.kind] ?? edge.kind : undefined,
+                label: style.caption ? `${style.glyph} ${EDGE_LABELS[edge.kind] ?? edge.kind}` : undefined,
                 style: style.style,
                 confidence: style.confidence,
-                data: { edgeTone: style.tone, edgeWeight: style.confidence === 'explicit' ? 2 : 1 },
+                data: {
+                    edgeTone: style.tone,
+                    edgeWeight: style.confidence === 'explicit' ? 2 : 1,
+                    ...(style.directed ? { arrowhead: 'target' } : {}),
+                },
             };
         },
     }, {
@@ -617,7 +682,7 @@ export class DurableHost {
                 height: el('stage').clientHeight || 900,
             },
             nodesAreaDensity: NODES_AREA_DENSITY,
-            maxScale: 8,
+            maxScale: 16,
         });
         this.#density = { scale: density.scale, measured: density.measured, target: NODES_AREA_DENSITY };
         this.#densityScale = density.scale;
@@ -1593,7 +1658,6 @@ export class DurableHost {
             this.#scopes = buildScopes(nodes, contains, 300);
             this.#scopeKey = key;
         }
-        const scopes = this.#scopes;
         const forest = buildScopeForest(
             nodes.map((node, index) => ({
                 id: node.id,
@@ -1606,36 +1670,18 @@ export class DurableHost {
             LAYOUT_STRATEGIES[this.#layoutName],
         );
         this.#simulation.setSpecs(forest.specs);
-        const solved = solveErgonomicLayout(
+        const positions = flowPositions(
             nodes.map((node, index) => ({
                 id: node.id,
                 width: scaledSize(octaves[index]!, this.#densityScale)[0],
                 height: scaledSize(octaves[index]!, this.#densityScale)[1],
             })),
-            placed.map((edge) => ({ source: edge.source, target: edge.target })),
-            {
-                width: el('stage').clientWidth || 1600,
-                height: el('stage').clientHeight || 900,
-            },
-            {
-                minCard: [
-                    Math.max(16, ...nodes.map((_, index) => scaledSize(octaves[index]!, this.#densityScale)[0])),
-                    Math.max(16, ...nodes.map((_, index) => scaledSize(octaves[index]!, this.#densityScale)[1])),
-                ],
-                maxColumns: 3,
-                refinementPasses: 3,
-                nodesAreaDensity: NODES_AREA_DENSITY,
-            },
+            placed,
         );
-        const fallback = new Map(scopes.map((scope) => [
-            scope.id,
-            { x: scope.position[0], y: scope.position[1], z: scope.position[2] },
-        ]));
-        const targets = new Map<string, { readonly x: number; readonly y: number; readonly z: number }>();
-        for (const [id, position] of solved ? solved.positions : fallback) {
+        const targets = new Map([...positions].flatMap(([id, position]) => {
             const qualified = forest.nodePaths.get(id);
-            if (qualified) targets.set(qualified, position);
-        }
+            return qualified ? [[qualified, position] as const] : [];
+        }));
         this.#simulation.setLayoutTargets(targets);
         this.#simulation.setPolicy({
             band: RUNGS.findIndex((entry) => entry.id === this.#rung),
@@ -2022,7 +2068,7 @@ export class DurableHost {
             ...Object.entries(EDGE_LABELS).map(([kind, label]) => {
                 const row = document.createElement('div');
                 row.className = 'row';
-                row.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value">${escapeHTML(kind)}</span>`;
+                row.innerHTML = `<span class="label">${edgeStyleForKind(kind).glyph} ${escapeHTML(label)}</span><span class="value">${escapeHTML(kind)}</span>`;
                 return row;
             }),
         );
