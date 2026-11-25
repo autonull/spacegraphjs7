@@ -570,26 +570,99 @@ export function buildRenderModel(
     };
 }
 
-/** Minimal layout function - hosts should provide their own implementation. */
-export function layoutGraph(model: GraphViewData, _options: { level: ZoomLevel }): LayoutResult {
-    // Placeholder - hosts should override with their layout implementation
+/** Deterministic layered layout: recorded edges set depth, model order breaks ties within a level. */
+export function layoutGraph(model: GraphViewData, options: { level: ZoomLevel }): LayoutResult {
     const positions = new Map<string, Position>();
-    for (const node of model.nodes) {
-        positions.set(node.id, { x: 0, y: 0 });
+    if (!model.nodes.length) return { positions, bounds: { x: 0, y: 0, width: 0, height: 0 } };
+    const children = new Map<string, string[]>();
+    const parents = new Set<string>();
+    for (const node of model.nodes) children.set(node.id, []);
+    for (const edge of model.edges) {
+        children.get(edge.source)?.push(edge.target);
+        parents.add(edge.target);
     }
-    return { positions, bounds: { x: 0, y: 0, width: 1000, height: 1000 } };
+    const level = new Map<string, number>();
+    const queue: string[] = [];
+    for (const node of model.nodes) {
+        if (parents.has(node.id)) continue;
+        level.set(node.id, 0);
+        queue.push(node.id);
+    }
+    if (!queue.length) {
+        level.set(model.nodes[0]!.id, 0);
+        queue.push(model.nodes[0]!.id);
+    }
+    const visited = new Set(queue);
+    for (let head = 0; head < queue.length; head++) {
+        const current = queue[head]!;
+        const depth = level.get(current) ?? 0;
+        for (const child of children.get(current) ?? []) {
+            if (visited.has(child)) continue;
+            visited.add(child);
+            level.set(child, depth + 1);
+            queue.push(child);
+        }
+    }
+    for (const node of model.nodes) if (!level.has(node.id)) level.set(node.id, 0);
+    const columns = new Map<number, string[]>();
+    for (const node of model.nodes) {
+        const depth = level.get(node.id) ?? 0;
+        const column = columns.get(depth) ?? [];
+        column.push(node.id);
+        columns.set(depth, column);
+    }
+    const spacingX = options.level === 'detail' ? 240 : 180;
+    const spacingY = 120;
+    let width = 0;
+    for (const [depth, ids] of columns) {
+        width = Math.max(width, ids.length * spacingX);
+        ids.forEach((id, index) => {
+            positions.set(id, {
+                x: (index - (ids.length - 1) / 2) * spacingX,
+                y: depth * spacingY,
+            });
+        });
+    }
+    const height = Math.max(1, columns.size) * spacingY;
+    return { positions, bounds: { x: -width / 2, y: 0, width, height } };
 }
 
-/** Minimal turn subgraph function - hosts should provide their own implementation. */
+/** Breadth-first turn neighbourhood: the turn, its recorded neighbours, up to `limit` nodes. */
 export function turnSubgraph(
     model: GraphViewData,
     turnID: string,
-    _limit: number,
+    limit: number,
 ): TurnSubgraphResult {
-    // Placeholder - hosts should override with their turn subgraph implementation
-    const turnNode = model.nodes.find((n) => n.id === turnID);
-    if (!turnNode) return { nodes: [], edges: [] };
-    return { nodes: [turnNode], edges: [] };
+    const turnNode = model.nodes.find((node) => node.id === turnID);
+    if (!turnNode || limit < 1) return { nodes: [], edges: [] };
+    const ids = new Set(model.nodes.map((node) => node.id));
+    const neighbours = new Map<string, string[]>();
+    const link = (source: string, target: string): void => {
+        const list = neighbours.get(source) ?? [];
+        list.push(target);
+        neighbours.set(source, list);
+    };
+    for (const edge of model.edges) {
+        if (!ids.has(edge.source) || !ids.has(edge.target)) continue;
+        link(edge.source, edge.target);
+        link(edge.target, edge.source);
+    }
+    const selected = new Set([turnID]);
+    const queue = [turnID];
+    for (let head = 0; head < queue.length && selected.size < limit; head++) {
+        for (const id of neighbours.get(queue[head]!) ?? []) {
+            if (selected.has(id)) continue;
+            selected.add(id);
+            queue.push(id);
+            if (selected.size >= limit) break;
+        }
+    }
+    return {
+        nodes: model.nodes.filter((node) => selected.has(node.id)),
+        edges: model.edges.filter(
+            (edge) => selected.has(edge.source) && selected.has(edge.target),
+        ),
+    };
 }
 
 /** Checks if a renderer supports a given depth mode. Re-exported from @spacegraphjs/renderer */

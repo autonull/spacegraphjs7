@@ -30,6 +30,7 @@ export function buildTurnRenderModel(
     return buildRenderModel(scoped, {
         level,
         positions: layoutGraph(scoped, { level }).positions,
+        edges: true,
         renderCard: options.renderCard,
     });
 }
