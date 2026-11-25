@@ -125,13 +125,18 @@ export class LODPlugin extends BaseSystemPlugin {
             );
 
             if ((node as any).isDOMNode) {
-                (node as any).setVisibility(visible);
+                if ((node as any).cssObject?.visible !== visible) (node as any).setVisibility(visible);
                 if (visible) {
                     const fogOpacity = depthFade(
                         isOrtho ? camera.position.distanceTo(node.position) : distanceOrExtent,
                         fogDensity,
                     );
-                    if ((node as any).setOpacity) (node as any).setOpacity(opacity * fogOpacity);
+                    const nextOpacity = opacity * fogOpacity;
+                    if (
+                        (node as any).setOpacity &&
+                        (node as any).domElement?.style.opacity !== String(nextOpacity)
+                    )
+                        (node as any).setOpacity(nextOpacity);
                     (node as any).updateLod(distanceOrExtent);
                 }
             } else if (!(node as any).isGroupNode) {

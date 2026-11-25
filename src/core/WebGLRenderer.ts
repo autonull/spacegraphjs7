@@ -58,6 +58,7 @@ export class WebGLRenderer {
     private _depthFadeStrength = 0;
     private _depthFadeCameraDistance = 0;
     private _depthFadeSceneDepth = 0;
+    private _fog?: FogExp2;
     private _resizeObserver: ResizeObserver | null = null;
     /**
      * The surface size, as last measured. Reading `clientWidth` forces the browser to lay the page
@@ -232,7 +233,11 @@ export class WebGLRenderer {
     setDepthFade(density: number): this {
         if (this._depthFade === density) return this;
         this._depthFade = density;
-        this.scene.fog = density > 0 ? new FogExp2(this._bgColor, density) : null;
+        if (density > 0) {
+            this._fog ??= new FogExp2(this._bgColor, density);
+            this._fog.density = density;
+            this.scene.fog = this._fog;
+        } else this.scene.fog = null;
         this.sg.requestFrame?.();
         return this;
     }
@@ -289,6 +294,7 @@ export class WebGLRenderer {
             this.beginFrameOptimization(timestamp);
         }
         this.renderContext?.startFrame(timestamp);
+        if (this.renderContext) this.renderContext.visibilityContext.zoom = this.getZoom();
 
         const camera = this.camera;
         camera.updateMatrixWorld();

@@ -19,7 +19,7 @@ const intersects = (a: LabelRect, b: LabelRect, padding: number): boolean =>
 
 export function declutterLabels(rects: readonly LabelRect[], padding = 4): Set<string> {
     const ordered = [...rects].sort(
-        (a, b) => (b.priority ?? 0) - (a.priority ?? 0) || a.id.localeCompare(b.id),
+        (a, b) => (b.priority ?? 0) - (a.priority ?? 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
     );
     const kept: LabelRect[] = [];
     const hidden = new Set<string>();

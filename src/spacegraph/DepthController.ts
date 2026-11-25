@@ -50,8 +50,14 @@ export class DepthController {
 
     applySceneFade(): SpaceGraph {
         const treatment = depthTreatment(this.#depth);
-        const depths = [...this.sg.graph.nodes.values()].map((node) => node.position.z);
-        const sceneDepth = depths.length > 0 ? Math.max(...depths) - Math.min(...depths) : 0;
+        let minZ = Infinity;
+        let maxZ = -Infinity;
+        for (const node of this.sg.graph.nodes.values()) {
+            const z = node.position.z;
+            if (z < minZ) minZ = z;
+            if (z > maxZ) maxZ = z;
+        }
+        const sceneDepth = minZ <= maxZ ? maxZ - minZ : 0;
         const cameraDistance = this.sg.cameraControls?.spherical.radius ?? 0;
         this.sg.renderer.setDepthFadeFromScene(treatment.fade, cameraDistance, sceneDepth);
         return this.sg;

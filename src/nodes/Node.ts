@@ -24,6 +24,8 @@ export interface VisibilityContext {
     viewportBounds: { width: number; height: number };
     minPixelSize: number;
     cameraPosition: THREE.Vector3;
+    /** Normalized camera zoom for the current frame; recomputed per node when absent. */
+    zoom?: number;
 }
 
 export type LODLevel = 'high' | 'medium' | 'low' | 'hidden';
@@ -205,8 +207,9 @@ export abstract class Node extends Surface {
     #lodBoundsBox?: THREE.Box3;
 
     #lodBounds(): THREE.Box3 {
-        if (this.#lodBoundsFrame !== Node.lodFrame || !this.#lodBoundsBox) {
-            this.#lodBoundsBox = new THREE.Box3().setFromObject(this.object);
+        this.#lodBoundsBox ??= new THREE.Box3();
+        if (this.#lodBoundsFrame !== Node.lodFrame) {
+            this.#lodBoundsBox.setFromObject(this.object);
             this.#lodBoundsFrame = Node.lodFrame;
         }
         return this.#lodBoundsBox;
@@ -215,7 +218,7 @@ export abstract class Node extends Surface {
     computeLOD(context: VisibilityContext): LODLevel {
         if (!this.visible) return 'hidden';
         const data = this.data as Record<string, unknown>;
-        const zoom = this.sg?.renderer?.getZoom?.();
+        const zoom = context.zoom ?? this.sg?.renderer?.getZoom?.();
         const minZoom = data.minZoom as number | undefined;
         const maxZoom = data.maxZoom as number | undefined;
         if (

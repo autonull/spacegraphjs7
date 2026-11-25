@@ -34,15 +34,21 @@ export const diffCollectionById = <T extends { readonly id: string }>(
     after: readonly T[],
     serialize: (item: T) => string = stableSerialize,
 ): KeyedCollectionDiff<T> => {
-    const beforeByID = new Map(before.map((item) => [item.id, item]));
-    const afterByID = new Map(after.map((item) => [item.id, item]));
+    const beforeByID = new Map<string, T>();
+    for (const item of before) beforeByID.set(item.id, item);
+    const afterByID = new Map<string, T>();
+    const added: T[] = [];
+    const changed: CollectionChange<T>[] = [];
+    for (const item of after) {
+        afterByID.set(item.id, item);
+        const previous = beforeByID.get(item.id);
+        if (!previous) added.push(item);
+        else if (previous !== item && serialize(previous) !== serialize(item))
+            changed.push({ id: item.id, before: previous, after: item });
+    }
     return {
-        added: after.filter((item) => !beforeByID.has(item.id)),
+        added,
         removed: before.filter((item) => !afterByID.has(item.id)),
-        changed: after.flatMap((item) => {
-            const previous = beforeByID.get(item.id);
-            if (!previous || serialize(previous) === serialize(item)) return [];
-            return [{ id: item.id, before: previous, after: item }];
-        }),
+        changed,
     };
 };

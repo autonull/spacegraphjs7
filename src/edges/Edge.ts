@@ -74,6 +74,12 @@ export class Edge extends Surface {
     private _gradientKey = '';
     private _sourcePos = new THREE.Vector3();
     private _targetPos = new THREE.Vector3();
+    private _cachedX = NaN;
+    private _cachedY = NaN;
+    private _cachedZ = NaN;
+    private _cachedEndX = NaN;
+    private _cachedEndY = NaN;
+    private _cachedEndZ = NaN;
 
     constructor(
         sgOrSpec: SpaceGraph | EdgeSpec | undefined,
@@ -231,6 +237,7 @@ export class Edge extends Surface {
     updateSpec(updates: Partial<EdgeSpec>): this {
         if (!updates.data) return this;
 
+        this._cachedX = NaN;
         this.data = { ...this.data, ...updates.data };
         const { color, thickness, gradientColors, dashed, dashSize, gapSize, opacity } =
             updates.data;
@@ -317,6 +324,21 @@ export class Edge extends Surface {
         const { sourcePos, targetPos } = this.endpointPositions();
 
         if (!isFiniteVector(sourcePos) || !isFiniteVector(targetPos)) return;
+        if (
+            sourcePos.x === this._cachedX &&
+            sourcePos.y === this._cachedY &&
+            sourcePos.z === this._cachedZ &&
+            targetPos.x === this._cachedEndX &&
+            targetPos.y === this._cachedEndY &&
+            targetPos.z === this._cachedEndZ
+        )
+            return;
+        this._cachedX = sourcePos.x;
+        this._cachedY = sourcePos.y;
+        this._cachedZ = sourcePos.z;
+        this._cachedEndX = targetPos.x;
+        this._cachedEndY = targetPos.y;
+        this._cachedEndZ = targetPos.z;
 
         this.geometry.setPositions([
             sourcePos.x,
