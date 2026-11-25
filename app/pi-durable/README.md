@@ -80,7 +80,8 @@ Four Core heroes are tracked at full resolution: `basic-turn`, `sleeping-approva
 `task-wake`, `fork-journey`, `resume-journey`, `inspect-flow`, `host-boundary` and `child-flow`. Each story captures
 four states from pure `?shot`/`?scenario` state through `window.__durable` hooks, then composes them
 in a browser canvas. Each cell is an engraved plate: a survey mark, landmark legend and scale bar
-alongside its numbered caption. The same frames are scrubbable through `setStory` / `chapters` /
+alongside its numbered caption. The active story follows `?story=<id>` or the first story containing `?shot`, and its frames are
+scrubbable through `setStory` / `chapters` /
 `scrub`; the PNG is the printed plate and the hooks are the film. Views `diff`, `trace`, `docs` and
 `transcript` re-place the same folded kernel and are represented inside those stories, not as new
 renderer contracts. `pnpm --filter pi-durable shots:all` captures heroes and stories; the contact
@@ -203,7 +204,10 @@ discrete view history, `Ctrl/⌘ K` opens the Lens, `?` lists every binding, and
 and restores focus to its icon. Lens keeps query history (`↑`/`↓`) and completes command prefixes on `Tab`.
 The insights panel also drives guided routes, curiosity callouts, kind/status muting chips, the commit
 ticker and thread following; `e` toggles a focus lens on the selection and `m` resets muting filters.
-Muting dims facts without removing nodes, edges or documents, and `Esc` restores a thread or focus lens.
+Its Compare block pins a tab or selected node as reference and clears back to the prior view. Dot and
+chip cards reveal their full committed summary on hover, and keyboard focus raises them to the card
+band and writes the summary into the inspector without changing the fold. Muting dims facts without
+removing nodes, edges or documents, and `Esc` restores a thread or focus lens.
 
 Icons are decorative inline SVG `<symbol>` definitions in `index.html` — survey mark, views grid,
 landmark rungs, lens, inspector, controls sliders, legend rules, glossary book, insights dial, tasks

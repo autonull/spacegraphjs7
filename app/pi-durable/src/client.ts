@@ -10,6 +10,7 @@ import { replayFeed } from './replay';
 import { provenanceFor } from './provenance';
 import { isRung } from './rungs';
 import { SCENARIOS } from './scenarios';
+import { STORIES } from './stories';
 import { asOfFeed } from './time-travel';
 import { forkOps } from './translator';
 
@@ -17,6 +18,8 @@ const params = new URLSearchParams(location.search);
 const compact = decodeAddress(params.get('at'));
 const shot = params.get('shot') ?? compact?.shot;
 const scenario = params.get('scenario') ?? undefined;
+const story = params.get('story')
+    ?? STORIES.find((entry) => entry.frames.some((frame) => 'shot' in frame && frame.shot === shot))?.id;
 const seed = params.get('seed') ?? 'fixed';
 const replayID = params.get('replay') ?? undefined;
 const asOf = params.get('asOf') === null ? compact?.asOf : Number(params.get('asOf'));
@@ -441,6 +444,22 @@ const bindPanelChrome = (): void => {
     el('present-exit').addEventListener('click', () => togglePresentation(false));
 };
 
+const raisedDots = new Set<string>();
+const bindCardFocus = (): void => {
+    el('canvas').addEventListener('focusin', (event) => {
+        const card = (event.target as HTMLElement).closest<HTMLElement>('.durable-card');
+        const band = card?.dataset['band'];
+        const id = card?.closest<HTMLElement>('[data-node-id]')?.dataset['nodeId'];
+        if (!id || !card || (band !== 'dot' && band !== 'chip') || raisedDots.has(id)) return;
+        raisedDots.add(id);
+        host.focus(id);
+        queueMicrotask(() => {
+            el('canvas').querySelector<HTMLElement>(`[data-node-id="${CSS.escape(id)}"] .durable-card`)?.focus();
+            raisedDots.delete(id);
+        });
+    });
+};
+
 const bindChrome = (): void => {
     host.onAbort = cancelPrompt;
     host.onFork = forkConversation;
@@ -451,6 +470,7 @@ const bindChrome = (): void => {
     bindApprove();
     bindCatalog();
     bindPanelChrome();
+    bindCardFocus();
     el('export-format').addEventListener('change', (event) =>
         host.export((event.target as HTMLSelectElement).value),
     );
@@ -465,6 +485,8 @@ const bindChrome = (): void => {
     el('time-present').addEventListener('click', () => host.scrubTo(undefined));
     el('route-prev').addEventListener('click', () => host.routeStep(-1));
     el('route-next').addEventListener('click', () => host.routeStep(1));
+    el('compare-pin').addEventListener('click', () => host.pinCompare());
+    el('compare-clear').addEventListener('click', () => host.clearCompare());
     el('filter-reset').addEventListener('click', () => host.resetFilters());
     el('inspector').addEventListener('click', (event) => {
         if ((event.target as HTMLElement).id === 'fork-here') void forkConversation();
@@ -537,6 +559,7 @@ const boot = async (): Promise<void> => {
     await host.mount(el('canvas'));
     bindChrome();
     await connect();
+    if (story) host.setStory(story);
     if (['s', 'view', 'rung', 'layout', 'asOf', 'zoom'].some((key) => params.has(key)))
         host.applyPermalink(location.href);
     if (compact) host.applyAddress(compact);

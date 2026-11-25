@@ -281,7 +281,7 @@ const cardTemplate = (node: DurableNode): string => {
     const attention = typeof node.data?.['attention'] === 'number' ? node.data['attention'].toFixed(2) : '0.50';
     const workshop = typeof node.data?.['workshop'] === 'string' ? node.data['workshop'] : '';
     const name = `${labelForNode(node)}${summary ? ` — ${summary}` : ''}`;
-    return `<div class="durable-card ${node.importance} band-${node.band}" data-kind="${escapeHTML(node.kind)}" data-status="${escapeHTML(node.status)}" data-importance="${node.importance}" data-attention="${attention}" data-octave="${node.octave.toFixed(2)}" data-band="${node.band}"${node.data?.['muted'] ? ' data-muted="true"' : ''}${node.data?.['pulse'] ? ' data-pulse="true"' : ''} aria-label="${escapeHTML(name)}" title="${escapeHTML(name)}"${workshop ? ` data-workshop="${escapeHTML(workshop)}"` : ''}${diff ? ` data-diff="${diff}"` : ''}>${workshop ? `<span class="card-workshop">${escapeHTML(workshop)}</span>` : ''}<span class="card-label">${escapeHTML(labelForNode(node))}${status}</span>${summary ? `<span class="card-summary">${escapeHTML(summary)}</span>` : ''}${detail ? `<span class="card-detail">${escapeHTML(detail)}</span>` : ''}${image}</div>`;
+    return `<div class="durable-card ${node.importance} band-${node.band}" tabindex="0" data-kind="${escapeHTML(node.kind)}" data-status="${escapeHTML(node.status)}" data-importance="${node.importance}" data-attention="${attention}" data-octave="${node.octave.toFixed(2)}" data-band="${node.band}"${node.data?.['muted'] ? ' data-muted="true"' : ''}${node.data?.['pulse'] ? ' data-pulse="true"' : ''} aria-label="${escapeHTML(name)}" title="${escapeHTML(name)}"${workshop ? ` data-workshop="${escapeHTML(workshop)}"` : ''}${diff ? ` data-diff="${diff}"` : ''}>${workshop ? `<span class="card-workshop">[${escapeHTML(workshop)}]</span>` : ''}<span class="card-label">${escapeHTML(labelForNode(node))}${status}</span>${summary ? `<span class="card-summary">${escapeHTML(summary)}</span>` : ''}${detail ? `<span class="card-detail">${escapeHTML(detail)}</span>` : ''}${image}</div>`;
 };
 
 /** One committed kernel, different captions per landmark: zoom changes detail, never facts. */
@@ -918,7 +918,10 @@ export class DurableHost {
     }
 
     pinCompare(id?: string): boolean {
-        const target = id ?? this.registry.list().find((tab) => tab.id !== this.registry.activeID())?.id;
+        const tabs = this.registry.list();
+        const target = id
+            ? this.registry.get(id)?.id ?? tabs.find((tab) => tabKernel(tab).nodes.some((node) => node.id === id))?.id
+            : tabs.find((tab) => tab.id !== this.registry.activeID())?.id;
         if (!target) return false;
         this.#pinnedID = target;
         this.#comparePrior ??= this.#viewName;
@@ -987,6 +990,7 @@ export class DurableHost {
     private renderInsights(): void {
         this.renderTime();
         this.renderRoute();
+        this.renderCompare();
         this.renderThread();
         if (el('app').dataset['drawerOpen'] !== 'insights') return;
         this.renderDigest();
@@ -999,6 +1003,12 @@ export class DurableHost {
     private renderRoute(): void {
         const caption = this.#chapter >= 0 ? chapterCaptions(this.#story?.id)[this.#chapter] : undefined;
         el('route-caption').textContent = caption ?? '';
+    }
+
+    private renderCompare(): void {
+        el('compare-status').textContent = this.#pinnedID
+            ? `Reference: ${this.#pinnedID}`
+            : 'No reference pinned';
     }
 
     private renderThread(): void {
@@ -1116,7 +1126,7 @@ export class DurableHost {
         const edges = emphasised.edges.map((edge: RenderEdge) => rung.mutedEdge(edge.kind)
             ? { ...edge, emphasis: 0, data: { ...edge.data, muted: true, opacity: 0.2 } }
             : edge);
-        this.#mutedEdges = edges.length - emphasised.edges.length;
+        this.#mutedEdges = edges.filter((edge: RenderEdge) => edge.data?.['muted'] === true).length;
         return { ...emphasised, edges };
     }
 

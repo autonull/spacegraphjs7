@@ -147,6 +147,18 @@
             .durable-card.band-monument { padding: 20px 24px; font-size: 24px; box-shadow: inset 4px 0 var(--accent); }
             .durable-card.band-dot .card-summary,
             .durable-card.band-chip .card-summary { display: none; }
+            .durable-card.band-dot:is(:hover, :focus-visible),
+            .durable-card.band-chip:is(:hover, :focus-visible) { overflow: visible; z-index: 6; }
+            .durable-card.band-dot:is(:hover, :focus-visible)::before,
+            .durable-card.band-chip:is(:hover, :focus-visible)::before {
+                content: attr(title); position: absolute; top: 100%; left: 0; z-index: 7;
+                width: max-content; max-width: 260px; box-sizing: border-box; padding: 6px 8px;
+                background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+                color: var(--text); font-size: 11px; line-height: 1.4; white-space: normal;
+                box-shadow: 0 6px 18px #0008; pointer-events: none;
+            }
+            [dir="rtl"] .durable-card.band-dot:is(:hover, :focus-visible)::before,
+            [dir="rtl"] .durable-card.band-chip:is(:hover, :focus-visible)::before { left: auto; right: 0; }
             .durable-card[data-status="sleeping"] .card-label::after { content: "◷"; margin-left: 6px; color: var(--warn); }
             .durable-card[data-status="failed"] { border-left: 3px solid var(--error); }
             .durable-card[data-kind="boundary"] { border-left: 3px solid var(--accent); }
@@ -223,8 +235,8 @@
                 border-radius: 999px; background: var(--panel-2); color: var(--muted); font-size: 11px; }
             .filter-chip[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
             #callouts button { display: block; width: 100%; text-align: left; margin-bottom: 4px; }
-            #route-caption, #thread-status, #commit-ticker, #filter-count { font-size: 11px; color: var(--muted); }
-            #route-prev, #route-next, #thread-follow, #thread-next { min-height: 32px; margin: 4px 4px 0 0; }
+            #route-caption, #compare-status, #thread-status, #commit-ticker, #filter-count { font-size: 11px; color: var(--muted); }
+            #route-prev, #route-next, #compare-pin, #compare-clear, #thread-follow, #thread-next { min-height: 32px; margin: 4px 4px 0 0; }
             @media (prefers-reduced-motion: reduce) { .durable-card[data-pulse="true"]::after { animation: none; opacity: 0; } }
             #announcer { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
             #help { position: absolute; inset: 0; display: grid; place-items: center; background: #050a0ecc;
@@ -251,6 +263,11 @@
                 footer { flex-wrap: wrap; }
                 #prompt-input { flex: 1 1 100%; }
                 #prompt-mode, #prompt-submit { flex: 1; }
+            }
+            @media (max-width: 600px) {
+                .rail-icon, #drawer-close, .action, #view-switch button, #rung-switch button,
+                #trail button, .filter-chip, #route-prev, #route-next, #compare-pin, #compare-clear,
+                #thread-follow, #thread-next, .tab, #lens-go, #lens-input, #menu-button { min-height: 44px; }
             }
             @media (prefers-reduced-motion: reduce) {
                 * { transition: none !important; animation: none !important; }
@@ -386,6 +403,12 @@
                             <div id="route-caption"></div>
                             <button type="button" class="action" id="route-prev">Prev</button>
                             <button type="button" class="action" id="route-next">Next</button>
+                        </div>
+                        <div class="insight-block">
+                            <h3>Compare</h3>
+                            <div id="compare-status">No reference pinned</div>
+                            <button type="button" class="action" id="compare-pin">Pin reference</button>
+                            <button type="button" class="action" id="compare-clear">Clear pin</button>
                         </div>
                         <div class="insight-block">
                             <h3>Curiosity</h3>

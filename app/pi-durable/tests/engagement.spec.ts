@@ -57,7 +57,6 @@ test('E1 — focus lens mutes without changing the fold and restores attention',
 
 test('E2 — guided route exposes each committed caption in the drawer and inspector', async ({ page }) => {
     const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setStory', 'turn-flow');
     await openPanel(page, 'insights');
     await page.locator('#route-next').click();
     await expect(page.locator('#route-caption')).toContainText('prompt committed');
@@ -127,7 +126,7 @@ test('ZUI — rung emphasis and band folding mute without changing the fold', as
     await call(page, 'setRung', 'cosmos');
     const cosmos = await call<Emphasis>(page, 'emphasis');
     expect(cosmos.mutedNodes).toBeGreaterThan(0);
-    expect(cosmos.mutedEdges).toBeGreaterThanOrEqual(0);
+    expect(cosmos.mutedEdges).toBeGreaterThan(0);
     expect(cosmos.activeGroups.length).toBeLessThanOrEqual(fact.activeGroups.length);
     const after = await call<Representation>(page, 'representation');
     expect(after.nodeIDs).toEqual(before.nodeIDs);
@@ -138,15 +137,22 @@ test('ZUI — rung emphasis and band folding mute without changing the fold', as
     expect(errors).toEqual([]);
 });
 
-test('C1 — compare pin diffs a chosen tab and clears to the prior view', async ({ page }) => {
+test('C1 — the drawer pins a reference, diffs committed ids and clears the view', async ({ page }) => {
     const errors = await boot(page, '?shot=fork-tabs');
     await openPanel(page, 'insights');
     const before = await call<string>(page, 'viewName');
-    expect(await call<boolean>(page, 'pinCompare')).toBe(true);
+    await page.locator('#compare-pin').click();
     expect(await call<string | null>(page, 'pinned')).not.toBeNull();
     expect(await call<string>(page, 'viewName')).toBe('diff');
-    expect(await call<boolean>(page, 'clearCompare')).toBe(true);
+    await expect(page.locator('#compare-status')).toContainText('Reference:');
+    expect(await page.locator('#canvas [data-diff]').count()).toBeGreaterThan(0);
+    await page.locator('#compare-clear').click();
     expect(await call<string | null>(page, 'pinned')).toBeNull();
     expect(await call<string>(page, 'viewName')).toBe(before);
+
+    const nodeID = (await call<Representation>(page, 'representation')).nodeIDs[0]!;
+    expect(await call<boolean>(page, 'pinCompare', nodeID)).toBe(true);
+    expect(await call<string | null>(page, 'pinned')).not.toBeNull();
+    await page.locator('#compare-clear').click();
     expect(errors).toEqual([]);
 });

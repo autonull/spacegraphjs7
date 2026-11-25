@@ -101,6 +101,37 @@ test('presentation mode hides chrome, keeps the view and exits by keyboard', asy
     expect(await call<string>(page, 'permalink')).toBe(before);
 });
 
+test('dot-band cards expose the committed summary and raise on keyboard focus', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 1000 });
+    const errors = await boot(page, '?shot=basic-turn&rung=grain');
+    const dots = page.locator('#canvas .durable-card.band-dot');
+    expect(await dots.count()).toBeGreaterThan(0);
+    const dot = dots.first();
+    const title = await dot.getAttribute('title');
+    expect(title).toBeTruthy();
+    await dot.hover();
+    const tooltip = await dot.evaluate((node) => getComputedStyle(node, '::before').content);
+    expect(tooltip).toContain(title!.slice(0, 12));
+    const id = await dot.evaluate((node) => (node.closest('[data-node-id]') as HTMLElement).dataset['nodeId']!);
+    await dot.focus();
+    await expect(page.locator(`[data-node-id="${id}"] .durable-card`)).toHaveAttribute('data-band', 'card');
+    await expect(page.locator('#inspector')).toContainText(title!.split(' — ').at(-1)!.slice(0, 12));
+    expect(errors).toEqual([]);
+});
+
+test('narrow viewport keeps controls at touch-target size', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await page.setViewportSize({ width: 375, height: 812 });
+    await openPanel(page);
+    for (const selector of ['#drawer-close', '#view-switch button', '#rung-switch button',
+        '#trail button', '.action', '.filter-chip', '#route-prev', '#compare-pin',
+        '#thread-follow', '#menu-button', '#lens-input']) {
+        const control = page.locator(selector).first();
+        if (await control.count()) await expect(control).toHaveCSS('min-height', '44px');
+    }
+    expect(errors).toEqual([]);
+});
+
 test('narrow viewport keeps controls and graph reachable', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     const errors = await boot(page, '?shot=basic-turn');
