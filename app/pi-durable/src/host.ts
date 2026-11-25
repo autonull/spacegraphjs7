@@ -22,7 +22,7 @@ import type { GraphViewData } from '@spacegraphjs/shared';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { ScopeSimulation, solveNodeAreaDensity, type ScopeSpec } from 'spacegraphjs/layout';
 import { Navigation, type MinimapProjection } from 'spacegraphjs/navigation';
-import { mountReading, readingOrder, type ReadingController } from 'spacegraphjs/reading';
+import { mountReading, readingOrder, type ReadingController, type ReadingNode } from 'spacegraphjs/reading';
 import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import { ZoomBands, type ScaleSample } from 'spacegraphjs/zoom';
@@ -644,14 +644,23 @@ export class DurableHost {
         const why = provenance
             ? `<br><br>why is this here?<br>commit ${provenance.sequence} · source ${escapeHTML(provenance.source)}${provenance.at ? ` · at ${new Date(provenance.at).toISOString().slice(0, 16)}Z` : ''}${provenance.predecessor ? `<br>after ${escapeHTML(provenance.predecessor)}` : ''}${provenance.successor ? `<br>before ${escapeHTML(provenance.successor)}` : ''}<br>facet ${escapeHTML(provenance.facets.join(', '))}<br>edges ${escapeHTML(provenance.edgeKinds.join(', '))}`
             : '';
-        el('inspector').innerHTML = `<strong>${escapeHTML(labelForNode(durable))}</strong><br>${escapeHTML(node.kind)} · ${escapeHTML(String(node.data?.['status'] ?? 'committed'))}${summaryForNode(durable) ? `<br>${escapeHTML(summaryForNode(durable))}` : ''}<br><code>${escapeHTML(node.id)}</code>${links.length ? `<br>links: ${escapeHTML([...new Set(links)].join(', '))}` : ''}${why}${provenance ? '<br><button type="button" class="action" id="fork-here" title="Fork at this committed entry (Shift+R)">Fork here</button>' : ''}`;
+        el('inspector').innerHTML = `<strong>${escapeHTML(labelForNode(durable))}</strong><br>${escapeHTML(node.kind)} · ${escapeHTML(String(node.data?.['status'] ?? 'committed'))}${summaryForNode(durable) ? `<br>${escapeHTML(summaryForNode(durable))}` : ''}<br><code>${escapeHTML(node.id)}</code>${links.length ? `<br>links: ${escapeHTML([...new Set(links)].join(', '))}` : ''}${why}${provenance ? '<br><button type="button" class="action" id="fork-here" title="Fork at this committed entry (Shift+R)">Fork here</button>' : ''}${TRANSCRIPT_KINDS.has(node.kind) ? '<br><button type="button" class="action" id="read-in-transcript" title="Read this passage in the transcript">Read in transcript</button>' : ''}`;
     }
 
     reveal(id: string): void {
         this.select(id);
         this.refresh();
-        this.renderer.focus(id);
+        if (this.#viewName === 'transcript' || this.#viewName === 'docs')
+            this.#readerController?.reveal(id);
+        else this.renderer.focus(id);
         this.announce(`Revealed ${id}`);
+    }
+
+    readInTranscript(id?: string): void {
+        const target = id ?? this.registry.active()?.view.focus;
+        this.setView('transcript');
+        if (target) this.#readerController?.reveal(target);
+        this.announce(target ? `Reading passage ${target}` : 'Select a committed entry to read it');
     }
 
     focus(id: string): void {
@@ -1480,6 +1489,7 @@ export class DurableHost {
             activeTab: () => this.registry.activeID(),
             setTab: (id: string) => this.setTab(id),
             reveal: (id: string) => this.reveal(id),
+            readInTranscript: (id?: string) => this.readInTranscript(id),
             focus: (id: string) => this.focus(id),
             applyShot: (id: string) => this.applyShot(id),
             setAsOf: (seq?: number) => this.setAsOf(seq),
@@ -2078,36 +2088,48 @@ export class DurableHost {
 
     /** Transcript is a readable projection of the same fold, with a link back to every fact. */
     private renderReader(kernel: Kernel): void {
-        const reading = this.#viewName === 'transcript';
+        const docs = this.#viewName === 'docs';
+        const reading = docs || this.#viewName === 'transcript';
         const reader = el('reader');
         this.#readerController?.destroy();
         this.#readerController = undefined;
         reader.hidden = !reading;
         el('canvas').hidden = reading;
         if (!reading) return;
-        const facts = kernel.nodes.filter((node) => TRANSCRIPT_KINDS.has(node.kind));
-        const ids = new Set(facts.map((node) => node.id));
-        const nodes = facts.map((node) => {
-            const at = node.data?.['at'];
-            const role = node.data?.['role'];
-            const status = node.data?.['status'];
-            return {
+        const nodes: readonly ReadingNode[] = docs
+            ? kernel.nodes.filter((node) => typeof node.data?.['doc'] === 'string').map((node) => ({
                 id: node.id,
                 label: labelForNode(node),
-                text: dataText(node),
-                format: node.kind === 'message' ? 'markdown' as const : 'text' as const,
+                text: String(node.data?.['doc']),
+                format: 'markdown' as const,
                 meta: {
-                    ...(typeof role === 'string' ? { role } : {}),
-                    ...(typeof status === 'string' ? { status } : {}),
-                    ...(typeof at === 'number' ? { at: new Date(at).toISOString() } : {}),
+                    ...(typeof node.data?.['status'] === 'string' ? { status: String(node.data['status']) } : {}),
                 },
-            };
-        });
-        const edges = kernel.edges
+            }))
+            : kernel.nodes.filter((node) => TRANSCRIPT_KINDS.has(node.kind)).map((node) => {
+                const at = node.data?.['at'];
+                const role = node.data?.['role'];
+                const status = node.data?.['status'];
+                return {
+                    id: node.id,
+                    label: labelForNode(node),
+                    text: dataText(node),
+                    format: node.kind === 'message' ? 'markdown' as const : 'text' as const,
+                    meta: {
+                        ...(typeof role === 'string' ? { role } : {}),
+                        ...(typeof status === 'string' ? { status } : {}),
+                        ...(typeof at === 'number' ? { at: new Date(at).toISOString() } : {}),
+                    },
+                };
+            });
+        const ids = new Set(nodes.map((node) => node.id));
+        const edges = docs ? [] : kernel.edges
             .filter((edge) => ['orders', 'checkpoint'].includes(edge.kind) && ids.has(edge.source) && ids.has(edge.target))
             .map((edge) => ({ source: edge.source, target: edge.target }));
         this.#readerController = mountReading(reader, readingOrder(nodes, edges), {
-            title: `Conversation ${this.registry.active()?.id ?? ''} — transcript`,
+            title: docs
+                ? `Documents — ${this.registry.active()?.id ?? ''}`
+                : `Conversation ${this.registry.active()?.id ?? ''} — transcript`,
             announce: (message) => this.announce(message),
             onReveal: (id) => {
                 this.setView('graph');

@@ -23,8 +23,9 @@ const cases = [
         await expect(page.locator('#canvas')).toContainText('pi.durable.tool.call');
     } },
     { id: 'docs', lanes: ['documents'], assertion: async (page: Page) => {
-        await expect(page.locator('#canvas .durable-card[data-status="deferred"]').first()).toBeVisible();
-        await expect(page.locator('#canvas')).toContainText('Host todos');
+        await expect(page.locator('#reader')).toBeVisible();
+        await expect(page.locator('#reader')).toContainText('Host todos');
+        await expect(page.locator('#reader .reading-backlink').first()).toHaveAttribute('data-node-id', /^d:/);
     } },
     { id: 'transcript', lanes: ['entries'], assertion: async (page: Page) => {
         await expect(page.locator('#reader')).toContainText('Compacted.');

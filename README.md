@@ -262,7 +262,7 @@ in [`docs/pi-study.md`](docs/pi-study.md). A second domain (`@spacegraphjs/workf
 | Semantic levels          | `spacegraphjs/levels`                                                                                 |
 | Layout strategies        | `spacegraphjs/layout`                                                                                 |
 | Summary representations  | `spacegraphjs/representations`                                                                        |
-| Search, minimap, trail   | `spacegraphjs/navigation`                                                                             |
+| Search, minimap, trail, typed-edge paths | `spacegraphjs/navigation`                                                                  |
 | Zoom bands, controller   | `spacegraphjs/control`, `spacegraphjs/zoom`                                                           |
 | The accessibility mirror | `spacegraphjs/a11y`                                                                                   |
 | The depth spectrum       | `spacegraphjs/depth`                                                                                  |
@@ -625,7 +625,7 @@ When adding hot-path code, avoid per-frame allocation, prefer sets for membershi
 | `src/vision`                        | Analyzers, strategies, auto-fix, model loading, Vite plugin, assertions                         |
 | `src/control`                       | `GraphController`, `GraphBinding`                                                               |
 | `src/a11y`                          | `AccessibilityLayer`                                                                            |
-| `src/navigation`                    | `Trail`                                                                                         |
+| `src/navigation`                    | `Trail`, typed-edge paths                                                                       |
 | `src/zoom`                          | `ZoomBands`                                                                                     |
 | `src/layout`                        | `LaneLayout`                                                                                    |
 | `src/depth`                         | Depth modes, treatments, and fade                                                               |

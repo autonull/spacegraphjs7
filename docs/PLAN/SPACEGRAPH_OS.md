@@ -40,6 +40,8 @@ In a Fractal ZUI, the canvas cannot drastically reorganize itself unexpectedly; 
 
 In standard zoomable interfaces (like Google Maps), zooming is pure coordinate translation. In a FZUI, zooming can traverse semantic edges. Double-clicking an edge smoothly forces the camera down the path to the connected component, acting as the primary navigation model instead of "clicking links".
 
+_Progress: `spacegraphjs/navigation` exports `edgePath`, a host-agnostic walk over recorded edge kinds. Both private Pi hosts adopt it: `app/pi-durable` follows `orders`/`checkpoint` threads and `app/pi` traces provenance paths. The host still owns edge vocabulary and camera policy._
+
 ### 4. Durable sessions are OS state
 
 The private `app/pi-durable` consumer models a session as persistent OS state rather than a page:

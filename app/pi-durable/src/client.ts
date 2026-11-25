@@ -497,7 +497,9 @@ const bindChrome = (): void => {
     el('compare-clear').addEventListener('click', () => host.clearCompare());
     el('filter-reset').addEventListener('click', () => host.resetFilters());
     el('inspector').addEventListener('click', (event) => {
-        if ((event.target as HTMLElement).id === 'fork-here') void forkConversation();
+        const target = event.target as HTMLElement;
+        if (target.id === 'fork-here') void forkConversation();
+        if (target.id === 'read-in-transcript') host.readInTranscript();
     });
     el('thread-follow').addEventListener('click', () => {
         const id = host.address().focus;

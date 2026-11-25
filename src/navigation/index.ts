@@ -11,6 +11,8 @@ export {
 
 export { Trail, type TrailListener, type TrailNode, type TrailOptions } from './Trail';
 
+export { edgePath, type EdgePathModel, type EdgePathOptions, type EdgePathStep } from './edgePath';
+
 export type {
     MinimapBounds,
     MinimapOptions,
