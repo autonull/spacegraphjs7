@@ -371,23 +371,23 @@ export function separateOverlappingNodes<P extends ForceNode>(
     isPinned: (node: P) => boolean,
     passes: number,
 ): void {
-    const radii = new Map<string, number>();
-    for (const node of nodes) radii.set(node.id, getRadius(node));
+    const radii = nodes.map((node) => getRadius(node));
+    const pinned = nodes.map((node) => isPinned(node));
 
     for (let pass = 0; pass < passes; pass++) {
         let anyOverlap = false;
         for (let i = 0; i < nodes.length; i++) {
             for (let j = i + 1; j < nodes.length; j++) {
+                if (pinned[i] && pinned[j]) continue;
                 const a = nodes[i];
                 const b = nodes[j];
-                if (isPinned(a) && isPinned(b)) continue;
 
                 const dx = a.position.x - b.position.x;
                 const dy = a.position.y - b.position.y;
                 const dz = a.position.z - b.position.z;
                 const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.001;
 
-                const needed = (radii.get(a.id) ?? 0) + (radii.get(b.id) ?? 0);
+                const needed = radii[i]! + radii[j]!;
                 if (dist >= needed) continue;
 
                 anyOverlap = true;
@@ -396,12 +396,12 @@ export function separateOverlappingNodes<P extends ForceNode>(
                 const fy = (dy / dist) * shove;
                 const fz = (dz / dist) * shove;
 
-                if (!isPinned(a)) {
+                if (!pinned[i]) {
                     a.position.x += fx;
                     a.position.y += fy;
                     a.position.z += fz;
                 }
-                if (!isPinned(b)) {
+                if (!pinned[j]) {
                     b.position.x -= fx;
                     b.position.y -= fy;
                     b.position.z -= fz;

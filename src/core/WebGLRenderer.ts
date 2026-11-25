@@ -65,6 +65,7 @@ export class WebGLRenderer {
      * does, so it is measured on the resize instead.
      */
     #size = { width: 1, height: 1 };
+    #orthoRangeCache?: ZoomRange;
     private renderScheduled = false;
     readonly projScreenMatrix: Matrix4;
     private readonly fpsMeter = new FpsMeter(OPT_INTERVAL_MS);
@@ -175,7 +176,10 @@ export class WebGLRenderer {
     // useful band and the host's 0..1 control can never reach an empty canvas.
     #orthoRange(): ZoomRange {
         const range = this.sg?.cameraControls?.getOrthoZoomRange?.();
-        return range ? { min: range.min, max: range.max, closerIsLarger: true } : ORTHO_ZOOM;
+        if (!range) return ORTHO_ZOOM;
+        const cached = this.#orthoRangeCache;
+        if (cached?.min === range.min && cached.max === range.max) return cached;
+        return (this.#orthoRangeCache = { min: range.min, max: range.max, closerIsLarger: true });
     }
 
     // Normalized 0..1 zoom; 1 is closest. Perspective uses camera distance, ortho uses frustum zoom.

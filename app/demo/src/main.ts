@@ -271,6 +271,16 @@ function fitCamera() {
     });
 }
 
+function fitReadable(): void {
+    renderer?.fit(
+        host.model.nodes.slice(0, 6).map((node) => node.id),
+        {
+            minScale: 1,
+            insets: { right: MINIMAP.width + MINIMAP_GAP, bottom: MINIMAP.height + MINIMAP_GAP },
+        },
+    );
+}
+
 async function mountRenderer(id: RendererID): Promise<void> {
     host.controller.unbind();
     renderer?.dispose();
@@ -428,6 +438,8 @@ async function main(): Promise<void> {
         for (const id of ids) el(`${prefix}-${id}`).addEventListener('click', () => apply(id));
     };
 
+    el('fit-all').addEventListener('click', () => fitCamera());
+    el('fit-read').addEventListener('click', () => fitReadable());
     bindPicker(
         'renderer',
         ['spacegraph', 'cytoscape', 'svg'] as const,

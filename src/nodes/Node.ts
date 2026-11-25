@@ -17,6 +17,8 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { AnimationProps, NodeData, NodeSpec } from '../types';
 import { resolveNodeBounds, type NodeBounds } from '../layout/node-bounds';
 
+const scratchSize = new THREE.Vector3();
+
 export interface VisibilityContext {
     cameraFrustum: THREE.Frustum;
     viewportBounds: { width: number; height: number };
@@ -191,7 +193,7 @@ export abstract class Node extends Surface {
     }
 
     getScreenPixelSize(viewport: { width: number; height: number }): number {
-        const bounds = this.#lodBounds().getSize(new THREE.Vector3());
+        const bounds = this.#lodBounds().getSize(scratchSize);
         const heightPercent = (bounds.y / viewport.height) * 100;
         const widthPercent = (bounds.x / viewport.width) * 100;
         return Math.min(heightPercent, widthPercent);
@@ -261,12 +263,19 @@ export abstract class Node extends Surface {
     }
 
     /** Write one data field and announce the change through a single writer. */
-    protected setDataField(property: string, value: unknown, extra?: Record<string, unknown>): void {
+    protected setDataField(
+        property: string,
+        value: unknown,
+        extra?: Record<string, unknown>,
+    ): void {
         this.data = { ...this.data, [property]: value };
         this.emitDataChanged(property, value, extra);
     }
 
-    private applySpecVector(target: THREE.Vector3, incoming: [number, number, number] | undefined): boolean {
+    private applySpecVector(
+        target: THREE.Vector3,
+        incoming: [number, number, number] | undefined,
+    ): boolean {
         if (incoming === undefined) return false;
         target.fromArray(incoming);
         return true;
@@ -301,8 +310,10 @@ export abstract class Node extends Surface {
             }
         }
 
-        if (this.applySpecVector(this.position, updates.position)) changes.position = updates.position;
-        if (this.applySpecVector(this.rotation, updates.rotation)) changes.rotation = updates.rotation;
+        if (this.applySpecVector(this.position, updates.position))
+            changes.position = updates.position;
+        if (this.applySpecVector(this.rotation, updates.rotation))
+            changes.rotation = updates.rotation;
         if (this.applySpecVector(this.scale, updates.scale)) changes.scale = updates.scale;
 
         this.commitSpecChanges(changes);
@@ -389,7 +400,12 @@ export abstract class Node extends Surface {
     }
 
     /** Shared move path: snap when animation is off or unavailable, otherwise tween. */
-    private movePosition(target: THREE.Vector3, animate: boolean, duration: number, delay?: number): this {
+    private movePosition(
+        target: THREE.Vector3,
+        animate: boolean,
+        duration: number,
+        delay?: number,
+    ): this {
         if (!animate || !Node.canAnimate) return this.snapTo(target);
         this.tweenPosition({
             x: target.x,
@@ -600,7 +616,6 @@ export abstract class Node extends Surface {
         };
     }
 
-
     enable(): this {
         return this.setVisibleFlag(true, true);
     }
@@ -702,7 +717,6 @@ export abstract class Node extends Surface {
         return this.setDataFlag('draggable', draggable);
     }
 
-
     /** Normalize tags from array or comma-separated string to a clean array. */
     #normalizeTags(): string[] {
         const tags = this.data.tags;
@@ -784,7 +798,9 @@ export abstract class Node extends Surface {
         return {
             ...this.#spec(),
             rotation: [this.rotation.x, this.rotation.y, this.rotation.z] as [
-                number, number, number,
+                number,
+                number,
+                number,
             ],
             scale: [this.scale.x, this.scale.y, this.scale.z] as [number, number, number],
             data: safeClone(this.data),

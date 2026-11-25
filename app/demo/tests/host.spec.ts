@@ -24,6 +24,16 @@ test.describe('the demo host (T6.12)', () => {
         noErrors(errors);
     });
 
+    test('frames the opening cards at reading scale', async ({ page }) => {
+        const errors = await boot(page, '/', { viewport: false });
+
+        await expect(page.locator('#fit-read')).toBeVisible();
+        await page.locator('#fit-read').click();
+        await page.locator('#fit-all').click();
+
+        noErrors(errors);
+    });
+
     test('runs every capability and reports what it produced', async ({ page }) => {
         const errors = await boot(page, '/', { viewport: false });
 

@@ -71,8 +71,10 @@ function withTargets(layout: ScopeLayout, targets: ReadonlyMap<string, Position>
     const positions = new Map(
         [...layout.positions].map(([id, position]) => [id, targets.get(id) ?? position] as const),
     );
-    let minX = Infinity, minY = Infinity;
-    let maxX = -Infinity, maxY = -Infinity;
+    let minX = Infinity,
+        minY = Infinity;
+    let maxX = -Infinity,
+        maxY = -Infinity;
     for (const position of positions.values()) {
         minX = Math.min(minX, position.x);
         minY = Math.min(minY, position.y);
@@ -163,6 +165,7 @@ export class ScopeSimulation {
     #specs?: readonly ScopeSpec[];
     #signals: ScopeSignals = {};
     #target?: ScopeLayout;
+    #frameTargets = new Map<string, Position>();
     #tree?: ScopeTree;
 
     #bodies = new BodySet<Position>();
@@ -222,10 +225,11 @@ export class ScopeSimulation {
         this.#signals = signals;
         const hosted = this.#host.update(specs, signals, this.#layoutOverride);
         const previous = this.#target;
-        const target = this.#targets?.size
-            ? withTargets(hosted, this.#targets)
-            : hosted;
+        const target = this.#targets?.size ? withTargets(hosted, this.#targets) : hosted;
         this.#target = target;
+        this.#frameTargets = new Map(
+            [...target.frames].map(([id, frame]) => [id, frame.origin] as const),
+        );
         this.#tree = hosted.tree;
 
         const spawnAtOrigin = this.#options.spawn !== 'target';
@@ -360,6 +364,7 @@ export class ScopeSimulation {
     reset(): void {
         this.#host = new ScopeHost(this.#options.layout);
         this.#target = undefined;
+        this.#frameTargets.clear();
         this.#tree = undefined;
         this.#specs = undefined;
         this.#bodies.clear();
@@ -418,9 +423,6 @@ export class ScopeSimulation {
         const damping = 2 * Math.sqrt(stiffness * mass) * (this.#options.dampingRatio ?? 1);
         const maxAcceleration = this.#options.forces?.maxAcceleration ?? 1200;
         const forces = this.#options.forces ? this.computeForces() : undefined;
-        const frameTargets = new Map(
-            [...this.#target.frames].map(([id, frame]) => [id, frame.origin] as const),
-        );
         this.relax(
             this.#bodies,
             this.#target.positions,
@@ -433,7 +435,7 @@ export class ScopeSimulation {
         );
         this.relax(
             this.#frames,
-            frameTargets,
+            this.#frameTargets,
             dt,
             stiffness,
             damping,
@@ -486,7 +488,9 @@ export class ScopeSimulation {
                 bodies.push({
                     id: child.path,
                     position: this.#frames.current.get(child.path) ?? childFrame.origin,
-                    radius: (Math.max(childFrame.bounds.size[0], childFrame.bounds.size[1]) / 2) * scale,
+                    radius:
+                        (Math.max(childFrame.bounds.size[0], childFrame.bounds.size[1]) / 2) *
+                        scale,
                 });
             }
             if (bodies.length > maxBodies) continue;
@@ -556,7 +560,11 @@ export class ScopeSimulation {
                 y: (force?.y ?? 0) * this.#heat,
                 z: (force?.z ?? 0) * this.#heat,
             };
-            const magnitude = Math.hypot(forceAcceleration.x, forceAcceleration.y, forceAcceleration.z);
+            const magnitude = Math.hypot(
+                forceAcceleration.x,
+                forceAcceleration.y,
+                forceAcceleration.z,
+            );
             const scale = magnitude > maxAcceleration ? maxAcceleration / magnitude : 1;
 
             let awake = false;
@@ -566,7 +574,10 @@ export class ScopeSimulation {
                     forceAcceleration[axis] * scale;
                 speed[axis] += acceleration * dt;
                 position[axis] += speed[axis] * dt;
-                if (Math.abs(speed[axis]) > sleepSpeed || Math.abs(goal[axis] - position[axis]) > sleepDistance) {
+                if (
+                    Math.abs(speed[axis]) > sleepSpeed ||
+                    Math.abs(goal[axis] - position[axis]) > sleepDistance
+                ) {
                     awake = true;
                 }
             }

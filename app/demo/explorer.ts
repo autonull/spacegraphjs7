@@ -558,14 +558,38 @@ function applyAppearance(change: RepresentationTween, value: number): void {
     group.querySelector('circle')?.setAttribute('r', String(Math.min(width, height) / 2));
 }
 
+const AXIS_LABELS: Readonly<Record<string, string>> = {
+    projection: 'Projection',
+    depth: 'Depth',
+    cardFacing: 'Card facing',
+    layout: 'Layout',
+    rendererStrategy: 'Renderer',
+    lod: 'Detail level',
+    edgeLod: 'Edge style',
+    widgets: 'Widgets',
+    salience: 'Salience signals',
+    emphasis: 'Emphasis',
+    motion: 'Motion',
+    motionVerb: 'Motion verb',
+    cameraVerb: 'Camera move',
+    depthAxis: 'Depth axis',
+    sceneFeature: 'Scene features',
+    sensory: 'Sensory',
+    source: 'Graph source',
+    view: 'View',
+    level: 'Reading level',
+    shape: 'Node shape',
+};
+
 function renderAxes(result: ReturnType<typeof negotiate>): void {
     const root = element('axes');
     root.replaceChildren();
 
     for (const axis of space.axes) {
         const field = document.createElement('fieldset');
+        field.title = axis.source;
         const legend = document.createElement('legend');
-        legend.textContent = axis.id;
+        legend.textContent = AXIS_LABELS[axis.id] ?? axis.id;
         field.append(legend);
 
         const values = document.createElement('div');

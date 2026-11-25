@@ -308,7 +308,12 @@ export class CameraControls {
         this.integrateDeltas();
         this.advanceFlight();
         this.commitCamera();
-        if (this.activeFlight || [...this.keyState.values()].some(Boolean)) this.requestFrame();
+        if (this.activeFlight || this.hasKeyInput()) this.requestFrame();
+    }
+
+    private hasKeyInput(): boolean {
+        for (const active of this.keyState.values()) if (active) return true;
+        return false;
     }
 
     panBy(dx: number, dy: number): void {
