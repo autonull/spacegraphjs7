@@ -136,9 +136,13 @@ export class CameraController {
     reportViewport(force = false): void {
         if (!this.sg.renderer || !this.sg.events) return;
         if (this.sg.depth !== 'flat') this.sg.applySceneFade();
-        const camera = this.sg.renderer.getCameraState();
-        const zoomChanged = Math.abs(camera.zoom - this.#lastZoom) > 1e-4;
-        const moved = camera.center.some((v, i) => Math.abs(v - this.#lastCenter[i]) > 1e-3);
+        const controls = this.sg.cameraControls;
+        const zoom = this.sg.renderer.getZoom();
+        const center: [number, number, number] = controls
+            ? [controls.target.x, controls.target.y, controls.target.z]
+            : [0, 0, 0];
+        const zoomChanged = Math.abs(zoom - this.#lastZoom) > 1e-4;
+        const moved = center.some((v, i) => Math.abs(v - this.#lastCenter[i]) > 1e-3);
         if (!force && !zoomChanged && !moved) return;
         const viewport = this.sg.renderer.getViewport();
         if (zoomChanged) {
@@ -151,7 +155,7 @@ export class CameraController {
                 this.sg.renderer.camera.position.y,
                 this.sg.renderer.camera.position.z,
             ],
-            target: camera.center,
+            target: center,
             timestamp: Date.now(),
         });
         this.#lastZoom = viewport.zoom;

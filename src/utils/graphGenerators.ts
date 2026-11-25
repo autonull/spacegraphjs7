@@ -7,12 +7,15 @@ export interface GraphGeneratorOptions {
     seed?: number;
 }
 
+const rngOf = (opts?: GraphGeneratorOptions): (() => number) =>
+    opts?.seed !== undefined ? seededRandom31(opts.seed) : Math.random;
+
 export const randomTree = (
     depth: number,
     maxChildren: number,
     opts?: GraphGeneratorOptions,
 ): NodeSpec[] => {
-    const rand = opts?.seed !== undefined ? seededRandom31(opts.seed) : Math.random;
+    const rand = rngOf(opts);
     const nodes: NodeSpec[] = [];
     const addNode = (parent: readonly number[] | null, d: number): void => {
         if (d >= depth) return;
@@ -35,7 +38,7 @@ export const randomMesh = (width: number, height: number, spacing = 50): NodeSpe
     }));
 
 export const scaleFreeGraph = (nodeCount: number, opts?: GraphGeneratorOptions): NodeSpec[] => {
-    const rand = opts?.seed !== undefined ? seededRandom31(opts.seed) : Math.random;
+    const rand = rngOf(opts);
     return Array.from({ length: nodeCount }, (_, i) => ({
         id: `node-${i}`,
         type: 'shape',
@@ -50,7 +53,7 @@ export const smallWorld = (
     beta: number,
     opts?: GraphGeneratorOptions,
 ): { nodes: NodeSpec[]; edges: Array<{ source: string; target: string }> } => {
-    const rand = opts?.seed !== undefined ? seededRandom31(opts.seed) : Math.random;
+    const rand = rngOf(opts);
     const radius = nodeCount / (2 * Math.PI);
     const nodes: NodeSpec[] = Array.from({ length: nodeCount }, (_, i) => ({
         id: `node-${i}`,
@@ -80,7 +83,11 @@ export const lattice2D = (
     for (let y = 0; y < rows; y++)
         for (let x = 0; x < cols; x++) {
             const id = `node-${x}-${y}`;
-            nodes.push({ id, type: 'shape', position: gridPoint(y * cols + x, cols, spacing, [0, 0], 'xy') });
+            nodes.push({
+                id,
+                type: 'shape',
+                position: gridPoint(y * cols + x, cols, spacing, [0, 0], 'xy'),
+            });
             if (x > 0) edges.push({ source: `node-${x - 1}-${y}`, target: id });
             if (y > 0) edges.push({ source: `node-${x}-${y - 1}`, target: id });
         }
