@@ -60,6 +60,21 @@ export abstract class BaseLayout<
         return diagonalRadius(node.getLayoutBounds(), padding);
     }
 
+    /** The largest node height at each depth of the trees rooted at `roots`. */
+    protected maxHeightByDepth(
+        roots: readonly string[],
+        children: ReadonlyMap<string, readonly string[]>,
+    ): Map<number, number> {
+        const heights = new Map<number, number>();
+        const visit = (id: string, depth: number): void => {
+            const bounds = this.graph.nodes.get(id)?.getLayoutBounds();
+            if (bounds) heights.set(depth, Math.max(heights.get(depth) ?? 0, bounds.height));
+            for (const child of children.get(id) ?? []) visit(child, depth + 1);
+        };
+        roots.forEach((id) => visit(id, 0));
+        return heights;
+    }
+
     /**
      * Applies the layout: the caller's options over the stored config, the nodes the layout owns,
      * then the layout itself.

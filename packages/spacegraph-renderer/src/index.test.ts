@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { supports, supportsEmphasis } from '@spacegraphjs/renderer';
 import { WIDGET_SLOTS } from 'spacegraphjs/widgets';
+import { rendererContractCases } from '../../renderer/test/fixtures';
 import { SpaceGraphRenderer } from './index';
 
 describe('@spacegraphjs/spacegraph-renderer', () => {
@@ -31,31 +32,5 @@ describe('@spacegraphjs/spacegraph-renderer', () => {
         expect(capabilities.zoomRange).toEqual({ min: 0, max: 1 });
     });
 
-    test('selection and model calls are no-ops before mount', () => {
-        const renderer = new SpaceGraphRenderer();
-        expect(() => {
-            renderer.setSelection(['a']);
-            renderer.setProjection('2d');
-            renderer.setViewport({ zoom: 0.5, center: [0, 0, 0] });
-            renderer.fit();
-            renderer.focus('a');
-            renderer.resize();
-            renderer.dispose();
-        }).not.toThrow();
-    });
-
-    test('reports no screen position before mount', () => {
-        // A host that anchors a surface to a node reads undefined, never a guess.
-        const renderer = new SpaceGraphRenderer();
-        expect(renderer.getNodeScreenPosition?.('a')).toBeUndefined();
-    });
-
-    test('on() returns a working unsubscribe before mount', () => {
-        const renderer = new SpaceGraphRenderer();
-        const seen: string[] = [];
-        const off = renderer.on('ready', () => seen.push('ready'));
-        expect(typeof off).toBe('function');
-        off();
-        expect(seen).toEqual([]);
-    });
 });
+rendererContractCases(() => new SpaceGraphRenderer());

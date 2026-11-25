@@ -29,20 +29,7 @@ export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
         const padding = this.nodePadding(config);
 
         // First pass: compute max height per depth for auto radiusStep
-        const maxHeightByDepth = new Map<number, number>();
-        const computeDepthHeights = (id: string, depth: number): void => {
-            const node = nodes.get(id);
-            if (node) {
-                const bounds = node.getLayoutBounds();
-                const currentMax = maxHeightByDepth.get(depth) ?? 0;
-                if (bounds.height > currentMax) maxHeightByDepth.set(depth, bounds.height);
-            }
-            for (const child of children.get(id) ?? []) {
-                computeDepthHeights(child, depth + 1);
-            }
-        };
-        computeDepthHeights(resolvedRootId, 0);
-
+        const maxHeightByDepth = this.maxHeightByDepth([resolvedRootId], children);
         const radiusStep = config.radiusStep ?? (maxHeightByDepth.get(1) ?? 0) + padding;
 
         // One ring placement serves both tree children and orphans: each node gets an angular

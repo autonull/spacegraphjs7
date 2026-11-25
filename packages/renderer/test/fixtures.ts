@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest';
 import type {
     GraphRenderer,
     RenderEdge,
@@ -114,4 +115,35 @@ export function fakeRenderer() {
         },
     };
     return { renderer: renderer as unknown as GraphRenderer, calls };
+}
+/** The lifecycle contract every adapter honours before it is mounted into a host. */
+export function rendererContractCases(
+    create: () => GraphRenderer,
+    extraCalls?: (renderer: GraphRenderer) => void,
+): void {
+    describe('pre-mount renderer contract', () => {
+        test('lifecycle calls are no-ops and dispose is idempotent', () => {
+            const renderer = create();
+            expect(() => {
+                extraCalls?.(renderer);
+                renderer.setSelection(['a']);
+                renderer.setProjection('2d');
+                renderer.setViewport({ zoom: 0.5, center: [0, 0, 0] });
+                renderer.fit();
+                renderer.focus('a');
+                renderer.resize();
+                renderer.dispose();
+                renderer.dispose();
+            }).not.toThrow();
+        });
+        test('reports no screen position before mount', () => {
+            expect(create().getNodeScreenPosition?.('a')).toBeUndefined();
+        });
+        test('on() returns a working unsubscribe before mount', () => {
+            const seen: string[] = [];
+            const off = create().on('ready', () => seen.push('ready'));
+            off();
+            expect(seen).toEqual([]);
+        });
+    });
 }

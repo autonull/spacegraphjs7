@@ -35,18 +35,13 @@ export class TreeLayout extends BaseLayout<TreeLayoutOptions> {
         const padding = this.nodePadding(config);
 
         // First pass: compute max height per level for auto levelHeight
-        const maxHeightByLevel = new Map<number, number>();
-        const computeLevelHeights = (node: Node, depth: number): void => {
-            const bounds = node.getLayoutBounds();
-            const currentMax = maxHeightByLevel.get(depth) ?? 0;
-            if (bounds.height > currentMax) maxHeightByLevel.set(depth, bounds.height);
-            for (const child of children.get(node.id) ?? []) {
-                computeLevelHeights(child, depth + 1);
-            }
-        };
-        for (const root of roots) {
-            computeLevelHeights(root, 0);
-        }
+        const childIDs = new Map(
+            [...children].map(([id, nodes]) => [id, nodes.map((node) => node.id)]),
+        );
+        const maxHeightByLevel = this.maxHeightByDepth(
+            roots.map((node) => node.id),
+            childIDs,
+        );
 
         const positions = new Map<string, Vector3>();
         let cursor = 0;
