@@ -160,11 +160,12 @@ export abstract class ModelAdapter<
             // Neighborhood opacity from focus overlay (P1.2): applies to canvas/WebGL nodes.
             // Precedence: diff.removed → trace.dim → neighborhood → diff.changed/added → selected/active → depth fade
             const neighborhoodOpacity = options.neighborhoodOpacity?.get(node.id);
-            const effectiveOpacity = neighborhoodOpacity !== undefined
-                ? neighborhoodOpacity
-                : !asCard && dimmed
-                  ? this.geometry.dimOpacity
-                  : 1;
+            const effectiveOpacity =
+                neighborhoodOpacity !== undefined
+                    ? neighborhoodOpacity
+                    : !asCard && dimmed
+                      ? this.geometry.dimOpacity
+                      : 1;
 
             const data: Record<string, unknown> = {
                 ...this.nodeData(node, level, dimmed),
@@ -278,38 +279,29 @@ export abstract class ModelAdapter<
         visible: ReadonlySet<string>,
     ): AdapterBounds | undefined {
         const byID = this.nodeIndex(model);
-        const boxes = ids.flatMap((id) => {
-            if (!visible.has(id)) return [];
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+        for (const id of ids) {
+            if (!visible.has(id)) continue;
             const position = positions.get(id);
-            if (!position) return [];
+            if (!position) continue;
             const node = byID.get(id);
             const size = node ? this.config.nodeSizeFn?.(node) : undefined;
             const halfWidth = (size?.[0] ?? 0) / 2;
             const halfHeight = (size?.[1] ?? 0) / 2;
-
-            return [
-                {
-                    min: { x: position.x - halfWidth, y: position.y - halfHeight, z: 0 },
-                    max: { x: position.x + halfWidth, y: position.y + halfHeight, z: 0 },
-                },
-            ];
-        });
-
-        if (boxes.length === 0) return undefined;
+            minX = Math.min(minX, position.x - halfWidth);
+            maxX = Math.max(maxX, position.x + halfWidth);
+            minY = Math.min(minY, position.y - halfHeight);
+            maxY = Math.max(maxY, position.y + halfHeight);
+        }
+        if (minX === Infinity) return undefined;
 
         const padding = paddingOf(this.geometry.bandPadding);
-
         return {
-            min: {
-                x: Math.min(...boxes.map((box) => box.min.x)) - padding.left,
-                y: Math.min(...boxes.map((box) => box.min.y)) - padding.bottom,
-                z: 0,
-            },
-            max: {
-                x: Math.max(...boxes.map((box) => box.max.x)) + padding.right,
-                y: Math.max(...boxes.map((box) => box.max.y)) + padding.top,
-                z: 0,
-            },
+            min: { x: minX - padding.left, y: minY - padding.bottom, z: 0 },
+            max: { x: maxX + padding.right, y: maxY + padding.top, z: 0 },
         };
     }
 
@@ -396,7 +388,7 @@ export abstract class ModelAdapter<
 
     /** A non-interactive row or column caption for a summary representation. */
     protected buildAxisLabel(label: AdapterAxisLabel): RenderNode {
-        const safeLabel = label.label ?? label.id ?? "";
+        const safeLabel = label.label ?? label.id ?? '';
         return {
             id: `axis:${label.id}`,
             kind: 'lane',

@@ -149,6 +149,7 @@ function renderSearch(query: string) {
 function renderEvidence(capability: Capability, evidence: readonly string[]) {
     el('evidence-title').textContent = capability.title;
     el('evidence-summary').textContent = capability.summary;
+    el('evidence-modules').textContent = capability.modules.join(' · ');
     el('evidence').replaceChildren(
         ...evidence.map((line) => {
             const row = document.createElement('div');
@@ -249,8 +250,11 @@ function paint() {
     mirror?.setSelected(host.controller.selection);
 
     el('state').textContent = `${host.view} · ${host.level} · ${host.depth} · ${rendererID}`;
-    paintTrail(el('trail'), host.controller.trail, () => host.controller.back(), (id) =>
-        select([id]),
+    paintTrail(
+        el('trail'),
+        host.controller.trail,
+        () => host.controller.back(),
+        (id) => select([id]),
     );
     renderMinimap();
 }
@@ -353,16 +357,13 @@ function renderGallery() {
             button.className = 'capability';
             button.dataset.capability = capability.id;
             button.setAttribute('aria-pressed', 'false');
+            button.title = capability.modules.join(' · ');
 
             const title = document.createElement('span');
             title.className = 'capability-title';
             title.textContent = capability.title;
 
-            const module = document.createElement('span');
-            module.className = 'capability-module';
-            module.textContent = capability.modules.join(' · ');
-
-            button.append(title, module);
+            button.append(title);
             button.addEventListener('click', () => runCapability(capability));
             return button;
         }),
@@ -419,11 +420,19 @@ async function main(): Promise<void> {
     renderGallery();
     renderViews();
 
-    const bindPicker = <T extends string>(prefix: string, ids: readonly T[], apply: (id: T) => void) => {
+    const bindPicker = <T extends string>(
+        prefix: string,
+        ids: readonly T[],
+        apply: (id: T) => void,
+    ) => {
         for (const id of ids) el(`${prefix}-${id}`).addEventListener('click', () => apply(id));
     };
 
-    bindPicker('renderer', ['spacegraph', 'cytoscape', 'svg'] as const, (id) => void mountRenderer(id));
+    bindPicker(
+        'renderer',
+        ['spacegraph', 'cytoscape', 'svg'] as const,
+        (id) => void mountRenderer(id),
+    );
     bindPicker('theme', ['dark', 'light'] as const, (id) => {
         themeName = id;
         document.documentElement.dataset.theme = id;

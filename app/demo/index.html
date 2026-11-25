@@ -149,19 +149,15 @@
             }
             .capability {
                 display: flex;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 2px;
+                align-items: center;
+                gap: 6px;
                 text-align: start;
                 width: 100%;
+                padding: 6px 8px;
             }
             .capability-title {
                 font-size: 12px;
                 font-weight: 650;
-            }
-            .capability-module {
-                font-size: 10px;
-                color: var(--sh-text-muted);
             }
             #stage {
                 position: relative;
@@ -249,7 +245,7 @@
             }
             .evidence-line {
                 font-family: ui-monospace, SFMono-Regular, monospace;
-                font-size: 11px;
+                font-size: 12px;
                 line-height: 1.5;
                 background: var(--sh-surface-muted);
                 border-inline-start: 2px solid var(--sh-accent);
@@ -288,7 +284,7 @@
                 font-size: 12px;
             }
             .panel-title {
-                font-size: 11px;
+                font-size: 12px;
                 text-transform: uppercase;
                 letter-spacing: 0.06em;
                 color: var(--sh-text-muted);
@@ -416,9 +412,7 @@
         <header>
             <div>
                 <h1>SpaceGraphJS Demo</h1>
-                <div class="sub">
-                    One model · three renderers · every library capability
-                </div>
+                <div class="sub">One model · three renderers · every library capability</div>
             </div>
             <div class="controls">
                 <div class="group" role="group" aria-label="Layout">
@@ -488,6 +482,10 @@
                         <div id="evidence" data-role="evidence"></div>
                     </section>
                     <section>
+                        <div class="panel-title">Modules</div>
+                        <div id="evidence-modules" class="evidence-line"></div>
+                    </section>
+                    <section>
                         <div class="panel-title">Search</div>
                         <input id="search" type="search" placeholder="vitest, publish, plan…" />
                         <div id="results"></div>
@@ -503,8 +501,8 @@
         <footer>
             <span id="state">lanes · execution · flat · spacegraph</span>
             <span
-                >Every capability runs a library module against the demo's model and reports
-                what it produced.</span
+                >Every capability runs a library module against the demo's model and reports what it
+                produced.</span
             >
         </footer>
 

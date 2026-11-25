@@ -39,11 +39,24 @@ export class LODPlugin extends BaseSystemPlugin {
 
         const camera = this.sg.renderer.camera;
         const isOrtho = 'isOrthographicCamera' in camera;
-        const nodes = Array.from(this.sg.graph.nodes.values());
+        const extentHeight = isOrtho ? visibleWorldExtent(camera, 0).height : 0;
+        const graphNodes = this.sg.graph.nodes;
 
-        const hiddenParentIds = this._updateGroupsAndFindHidden(nodes, camera, isOrtho);
-        const fogDensity = this._fogDensity(nodes, camera);
-        this._updateNodeVisibility(nodes, camera, isOrtho, hiddenParentIds, fogDensity);
+        const hiddenParentIds = this._updateGroupsAndFindHidden(
+            graphNodes.values(),
+            camera,
+            isOrtho,
+            extentHeight,
+        );
+        const fogDensity = this._fogDensity(graphNodes.values(), camera);
+        this._updateNodeVisibility(
+            graphNodes.values(),
+            camera,
+            isOrtho,
+            extentHeight,
+            hiddenParentIds,
+            fogDensity,
+        );
         this._updateEdgeVisibility();
     }
 
@@ -57,17 +70,17 @@ export class LODPlugin extends BaseSystemPlugin {
     }
 
     private _updateGroupsAndFindHidden(
-        nodes: Node[],
+        nodes: Iterable<Node>,
         camera: THREE.Camera,
         isOrtho: boolean,
+        extentHeight: number,
     ): Set<string> {
         const hiddenParentIds = new Set<string>();
         for (const node of nodes) {
             if ((node as any).isGroupNode) {
-                const distanceOrExtent = isOrtho
-                    ? visibleWorldExtent(camera, 0).height
-                    : camera.position.distanceTo(node.position);
-                (node as any).updateLod(distanceOrExtent);
+                (node as any).updateLod(
+                    isOrtho ? extentHeight : camera.position.distanceTo(node.position),
+                );
                 if ((node.data as Record<string, unknown>)._lastLodVisible === false)
                     hiddenParentIds.add(node.id);
             }
@@ -75,26 +88,31 @@ export class LODPlugin extends BaseSystemPlugin {
         return hiddenParentIds;
     }
 
-    private _fogDensity(nodes: Node[], camera: THREE.Camera): number {
+    private _fogDensity(nodes: Iterable<Node>, camera: THREE.Camera): number {
         const strength = depthTreatment(this.sg.depth ?? 'flat').fade;
         if (strength <= 0) return 0;
         const cameraDistance = this.sg.cameraControls?.spherical.radius ?? camera.position.length();
-        const zs = nodes.map((node) => node.position.z);
-        const sceneDepth = zs.length ? Math.max(...zs) - Math.min(...zs) : 0;
-        return sceneFadeDensity(strength, cameraDistance, sceneDepth);
+        let minZ = Infinity;
+        let maxZ = -Infinity;
+        for (const node of nodes) {
+            minZ = Math.min(minZ, node.position.z);
+            maxZ = Math.max(maxZ, node.position.z);
+        }
+        return sceneFadeDensity(strength, cameraDistance, maxZ - minZ);
     }
 
     private _updateNodeVisibility(
-        nodes: Node[],
+        nodes: Iterable<Node>,
         camera: THREE.Camera,
         isOrtho: boolean,
+        extentHeight: number,
         hiddenParentIds: Set<string>,
         fogDensity: number,
     ): void {
         for (const node of nodes) {
             const isHiddenByParent = this._isNodeHiddenByParent(node, hiddenParentIds);
             const distanceOrExtent = isOrtho
-                ? visibleWorldExtent(camera, 0).height
+                ? extentHeight
                 : camera.position.distanceTo(node.position);
             const maxDistOrExtent = isOrtho ? this.maxVisibleExtent : this.maxDistance;
             const transitionRange = isOrtho ? this.extentTransitionRange : this.transitionRange;
@@ -110,7 +128,7 @@ export class LODPlugin extends BaseSystemPlugin {
                 (node as any).setVisibility(visible);
                 if (visible) {
                     const fogOpacity = depthFade(
-                        camera.position.distanceTo(node.position),
+                        isOrtho ? camera.position.distanceTo(node.position) : distanceOrExtent,
                         fogDensity,
                     );
                     if ((node as any).setOpacity) (node as any).setOpacity(opacity * fogOpacity);

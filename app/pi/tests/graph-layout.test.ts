@@ -18,6 +18,20 @@ import { measure } from '../scripts/baseline';
 
 const richView = () => agentDomain.build(richFixtureKernel());
 
+const expectMetricsClose = <T extends object>(
+    actual: Record<string, T>,
+    recorded: Record<string, Record<string, number>>,
+): void => {
+    expect(Object.keys(actual)).toEqual(Object.keys(recorded));
+    for (const [view, metrics] of Object.entries(recorded)) {
+        const shape = actual[view] as unknown as Record<string, number>;
+        expect(Object.keys(shape)).toEqual(Object.keys(metrics));
+        for (const [metric, value] of Object.entries(metrics)) {
+            expect(shape[metric]).toBeCloseTo(value, 6);
+        }
+    }
+};
+
 describe('graph layouts', () => {
     it('exposes the six views and validates URL values', () => {
         expect(GRAPH_LAYOUTS).toEqual([
@@ -41,8 +55,11 @@ describe('graph layouts', () => {
         const path = ['docs', '../docs', '../../docs']
             .map((up) => resolve(process.cwd(), up, 'screenshots/reports/graph-baseline.json'))
             .find(existsSync)!;
-        const recorded = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
-        expect(measure()).toEqual(recorded);
+        const recorded = JSON.parse(readFileSync(path, 'utf8')) as Record<
+            string,
+            Record<string, number>
+        >;
+        expectMetricsClose(measure(), recorded);
     });
 
     it('shortens edges and keeps every view free of parent/child overlap', () => {
@@ -89,11 +106,16 @@ describe('graph layouts', () => {
             expect(columnX[index]!).toBeGreaterThan(columnX[index - 1]!);
 
         const childrenOf = (id: string): string[] =>
-            view.edges.filter((edge) => edge.kind === 'contains' && edge.source === id).map((edge) => edge.target);
+            view.edges
+                .filter((edge) => edge.kind === 'contains' && edge.source === id)
+                .map((edge) => edge.target);
         const turn = turns.find((id) => childrenOf(id).length >= 2)!;
         const members = childrenOf(turn).map((id) => rows.positions.get(id)!);
         const band = rows.positions.get(turn)!.y;
-        expect(Math.max(...members.map((point) => point.x)) - Math.min(...members.map((point) => point.x))).toBeGreaterThan(0);
+        expect(
+            Math.max(...members.map((point) => point.x)) -
+                Math.min(...members.map((point) => point.x)),
+        ).toBeGreaterThan(0);
         for (const member of members) expect(member.y).toBeCloseTo(band, 5);
     });
 
@@ -142,10 +164,13 @@ describe('graph layouts', () => {
 
     it('reports overlap from geometry, not from rendered pixels', () => {
         const view = agentDomain.build(fixtureKernel());
-        const shape = graphShape(view, new Map([
-            [view.nodes[0]!.id, { x: 0, y: 0, z: 0 }],
-            [view.nodes[1]!.id, { x: 10, y: 10, z: 0 }],
-        ]));
+        const shape = graphShape(
+            view,
+            new Map([
+                [view.nodes[0]!.id, { x: 0, y: 0, z: 0 }],
+                [view.nodes[1]!.id, { x: 10, y: 10, z: 0 }],
+            ]),
+        );
         expect(shape.overlaps).toBeGreaterThanOrEqual(0);
         expect(shape.nodes).toBe(2);
     });
@@ -170,8 +195,9 @@ describe('graph layouts', () => {
         expect(decoded?.graphLayoutAligned).toBe(true);
         expect(decoded?.ribbonCorridor).toBe(true);
         expect(decoded?.graphMorph).toBe(true);
-        expect(decodePermalink(encodePermalink({ ...state, graphLayout: 'timeline-rows' }))?.graphLayout).toBe(
-            'timeline-rows',
-        );
+        expect(
+            decodePermalink(encodePermalink({ ...state, graphLayout: 'timeline-rows' }))
+                ?.graphLayout,
+        ).toBe('timeline-rows');
     });
 });

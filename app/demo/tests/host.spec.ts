@@ -16,8 +16,9 @@ test.describe('the demo host (T6.12)', () => {
         await expect(page.locator('[data-renderer="spacegraph"]')).toBeVisible();
         await expect(page.locator('#canvas canvas').first()).toBeVisible({ timeout: 10_000 });
         await expect(page.locator('[data-capability]')).toHaveCount(capabilities.length);
-        await expect(page.locator('[data-capability="theme"]')).toContainText(
-            '@spacegraphjs/renderer',
+        await expect(page.locator('[data-capability="theme"]')).toHaveAttribute(
+            'title',
+            /@spacegraphjs\/renderer/,
         );
 
         noErrors(errors);

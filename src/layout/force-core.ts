@@ -1,6 +1,8 @@
 import { addRepulsion, buildOctree, computeBarnesHutForce, type BarnesHutConfig } from './octree';
 import { DEFAULT_NODE_PADDING, diagonalRadius } from './node-bounds';
 
+type Force = { x: number; y: number; z: number };
+
 /** The force placement's vocabulary: what pulls a box towards another one. */
 export interface ForceMeta {
     /** The ids this box is attracted to. */
@@ -64,7 +66,7 @@ const GOLDEN_ANGLE = 2.399963229728653;
 
 /**
  * Shared core for force-directed layouts.
- * 
+ *
  * Both ForcePlacement (session-graph's internal engine) and ForceLayout (public plugin)
  * now use this core. This eliminates drift between the two engines and halves maintenance.
  */
@@ -97,7 +99,7 @@ export class ForceCore {
         this.#minDistance = config.minDistance ?? DEFAULT_MIN_DISTANCE;
         this.#randomize = config.randomize ?? false;
         this.#onProgress = config.onProgress;
-        this.#useBarnesHut = config.useBarnesHut ?? ((config.iterations ?? 0) > 1000);
+        this.#useBarnesHut = config.useBarnesHut ?? (config.iterations ?? 0) > 1000;
         this.#barnesHutTheta = config.barnesHut?.theta ?? 0.5;
         this.#barnesHutMaxDepth = config.barnesHut?.maxDepth ?? 20;
         this.#barnesHutMinCellSize = config.barnesHut?.minCellSize ?? 1;
@@ -108,9 +110,15 @@ export class ForceCore {
      * Diagonal radius = half the diagonal of the bounding box + padding.
      * This is half the distance two items need to sit side by side without overlapping.
      */
-    getNodeRadius(item: { width: number; height?: number; meta?: ForceMeta } | { getLayoutBounds(): { width: number; height: number } }, padding?: number): number {
+    getNodeRadius(
+        item:
+            | { width: number; height?: number; meta?: ForceMeta }
+            | { getLayoutBounds(): { width: number; height: number } },
+        padding?: number,
+    ): number {
         const effectivePadding = padding ?? this.#nodePadding;
-        if ('getLayoutBounds' in item) return diagonalRadius(item.getLayoutBounds(), effectivePadding);
+        if ('getLayoutBounds' in item)
+            return diagonalRadius(item.getLayoutBounds(), effectivePadding);
         return diagonalRadius(
             { width: item.width, height: item.height ?? item.width },
             effectivePadding,
@@ -127,30 +135,42 @@ export class ForceCore {
         getRadius: (node: P) => number,
     ): Map<string, { x: number; y: number; z: number }> {
         if (!nodes.length) return new Map();
+        const forces = this.#stepForces(
+            nodes,
+            getLinks,
+            nodes.map((node) => getRadius(node)),
+            new Map(nodes.map((node, index) => [node.id, index])),
+        );
+        return new Map(nodes.map((node, index) => [node.id, forces[index]!]));
+    }
 
-        const forces = new Map<string, { x: number; y: number; z: number }>();
-        const nodeById = new Map<string, P>();
-        for (const node of nodes) {
-            forces.set(node.id, { x: 0, y: 0, z: 0 });
-            if (!nodeById.has(node.id)) nodeById.set(node.id, node);
+    /** Indexed force pass; `reuse` carries one force buffer across iterations of `run`. */
+    #stepForces<P extends ForceNode>(
+        nodes: P[],
+        getLinks: (node: P) => readonly string[],
+        radii: readonly number[],
+        indexById: ReadonlyMap<string, number>,
+        reuse?: Force[],
+    ): Force[] {
+        const count = nodes.length;
+        const forces = reuse ?? nodes.map(() => ({ x: 0, y: 0, z: 0 }));
+        for (let i = 0; i < count; i++) {
+            const force = forces[i]!;
+            force.x = 0;
+            force.y = 0;
+            force.z = 0;
         }
-
-        // Precompute radii (used as mass for Barnes-Hut)
-        const radii = new Map<string, number>();
-        for (const node of nodes) radii.set(node.id, getRadius(node));
 
         const maxForce = this.#repulsion / (this.#minDistance * this.#minDistance);
 
-        if (this.#useBarnesHut && nodes.length > 100) {
-            // Build octree for Barnes-Hut approximation
-            const octree = buildOctree(nodes, (node) => radii.get(node.id) ?? 1, {
+        if (this.#useBarnesHut && count > 100) {
+            const octree = buildOctree(nodes, (node) => radii[indexById.get(node.id)!] ?? 1, {
                 theta: this.#barnesHutTheta,
                 maxDepth: this.#barnesHutMaxDepth,
                 minCellSize: this.#barnesHutMinCellSize,
             });
-
-            // Compute repulsion using Barnes-Hut
-            for (const node of nodes) {
+            for (let i = 0; i < count; i++) {
+                const node = nodes[i]!;
                 const force = computeBarnesHutForce(
                     { position: node.position, id: node.id },
                     octree,
@@ -159,63 +179,69 @@ export class ForceCore {
                     this.#minDistance,
                     maxForce,
                 );
-                const f = forces.get(node.id)!;
-                f.x += force.x;
-                f.y += force.y;
-                f.z += force.z;
+                const target = forces[i]!;
+                target.x += force.x;
+                target.y += force.y;
+                target.z += force.z;
             }
         } else {
-            // Repulsion: all-pairs (exact for small graphs)
-            for (let i = 0; i < nodes.length; i++) {
-                for (let j = i + 1; j < nodes.length; j++) {
-                    const a = nodes[i];
-                    const b = nodes[j];
+            for (let i = 0; i < count; i++) {
+                const a = nodes[i]!;
+                const forceA = forces[i]!;
+                for (let j = i + 1; j < count; j++) {
+                    const b = nodes[j]!;
                     const dx = a.position.x - b.position.x;
                     const dy = a.position.y - b.position.y;
                     const dz = a.position.z - b.position.z;
                     const distSq = dx * dx + dy * dy + dz * dz;
                     const dist = Math.sqrt(distSq) || 0.001;
-                    const minDist = (radii.get(a.id) ?? 0) + (radii.get(b.id) ?? 0);
+                    const minDist = radii[i]! + radii[j]!;
 
-                    const forceA = forces.get(a.id)!;
-                    const forceB = forces.get(b.id)!;
-                    addRepulsion(forceA, dx, dy, dz, distSq, dist, this.#repulsion, minDist, maxForce);
-                    addRepulsion(forceB, -dx, -dy, -dz, distSq, dist, this.#repulsion, minDist, maxForce);
+                    addRepulsion(
+                        forceA,
+                        dx,
+                        dy,
+                        dz,
+                        distSq,
+                        dist,
+                        this.#repulsion,
+                        minDist,
+                        maxForce,
+                    );
+                    addRepulsion(
+                        forces[j]!,
+                        -dx,
+                        -dy,
+                        -dz,
+                        distSq,
+                        dist,
+                        this.#repulsion,
+                        minDist,
+                        maxForce,
+                    );
                 }
             }
         }
 
-        // Attraction along links/edges
-        for (const node of nodes) {
-            const force = forces.get(node.id)!;
+        for (let i = 0; i < count; i++) {
+            const node = nodes[i]!;
+            const force = forces[i]!;
             for (const link of getLinks(node)) {
-                const target = nodeById.get(link);
-                if (!target) continue;
-
-                const dx = target.position.x - node.position.x;
-                const dy = target.position.y - node.position.y;
-                const dz = target.position.z - node.position.z;
-                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.001;
-
-                const pull = this.#attraction * dist;
-                const fx = (dx / dist) * pull;
-                const fy = (dy / dist) * pull;
-                const fz = (dz / dist) * pull;
-
-                force.x += fx; force.y += fy; force.z += fz;
+                const targetIndex = indexById.get(link);
+                if (targetIndex === undefined) continue;
+                const target = nodes[targetIndex]!.position;
+                force.x += (target.x - node.position.x) * this.#attraction;
+                force.y += (target.y - node.position.y) * this.#attraction;
+                force.z += (target.z - node.position.z) * this.#attraction;
             }
         }
 
-        // Gravity towards center
-        for (const node of nodes) {
-            const force = forces.get(node.id)!;
-            const dist = Math.sqrt(node.position.x ** 2 + node.position.y ** 2 + node.position.z ** 2);
-            if (dist > 0) {
-                const gx = -node.position.x / dist * this.#gravity * dist;
-                const gy = -node.position.y / dist * this.#gravity * dist;
-                const gz = -node.position.z / dist * this.#gravity * dist;
-                force.x += gx; force.y += gy; force.z += gz;
-            }
+        for (let i = 0; i < count; i++) {
+            const node = nodes[i]!;
+            const force = forces[i]!;
+            force.x -= node.position.x * this.#gravity;
+            force.y -= node.position.y * this.#gravity;
+            force.z -= node.position.z * this.#gravity;
         }
 
         return forces;
@@ -303,13 +329,18 @@ export class ForceCore {
                       ),
                   );
 
+        const radii = nodes.map((node) => getRadius(node));
+        const indexById = new Map(nodes.map((node, index) => [node.id, index]));
+        let forces: Force[] | undefined;
+
         for (let step = 0; step < iterations; step++) {
             const heat = (k / 2) * (1 - step / iterations);
-            const forces = this.step(nodes, getLinks, getRadius);
+            forces = this.#stepForces(nodes, getLinks, radii, indexById, forces);
 
-            for (const node of nodes) {
+            for (let i = 0; i < nodes.length; i++) {
+                const node = nodes[i]!;
                 if (isPinned(node)) continue;
-                const force = forces.get(node.id)!;
+                const force = forces[i]!;
                 const magnitude = Math.sqrt(force.x ** 2 + force.y ** 2 + force.z ** 2);
 
                 if (magnitude === 0) continue;

@@ -36,7 +36,10 @@
             body {
                 background: var(--bg);
                 color: var(--text);
-                font: 13px/1.5 ui-sans-serif, system-ui, sans-serif;
+                font:
+                    13px/1.5 ui-sans-serif,
+                    system-ui,
+                    sans-serif;
             }
             header {
                 padding: 12px 16px;
@@ -68,7 +71,7 @@
                 background: var(--muted-surface);
                 border: 1px solid var(--border);
                 border-radius: 6px;
-                padding: 5px 9px;
+                padding: 6px 10px;
                 cursor: pointer;
             }
             button:hover {
@@ -90,10 +93,22 @@
                 gap: 16px;
                 padding: 16px;
             }
+            #axes-column {
+                position: sticky;
+                top: 16px;
+                max-height: calc(100vh - 32px);
+                overflow-y: auto;
+            }
             #axes {
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
+            }
+            .content {
+                display: grid;
+                gap: 12px;
+                align-content: start;
+                min-width: 0;
             }
             fieldset {
                 margin: 0;
@@ -113,7 +128,7 @@
             }
             .meta {
                 color: var(--muted);
-                font-size: 11px;
+                font-size: 12px;
                 margin-top: 6px;
             }
             #presets {
@@ -139,7 +154,7 @@
             .pane h2 {
                 margin: 0;
                 padding: 8px 10px;
-                font-size: 12px;
+                font-size: 13px;
                 color: var(--muted);
                 border-bottom: 1px solid var(--border);
             }
@@ -179,6 +194,11 @@
                 main {
                     grid-template-columns: minmax(0, 1fr);
                 }
+                #axes-column {
+                    position: static;
+                    max-height: none;
+                    overflow: visible;
+                }
                 #stage[data-compare='true'] {
                     grid-template-columns: minmax(0, 1fr);
                 }
@@ -201,7 +221,7 @@
             </div>
         </header>
         <main>
-            <section aria-label="Configuration axes">
+            <section id="axes-column" aria-label="Configuration axes">
                 <div id="axes"></div>
                 <fieldset>
                     <legend>Example presets</legend>
@@ -209,35 +229,40 @@
                     <div id="presets"></div>
                 </fieldset>
             </section>
-            <section id="stage" data-compare="false" aria-label="Live graph">
-                <div class="pane">
-                    <h2 id="left-title">Configuration</h2>
-                    <div id="left-graph"></div>
-                </div>
-                <div class="pane" id="right-pane" hidden>
-                    <h2 id="right-title">Comparison</h2>
-                    <div id="right-graph"></div>
-                </div>
-                <div id="diff" hidden></div>
-            </section>
-            <section aria-label="Salience explanation">
-                <fieldset>
-                    <legend>Why is this big?</legend>
-                    <div class="meta">Click a node in the live graph to list its contributing signals.</div>
-                    <pre id="explain">Click a node to see why it is big.</pre>
-                </fieldset>
-            </section>
-            <section aria-label="Widget registry">
-                <fieldset>
-                    <legend>Registered widgets</legend>
-                    <div class="meta">Host registrations only. Choose a widget slot on the widgets axis to attach them.</div>
-                    <pre id="widgets"></pre>
-                </fieldset>
-            </section>
+            <div class="content">
+                <section id="stage" data-compare="false" aria-label="Live graph">
+                    <div class="pane">
+                        <h2 id="left-title">Configuration</h2>
+                        <div id="left-graph"></div>
+                    </div>
+                    <div class="pane" id="right-pane" hidden>
+                        <h2 id="right-title">Comparison</h2>
+                        <div id="right-graph"></div>
+                    </div>
+                    <div id="diff" hidden></div>
+                </section>
+                <section aria-label="Salience explanation">
+                    <fieldset>
+                        <legend>Why is this big?</legend>
+                        <div class="meta">
+                            Click a node in the live graph to list its contributing signals.
+                        </div>
+                        <pre id="explain">Click a node to see why it is big.</pre>
+                    </fieldset>
+                </section>
+                <section aria-label="Widget registry">
+                    <fieldset>
+                        <legend>Registered widgets</legend>
+                        <div class="meta">
+                            Host registrations only. Choose a widget slot on the widgets axis to
+                            attach them.
+                        </div>
+                        <pre id="widgets"></pre>
+                    </fieldset>
+                </section>
+            </div>
         </main>
-        <footer>
-            State: <span id="hash"></span>
-        </footer>
+        <footer>State: <span id="hash"></span></footer>
         <script type="module" src="./explorer.ts"></script>
     </body>
 </html>
