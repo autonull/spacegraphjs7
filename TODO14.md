@@ -1,6 +1,6 @@
 # TODO14 — Octave atlas: hierarchy, wayfinding and depth
 
-> **Status: complete (2026-11-24); post-close follow-up iteration landed (2026-11-25, §16).** All three phases, the ZUI follow-ups and the close-out landed; the full ladder is green and §15 records the non-blocking follow-ups. The follow-up iteration raised density and legibility, recaptured the eleven PNGs, and then fixed the pre-existing second-navigation E2E flake at its dev-server cause; the suite is green at one and eight workers. The close-out finished W1 dot-band usability, wired the guided route and compare pin into the drawer, fixed the muted-edge metric, and reconciled two overstated claims. TODO13 landed the durable atlas: continuous attention, one Lens,
+> **Status: complete (2026-11-24); post-close follow-up iteration landed (2026-11-25, §16).** All three phases, the ZUI follow-ups and the close-out landed; the full ladder is green and §15 records the non-blocking follow-ups. The follow-up iteration raised density and legibility, recaptured the eleven PNGs, fixed the pre-existing second-navigation E2E flake at its dev-server cause, and recorded a clean Strobe re-measurement; the suite is green at one and eight workers. The close-out finished W1 dot-band usability, wired the guided route and compare pin into the drawer, fixed the muted-edge metric, and reconciled two overstated claims. TODO13 landed the durable atlas: continuous attention, one Lens,
 > a landmark trail and compact address, scrubbable story plates, two workshops, and budget/spatial
 > grace. Phase 1 fixed the fundamentals — octave sizing, focused address and provenance, and a
 > minimal icon rail. Phase 2 added depth inside that one drawer: full-text filtered Lens, a time
@@ -325,7 +325,7 @@ This plan is closed. The follow-ups below are recorded for a future plan, not fo
 
 Open follow-ups (not blocking this plan):
 
-- A clean idle-machine Strobe run is still unavailable: `rec_0d8091` (20.13% main-busy) and `rec_d96ac7` (10.93%) were both taken with other workloads at high CPU. Pause those workloads and record once more only if a trustworthy cost figure is needed; this plan adds no run. At close-out the machine was still loaded (load average 2.74 and several processes above 90% CPU), so no further measurement was attempted.
+- ~~A clean idle-machine Strobe run is still unavailable: `rec_0d8091` (20.13% main-busy) and `rec_d96ac7` (10.93%) were both taken with other workloads at high CPU.~~ §16 records `rec_3a5e0a`, taken against the built bundle at 1.08% main-busy; the headless frame/GPU refusals still apply.
 - ~~Tune `NODES_AREA_DENSITY` (item 8) only if the new E2E density gate moves outside 7–13% measured coverage; the working band stays 8–12%.~~ Superseded by §16: the target is now `0.6` and the measured band is 20–35%. Tune only if the gate moves outside that new band.
 - Coverage not landed by design: edge captions are static per recorded kind and fork edges use a solid stroke because the renderer contract has no double-line style or per-caption attention channel; instrument histograms report band counts. None of these changes the fold or invents a kind.
 
@@ -351,12 +351,12 @@ The plan stayed closed. This change set lands the non-blocking density and legib
 - With the E2E-only cache header: `SG_DURABLE_PORT=5428 PI_DURABLE_SERVER_PORT=8914 pnpm --filter pi-durable test:e2e --workers=1` — 65 passed in 1.7m; `SG_DURABLE_PORT=5429 PI_DURABLE_SERVER_PORT=8915 pnpm --filter pi-durable test:e2e` — 65 passed in 48s at the default eight workers. Both runs include the five reload gates that failed before the fix.
 - `verify:visual` is redundant here: its screenshot and vision specs run inside `test:e2e` and passed in both runs above. Eleven tracked PNGs carry the new visual grammar, each keeps its `.prev` pair, and `pi-durable-index.html` is the contact sheet. No verdict was written.
 - `pnpm --filter pi-durable build` and root `bun run check` — clean.
-- No Strobe run: the machine stayed loaded, so no clean measurement was available (§15).
+- `strobe record 'http://localhost:5430/?shot=basic-turn' --headless --for 6s --probes timing --json` — `rec_3a5e0a`: main-busy 1.08%, paint 0.98 ms, zero long tasks, app CPU 10.23%. Frame metrics were refused headlessly (`frames_refused`) and compositing stayed software (SwiftShader); CPU was not otherwise saturated during the run, so this is the cleanest figure in the plan.
 
 ### Remaining work (non-blocking follow-ups)
 
 1. ~~Stabilise second-navigation boot under the Vite dev server.~~ Landed with the E2E-only cache header; the production preview already reloaded cleanly. Keep dev HMR uncached outside E2E, and revisit only if a real user-visible reload failure appears.
-2. Re-run Strobe on an idle machine only if a trustworthy cost figure is needed. Larger cards and the serpentine layout change the frame budget; reuse the §11 recipe and record the handle.
+2. ~~Re-run Strobe on an idle machine only if a trustworthy cost figure is needed.~~ `rec_3a5e0a` is recorded above against the built bundle after the density change. A display-backed run is still the only way to get frame and GPU metrics; no such display was available.
 3. Watch the 20–35% density band on loaded machines. The pre-fix eight-worker crash run showed resource pressure, not a density regression; cap scale if a clean run ever leaves the band.
 4. Edge captions stay static per recorded kind and forks use a solid stroke; the renderer contract still has no per-caption attention channel or double-line style. No kind is invented and no hidden filter is added.
 
