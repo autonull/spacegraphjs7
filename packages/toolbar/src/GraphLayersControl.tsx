@@ -33,15 +33,25 @@ const LAYER_OPTION_CLASS =
     'flex w-full items-center gap-2 rounded-sm px-2 py-1 text-12-regular text-text-base hover:bg-surface-base-hover disabled:opacity-50';
 
 export interface GraphLayersControlProps {
+    /** Renderer capabilities for feature gating. */
     capabilities?: RendererCapabilities;
+    /** Active renderer name. */
     renderer?: string;
+    /** Semantic zoom level. */
     level?: ZoomLevel;
+    /** Callback when level changes. */
     onLevel?: (level: ZoomLevel) => void;
+    /** Active facets (filters). */
     facets?: GraphFacets;
+    /** Live kept/total counts for facet chips. */
     facetCounts?: FacetCounts;
+    /** Callback when facets change. */
     onFacetsChange?: (facets: GraphFacets) => void;
+    /** Projection depth mode. */
     depth?: DepthMode;
+    /** Callback when depth changes. */
     onDepth?: (depth: DepthMode) => void;
+    /** Available depth modes. */
     depthModes?: readonly DepthMode[];
     model?: GraphViewData;
     i18n: I18n;

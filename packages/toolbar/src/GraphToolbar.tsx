@@ -12,7 +12,7 @@ import {
 } from '@spacegraphjs/shared';
 import { createPopoverRenderer } from '@spacegraphjs/shared/popover';
 import { ToolbarMenu } from './ToolbarMenu';
-import { GraphLayersControl } from './GraphLayersControl';
+import { GraphLayersControl, type GraphLayersControlProps } from './GraphLayersControl';
 import { GraphLayoutControl } from './GraphLayoutControl';
 import { GraphTimeControl } from './GraphTimeControl';
 import { GraphDrawControl, type GraphDrawControlProps } from './GraphDrawControl';
@@ -20,41 +20,18 @@ import { GraphShowControl, type GraphShowControlProps } from './GraphShowControl
 import { GraphZoomControl } from './GraphZoomControl';
 import { GraphExportControl } from '@spacegraphjs/export';
 import { GraphQuestionsControl } from './GraphQuestionsControl';
-import type { RendererCapabilities, RenderModel } from '@spacegraphjs/renderer';
+import type { RenderModel } from '@spacegraphjs/renderer';
 import type {
     GraphViewData,
-    DepthMode,
     Layout,
     GraphSide,
     GraphArrangement,
-    GraphFacets,
-    FacetCounts,
     DetailMode,
     DetailFraming,
-    ZoomLevel,
 } from '@spacegraphjs/shared/types';
 
-export interface GraphToolbarProps {
-    /** Renderer capabilities for feature gating. */
-    capabilities?: RendererCapabilities;
-    /** Active renderer name. */
-    renderer?: string;
-    /** Semantic zoom level. */
-    level?: ZoomLevel;
-    /** Callback when level changes. */
-    onLevel?: (level: ZoomLevel) => void;
-    /** Active facets (filters). */
-    facets?: GraphFacets;
-    /** Live kept/total counts for facet chips. */
-    facetCounts?: FacetCounts;
-    /** Callback when facets change. */
-    onFacetsChange?: (facets: GraphFacets) => void;
-    /** Projection depth mode. */
-    depth?: DepthMode;
-    /** Callback when depth changes. */
-    onDepth?: (depth: DepthMode) => void;
-    /** Available depth modes. */
-    depthModes?: readonly DepthMode[];
+export interface GraphToolbarProps
+    extends Omit<GraphLayersControlProps, 'model' | 'i18n' | 'Icon' | 'Popover'> {
     /** Current checkpoint/turn index. */
     checkpoint?: number;
     /** Total turn count. */
