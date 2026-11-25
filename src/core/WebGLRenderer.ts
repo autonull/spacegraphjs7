@@ -67,6 +67,8 @@ export class WebGLRenderer {
      */
     #size = { width: 1, height: 1 };
     #orthoRangeCache?: ZoomRange;
+    private readonly labelRectBuffer: LabelRect[] = [];
+    private readonly labelElementBuffer: Array<HTMLElement | undefined> = [];
     private renderScheduled = false;
     readonly projScreenMatrix: Matrix4;
     private readonly fpsMeter = new FpsMeter(OPT_INTERVAL_MS);
@@ -327,14 +329,26 @@ export class WebGLRenderer {
     // Hide edge labels that would overlap a higher-priority neighbour or a DOM card this frame. Cheap
     // for small label counts; skipped entirely above the cap so large graphs never pay the cost.
     #declutterLabels(): void {
-        const rects: LabelRect[] = [];
-        const labels: Array<HTMLElement | undefined> = [];
+        const rects = this.labelRectBuffer;
+        const labels = this.labelElementBuffer;
+        rects.length = 0;
+        labels.length = 0;
+        const push = (id: string, box: DOMRect, element?: HTMLElement, priority = 0): void => {
+            const index = rects.length;
+            const rect =
+                rects[index] ?? (rects[index] = { id, left: 0, top: 0, width: 0, height: 0 });
+            rect.id = id;
+            rect.left = box.left;
+            rect.top = box.top;
+            rect.width = box.width;
+            rect.height = box.height;
+            rect.priority = priority;
+            labels[index] = element;
+        };
         for (const edge of this.sg.graph.edges.values()) {
             const el = edge?.labelElement;
             if (!el) continue;
-            const { left, top, width, height } = el.getBoundingClientRect();
-            rects.push({ id: `edge:${edge.id}`, left, top, width, height });
-            labels.push(el);
+            push(`edge:${edge.id}`, el.getBoundingClientRect(), el);
             if (rects.length >= LABEL_DECLUTTER_CAP) break;
         }
         // Without labels there is nothing to hide; measuring card rects would only force layout.
@@ -343,10 +357,9 @@ export class WebGLRenderer {
         for (const node of this.sg.graph.nodes.values()) {
             const el = (node as { domElement?: HTMLElement } | undefined)?.domElement;
             if (!el || !node.object.visible) continue;
-            const { left, top, width, height } = el.getBoundingClientRect();
-            if (width === 0 || height === 0) continue;
-            rects.push({ id: `node:${node.id}`, left, top, width, height, priority: 1 });
-            labels.push(undefined);
+            const box = el.getBoundingClientRect();
+            if (box.width === 0 || box.height === 0) continue;
+            push(`node:${node.id}`, box, undefined, 1);
             if (rects.length >= LABEL_DECLUTTER_CAP * 2) break;
         }
         if (rects.length < 2) return;

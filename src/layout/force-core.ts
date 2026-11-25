@@ -1,7 +1,16 @@
-import { addRepulsion, buildOctree, computeBarnesHutForce, type BarnesHutConfig } from './octree';
+import {
+    addRepulsion,
+    buildOctree,
+    computeBarnesHutForce,
+    type BarnesHutConfig,
+    type OctreeNode,
+} from './octree';
 import { DEFAULT_NODE_PADDING, diagonalRadius } from './node-bounds';
 
 type Force = { x: number; y: number; z: number };
+
+const BARNES_HUT_FORCE: Force = { x: 0, y: 0, z: 0 };
+const BARNES_HUT_STACK: OctreeNode[] = [];
 
 /** The force placement's vocabulary: what pulls a box towards another one. */
 export interface ForceMeta {
@@ -178,6 +187,8 @@ export class ForceCore {
                     this.#repulsion,
                     this.#minDistance,
                     maxForce,
+                    BARNES_HUT_FORCE,
+                    BARNES_HUT_STACK,
                 );
                 const target = forces[i]!;
                 target.x += force.x;

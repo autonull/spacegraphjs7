@@ -138,12 +138,16 @@ export class CameraController {
         if (this.sg.depth !== 'flat') this.sg.applySceneFade();
         const controls = this.sg.cameraControls;
         const zoom = this.sg.renderer.getZoom();
-        const center: [number, number, number] = controls
-            ? [controls.target.x, controls.target.y, controls.target.z]
-            : [0, 0, 0];
+        const x = controls?.target.x ?? 0;
+        const y = controls?.target.y ?? 0;
+        const z = controls?.target.z ?? 0;
         const zoomChanged = Math.abs(zoom - this.#lastZoom) > 1e-4;
-        const moved = center.some((v, i) => Math.abs(v - this.#lastCenter[i]) > 1e-3);
+        const moved =
+            Math.abs(x - this.#lastCenter[0]) > 1e-3 ||
+            Math.abs(y - this.#lastCenter[1]) > 1e-3 ||
+            Math.abs(z - this.#lastCenter[2]) > 1e-3;
         if (!force && !zoomChanged && !moved) return;
+        const center: [number, number, number] = [x, y, z];
         const viewport = this.sg.renderer.getViewport();
         if (zoomChanged) {
             this.sg.events.emit('zoom:change', { zoom: viewport.zoom, previous: this.#lastZoom });

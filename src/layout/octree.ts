@@ -212,10 +212,14 @@ export function computeBarnesHutForce(
     repulsion: number,
     minDistance: number,
     maxForce: number,
+    force: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
+    stack: OctreeNode[] = [],
 ): { x: number; y: number; z: number } {
-    const force = { x: 0, y: 0, z: 0 };
-
-    const stack: OctreeNode[] = [octree];
+    force.x = 0;
+    force.y = 0;
+    force.z = 0;
+    stack.length = 0;
+    stack.push(octree);
 
     while (stack.length > 0) {
         const cell = stack.pop()!;

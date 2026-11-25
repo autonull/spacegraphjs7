@@ -1,3 +1,4 @@
+import { Vector3 } from 'three';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import type { Node } from '../nodes/Node';
 import { lodLevelAt, lodVisibility } from '../core/lod';
@@ -7,6 +8,8 @@ import { DOMUtils } from '../utils/DOMUtils';
 import { midpoint } from '../utils/vector';
 import { EdgeColors } from '../core/constants';
 import { Edge, withEdgeData } from './Edge';
+
+const LABEL_MIDPOINT = new Vector3();
 
 /**
  * LabeledEdge — Straight edge with a mid-point text label rendered via CSS2D.
@@ -77,11 +80,13 @@ export class LabeledEdge extends Edge {
         const { sourcePos, targetPos } = this.endpointPositions();
         const level = lodLevelAt(
             this.labelLod,
-            midpoint(sourcePos, targetPos).distanceTo(camera.position),
+            midpoint(sourcePos, targetPos, LABEL_MIDPOINT).distanceTo(camera.position),
         );
 
-        this.labelEl.style.visibility = lodVisibility(level);
-        this.labelEl.style.transform = level?.scale !== undefined ? `scale(${level.scale})` : '';
+        const visibility = lodVisibility(level);
+        if (this.labelEl.style.visibility !== visibility) this.labelEl.style.visibility = visibility;
+        const transform = level?.scale !== undefined ? `scale(${level.scale})` : '';
+        if (this.labelEl.style.transform !== transform) this.labelEl.style.transform = transform;
     }
 
     update(): void {
@@ -116,6 +121,8 @@ export class LabeledEdge extends Edge {
         const { sourcePos, targetPos } = this.endpointPositions();
 
         // labelObject is child of this.object, which is in world space
-        this.labelObject.position.copy(midpoint(sourcePos, targetPos)).sub(this.object.position);
+        this.labelObject.position
+            .copy(midpoint(sourcePos, targetPos, LABEL_MIDPOINT))
+            .sub(this.object.position);
     }
 }

@@ -674,10 +674,7 @@ export abstract class Node extends Surface {
     }
 
     getWorldPosition(target: THREE.Vector3): THREE.Vector3 {
-        if (this.object) {
-            this.object.updateMatrixWorld();
-            return this.object.getWorldPosition(target);
-        }
+        if (this.object) return this.object.getWorldPosition(target);
         return target.copy(this.position);
     }
 
