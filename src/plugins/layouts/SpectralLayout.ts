@@ -106,8 +106,9 @@ function powerIteration(
     count: number,
 ): void {
     const eigenCount = eigenvectors.length;
+    const next = Array.from({ length: eigenCount }, () => new Float32Array(count));
     for (let iteration = 0; iteration < 50; iteration++) {
-        const next = Array.from({ length: eigenCount }, () => new Float32Array(count));
+        for (const vector of next) vector.fill(0);
         for (let k = 0; k < eigenCount; k++) {
             for (let i = 0; i < count; i++) {
                 if (!degree[i]) continue;

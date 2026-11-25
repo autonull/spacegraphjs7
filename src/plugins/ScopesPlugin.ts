@@ -134,8 +134,9 @@ export class ScopesPlugin extends BaseSystemPlugin {
         this.applySignals();
         if (this.options.animate === false) this.#simulation.settle();
         else this.#simulation.advance(delta);
-        this.#applyPositions();
-        this.options.onFrame?.(this.#simulation.view());
+        const view = this.#simulation.view();
+        this.#applyPositions(view);
+        this.options.onFrame?.(view);
         if (!this.#simulation.settled) this.sg.requestFrame();
     }
 
@@ -158,8 +159,7 @@ export class ScopesPlugin extends BaseSystemPlugin {
         return this.options.bandOf ? this.options.bandOf(zoom) : Math.round(zoom * 3);
     }
 
-    #applyPositions(): void {
-        const view = this.#simulation.view();
+    #applyPositions(view: ScopeLayout): void {
         for (const [qualified, position] of view.positions) {
             const nodeId = this.options.nodeId?.(qualified) ?? qualified;
             const node = this.graph.nodes.get(nodeId);

@@ -29,6 +29,8 @@ import {
 const isFiniteVector = (vector: THREE.Vector3): boolean =>
     isFinite(vector.x) && isFinite(vector.y) && isFinite(vector.z);
 
+const POSITIONS = [0, 0, 0, 0, 0, 0];
+
 export const DEFAULT_EDGE_DATA: EdgeData = Object.freeze({
     color: EdgeColors.DEFAULT,
     thickness: Defaults.EDGE_THICKNESS,
@@ -72,8 +74,8 @@ export class Edge extends Surface {
     private _colorStart = new THREE.Color();
     private _colorEnd = new THREE.Color();
     private _gradientKey = '';
-    private _sourcePos = new THREE.Vector3();
-    private _targetPos = new THREE.Vector3();
+    protected _sourcePos = new THREE.Vector3();
+    protected _targetPos = new THREE.Vector3();
     private _cachedX = NaN;
     private _cachedY = NaN;
     private _cachedZ = NaN;
@@ -228,9 +230,13 @@ export class Edge extends Surface {
      * The world positions of the edge's two ends. The vectors are reused, so a caller that keeps one
      * has to copy it.
      */
-    protected endpointPositions(): { sourcePos: THREE.Vector3; targetPos: THREE.Vector3 } {
+    protected syncEndpointPositions(): void {
         this.source.getWorldPosition(this._sourcePos);
         this.target.getWorldPosition(this._targetPos);
+    }
+
+    protected endpointPositions(): { sourcePos: THREE.Vector3; targetPos: THREE.Vector3 } {
+        this.syncEndpointPositions();
         return { sourcePos: this._sourcePos, targetPos: this._targetPos };
     }
 
@@ -321,7 +327,9 @@ export class Edge extends Surface {
     update(): void {
         if (!this.line || !this.source || !this.target) return;
 
-        const { sourcePos, targetPos } = this.endpointPositions();
+        this.syncEndpointPositions();
+        const sourcePos = this._sourcePos;
+        const targetPos = this._targetPos;
 
         if (!isFiniteVector(sourcePos) || !isFiniteVector(targetPos)) return;
         if (
@@ -340,14 +348,13 @@ export class Edge extends Surface {
         this._cachedEndY = targetPos.y;
         this._cachedEndZ = targetPos.z;
 
-        this.geometry.setPositions([
-            sourcePos.x,
-            sourcePos.y,
-            sourcePos.z,
-            targetPos.x,
-            targetPos.y,
-            targetPos.z,
-        ]);
+        POSITIONS[0] = sourcePos.x;
+        POSITIONS[1] = sourcePos.y;
+        POSITIONS[2] = sourcePos.z;
+        POSITIONS[3] = targetPos.x;
+        POSITIONS[4] = targetPos.y;
+        POSITIONS[5] = targetPos.z;
+        this.geometry.setPositions(POSITIONS);
 
         if (this.geometry.attributes.position.count === 0) return;
 

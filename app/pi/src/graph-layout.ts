@@ -1,4 +1,5 @@
 import type { AgentView } from '@spacegraphjs/agent';
+import { appendTo } from 'spacegraphjs/utils';
 import {
     chapterPacking,
     octaveLayout,
@@ -30,12 +31,17 @@ export const isGraphLayoutMode = (value: string | null | undefined): value is Gr
     value !== null && value !== undefined && (GRAPH_LAYOUTS as readonly string[]).includes(value);
 
 function boundsOf(positions: ReadonlyMap<string, Position>, card: readonly [number, number]) {
-    const xs = [...positions.values()].map((point) => point.x);
-    const ys = [...positions.values()].map((point) => point.y);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const point of positions.values()) {
+        minX = Math.min(minX, point.x);
+        minY = Math.min(minY, point.y);
+        maxX = Math.max(maxX, point.x);
+        maxY = Math.max(maxY, point.y);
+    }
     const [width, height] = card;
     return {
-        min: { x: Math.min(...xs) - width / 2, y: Math.min(...ys) - height / 2, z: 0 },
-        max: { x: Math.max(...xs) + width / 2, y: Math.max(...ys) + height / 2, z: 0 },
+        min: { x: minX - width / 2, y: minY - height / 2, z: 0 },
+        max: { x: maxX + width / 2, y: maxY + height / 2, z: 0 },
     };
 }
 
@@ -65,17 +71,12 @@ export function layoutConfig(
     const parent = new Map<string, string>();
     const links = new Map<string, string[]>();
     for (const edge of view.edges) {
-        if (edge.kind === 'contains') parent.set(edge.target, edge.source);
-        else {
-            for (const [from, to] of [
-                [edge.source, edge.target],
-                [edge.target, edge.source],
-            ]) {
-                const existing = links.get(from);
-                if (existing) existing.push(to);
-                else links.set(from, [to]);
-            }
+        if (edge.kind === 'contains') {
+            parent.set(edge.target, edge.source);
+            continue;
         }
+        appendTo(links, edge.source, edge.target);
+        appendTo(links, edge.target, edge.source);
     }
     return {
         nodeSizeFn: () => cardSize,

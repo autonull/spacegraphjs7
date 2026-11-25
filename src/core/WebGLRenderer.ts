@@ -327,36 +327,38 @@ export class WebGLRenderer {
     // Hide edge labels that would overlap a higher-priority neighbour or a DOM card this frame. Cheap
     // for small label counts; skipped entirely above the cap so large graphs never pay the cost.
     #declutterLabels(): void {
-        const entries: Array<{ el?: HTMLElement; rect: LabelRect }> = [];
+        const rects: LabelRect[] = [];
+        const labels: Array<HTMLElement | undefined> = [];
         for (const edge of this.sg.graph.edges.values()) {
             const el = edge?.labelElement;
             if (!el) continue;
             const { left, top, width, height } = el.getBoundingClientRect();
-            entries.push({ el, rect: { id: `edge:${edge.id}`, left, top, width, height } });
-            if (entries.length >= LABEL_DECLUTTER_CAP) break;
+            rects.push({ id: `edge:${edge.id}`, left, top, width, height });
+            labels.push(el);
+            if (rects.length >= LABEL_DECLUTTER_CAP) break;
         }
         // Without labels there is nothing to hide; measuring card rects would only force layout.
-        if (entries.length === 0) return;
+        if (rects.length === 0) return;
         // DOM cards are obstacles, never hidden: a label overlapping a card loses.
         for (const node of this.sg.graph.nodes.values()) {
             const el = (node as { domElement?: HTMLElement } | undefined)?.domElement;
             if (!el || !node.object.visible) continue;
             const { left, top, width, height } = el.getBoundingClientRect();
             if (width === 0 || height === 0) continue;
-            entries.push({
-                rect: { id: `node:${node.id}`, left, top, width, height, priority: 1 },
-            });
-            if (entries.length >= LABEL_DECLUTTER_CAP * 2) break;
+            rects.push({ id: `node:${node.id}`, left, top, width, height, priority: 1 });
+            labels.push(undefined);
+            if (rects.length >= LABEL_DECLUTTER_CAP * 2) break;
         }
-        if (entries.length < 2) return;
-        const hidden = declutterLabels(entries.map((entry) => entry.rect));
-        for (const entry of entries) {
-            if (!entry.el) continue;
-            const isHidden = hidden.has(entry.rect.id);
-            if (labelHidden.get(entry.el) === isHidden) continue;
-            labelHidden.set(entry.el, isHidden);
-            entry.el.style.opacity = isHidden ? '0' : '';
-        }
+        if (rects.length < 2) return;
+        const hidden = declutterLabels(rects);
+        rects.forEach((rect, index) => {
+            const el = labels[index];
+            if (!el) return;
+            const isHidden = hidden.has(rect.id);
+            if (labelHidden.get(el) === isHidden) return;
+            labelHidden.set(el, isHidden);
+            el.style.opacity = isHidden ? '0' : '';
+        });
     }
 
     beginFrameOptimization(timestamp: number): void {

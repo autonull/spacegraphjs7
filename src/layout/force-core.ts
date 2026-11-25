@@ -330,6 +330,7 @@ export class ForceCore {
                   );
 
         const radii = nodes.map((node) => getRadius(node));
+        const pinned = nodes.map((node) => isPinned(node));
         const indexById = new Map(nodes.map((node, index) => [node.id, index]));
         let forces: Force[] | undefined;
 
@@ -338,8 +339,8 @@ export class ForceCore {
             forces = this.#stepForces(nodes, getLinks, radii, indexById, forces);
 
             for (let i = 0; i < nodes.length; i++) {
+                if (pinned[i]) continue;
                 const node = nodes[i]!;
-                if (isPinned(node)) continue;
                 const force = forces[i]!;
                 const magnitude = Math.sqrt(force.x ** 2 + force.y ** 2 + force.z ** 2);
 
@@ -357,10 +358,10 @@ export class ForceCore {
         if (nodes.length <= 150) this.separateOverlaps(nodes, getRadius, isPinned);
 
         // Apply depth-based Z
-        for (const node of nodes) {
-            if (isPinned(node)) continue;
+        nodes.forEach((node, index) => {
+            if (pinned[index]) return;
             setDepth(node, (node.depth ?? 0) * this.#depthStep);
-        }
+        });
     }
 }
 

@@ -6,6 +6,8 @@ import type { EdgeData, EdgeSpec } from '../types';
 import { directionBetween, midpoint, perpendicularTo } from '../utils/vector';
 import { Edge } from './Edge';
 
+const POINT = new Vector3();
+
 export class CurvedEdge extends Edge {
     static readonly typeName: string = 'CurvedEdge';
     readonly curve: QuadraticBezierCurve3;
@@ -36,18 +38,20 @@ export class CurvedEdge extends Edge {
 
         if (!this.curve) return;
 
-        const { sourcePos, targetPos } = this.endpointPositions();
+        this.syncEndpointPositions();
+        const sourcePos = this._sourcePos;
+        const targetPos = this._targetPos;
 
         this.curve.v0.copy(sourcePos);
         this.curve.v1.copy(this.getControlPoint(sourcePos, targetPos));
         this.curve.v2.copy(targetPos);
 
-        const points = this.curve.getPoints(20);
         let offset = 0;
-        for (const p of points) {
-            this.positionsBuffer[offset++] = p.x;
-            this.positionsBuffer[offset++] = p.y;
-            this.positionsBuffer[offset++] = p.z;
+        for (let i = 0; i <= 20; i++) {
+            this.curve.getPoint(i / 20, POINT);
+            this.positionsBuffer[offset++] = POINT.x;
+            this.positionsBuffer[offset++] = POINT.y;
+            this.positionsBuffer[offset++] = POINT.z;
         }
 
         this.geometry.attributes.position.needsUpdate = true;
