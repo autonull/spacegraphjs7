@@ -44,8 +44,6 @@ program
         const spinner = new Spinner('Analyzing visual telemetry and model inference...');
         spinner.start();
 
-        await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulating deep analysis
-
         if (!fs.existsSync(patchPath)) {
             spinner.stop('✓', chalk.green);
             console.log(

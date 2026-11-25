@@ -1,9 +1,11 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const APP = resolve(import.meta.dirname, '..');
+const require = createRequire(import.meta.url);
 
 export type TestServer = {
     readonly base: string;
@@ -19,7 +21,7 @@ export const startServer = async (
 ): Promise<TestServer> => {
     const dir = env.PI_DURABLE_DIR ?? mkdtempSync(join(tmpdir(), 'pi-durable-server-'));
     const base = `http://127.0.0.1:${port}`;
-    const child: ChildProcess = spawn('pnpm', ['exec', 'tsx', 'src/server.ts'], {
+    const child: ChildProcess = spawn(process.execPath, [require.resolve('tsx/cli'), 'src/server.ts'], {
         cwd: APP,
         env: {
             ...process.env,
@@ -44,7 +46,7 @@ export const startServer = async (
         } catch {
             // Not listening yet; fall through to the delay.
         }
-        await new Promise((done) => setTimeout(done, 100));
+        await new Promise((done) => setTimeout(done, 25));
     }
     await stop(child);
     throw new Error(`test server on ${port} did not become healthy`);
