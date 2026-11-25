@@ -40,3 +40,15 @@ export const RUNGS: readonly RungSpec[] = [
 export const RUNG_IDS: readonly Rung[] = RUNGS.map((rung) => rung.id);
 
 export const isRung = (value: unknown): value is Rung => RUNG_IDS.includes(value as Rung);
+
+/** Per-rung kinds and edges mute what is out of landmark; empty sets leave the fold untouched. */
+export const rungEmphasis = (rung: Rung): {
+    readonly mutedNode: (kind: string) => boolean;
+    readonly mutedEdge: (kind: string) => boolean;
+} => {
+    const spec = RUNGS.find((entry) => entry.id === rung)!;
+    return {
+        mutedNode: (kind) => spec.kinds.size > 0 && !spec.kinds.has(kind),
+        mutedEdge: (kind) => spec.edges.size > 0 && !spec.edges.has(kind),
+    };
+};

@@ -41,3 +41,11 @@ test('recorded edges form subgraphs and rungs change caption detail', async ({ p
     await expect(page.locator('#canvas .card-detail')).toHaveCount(0);
     expect(errors).toEqual([]);
 });
+
+test('territory counts recorded tasks and forks on subgraph frames', async ({ page }) => {
+    const errors = await boot(page, '?shot=fork-tabs');
+    await call(page, 'setRung', 'territory');
+    const captions = await page.locator('#canvas .durable-band').allTextContents();
+    expect(captions.join(' | ')).toMatch(/(task|fork) \d+/);
+    expect(errors).toEqual([]);
+});

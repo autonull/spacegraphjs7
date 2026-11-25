@@ -4,6 +4,12 @@ import { boot, call, openPanel } from './boot';
 type Addr = { readonly view?: string; readonly rung?: string; readonly layout?: string; readonly focus?: string };
 type Representation = { readonly nodeIDs: readonly string[]; readonly edgeIDs: readonly string[] };
 type Weights = { readonly weights: Readonly<Record<string, number>> };
+type Emphasis = {
+    readonly rung: string;
+    readonly mutedNodes: number;
+    readonly mutedEdges: number;
+    readonly activeGroups: readonly string[];
+};
 
 test('E0 — follow thread uses recorded edges and Esc restores the address', async ({ page }) => {
     const errors = await boot(page, '?shot=basic-turn');
@@ -91,7 +97,10 @@ test('C2 — muting chips dim non-matches without changing the fold', async ({ p
     const errors = await boot(page, '?shot=basic-turn');
     await openPanel(page, 'insights');
     const before = await call<Representation>(page, 'representation');
+    await call(page, 'setRung', 'fact');
+    const baseline = await page.locator('#canvas [data-muted="true"]').count();
     await page.locator('#filter-kinds .filter-chip', { hasText: 'message' }).click();
+    await call(page, 'setRung', 'fact');
     const after = await call<Representation>(page, 'representation');
     expect(after.nodeIDs).toEqual(before.nodeIDs);
     expect(after.edgeIDs).toEqual(before.edgeIDs);
@@ -99,11 +108,33 @@ test('C2 — muting chips dim non-matches without changing the fold', async ({ p
     expect(counts.counts.total).toBe(before.nodeIDs.length);
     expect(counts.counts.matching).toBeLessThan(counts.counts.total);
     await expect(page.locator('#filter-count')).toContainText(`${counts.counts.matching} / ${counts.counts.total}`);
-    expect(await page.locator('#canvas [data-muted="true"]').count()).toBeGreaterThan(0);
+    expect(await page.locator('#canvas [data-muted="true"]').count()).toBeGreaterThan(baseline);
     await page.keyboard.press('m');
-    expect(await page.locator('#canvas [data-muted="true"]').count()).toBe(0);
+    await call(page, 'setRung', 'fact');
+    expect(await page.locator('#canvas [data-muted="true"]').count()).toBe(baseline);
     expect((await call<{ readonly counts: { readonly matching: number } }>(page, 'filters')).counts.matching)
         .toBe(before.nodeIDs.length);
+    expect(errors).toEqual([]);
+});
+
+test('ZUI — rung emphasis and band folding mute without changing the fold', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    const before = await call<Representation>(page, 'representation');
+    const fact = await call<Emphasis>(page, 'emphasis');
+    expect(fact.mutedNodes).toBe(0);
+    expect(fact.activeGroups.length).toBeGreaterThan(0);
+
+    await call(page, 'setRung', 'cosmos');
+    const cosmos = await call<Emphasis>(page, 'emphasis');
+    expect(cosmos.mutedNodes).toBeGreaterThan(0);
+    expect(cosmos.mutedEdges).toBeGreaterThanOrEqual(0);
+    expect(cosmos.activeGroups.length).toBeLessThanOrEqual(fact.activeGroups.length);
+    const after = await call<Representation>(page, 'representation');
+    expect(after.nodeIDs).toEqual(before.nodeIDs);
+    expect(after.edgeIDs).toEqual(before.edgeIDs);
+
+    await call(page, 'setRung', 'fact');
+    expect((await call<Emphasis>(page, 'emphasis')).mutedNodes).toBe(0);
     expect(errors).toEqual([]);
 });
 

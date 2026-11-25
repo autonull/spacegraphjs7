@@ -33,6 +33,24 @@ test('zooming toward cosmos grows committed nodes on the same ladder', async ({ 
     expect(errors).toEqual([]);
 });
 
+test('node-area density stays inside the measured working band', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 1000 });
+    const errors = await boot(page, '?shot=basic-turn');
+    const stage = (await page.locator('#stage').boundingBox())!;
+    const boxes = await page.locator('#canvas .durable-card').evaluateAll((nodes) =>
+        nodes.map((node) => {
+            const rect = (node as HTMLElement).getBoundingClientRect();
+            return rect.width * rect.height;
+        }));
+    const coverage = boxes.reduce((sum, area) => sum + area, 0) / (stage.width * stage.height);
+    expect(coverage).toBeGreaterThanOrEqual(0.07);
+    expect(coverage).toBeLessThanOrEqual(0.13);
+    const density = await call<{ readonly scale: number; readonly measured: number; readonly target: number }>(page, 'density');
+    expect(density.target).toBeCloseTo(0.32);
+    expect(density.scale).toBeGreaterThan(1);
+    expect(errors).toEqual([]);
+});
+
 for (const viewport of [{ width: 1600, height: 1000 }, { width: 900, height: 700 }]) {
     test(`octave sizes keep cards clear at ${viewport.width}x${viewport.height}`, async ({ page }) => {
         await page.setViewportSize(viewport);

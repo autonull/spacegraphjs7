@@ -8,7 +8,14 @@ import {
     type BandTemplate,
 } from '@spacegraphjs/adapter';
 import { applyNodeBudget, diffKernels, Kernel, SessionKernel, SpatialIndex2D } from '@spacegraphjs/kernel';
-import { createRenderClock, DEFAULT_THEME, type RenderModel, type RenderNode, type RenderTheme } from '@spacegraphjs/renderer';
+import {
+    createRenderClock,
+    DEFAULT_THEME,
+    type RenderEdge,
+    type RenderModel,
+    type RenderNode,
+    type RenderTheme,
+} from '@spacegraphjs/renderer';
 import { rankedSearch } from '@spacegraphjs/search';
 import type { GraphViewData } from '@spacegraphjs/shared';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
@@ -47,8 +54,9 @@ import {
 import type { Feed } from './local-feed';
 import { localFeed } from './local-feed';
 import { replayFeed } from './replay';
-import { isRung, RUNGS, type Rung } from './rungs';
+import { isRung, RUNGS, rungEmphasis, type Rung } from './rungs';
 import { scenarioByID, scenarioOps, VIEW_NAMES, type ViewName } from './scenarios';
+import { buildScopeForest } from './scopes';
 import { shotById } from './shots';
 import { storyByID, type Story } from './stories';
 import { threadFrom, type ThreadStep } from './thread';
@@ -144,19 +152,33 @@ const TRANSCRIPT_KINDS = new Set(['message', 'boundary', 'state', 'action']);
 /** Only recorded hierarchy forms a subgraph; order and signal edges never become groups. */
 const HIERARCHY = new Set(['contains', 'owns', 'delegates', 'fork', 'forkedFrom']);
 
-type DurableGroup = { readonly id: string; readonly members: readonly string[] };
+type DurableGroup = {
+    readonly id: string;
+    readonly members: readonly string[];
+    readonly counts: Readonly<Record<string, number>>;
+};
+
+/** One caption authority for subgraph frames and their member detail at territory. */
+const groupDetail = (group: DurableGroup): string =>
+    ['task', 'fork']
+        .filter((kind) => group.counts[kind]! > 0)
+        .map((kind) => `${kind} ${group.counts[kind]}`)
+        .join(' · ');
 
 /** Emits recorded subgraphs as frames; the adapter still owns member parenting and counts. */
 class DurableAdapter extends VocabularyAdapter<DurableNode> {
     readonly #groups: () => readonly DurableGroup[];
+    readonly #active: () => ReadonlySet<string>;
 
     constructor(
         vocabulary: ConstructorParameters<typeof VocabularyAdapter<DurableNode>>[0],
         config: ConstructorParameters<typeof VocabularyAdapter<DurableNode>>[1],
         groups: () => readonly DurableGroup[],
+        active: () => ReadonlySet<string>,
     ) {
         super(vocabulary, config);
         this.#groups = groups;
+        this.#active = active;
     }
 
     override buildBands(
@@ -167,7 +189,8 @@ class DurableAdapter extends VocabularyAdapter<DurableNode> {
         visible: ReadonlySet<string>,
     ): RenderNode[] {
         const byID = new Map(model.nodes.map((node) => [node.id, node]));
-        return this.#groups().flatMap((group) => {
+        const active = this.#active();
+        return this.#groups().filter((group) => active.has(group.id)).flatMap((group) => {
             const box = this.bandBox(model, group.members, positions, visible);
             const source = byID.get(group.id);
             if (!box || !source) return [];
@@ -181,7 +204,7 @@ class DurableAdapter extends VocabularyAdapter<DurableNode> {
                 importance: 'compact',
                 octave: 0,
                 band: 'chip',
-                data: { members: group.members },
+                data: { members: group.members, counts: groupDetail(group) },
             };
             return [{
                 id: frame.id,
@@ -190,7 +213,7 @@ class DurableAdapter extends VocabularyAdapter<DurableNode> {
                 shape: 'group',
                 position: [(box.min.x + box.max.x) / 2, (box.min.y + box.max.y) / 2, 0],
                 size: [width, height, 0],
-                data: { members: [...group.members], cluster: group.id },
+                data: { members: [...group.members], cluster: group.id, counts: groupDetail(group) },
                 html: renderBand(frame, group.members.length, box),
             }];
         });
@@ -271,7 +294,11 @@ const detailFor = (
     group: DurableGroup | undefined,
 ): string => {
     if (rung === 'cosmos') return '';
-    if (rung === 'territory') return group ? `in ${group.id.split(':').pop()} · ${group.members.length}` : '';
+    if (rung === 'territory') {
+        if (!group) return '';
+        const detail = groupDetail(group);
+        return `in ${group.id.split(':').pop()} · ${group.members.length}${detail ? ` · ${detail}` : ''}`;
+    }
     if (rung === 'passage') return step >= 0 ? `step ${step + 1}/${steps}` : '';
     if (rung === 'grain') {
         const data = node.data ?? {};
@@ -321,6 +348,7 @@ export class DurableHost {
             duration: node.data?.['durationMs'] ?? null,
             importance: node.importance,
             band: node.band,
+            muted: node.data?.['muted'] === true,
             style: {
                 width: `${sizeForNode(node)[0]}px`,
                 height: `${sizeForNode(node)[1]}px`,
@@ -339,9 +367,12 @@ export class DurableHost {
         bands: true,
         nodeSizeFn: sizeForNode,
         renderCardTemplate: cardTemplate,
-        renderBandTemplate: (node, count) =>
-            `<div class="durable-band" data-group="${escapeHTML(node.id.slice(5))}"><span>${escapeHTML(node.label)} · ${count}</span></div>`,
-    }, () => this.#groups);
+        renderBandTemplate: (node, count) => {
+            const counts = node.data?.['counts'];
+            const detail = typeof counts === 'string' && counts ? ` · ${counts}` : '';
+            return `<div class="durable-band" data-group="${escapeHTML(node.id.slice(5))}"><span>${escapeHTML(node.label)} · ${count}${escapeHTML(detail)}</span></div>`;
+        },
+    }, () => this.#groups, () => this.#activeGroups);
     #status: { readonly provider: string; readonly storage: string; readonly tasks: number } = {
         provider: 'local feed',
         storage: 'fixture',
@@ -392,6 +423,11 @@ export class DurableHost {
     #overviewProjection: MinimapProjection | undefined;
     #omitted = 0;
     #densityScale = 1;
+    #density: { readonly scale: number; readonly measured: number; readonly target: number } = {
+        scale: 1, measured: 0, target: NODES_AREA_DENSITY,
+    };
+    #mutedEdges = 0;
+    #activeGroups = new Set<string>();
     #scopeKey = '';
     #scopes: ReturnType<typeof buildScopes> | undefined;
     #laneNames: readonly string[] = [];
@@ -541,6 +577,7 @@ export class DurableHost {
     refresh(): void {
         const tab = this.registry.active();
         if (!tab) return;
+        const rung = rungEmphasis(this.#rung);
         const full = tabKernel(tab);
         const kernel = full.nodes.length > 160
             ? applyNodeBudget(full, {
@@ -568,7 +605,7 @@ export class DurableHost {
             }
         }
         const focus = tab.view.focus;
-        this.#densityScale = solveNodeAreaDensity({
+        const density = solveNodeAreaDensity({
             nodes: presented.nodes.map((node) => {
                 const [width, height] = sizeForOctave(octaveFor(node, this.#sample, focus));
                 return { width, height };
@@ -579,7 +616,9 @@ export class DurableHost {
             },
             nodesAreaDensity: NODES_AREA_DENSITY,
             maxScale: 8,
-        }).scale;
+        });
+        this.#density = { scale: density.scale, measured: density.measured, target: NODES_AREA_DENSITY };
+        this.#densityScale = density.scale;
         const positions = this.#layout(presented.nodes, presented.edges);
         const labels = this.#labels(presented, positions);
         this.#presented = presented;
@@ -629,6 +668,7 @@ export class DurableHost {
                     const octave = lensed?.octaves.get(node.id) ?? baseOctaves.get(node.id) ?? octaveFor(durable, this.#sample, tab.view.focus);
                     const status = String(node.data?.['status'] ?? '');
                     const muted = Boolean(lensed?.muted.has(node.id))
+                        || rung.mutedNode(node.kind)
                         || !matchesFilter({ kind: node.kind, status }, this.#filter);
                     const sized: DurableNode = {
                         ...durable,
@@ -651,7 +691,7 @@ export class DurableHost {
             { level: 'execution', positions, focus: tab.view.focus, cardBudget: 30, bands: true, ...labels },
         );
         this.#baseModel = model;
-        this.#setModel(applyModelEmphasis(model, this.#attention, ATTENTION_MAPPING));
+        this.#setModel(this.#emphasised(model));
         this.#edgeCount = model.edges.length;
         this.#edgeLabels = model.edges.flatMap((edge) => (edge.label ? [edge.label] : []));
         if (!this.#fitted && presented.nodes.length) {
@@ -1064,7 +1104,18 @@ export class DurableHost {
                 [node.id, octaveFor(node, this.#sample, focus)] as const));
             this.#attention = focusLens(octaves, base, this.#focusNeighbours).weights;
         }
-        this.#setModel(applyModelEmphasis(this.#baseModel, this.#attention, ATTENTION_MAPPING), false);
+        this.#setModel(this.#emphasised(this.#baseModel), false);
+    }
+
+    /** Attention and rung muting share one model pass; neither removes a node or an edge. */
+    #emphasised(model: RenderModel): RenderModel {
+        const emphasised = applyModelEmphasis(model, this.#attention, ATTENTION_MAPPING);
+        const rung = rungEmphasis(this.#rung);
+        const edges = emphasised.edges.map((edge: RenderEdge) => rung.mutedEdge(edge.kind)
+            ? { ...edge, emphasis: 0, data: { ...edge.data, muted: true, opacity: 0.2 } }
+            : edge);
+        this.#mutedEdges = edges.length - emphasised.edges.length;
+        return { ...emphasised, edges };
     }
 
     /** Morph positions between placements; reduced motion and pure shots cut instantly. */
@@ -1358,6 +1409,13 @@ export class DurableHost {
             scrubTo: (seq?: number) => this.scrubTo(seq),
             digest: () => this.digest(),
             instruments: () => this.instruments(),
+            density: () => ({ ...this.#density }),
+            emphasis: () => ({
+                rung: this.#rung,
+                mutedNodes: this.#model?.nodes.filter((node) => node.data?.['muted'] === true).length ?? 0,
+                mutedEdges: this.#mutedEdges,
+                activeGroups: [...this.#activeGroups],
+            }),
             thread: () => this.#thread,
             threadIDs: () => this.#threadHead ? [this.#threadHead, ...this.#thread.map((step) => step.id)] : [],
             threadActive: () => this.threadActive(),
@@ -1493,18 +1551,18 @@ export class DurableHost {
             this.#scopeKey = key;
         }
         const scopes = this.#scopes;
-        const spec: ScopeSpec = {
-            id: 'root',
-            strategy: LAYOUT_STRATEGIES[this.#layoutName],
-            nodes: nodes.map((node, index) => ({
+        const forest = buildScopeForest(
+            nodes.map((node, index) => ({
                 id: node.id,
                 lane: this.#viewName,
                 row: index,
                 size: scaledSize(octaves[index]!, this.#densityScale),
             })),
-            edges: placed,
-        };
-        this.#simulation.setSpecs([spec]);
+            placed,
+            this.#groups,
+            LAYOUT_STRATEGIES[this.#layoutName],
+        );
+        this.#simulation.setSpecs(forest.specs);
         const solved = solveErgonomicLayout(
             nodes.map((node, index) => ({
                 id: node.id,
@@ -1526,19 +1584,29 @@ export class DurableHost {
                 nodesAreaDensity: NODES_AREA_DENSITY,
             },
         );
-        this.#simulation.setLayoutTargets(solved
-            ? new Map([...solved.positions].map(([id, position]) => [`root/${id}`, position]))
-            : new Map(scopes.map((scope) => [
-                  `root/${scope.id}`,
-                  { x: scope.position[0], y: scope.position[1], z: scope.position[2] },
-              ])));
+        const fallback = new Map(scopes.map((scope) => [
+            scope.id,
+            { x: scope.position[0], y: scope.position[1], z: scope.position[2] },
+        ]));
+        const targets = new Map<string, { readonly x: number; readonly y: number; readonly z: number }>();
+        for (const [id, position] of solved ? solved.positions : fallback) {
+            const qualified = forest.nodePaths.get(id);
+            if (qualified) targets.set(qualified, position);
+        }
+        this.#simulation.setLayoutTargets(targets);
+        this.#simulation.setPolicy({
+            band: RUNGS.findIndex((entry) => entry.id === this.#rung),
+            focus: focus ? forest.nodePaths.get(focus) : undefined,
+        });
         this.#simulation.settle();
-        return new Map(
-            [...this.#simulation.view().positions].map(([qualified, position]) => [
-                qualified.slice('root/'.length),
-                position,
-            ]),
-        );
+        const view = this.#simulation.view();
+        this.#activeGroups = new Set([...forest.groupPaths]
+            .filter(([, path]) => view.frames.get(path)?.active)
+            .map(([id]) => id));
+        return new Map([...view.positions].flatMap(([qualified, position]) => {
+            const id = forest.nodesByPath.get(qualified);
+            return id ? [[id, position] as const] : [];
+        }));
     }
 
     /** Subgraphs come only from recorded edges: owners, waits and ordered threads. */
@@ -1567,9 +1635,19 @@ export class DurableHost {
             }
             if (members.size > 1) add(node.id, [...members]);
         }
+        const kinds = new Map(kernel.nodes.map((node) => [node.id, node.kind] as const));
+        const forks = new Set(kernel.edges.filter((edge) => edge.kind === 'fork').map((edge) => edge.source));
         return [...membersOf]
             .filter(([, members]) => members.size > 1)
-            .map(([id, members]) => ({ id, members: [...members] }));
+            .map(([id, members]) => ({
+                id,
+                members: [...members],
+                counts: {
+                    task: [...members].filter((member) =>
+                        TASK_KINDS.has(kinds.get(member) ?? '') && kinds.get(member) !== 'conversation').length,
+                    fork: [...members].filter((member) => forks.has(member)).length,
+                },
+            }));
     }
 
     /** Every placement reads the same folded kernel; only the selected data facet changes. */
