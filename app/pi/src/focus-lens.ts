@@ -1,7 +1,7 @@
 import type { AgentView } from '@spacegraphjs/agent';
 import type { RenderModel, RenderNode, RendererViewport } from '@spacegraphjs/renderer';
 import type { InstrumentKit } from 'spacegraphjs/widgets';
-import { toAdapterModel, focusCardMarkup } from './adapter';
+import { toAdapterNode, focusCardMarkup } from './adapter';
 import { derivePorts } from './anatomy';
 import { el } from './dom';
 import { innerTree, type InnerLayout } from './inner';
@@ -58,7 +58,8 @@ export class FocusLens {
         }
         const point = this.host.screenPosition(focus);
         const view = this.host.view();
-        const adapterNode = toAdapterModel(view).nodes.find((node) => node.id === focus);
+        const viewNode = view.nodes.find((node) => node.id === focus);
+        const adapterNode = viewNode ? toAdapterNode(viewNode) : undefined;
         const modelNode = this.host.model()?.nodes.find((node) => node.id === focus);
         if (!point || !adapterNode || !modelNode) {
             this.#hide(overlay);
@@ -66,7 +67,9 @@ export class FocusLens {
         }
         const layout = String(policy.values['emphasis.innerLayout']) as InnerLayout;
         const scope = this.host.portals().get(focus);
-        document.documentElement.dataset.scopeFocus = scope ?? '';
+        const scopeFocus = scope ?? '';
+        if (document.documentElement.dataset.scopeFocus !== scopeFocus)
+            document.documentElement.dataset.scopeFocus = scopeFocus;
         const chips = innerTree(focus, view.nodes, view.edges, depth);
         const signature = [
             focus,

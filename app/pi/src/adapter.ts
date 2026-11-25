@@ -81,14 +81,16 @@ const STATUS: Readonly<Record<string, NodeStatus>> = {
     aborted: 'error',
 };
 
+export const toAdapterNode = (node: AgentView['nodes'][number]): AgentAdapterNode => ({
+    ...node,
+    status: node.status ?? 'complete',
+    role: typeof node.data?.role === 'string' ? node.data.role : node.kind,
+    lane: typeof node.data?.lane === 'string' ? node.data.lane : 'action',
+    scope: typeof node.data?.scope === 'string' ? node.data.scope : undefined,
+});
+
 export const toAdapterModel = (view: AgentView): AgentAdapterModel => ({
-    nodes: view.nodes.map((node) => ({
-        ...node,
-        status: node.status ?? 'complete',
-        role: typeof node.data?.role === 'string' ? node.data.role : node.kind,
-        lane: typeof node.data?.lane === 'string' ? node.data.lane : 'action',
-        scope: typeof node.data?.scope === 'string' ? node.data.scope : undefined,
-    })),
+    nodes: view.nodes.map(toAdapterNode),
     edges: view.edges.map((edge) => ({
         ...edge,
         confidence: edge.confidence ?? 'explicit',

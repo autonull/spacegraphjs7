@@ -30,6 +30,7 @@ const CSS_STYLES = {
     left: '0px',
     pointerEvents: 'none',
 } as const;
+const labelHidden = new WeakMap<HTMLElement, boolean>();
 const OPT_INTERVAL_MS = 250;
 const LABEL_DECLUTTER_CAP = 200;
 const FOV = 75;
@@ -324,6 +325,8 @@ export class WebGLRenderer {
             entries.push({ el, rect: { id: `edge:${edge.id}`, left, top, width, height } });
             if (entries.length >= LABEL_DECLUTTER_CAP) break;
         }
+        // Without labels there is nothing to hide; measuring card rects would only force layout.
+        if (entries.length === 0) return;
         // DOM cards are obstacles, never hidden: a label overlapping a card loses.
         for (const node of this.sg.graph.nodes.values()) {
             const el = (node as { domElement?: HTMLElement } | undefined)?.domElement;
@@ -338,7 +341,11 @@ export class WebGLRenderer {
         if (entries.length < 2) return;
         const hidden = declutterLabels(entries.map((entry) => entry.rect));
         for (const entry of entries) {
-            if (entry.el) entry.el.style.opacity = hidden.has(entry.rect.id) ? '0' : '';
+            if (!entry.el) continue;
+            const isHidden = hidden.has(entry.rect.id);
+            if (labelHidden.get(entry.el) === isHidden) continue;
+            labelHidden.set(entry.el, isHidden);
+            entry.el.style.opacity = isHidden ? '0' : '';
         }
     }
 
