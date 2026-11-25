@@ -2,6 +2,7 @@
 // Graph topology analysis for hierarchy detection
 
 import type { HeuristicsConfig } from '..';
+import { childrenByID } from '../../utils/collection';
 import { clamp } from '../../utils/math';
 import type { HierarchyResult, VisionContext } from '../types';
 
@@ -32,11 +33,14 @@ export class HierarchyAnalyzer {
             };
         }
 
-        // Build adjacency list
-        const adjacency = this.buildAdjacencyList(nodes, edges);
-
-        // Find root nodes (nodes with no incoming edges)
-        const rootIds = this.findRoots(nodes, edges);
+        // Children and roots come from the same edge scan
+        const { children: adjacency, parents } = childrenByID(
+            nodes.map((node) => node.id),
+            edges,
+            (edge) => edge.source.id,
+            (edge) => edge.target.id,
+        );
+        const rootIds = nodes.filter((node) => !parents.has(node.id)).map((node) => node.id);
 
         // Compute hierarchy levels using BFS
         const levels = this.computeLevels(rootIds, adjacency);
@@ -52,47 +56,6 @@ export class HierarchyAnalyzer {
             levels,
             score,
         };
-    }
-
-    /**
-     * Build adjacency list from edges
-     */
-    private buildAdjacencyList(
-        nodes: Array<{ id: string }>,
-        edges: Array<{ source: { id: string }; target: { id: string } }>,
-    ): Map<string, string[]> {
-        const adjacency = new Map<string, string[]>();
-
-        // Initialize all nodes
-        for (const node of nodes) {
-            adjacency.set(node.id, []);
-        }
-
-        // Add edges
-        for (const edge of edges) {
-            const sources = adjacency.get(edge.source.id);
-            if (sources) {
-                sources.push(edge.target.id);
-            }
-        }
-
-        return adjacency;
-    }
-
-    /**
-     * Find root nodes (no incoming edges)
-     */
-    private findRoots(
-        nodes: Array<{ id: string }>,
-        edges: Array<{ source: { id: string }; target: { id: string } }>,
-    ): string[] {
-        const hasIncoming = new Set<string>();
-
-        for (const edge of edges) {
-            hasIncoming.add(edge.target.id);
-        }
-
-        return nodes.filter((node) => !hasIncoming.has(node.id)).map((node) => node.id);
     }
 
     /**

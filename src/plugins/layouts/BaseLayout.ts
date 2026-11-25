@@ -4,6 +4,7 @@
 import { Vector3 } from 'three';
 import { BaseSystemPlugin } from '../BaseSystemPlugin';
 import type { Node } from '../../nodes/Node';
+import { childrenByID } from '../../utils/collection';
 import {
     DEFAULT_NODE_PADDING,
     diagonalRadius,
@@ -138,15 +139,14 @@ export abstract class BaseLayout<
      * The parent to child map of the graph, plus the id of the node that roots the tree.
      */
     protected buildTree(rootId?: string): { children: Map<string, string[]>; rootId: string } {
-        const children = new Map<string, string[]>();
-        const parents = new Set<string>();
-        for (const id of this.graph.nodes.keys()) children.set(id, []);
-        for (const edge of this.graph.getEdges()) {
-            children.get(edge.source.id)?.push(edge.target.id);
-            parents.add(edge.target.id);
-        }
-
         const ids = [...this.graph.nodes.keys()];
+        const { children, parents } = childrenByID(
+            ids,
+            this.graph.getEdges(),
+            (edge) => edge.source.id,
+            (edge) => edge.target.id,
+        );
+
         const resolved =
             rootId && this.graph.nodes.has(rootId)
                 ? rootId
