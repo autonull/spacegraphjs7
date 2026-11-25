@@ -88,6 +88,12 @@ export const LIBRARY_ENTRIES: LibraryEntry[] = [
     { subpath: './reading', name: 'reading', source: 'src/reading.ts', types: 'dist/reading.d.ts' },
     { subpath: './composer', name: 'composer', source: 'src/composer.ts', types: 'dist/composer.d.ts' },
     {
+        subpath: './documents',
+        name: 'documents',
+        source: 'src/documents.ts',
+        types: 'dist/documents.d.ts',
+    },
+    {
         subpath: './salience',
         name: 'salience',
         source: 'src/salience/index.ts',

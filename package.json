@@ -111,6 +111,11 @@
             "import": "./dist/composer.js",
             "default": "./dist/composer.js"
         },
+        "./documents": {
+            "types": "./dist/documents.d.ts",
+            "import": "./dist/documents.js",
+            "default": "./dist/documents.js"
+        },
         "./salience": {
             "types": "./dist/salience.d.ts",
             "import": "./dist/salience.js",

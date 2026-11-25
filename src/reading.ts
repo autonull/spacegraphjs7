@@ -1,7 +1,5 @@
-const escapeHtml = (value: string): string =>
-    value.replace(/[&<>"']/g, (char) => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-    })[char]!);
+import { safeDocumentHTML } from './documents';
+import { escapeHtml } from './markup';
 
 /** The host owns vocabulary; the library only needs stable ids and the committed text. */
 export type ReadingNode = {
@@ -69,26 +67,8 @@ export const readingOrder = (
     return sections;
 };
 
-const SAFE_HREF = /^(https?:\/\/|mailto:|#|\/|\.?\/)/i;
-
-const inlineHTML = (text: string): string => {
-    const escaped = escapeHtml(text)
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label: string, href: string) =>
-            SAFE_HREF.test(href) ? `<a href="${href}">${label}</a>` : label,
-        )
-        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    return escaped;
-};
-
-/** Escape first, then allow only a small inline/fenced subset. No raw HTML ever reaches the DOM. */
-export const readingTextHTML = (text: string): string =>
-    text.split('```').map((part, index) => {
-        if (index % 2 === 1)
-            return `<pre><code>${escapeHtml(part.replace(/^\n|\n$/g, ''))}</code></pre>`;
-        return part.trim() ? `<p class="reading-text">${inlineHTML(part)}</p>` : '';
-    }).join('');
+/** Reading uses the same escape-first document renderer as MarkdownNode. */
+export const readingTextHTML = safeDocumentHTML;
 
 /** Semantic, escaped DOM for a reading view. Every section carries its node id for backlinks. */
 export const readingHTML = (

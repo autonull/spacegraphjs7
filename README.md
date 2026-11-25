@@ -102,6 +102,7 @@ Design rules that keep the layers honest:
 | `spacegraphjs/activity`                                                                       | Lean entry that keeps `three` off the critical path                |
 | `spacegraphjs/core`, `/nodes`, `/edges`, `/plugins`, `/input`, `/utils`, `/builder`, `/types` | Focused subpath exports                                            |
 | `spacegraphjs/zoom`, `/layout`, `/a11y`, `/navigation`, `/depth`, `/control`                  | Generic capabilities with minimal structural types                 |
+| `spacegraphjs/reading`, `/documents`, `/composer`                                             | Text projections, safe document rendering and the prompt editor    |
 | `spacegraphjs/vision`                                                                         | Vision analyzers, strategies, auto-fix, model loading              |
 | `@spacegraphjs/renderer`                                                                      | Dependency-free renderer contract                                  |
 | `@spacegraphjs/adapter`                                                                       | Host-agnostic model → `RenderModel` pipeline and conformance suite |

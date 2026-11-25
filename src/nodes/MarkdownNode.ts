@@ -1,11 +1,8 @@
+import { safeDocumentHTML } from '../documents';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
-
-import { createLogger } from '../utils/logger';
 import { BaseContentNode } from './BaseContentNode';
-
-const logger = createLogger('MarkdownNode');
 
 export class MarkdownNode extends BaseContentNode {
     static readonly typeName: string = 'MarkdownNode';
@@ -71,16 +68,8 @@ export class MarkdownNode extends BaseContentNode {
     }
 
     private _renderMarkdown(markdown: string, afterRender?: () => void): void {
-        this.contentElement.innerHTML = 'Loading markdown...';
-        import('marked')
-            .then(({ marked }) => {
-                this.contentElement.innerHTML = marked.parse(markdown) as string;
-                afterRender?.();
-            })
-            .catch((err) => {
-                this.contentElement.innerHTML = 'Failed to load markdown renderer';
-                logger.error('Failed to load marked:', err);
-            });
+        this.contentElement.innerHTML = safeDocumentHTML(markdown);
+        afterRender?.();
     }
 
     updateSpec(updates: Partial<NodeSpec>): this {
