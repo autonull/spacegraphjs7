@@ -27,7 +27,6 @@ import type {
     SpaceGraphOptions,
     SpecUpdate,
 } from './types';
-import { clamp01 } from './utils';
 import type { CardFacing } from '@spacegraphjs/renderer';
 
 // Internal controllers
@@ -36,7 +35,6 @@ import { AnimationController } from './spacegraph/AnimationController';
 import { DepthController } from './spacegraph/DepthController';
 import { LifecycleController } from './spacegraph/LifecycleController';
 import { StaticMethods } from './spacegraph/StaticMethods';
-import { MathPool } from './core/pooling/ObjectPool';
 
 export const VERSION = '8.5.0';
 
@@ -387,18 +385,9 @@ export class SpaceGraph {
         position: [number, number, number];
         target: [number, number, number];
     }): void {
-        const { camera: cam } = this.renderer;
-        const { target } = this.cameraControls;
-        cam.position.set(...camera.position);
-        target.set(...camera.target);
-        const mathPool = MathPool.getInstance();
-        const diff = mathPool.acquireVector3().subVectors(cam.position, target);
-        this.cameraControls.spherical.radius = diff.length();
-        const radius = this.cameraControls.spherical.radius;
-        const ratio = radius > 0 ? clamp01(diff.y / radius) : 0;
-        this.cameraControls.spherical.phi = Math.acos(ratio);
-        this.cameraControls.spherical.theta = Math.atan2(diff.x, diff.z);
-        mathPool.releaseVector3(diff);
+        this.renderer.camera.position.set(...camera.position);
+        this.cameraControls.target.set(...camera.target);
+        this.cameraControls.updateSpherical();
     }
     #init(): void {
         this.animationController.setContinuousMode(
