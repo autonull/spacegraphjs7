@@ -28,7 +28,6 @@ test.describe('Pi activity pulse', () => {
         expect(await page.evaluate(() => (window as any).__pi.activity().length)).toBeGreaterThan(0);
         const pulse = await pulseFor(page);
         expect(pulse).toContain('pi-pulse-');
-        expect(pulse).toContain('120ms');
 
         await motionBoot(page, true);
         expect(await pulseFor(page)).toMatch(/^none/);

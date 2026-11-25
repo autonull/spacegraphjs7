@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
     <head>
+        <meta charset="UTF-8" />
         <title>Empty Graph Test</title>
         <style>
             * {
@@ -11,10 +12,20 @@
                 height: 100vh;
                 background-color: #1a1a2e;
             }
+            #empty-state {
+                position: absolute;
+                inset: 0;
+                display: grid;
+                place-items: center;
+                color: #94a3b8;
+                font: 14px system-ui, sans-serif;
+                pointer-events: none;
+            }
         </style>
     </head>
     <body>
         <div id="container"></div>
+        <div id="empty-state">Empty graph — add nodes to begin</div>
         <script type="module">
             import { SpaceGraph } from '@src/index.ts';
 

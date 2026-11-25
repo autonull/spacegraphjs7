@@ -29,7 +29,8 @@ for (const file of markdown) {
     const text = readFileSync(resolve(root, file), 'utf8');
     for (const [path] of text.matchAll(/docs\/screenshots\/[A-Za-z0-9_.\/-]+\.(?:png|jpe?g|json|html)/g)) {
         const relative = path.slice('docs/screenshots/'.length);
-        if (relative === 'index.html' || generated.test(relative)) continue;
+        if (relative === 'index.html' || relative === 'pi-durable-index.html' || generated.test(relative))
+            continue;
         if (!tracked.has(path)) failures.push(`${file}: missing ${path}`);
     }
     if (file === 'docs/screenshots/README.md') {

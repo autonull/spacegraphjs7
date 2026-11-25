@@ -12,7 +12,7 @@ import {
     unionBounds,
     type CenterBounds,
 } from './bounds';
-import { computeIncremental, interpolatedPositions, type IncrementalLayout } from './incremental';
+import { computeIncremental, type IncrementalLayout } from './incremental';
 import type { PlacementItem, Position } from './placement';
 import {
     ScopeError,
@@ -402,11 +402,6 @@ export const scopeChanges = (
     previous: ScopeLayout | undefined,
     next: ScopeLayout,
 ): IncrementalLayout => computeIncremental(next.positions, previous?.positions);
-
-export const scopePositionsAt = (
-    change: IncrementalLayout,
-    t: number,
-): ReadonlyMap<string, Position> => interpolatedPositions(change, t);
 
 export interface HostedScopeLayout extends ScopeLayout {
     change: IncrementalLayout;

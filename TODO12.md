@@ -301,7 +301,7 @@ names and shot ids change.
   `__durable.ready` and a stable frame, captures at the shot viewport, and asserts the vision score
   through the kit's vision controller. `SG_DURABLE_SHOT` selects ids; names match `--grep 'shot:'`.
 - `scripts/shot.ts` copies existing PNGs to `.prev` (gitignored), runs Playwright, then writes
-  `docs/screenshots/pi-durable/index.html`: before/after pairs, one-line shot question, and a local
+  `docs/screenshots/pi-durable-index.html`: before/after pairs, one-line shot question, and a local
   `kept`/`rejected` review selector whose JSON can be pasted into `review.json`. `--watch` refreshes
   the sheet every 4 s. `PI_DURABLE_FAUX_SEED` keeps captures deterministic.
 - **First four shots, in Phase 1:** `basic-turn`, `sleeping-approval`, `fork-tabs`, `resumed`.

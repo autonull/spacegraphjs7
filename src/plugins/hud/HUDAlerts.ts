@@ -37,6 +37,10 @@ export class HUDAlerts extends HUDElement {
 
     show(options: AlertOptions | string): void {
         if (!this.element || typeof document === 'undefined') return;
+        if (!this.element.hasAttribute('role')) {
+            this.element.setAttribute('role', 'status');
+            this.element.setAttribute('aria-live', 'polite');
+        }
 
         const config = typeof options === 'string' ? { message: options } : options;
         const { message, variant = 'info', duration = 3000 } = config;

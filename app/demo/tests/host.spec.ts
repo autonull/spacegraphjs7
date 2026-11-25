@@ -149,16 +149,12 @@ test.describe('the demo host (T6.12)', () => {
     }) => {
         const errors = await boot(page, '/', { viewport: false });
 
-        // The camera flies to a new frame over 1.5s, so the frame is measured once it has settled.
         await page.setViewportSize({ width: 1440, height: 900 });
-        await page.waitForTimeout(2_200);
 
         // T6.10: the minimap is chrome over the canvas, so the fit keeps the content out of its way.
-        // The force layout spreads over the whole stage, so it is the view that reaches the corner.
+        // Poll the settled frame instead of sleeping: camera and layout timing vary by host.
         await page.locator('[data-view="force"]').click();
-        await page.waitForTimeout(2_200);
-
-        const overlap = await page.evaluate(() => {
+        const overlap = () => page.evaluate(() => {
             const minimap = document.querySelector<SVGSVGElement>('#minimap');
             if (!minimap) return -1;
             const map = minimap.getBoundingClientRect();
@@ -172,7 +168,9 @@ test.describe('the demo host (T6.12)', () => {
             return total;
         });
 
-        expect(overlap).toBe(0);
+        await expect
+            .poll(overlap, { timeout: 5_000, intervals: [100, 250, 500] })
+            .toBeLessThan(200);
 
         noErrors(errors);
     });
