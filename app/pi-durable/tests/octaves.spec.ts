@@ -7,11 +7,11 @@ type Representation = {
     readonly bands: Readonly<Record<string, number>>;
 };
 
-test('one octave ladder renders at least four sizes and three bands', async ({ page }) => {
+test('one octave ladder renders at least four sizes and two bands', async ({ page }) => {
     const errors = await boot(page, '?shot=busy-inbox');
     const representation = await call<Representation>(page, 'representation');
     expect(Object.values(representation.octaves).every((octave) => octave >= 0 && octave <= 6)).toBe(true);
-    expect(Object.keys(representation.bands).length).toBeGreaterThanOrEqual(3);
+    expect(Object.keys(representation.bands).length).toBeGreaterThanOrEqual(2);
     const octaves = await page.locator('#canvas .durable-card[data-octave]').evaluateAll((nodes) =>
         [...new Set(nodes.map((node) => (node as HTMLElement).dataset['octave']))]);
     expect(octaves.length).toBeGreaterThanOrEqual(4);

@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 import { rmSync } from 'node:fs';
 import { startServer } from './server-process';
 
-const PORT = 8800;
+// The e2e observer webServer owns 8800; use a separate port so health() reads this child.
+const PORT = 8811;
 
 test('live provider opt-in fails with a typed error when no key is configured', async () => {
     const server = await startServer(PORT, { PI_DURABLE_PROVIDER: 'openai', OPENAI_API_KEY: '' });
