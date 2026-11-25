@@ -23,6 +23,24 @@ export function button(
     element.addEventListener('click', onClick);
     return element;
 }
+export function row(label: string, value?: string, tone?: string, title?: string): HTMLElement {
+    const element = document.createElement('div');
+    element.className = 'row';
+    if (title) element.title = title;
+    const name = document.createElement('span');
+    name.className = 'label';
+    name.textContent = label;
+    element.append(name);
+    if (value !== undefined) {
+        const content = document.createElement('span');
+        content.className = 'value';
+        content.textContent = value;
+        if (value.includes('\n')) content.style.whiteSpace = 'pre-line';
+        if (tone) content.dataset['tone'] = tone;
+        element.append(content);
+    }
+    return element;
+}
 /** The indexed child, created and appended on first use. */
 export function ensureChild<T extends HTMLElement>(
     registry: Map<string, T>,

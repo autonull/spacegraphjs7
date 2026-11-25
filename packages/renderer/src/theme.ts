@@ -4,7 +4,7 @@
  * host supplies the reader.
  */
 
-import { contrastRatioOf, relativeLuminance } from './color';
+import { contrastRatioOf, parseColor, relativeLuminance } from './color';
 import type { NodeStatus, RenderTheme } from './index';
 
 /** A renderer role mapped to the CSS variable that carries the host's value for it. */
@@ -144,24 +144,14 @@ export type ContrastReport = {
     passed: boolean;
 };
 
-function channel(hex: string): [number, number, number] | undefined {
-    const match = hex.trim().match(/^#([0-9a-f]{6})$/i);
-
-    if (!match) return undefined;
-    const value = match[1]!;
-
-    return [0, 2, 4].map((index) => Number.parseInt(value.slice(index, index + 2), 16)) as [
-        number,
-        number,
-        number,
-    ];
-}
-
-function luminance(hex: string): number | undefined {
-    const rgb = channel(hex);
-
-    if (!rgb) return undefined;
-    return relativeLuminance(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255);
+function luminance(color: string): number | undefined {
+    const parsed = parseColor(color);
+    if (parsed === undefined) return undefined;
+    return relativeLuminance(
+        ((parsed >> 16) & 255) / 255,
+        ((parsed >> 8) & 255) / 255,
+        (parsed & 255) / 255,
+    );
 }
 
 /** The WCAG contrast ratio of two colours; undefined when a colour cannot be parsed. */

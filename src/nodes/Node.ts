@@ -782,18 +782,9 @@ export abstract class Node extends Surface {
 
     toJSON(): NodeSpec {
         return {
-            id: this.id,
-            type: this.type,
-            label: this.label,
-            position: [this.position.x, this.position.y, this.position.z] as [
-                number,
-                number,
-                number,
-            ],
+            ...this.#spec(),
             rotation: [this.rotation.x, this.rotation.y, this.rotation.z] as [
-                number,
-                number,
-                number,
+                number, number, number,
             ],
             scale: [this.scale.x, this.scale.y, this.scale.z] as [number, number, number],
             data: safeClone(this.data),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dataText, el, escapeHTML } from '../src/dom';
+import { dataText, el, escapeHTML, row } from '../src/dom';
 import { dispatchKeys, plainKey, renderShortcuts, shiftedKey, type KeyBinding } from '../src/keyboard';
 import { clampZoom, createViewportController } from '../src/viewport';
 const event = (key: string, extra: Partial<KeyboardEvent> = {}): KeyboardEvent => {
@@ -79,5 +79,16 @@ describe('host DOM helpers', () => {
         expect(dataText({ data: { text: 'hello' } })).toBe('hello');
         expect(dataText({ data: { text: 3 } })).toBe('');
         expect(() => el('missing-host-element')).toThrow();
+    });
+    it('builds label/value rows as text with tone and title', () => {
+        const element = row('<b>label</b>', '5\n6', 'warn', 'details');
+        expect(element.className).toBe('row');
+        expect(element.title).toBe('details');
+        expect(element.querySelector('.label')?.textContent).toBe('<b>label</b>');
+        const value = element.querySelector<HTMLElement>('.value');
+        expect(value?.textContent).toBe('5\n6');
+        expect(value?.dataset['tone']).toBe('warn');
+        expect(element.querySelector('b')).toBeNull();
+        expect(row('only').querySelector('.value')).toBeNull();
     });
 });

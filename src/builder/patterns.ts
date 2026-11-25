@@ -3,15 +3,22 @@ import { gridPoints, polarPoint, ringPoints } from '../utils/points';
 // builder/patterns.ts - Pre-built graph patterns
 import { GraphBuilder } from './graph';
 
+const shape = (
+    builder: GraphBuilder,
+    id: string,
+    label: string,
+    x: number,
+    y: number,
+    z: number,
+): void => {
+    builder.node(id).type('ShapeNode').label(label).position(x, y, z);
+};
+
 const Patterns = {
     circle(count: number, radius = 100, labelPrefix = 'Node'): GraphBuilder {
         const builder = new GraphBuilder();
         ringPoints(count, radius).forEach(([x, , z], i) => {
-            builder
-                .node(`node-${i}`)
-                .type('ShapeNode')
-                .label(`${labelPrefix} ${i}`)
-                .position(x, 0, z);
+            shape(builder, `node-${i}`, `${labelPrefix} ${i}`, x, 0, z);
             if (i > 0)
                 builder.addEdge({ id: `edge-${i}`, source: `node-${i - 1}`, target: `node-${i}` });
         });
@@ -25,7 +32,7 @@ const Patterns = {
             const row = Math.floor(i / cols);
             const col = i % cols;
             const id = `node-${row}-${col}`;
-            builder.node(id).type('ShapeNode').label(`${row},${col}`).position(x, 0, z);
+            shape(builder, id, `${row},${col}`, x, 0, z);
             if (col > 0)
                 builder.addEdge({
                     id: `h-${row}-${col}`,
@@ -51,11 +58,7 @@ const Patterns = {
                 levelStart = nodeId;
             for (let i = 0; i < count; i++) {
                 const id = `node-${nodeId++}`;
-                builder
-                    .node(id)
-                    .type('ShapeNode')
-                    .label(id)
-                    .position(((i - (count - 1) / 2) * spacing) / 2, y, 0);
+                shape(builder, id, id, ((i - (count - 1) / 2) * spacing) / 2, y, 0);
                 if (levelIndex > 0 && prevLevelStart < nodeId) {
                     const prevCount = levels[levelIndex - 1] || 0;
                     const parentIndex = prevLevelStart + Math.floor((i * prevCount) / count);
@@ -76,11 +79,7 @@ const Patterns = {
     chain(count: number, spacing = 100): GraphBuilder {
         const builder = new GraphBuilder();
         for (let i = 0; i < count; i++) {
-            builder
-                .node(`node-${i}`)
-                .type('ShapeNode')
-                .label(`Node ${i}`)
-                .position(i * spacing, 0, 0);
+            shape(builder, `node-${i}`, `Node ${i}`, i * spacing, 0, 0);
             if (i > 0)
                 builder.addEdge({ id: `edge-${i}`, source: `node-${i - 1}`, target: `node-${i}` });
         }
@@ -89,9 +88,9 @@ const Patterns = {
 
     star(spokes: number, radius = 100): GraphBuilder {
         const builder = new GraphBuilder();
-        builder.node('center').type('ShapeNode').label('Center').position(0, 0, 0);
+        shape(builder, 'center', 'Center', 0, 0, 0);
         ringPoints(spokes, radius).forEach(([x, , z], i) => {
-            builder.node(`spoke-${i}`).type('ShapeNode').label(`Spoke ${i}`).position(x, 0, z);
+            shape(builder, `spoke-${i}`, `Spoke ${i}`, x, 0, z);
             builder.addEdge({ id: `edge-${i}`, source: 'center', target: `spoke-${i}` });
         });
         return builder;
@@ -103,7 +102,7 @@ const Patterns = {
             const id = `node-${level}-${index}`;
             const x = (index - (2 ** level - 1) / 2) * spacing;
             const y = level * spacing;
-            builder.node(id).type('ShapeNode').label(id).position(x, 0, -y);
+            shape(builder, id, id, x, 0, -y);
             if (level > 0) {
                 const parentIndex = Math.floor((index - 1) / 2);
                 builder.addEdge({
@@ -130,7 +129,7 @@ const Patterns = {
             const x = (majorRadius + minorRadius * Math.cos(i * 3)) * Math.cos(majorAngle);
             const z = (majorRadius + minorRadius * Math.cos(i * 3)) * Math.sin(majorAngle);
             const y = minorRadius * Math.sin(i * 3);
-            builder.node(`node-${i}`).type('ShapeNode').label(`Node ${i}`).position(x, y, z);
+            shape(builder, `node-${i}`, `Node ${i}`, x, y, z);
             if (i > 0)
                 builder.addEdge({ id: `e-${i}`, source: `node-${i - 1}`, target: `node-${i}` });
         }
@@ -141,15 +140,14 @@ const Patterns = {
     random(count: number, spread = 500): GraphBuilder {
         const builder = new GraphBuilder();
         for (let i = 0; i < count; i++) {
-            builder
-                .node(`node-${i}`)
-                .type('ShapeNode')
-                .label(`Node ${i}`)
-                .position(
-                    Math.random() * spread - spread / 2,
-                    Math.random() * spread - spread / 2,
-                    Math.random() * spread - spread / 2,
-                );
+            shape(
+                builder,
+                `node-${i}`,
+                `Node ${i}`,
+                Math.random() * spread - spread / 2,
+                Math.random() * spread - spread / 2,
+                Math.random() * spread - spread / 2,
+            );
         }
         return builder;
     },
@@ -158,7 +156,7 @@ const Patterns = {
         const builder = new GraphBuilder();
         for (let i = 0; i < turns * pointsPerTurn; i++) {
             const [x, , z] = polarPoint((i / pointsPerTurn) * TAU, i * (spacing / pointsPerTurn));
-            builder.node(`node-${i}`).type('ShapeNode').label(`Node ${i}`).position(x, 0, z);
+            shape(builder, `node-${i}`, `Node ${i}`, x, 0, z);
         }
         return builder;
     },
@@ -176,7 +174,7 @@ const Patterns = {
             }
         }
         hexPositions.forEach(([x, z], i) => {
-            builder.node(`node-${i}`).type('ShapeNode').label(`Node ${i}`).position(x, 0, z);
+            shape(builder, `node-${i}`, `Node ${i}`, x, 0, z);
         });
         for (let i = 0; i < hexPositions.length; i++) {
             for (let j = i + 1; j < hexPositions.length; j++) {
@@ -205,7 +203,7 @@ const Patterns = {
             for (let i = 0; i < count; i++) {
                 const x = (i - (count - 1) / 2) * spacingX - width / 2;
                 const id = `node-${nodeId++}`;
-                builder.node(id).type('ShapeNode').label(id).position(x, 0, y);
+                shape(builder, id, id, x, 0, y);
                 if (level > 0) {
                     const parentIdx = parentStart + Math.floor((i * children[level - 1]) / count);
                     builder.addEdge({
@@ -227,15 +225,14 @@ const Patterns = {
             const cz = Math.floor(c / 3) * spread - spread;
             for (let i = 0; i < nodesPerCluster; i++) {
                 const id = `node-${c}-${i}`;
-                builder
-                    .node(id)
-                    .type('ShapeNode')
-                    .label(`C${c}-${i}`)
-                    .position(
-                        cx + Math.random() * 100 - 50,
-                        Math.random() * 100 - 50,
-                        cz + Math.random() * 100 - 50,
-                    );
+                shape(
+                    builder,
+                    id,
+                    `C${c}-${i}`,
+                    cx + Math.random() * 100 - 50,
+                    Math.random() * 100 - 50,
+                    cz + Math.random() * 100 - 50,
+                );
                 if (i > 0)
                     builder.addEdge({
                         id: `e-${c}-${i}`,
@@ -255,11 +252,7 @@ const Patterns = {
             const nodesAtLevel: string[] = [];
             for (let i = 0; i < count; i++) {
                 const id = `node-${nodeId++}`;
-                builder
-                    .node(id)
-                    .type('ShapeNode')
-                    .label(id)
-                    .position(i * 100, 0, levelIndex * 100);
+                shape(builder, id, id, i * 100, 0, levelIndex * 100);
                 nodesAtLevel.push(id);
             }
             levelNodes.push(nodesAtLevel);

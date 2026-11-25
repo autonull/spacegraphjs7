@@ -59,45 +59,26 @@ function traceContextIds(config: TraceConfig, answerIds: Set<string>): Set<strin
     return context;
 }
 
+const edgeIdsMatching = (
+    edges: readonly { readonly id: string; readonly source: string; readonly target: string }[],
+    matches: (edge: { readonly source: string; readonly target: string }) => boolean,
+): Set<string> => new Set(edges.filter(matches).map((edge) => edge.id));
+
 function traceAnswerEdgeIds(
     config: TraceConfig,
     answerIds: Set<string>,
     contextIds: Set<string>,
     from: string,
 ): Set<string> {
-    const { model } = config;
-    const result = new Set<string>();
-
-    for (const edge of model.edges) {
+    return edgeIdsMatching(config.model.edges, (edge) => {
         const sourceInAnswer = answerIds.has(edge.source);
         const targetInAnswer = answerIds.has(edge.target);
-        const sourceInContext = contextIds.has(edge.source);
-        const targetInContext = contextIds.has(edge.target);
-        const sourceIsFrom = edge.source === from;
-        const targetIsFrom = edge.target === from;
-
-        // Edge between two answer nodes
-        if (sourceInAnswer && targetInAnswer) {
-            result.add(edge.id);
-        }
-        // Edge from context to answer (the "why" edge)
-        else if (sourceInContext && targetInAnswer) {
-            result.add(edge.id);
-        }
-        // Edge from answer to context
-        else if (sourceInAnswer && targetInContext) {
-            result.add(edge.id);
-        }
-        // Edge from answer to the trace source (e.g., writes edge to file)
-        else if (sourceInAnswer && targetIsFrom) {
-            result.add(edge.id);
-        }
-        // Edge from trace source to answer (e.g., reads edge from file)
-        else if (sourceIsFrom && targetInAnswer) {
-            result.add(edge.id);
-        }
-    }
-    return result;
+        return (sourceInAnswer && targetInAnswer)
+            || (contextIds.has(edge.source) && targetInAnswer)
+            || (sourceInAnswer && contextIds.has(edge.target))
+            || (sourceInAnswer && edge.target === from)
+            || (edge.source === from && targetInAnswer);
+    });
 }
 
 function traceVisibleEdgeIds(
@@ -107,31 +88,18 @@ function traceVisibleEdgeIds(
     answerEdgeIds: Set<string>,
     from: string,
 ): Set<string> {
-    const { model } = config;
-    const result = new Set(answerEdgeIds);
-
-    for (const edge of model.edges) {
-        const sourceInAnswer = answerIds.has(edge.source);
-        const targetInAnswer = answerIds.has(edge.target);
-        const sourceInContext = contextIds.has(edge.source);
-        const targetInContext = contextIds.has(edge.target);
-        const sourceIsFrom = edge.source === from;
-        const targetIsFrom = edge.target === from;
-
-        // Edges between context nodes (to show hierarchy)
-        if (sourceInContext && targetInContext && !(sourceInAnswer || targetInAnswer)) {
-            result.add(edge.id);
-        }
-        // Edges from context to trace source
-        else if (sourceInContext && targetIsFrom) {
-            result.add(edge.id);
-        }
-        // Edges from trace source to context
-        else if (sourceIsFrom && targetInContext) {
-            result.add(edge.id);
-        }
-    }
-    return result;
+    return new Set([
+        ...answerEdgeIds,
+        ...edgeIdsMatching(config.model.edges, (edge) => {
+            const sourceInAnswer = answerIds.has(edge.source);
+            const targetInAnswer = answerIds.has(edge.target);
+            const sourceInContext = contextIds.has(edge.source);
+            const targetInContext = contextIds.has(edge.target);
+            return (sourceInContext && targetInContext && !(sourceInAnswer || targetInAnswer))
+                || (sourceInContext && edge.target === from)
+                || (edge.source === from && targetInContext);
+        }),
+    ]);
 }
 
 /**

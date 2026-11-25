@@ -12,6 +12,9 @@ import type { ControlState } from '../plugins/interaction/ControlStateBorder';
 
 const PARENT_ROTATION = new Quaternion();
 
+const contentScaleOf = (data: object | undefined): number =>
+    ((data as { contentScale?: number } | undefined)?.contentScale ?? 1);
+
 const contentOf = (data: SpaceGraphNodeData, label: string | undefined) =>
     (data.content as string) ?? label ?? 'HTML Node';
 
@@ -169,7 +172,7 @@ export class HtmlNode extends BaseContentNode {
 
         if (scaleContent === true && oldArea > 0) {
             const scaleFactor = Math.sqrt((this.size.width * this.size.height) / oldArea);
-            this.setContentScale(((this.data?.contentScale as number) ?? 1.0) * scaleFactor);
+            this.setContentScale(contentScaleOf(this.data) * scaleFactor);
         }
 
         this.data = { ...this.data, width: this.size.width, height: this.size.height };
@@ -197,7 +200,7 @@ export class HtmlNode extends BaseContentNode {
     }
 
     adjustContentScale(deltaFactor: number): void {
-        this.setContentScale(((this.data?.contentScale as number) ?? 1.0) * deltaFactor);
+        this.setContentScale(contentScaleOf(this.data) * deltaFactor);
     }
 
     adjustNodeSize(factor: number): void {
@@ -310,7 +313,7 @@ export class HtmlNode extends BaseContentNode {
         if (!camera) return;
 
         const level = lodLevelAt(this.labelLod, this.position.distanceTo(camera.position));
-        const baseScale = (this.data?.contentScale as number) ?? 1.0;
+        const baseScale = contentScaleOf(this.data);
         const hidden =
             level?.style?.includes('display:none') === true ||
             level?.style?.includes('visibility:hidden') === true;
@@ -324,7 +327,7 @@ export class HtmlNode extends BaseContentNode {
     }
 
     private resetLodStyles(): void {
-        const baseScale = (this.data?.contentScale as number) ?? 1.0;
+        const baseScale = contentScaleOf(this.data);
         this.domElement.style.visibility = '';
         this.domElement.style.display = 'flex';
         this.applyContentTransform(baseScale);
@@ -392,7 +395,7 @@ export class HtmlNode extends BaseContentNode {
             overflow: 'auto',
         });
         contentWrapper.style.transformOrigin = 'top left';
-        setContentTransform(contentWrapper, (data.contentScale as number) ?? 1.0);
+        setContentTransform(contentWrapper, contentScaleOf(data));
         return contentWrapper;
     }
 

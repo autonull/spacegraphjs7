@@ -40,6 +40,7 @@ import { LAYOUT_NAMES, lensCompletions, LENS_HELP, parseLens, type LayoutName } 
 import { bandForOctave, octaveFor, octaveSizeFor, sizeForOctave, type OctaveBand } from './octaves';
 import { provenanceFor } from './provenance';
 import {
+    button,
     buildScopes,
     createViewportController,
     dataText,
@@ -47,6 +48,7 @@ import {
     downloadBlob,
     el,
     escapeHTML,
+    row,
     TabRegistry,
     tabKernel,
     toneOf,
@@ -58,7 +60,7 @@ import {
 import type { Feed } from './local-feed';
 import { localFeed } from './local-feed';
 import { replayFeed } from './replay';
-import { isRung, RUNGS, rungEmphasis, type Rung } from './rungs';
+import { isRung, RUNGS, rungEmphasis, type Rung, type RungSpec } from './rungs';
 import { scenarioByID, scenarioOps, VIEW_NAMES, type ViewName } from './scenarios';
 import { buildScopeForest } from './scopes';
 import { shotById } from './shots';
@@ -494,7 +496,6 @@ export class DurableHost {
     };
     #overviewProjection: MinimapProjection | undefined;
     #omitted = 0;
-    #densityScale = 1;
     #density: { readonly scale: number; readonly measured: number; readonly target: number } = {
         scale: 1, measured: 0, target: NODES_AREA_DENSITY,
     };
@@ -696,7 +697,6 @@ export class DurableHost {
             maxScale: 16,
         });
         this.#density = { scale: density.scale, measured: density.measured, target: NODES_AREA_DENSITY };
-        this.#densityScale = density.scale;
         const positions = this.#layout(presented.nodes, presented.edges);
         const labels = this.#labels(presented, positions);
         this.#presented = presented;
@@ -753,7 +753,7 @@ export class DurableHost {
                         octave,
                         band: bandForOctave(octave),
                         data: {
-                            ...durable.data, octave, size: scaledSize(octave, this.#densityScale),
+                            ...durable.data, octave, size: scaledSize(octave, this.#density.scale),
                             muted, pulse: node.id === this.#pulseID,
                         },
                     };
@@ -1087,16 +1087,12 @@ export class DurableHost {
 
     private renderCallouts(): void {
         el('callouts').replaceChildren(...this.#callouts.map((callout) => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'action';
-            button.textContent = `${callout.count} ${callout.label}`;
-            button.setAttribute('aria-label', `${callout.count} ${callout.label} — open ${callout.view}`);
-            button.addEventListener('click', () => {
+            const element = button(`${callout.count} ${callout.label}`, () => {
                 this.setView(callout.view);
                 this.announce(`${callout.count} ${callout.label}`);
-            });
-            return button;
+            }, { className: 'action' });
+            element.setAttribute('aria-label', `${callout.count} ${callout.label} — open ${callout.view}`);
+            return element;
         }));
     }
 
@@ -1109,13 +1105,11 @@ export class DurableHost {
             const key = group === 'kind' ? 'kinds' : 'statuses';
             el(group === 'kind' ? 'filter-kinds' : 'filter-statuses').replaceChildren(
                 ...values.filter(Boolean).map((value) => {
-                    const button = document.createElement('button');
-                    button.type = 'button';
-                    button.className = 'filter-chip';
-                    button.textContent = value;
-                    button.setAttribute('aria-pressed', String(this.#filter[key].includes(value)));
-                    button.addEventListener('click', () => this.setFilter(group, value));
-                    return button;
+                    const element = button(value, () => this.setFilter(group, value), {
+                        className: 'filter-chip',
+                    });
+                    element.setAttribute('aria-pressed', String(this.#filter[key].includes(value)));
+                    return element;
                 }),
             );
         }
@@ -1159,18 +1153,7 @@ export class DurableHost {
             ['omitted', String(panel.omitted)] as const,
             ...Object.entries(panel.weights).map(([id, weight]) => [id, weight.toFixed(2)] as const),
         ];
-        el('instruments').replaceChildren(...rows.map(([label, value]) => {
-            const row = document.createElement('div');
-            row.className = 'row';
-            const name = document.createElement('span');
-            name.className = 'label';
-            name.textContent = label;
-            const count = document.createElement('span');
-            count.className = 'value';
-            count.textContent = value;
-            row.append(name, count);
-            return row;
-        }));
+        el('instruments').replaceChildren(...rows.map(([label, value]) => row(label, value)));
     }
 
     regrade(): void {
@@ -1652,17 +1635,18 @@ export class DurableHost {
         const focus = this.registry.active()?.view.focus;
         const octaves = nodes.map((node) => octaveFor(node, this.#sample, focus));
         const buckets = octaves.map(bandForOctave).join(',');
-        const key = `${this.#layoutName}|${buckets}|${this.#densityScale.toFixed(2)}|${nodes.map((node) => node.id).join(',')}|${placed.map((edge) => edge.id).join(',')}`;
+        const key = `${this.#layoutName}|${buckets}|${this.#density.scale.toFixed(2)}|${nodes.map((node) => node.id).join(',')}|${placed.map((edge) => edge.id).join(',')}`;
         if (key !== this.#scopeKey || !this.#scopes) {
             this.#scopes = buildScopes(nodes, contains, 300);
             this.#scopeKey = key;
         }
+        const sizes = octaves.map((octave) => scaledSize(octave, this.#density.scale));
         const forest = buildScopeForest(
             nodes.map((node, index) => ({
                 id: node.id,
                 lane: this.#viewName,
                 row: index,
-                size: scaledSize(octaves[index]!, this.#densityScale),
+                size: sizes[index]!,
             })),
             placed,
             this.#groups,
@@ -1673,8 +1657,8 @@ export class DurableHost {
             nodes.map((node, index) => ({
                 id: node.id,
                 kind: node.kind,
-                width: scaledSize(octaves[index]!, this.#densityScale)[0],
-                height: scaledSize(octaves[index]!, this.#densityScale)[1],
+                width: sizes[index]![0],
+                height: sizes[index]![1],
             })),
             placed,
         );
@@ -1780,13 +1764,6 @@ export class DurableHost {
         view: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] },
         kernel: Kernel,
     ): { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } {
-        return this.#viewDataForView(view, kernel);
-    }
-
-    #viewDataForView(
-        view: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] },
-        kernel: Kernel,
-    ): { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } {
         const { nodes, edges } = view;
         if (this.#viewName === 'graph') return view;
         if (this.#viewName === 'trace') return { nodes: this.#traceNodes(view), edges: [] };
@@ -1886,17 +1863,15 @@ export class DurableHost {
         const strip = el('tab-strip');
         strip.replaceChildren(
             ...this.registry.list().map((tab) => {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.className = 'tab';
-                button.setAttribute('role', 'tab');
-                button.dataset['tab'] = tab.id;
-                button.textContent = tab.id;
                 const active = this.registry.activeID() === tab.id;
-                button.setAttribute('aria-selected', String(active));
-                button.tabIndex = active ? 0 : -1;
-                button.addEventListener('click', () => this.setTab(tab.id));
-                button.addEventListener('keydown', (event) => {
+                const element = button(tab.id, () => this.setTab(tab.id), {
+                    className: 'tab',
+                    dataset: { tab: tab.id },
+                });
+                element.setAttribute('role', 'tab');
+                element.setAttribute('aria-selected', String(active));
+                element.tabIndex = active ? 0 : -1;
+                element.addEventListener('keydown', (event) => {
                     const rtl = document.dir === 'rtl';
                     const delta = event.key === 'ArrowRight' ? (rtl ? -1 : 1) : event.key === 'ArrowLeft' ? (rtl ? 1 : -1) : 0;
                     if (!delta) return;
@@ -1907,7 +1882,7 @@ export class DurableHost {
                     this.setTab(next.id);
                     strip.querySelector<HTMLButtonElement>(`[data-tab="${next.id}"]`)?.focus();
                 });
-                return button;
+                return element;
             }),
         );
     }
@@ -1946,12 +1921,14 @@ export class DurableHost {
             ...(tasks.length
                 ? tasks.map((node) => {
                       const status = String(node.data?.['status'] ?? 'pending');
-                      const row = document.createElement('div');
-                      row.className = 'row';
-                      row.innerHTML = `<span class="label">${escapeHTML(node.label)}</span><span class="value" data-tone="${toneOf(node.kind, status)}">${escapeHTML(status)}${node.data?.['signals'] ? `<br>${escapeHTML(String(node.data['signals']))}` : ''}</span>`;
-                      return row;
+                      const signals = node.data?.['signals'];
+                      return row(
+                          node.label,
+                          signals ? `${status}\n${String(signals)}` : status,
+                          toneOf(node.kind, status),
+                      );
                   })
-                : [textRow('No live tasks')]),
+                : [row('No live tasks')]),
         );
     }
 
@@ -1965,32 +1942,31 @@ export class DurableHost {
         );
         el('timeline').replaceChildren(
             ...(timeline.length
-                ? timeline.map((node) => {
-                      const row = document.createElement('div');
-                      row.className = 'row';
-                      row.innerHTML = `<span class="label">${escapeHTML(node.kind)}</span><span class="value">${escapeHTML(dataText(node) || node.label)}</span>`;
-                      return row;
-                  })
-                : [textRow('No committed entries')]),
+                ? timeline.map((node) => row(node.kind, dataText(node) || node.label))
+                : [row('No committed entries')]),
         );
+    }
+
+    private rungButton(rung: RungSpec, current: string): HTMLButtonElement {
+        const element = button(rung.label.toLowerCase(), () => this.setRung(rung.id), {
+            dataset: { rung: rung.id },
+        });
+        element.setAttribute('aria-current', current);
+        return element;
     }
 
     private renderRungs(): void {
         el('rung-switch').replaceChildren(
             ...RUNGS.map((rung) => {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.dataset['rung'] = rung.id;
-                button.textContent = rung.label.toLowerCase();
-                button.title = rung.description;
-                button.setAttribute('aria-current', String(this.#rung === rung.id));
-                button.addEventListener('click', () => this.setRung(rung.id));
-                return button;
+                const element = this.rungButton(rung, String(this.#rung === rung.id));
+                element.title = rung.description;
+                return element;
             }),
         );
+        const current = RUNGS.find((entry) => entry.id === this.#rung)!;
         el('app').dataset['rung'] = this.#rung;
-        el('rung-badge').textContent = RUNGS.find((entry) => entry.id === this.#rung)!.id;
-        el('rung-caption').textContent = RUNGS.find((entry) => entry.id === this.#rung)!.description;
+        el('rung-badge').textContent = current.id;
+        el('rung-caption').textContent = current.description;
         this.renderTrail();
     }
 
@@ -1998,15 +1974,7 @@ export class DurableHost {
         const index = RUNGS.findIndex((entry) => entry.id === this.#rung);
         const nodes = RUNGS.slice(0, index + 1).flatMap((rung, position) => [
             ...(position ? [Object.assign(document.createElement('span'), { textContent: '›' })] : []),
-            (() => {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.textContent = rung.label.toLowerCase();
-                button.dataset['rung'] = rung.id;
-                button.setAttribute('aria-current', rung.id === this.#rung ? 'page' : 'false');
-                button.addEventListener('click', () => this.setRung(rung.id));
-                return button;
-            })(),
+            this.rungButton(rung, rung.id === this.#rung ? 'page' : 'false'),
         ]);
         el('trail').replaceChildren(...nodes);
     }
@@ -2047,8 +2015,8 @@ export class DurableHost {
         el('view-badge').textContent = this.#viewName;
         el('tasks').toggleAttribute('data-active', this.#viewName === 'tasks');
         el('timeline').toggleAttribute('data-active', this.#viewName === 'timeline');
-        for (const button of document.querySelectorAll<HTMLButtonElement>('#view-switch button'))
-            button.setAttribute('aria-selected', String(button.dataset['view'] === this.#viewName));
+        for (const element of document.querySelectorAll<HTMLButtonElement>('#view-switch button'))
+            element.setAttribute('aria-selected', String(element.dataset['view'] === this.#viewName));
     }
 
     /** Transcript is a readable projection of the same fold, with a link back to every fact. */
@@ -2112,36 +2080,21 @@ export class DurableHost {
             ['failed · aborted', 'error'],
         ];
         el('legend').replaceChildren(
-            ...statuses.map(([label, tone]) => {
-                const row = document.createElement('div');
-                row.className = 'row';
-                row.innerHTML = `<span class="label">${escapeHTML(label)}</span><span class="value" data-tone="${tone}">${escapeHTML(tone)}</span>`;
-                return row;
-            }),
-            ...Object.entries(EDGE_LABELS).map(([kind, label]) => {
-                const row = document.createElement('div');
-                row.className = 'row';
-                row.innerHTML = `<span class="label">${edgeStyleForKind(kind).glyph} ${escapeHTML(label)}</span><span class="value">${escapeHTML(kind)}</span>`;
-                return row;
-            }),
+            ...statuses.map(([label, tone]) => row(label, tone, tone)),
+            ...Object.entries(EDGE_LABELS).map(([kind, label]) =>
+                row(`${edgeStyleForKind(kind).glyph} ${label}`, kind)),
         );
     }
 
     private renderGlossary(): void {
         el('glossary').replaceChildren(
-            ...Object.entries(GLOSSARY).map(([term, definition]) => {
-                const row = document.createElement('div');
-                row.className = 'row';
-                row.title = definition;
-                row.innerHTML = `<span class="label">${escapeHTML(term)}</span>`;
-                return row;
-            }),
+            ...Object.entries(GLOSSARY).map(([term, definition]) => row(term, undefined, undefined, definition)),
         );
     }
 
     private bindChrome(): void {
-        for (const button of document.querySelectorAll<HTMLButtonElement>('#view-switch button'))
-            button.addEventListener('click', () => this.setView(button.dataset['view'] as ViewName));
+        for (const element of document.querySelectorAll<HTMLButtonElement>('#view-switch button'))
+            element.addEventListener('click', () => this.setView(element.dataset['view'] as ViewName));
         el('help-close').addEventListener('click', () => this.toggleHelp(false));
         el('survey').addEventListener('click', (event) => {
             const projection = this.#overviewProjection;
@@ -2177,10 +2130,3 @@ export class DurableHost {
         help.hidden = !next;
     }
 }
-
-const textRow = (label: string): HTMLElement => {
-    const row = document.createElement('div');
-    row.className = 'row';
-    row.innerHTML = `<span class="label">${escapeHTML(label)}</span>`;
-    return row;
-};

@@ -8,6 +8,27 @@ import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shar
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import { ToolbarMenu } from './ToolbarMenu';
 
+type QuestionName =
+    | 'why'
+    | 'led-here'
+    | 'related'
+    | 'compare'
+    | 'note'
+    | 'facets'
+    | 'failureProgress'
+    | 'find';
+
+const QUESTIONS: readonly (readonly [QuestionName, string])[] = [
+    ['why', 'ui.toolbar.questions.why'],
+    ['led-here', 'ui.toolbar.questions.ledHere'],
+    ['related', 'ui.toolbar.questions.related'],
+    ['compare', 'ui.toolbar.questions.compare'],
+    ['note', 'ui.toolbar.questions.note'],
+    ['facets', 'ui.toolbar.questions.facets'],
+    ['failureProgress', 'ui.toolbar.questions.failureProgress'],
+    ['find', 'ui.toolbar.questions.find'],
+];
+
 export interface GraphQuestionsControlProps {
     dispatchCommand?: (command: string) => void;
     i18n: I18n;
@@ -19,17 +40,7 @@ export function GraphQuestionsControl(props: GraphQuestionsControlProps): JSX.El
     const { dispatchCommand, i18n, Popover } = props;
     const PopoverComponent = Popover ?? createPopoverRenderer();
 
-    const ask = (
-        name:
-            | 'why'
-            | 'led-here'
-            | 'related'
-            | 'compare'
-            | 'note'
-            | 'facets'
-            | 'failureProgress'
-            | 'find',
-    ) => {
+    const ask = (name: QuestionName) => {
         if (dispatchCommand) {
             dispatchCommand(name);
             return;
@@ -37,18 +48,7 @@ export function GraphQuestionsControl(props: GraphQuestionsControlProps): JSX.El
         window.dispatchEvent(new CustomEvent('graph:command', { detail: { name } }));
     };
 
-    const question = (
-        name:
-            | 'why'
-            | 'led-here'
-            | 'related'
-            | 'compare'
-            | 'note'
-            | 'facets'
-            | 'failureProgress'
-            | 'find',
-        label: string,
-    ) => (
+    const question = (name: QuestionName, label: string) => (
         <button
             type="button"
             data-slot="graph-question-option"
@@ -68,14 +68,7 @@ export function GraphQuestionsControl(props: GraphQuestionsControlProps): JSX.El
             align="end"
             Popover={PopoverComponent}
         >
-            {question('why', i18n.t('ui.toolbar.questions.why'))}
-            {question('led-here', i18n.t('ui.toolbar.questions.ledHere'))}
-            {question('related', i18n.t('ui.toolbar.questions.related'))}
-            {question('compare', i18n.t('ui.toolbar.questions.compare'))}
-            {question('note', i18n.t('ui.toolbar.questions.note'))}
-            {question('facets', i18n.t('ui.toolbar.questions.facets'))}
-            {question('failureProgress', i18n.t('ui.toolbar.questions.failureProgress'))}
-            {question('find', i18n.t('ui.toolbar.questions.find'))}
+            {QUESTIONS.map(([name, key]) => question(name, i18n.t(key)))}
         </ToolbarMenu>
     );
 }

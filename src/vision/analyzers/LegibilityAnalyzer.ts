@@ -6,6 +6,12 @@ import * as THREE from 'three';
 import { getContrastRatio, getRelativeLuminance } from '../../utils/color';
 import type { ContrastFailure, LegibilityResult, VisionContext } from '../types';
 
+type ColorNode = {
+    id: string;
+    data: Record<string, unknown>;
+    object?: THREE.Object3D;
+};
+
 /**
  * Legibility Analyzer
  * Checks WCAG contrast ratios for text and UI elements
@@ -21,13 +27,7 @@ export class LegibilityAnalyzer {
             nodeCount: number;
         }>(
             (acc, node) => {
-                const result = this.analyzeNode(
-                    node as {
-                        id: string;
-                        data: Record<string, unknown>;
-                        object?: THREE.Object3D;
-                    },
-                );
+                const result = this.analyzeNode(node as ColorNode);
 
                 if (result) {
                     acc.totalContrast += result.contrast;
@@ -58,11 +58,7 @@ export class LegibilityAnalyzer {
     /**
      * Analyze a single node's legibility
      */
-    private analyzeNode(node: {
-        id: string;
-        data: Record<string, unknown>;
-        object?: THREE.Object3D;
-    }): { nodeId: string; contrast: number } | null {
+    private analyzeNode(node: ColorNode): { nodeId: string; contrast: number } | null {
         const nodeColor = this.getNodeColor(node);
         const bgColor = this.getBackgroundColor(node);
 
@@ -82,10 +78,7 @@ export class LegibilityAnalyzer {
     /**
      * Get node's foreground color
      */
-    private getNodeColor(node: {
-        data: Record<string, unknown>;
-        object?: THREE.Object3D;
-    }): THREE.Color | null {
+    private getNodeColor(node: ColorNode): THREE.Color | null {
         // HTML nodes render their text with an inline style; the node box colour is a neutral
         // surface and would report a false contrast failure.
         const style = node.data.style as Record<string, unknown> | undefined;
@@ -93,12 +86,8 @@ export class LegibilityAnalyzer {
 
         // Try to get color from data
         const dataColor = node.data.color;
-        if (typeof dataColor === 'string') {
+        if (typeof dataColor === 'string' || typeof dataColor === 'number')
             return new THREE.Color(dataColor);
-        }
-        if (typeof dataColor === 'number') {
-            return new THREE.Color(dataColor);
-        }
 
         // Try to get color from material
         if (node.object) {
@@ -115,19 +104,13 @@ export class LegibilityAnalyzer {
     /**
      * Get background color
      */
-    private getBackgroundColor(node: { data: Record<string, unknown> }): THREE.Color | null {
+    private getBackgroundColor(node: Pick<ColorNode, 'data'>): THREE.Color | null {
         const style = node.data.style as Record<string, unknown> | undefined;
         if (typeof style?.backgroundColor === 'string') return new THREE.Color(style.backgroundColor);
         // Try to get from data
         const bgColor = (node.data as { backgroundColor?: string | number }).backgroundColor;
-        if (bgColor !== undefined) {
-            if (typeof bgColor === 'string') {
-                return new THREE.Color(bgColor);
-            }
-            if (typeof bgColor === 'number') {
-                return new THREE.Color(bgColor);
-            }
-        }
+        if (typeof bgColor === 'string' || typeof bgColor === 'number')
+            return new THREE.Color(bgColor);
 
         // Default to dark background (SpaceGraphJS default)
         return new THREE.Color(0x1a1a2e);

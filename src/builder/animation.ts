@@ -1,5 +1,6 @@
 // builder/animation.ts - Animation helpers
 
+import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 
 type GsapModule = typeof import('gsap');
@@ -27,6 +28,18 @@ async function tween(
     });
 }
 
+async function tweenNode(
+    sg: SpaceGraph,
+    nodeId: string,
+    duration: number,
+    target: (node: Node) => object,
+    vars: Record<string, unknown> | ((node: Node) => Record<string, unknown>),
+): Promise<void> {
+    const node = sg.graph.queryEngine.getNode(nodeId);
+    if (!node) return;
+    await tween(target(node), typeof vars === 'function' ? vars(node) : vars, duration);
+}
+
 export const Animate = {
     async move(
         sg: SpaceGraph,
@@ -34,32 +47,24 @@ export const Animate = {
         to: { x?: number; y?: number; z?: number },
         duration = 1000,
     ): Promise<void> {
-        const node = sg.graph.queryEngine.getNode(nodeId);
-        if (!node) return;
-        await tween(
-            node.position,
-            {
-                x: to.x ?? node.position.x,
-                y: to.y ?? node.position.y,
-                z: to.z ?? node.position.z,
-                onUpdate: () => {
-                    node.updatePosition(node.position.x, node.position.y, node.position.z);
-                },
+        await tweenNode(sg, nodeId, duration / 1000, (node) => node.position, (node) => ({
+            x: to.x ?? node.position.x,
+            y: to.y ?? node.position.y,
+            z: to.z ?? node.position.z,
+            onUpdate: () => {
+                node.updatePosition(node.position.x, node.position.y, node.position.z);
             },
-            duration / 1000,
-        );
+        }));
     },
 
     async fade(sg: SpaceGraph, nodeId: string, to: number, duration = 500): Promise<void> {
-        const node = sg.graph.queryEngine.getNode(nodeId);
-        if (!node) return;
-        await tween(node.data, { opacity: to }, duration / 1000);
+        await tweenNode(sg, nodeId, duration / 1000, (node) => node.data, { opacity: to });
     },
 
     async scale(sg: SpaceGraph, nodeId: string, to: number, duration = 500): Promise<void> {
-        const node = sg.graph.queryEngine.getNode(nodeId);
-        if (!node) return;
-        await tween(node.object.scale, { x: to, y: to, z: to }, duration / 1000);
+        await tweenNode(sg, nodeId, duration / 1000, (node) => node.object.scale, {
+            x: to, y: to, z: to,
+        });
     },
 
     async rotate(
@@ -68,13 +73,9 @@ export const Animate = {
         to: { x?: number; y?: number; z?: number },
         duration = 1000,
     ): Promise<void> {
-        const node = sg.graph.queryEngine.getNode(nodeId);
-        if (!node) return;
-        await tween(
-            node.object.rotation,
-            { x: to.x ?? 0, y: to.y ?? 0, z: to.z ?? 0 },
-            duration / 1000,
-        );
+        await tweenNode(sg, nodeId, duration / 1000, (node) => node.object.rotation, {
+            x: to.x ?? 0, y: to.y ?? 0, z: to.z ?? 0,
+        });
     },
 
     async color(sg: SpaceGraph, nodeId: string, to: string | number): Promise<void> {

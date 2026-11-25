@@ -601,12 +601,12 @@ export class PiHost {
 
     /** The scale-aware card factor is host policy data fed to the same size seam as salience. */
     private cardSize(kind: string, html: boolean, dense: boolean): readonly [number, number] {
-        if (this.#graphLayout === 'chapters')
-            return [CHAPTER_CARD[0] * this.#cardScale, CHAPTER_CARD[1] * this.#cardScale];
-        if (this.#graphLayout === 'ergonomic')
-            return [ERGONOMIC_CARD[0] * this.#cardScale, ERGONOMIC_CARD[1] * this.#cardScale];
-        const [width, height] = nodeSize(kind, html, dense);
-        return [width * this.#cardScale, height * this.#cardScale];
+        const fixed = this.#graphLayout === 'chapters'
+            ? CHAPTER_CARD
+            : this.#graphLayout === 'ergonomic'
+                ? ERGONOMIC_CARD
+                : nodeSize(kind, html, dense);
+        return [fixed[0] * this.#cardScale, fixed[1] * this.#cardScale];
     }
 
     /** Re-solve scope spacing for the shot octave; the far octave has no packed target. */
@@ -1249,9 +1249,7 @@ export class PiHost {
 
     settle(): void {
         this.simulation.settle();
-        this.#playback?.finish();
-        this.#playback = undefined;
-        this.clearDissolve();
+        this.stopPlayback();
         this.#activity.clear();
         this.renderPositions();
     }
@@ -1370,9 +1368,7 @@ export class PiHost {
     /** B1 `return`: one keystroke back to the familiar hybrid view. */
     returnHome(): void {
         this.recordEvent('escape-hatch', { from: this.#revealed });
-        this.#playback?.finish();
-        this.#playback = undefined;
-        this.clearDissolve();
+        this.stopPlayback();
         this.setKnob('surface.mode', 'hybrid');
         this.renderer.setSelection([]);
         this.renderer.setViewport({ zoom: 1, center: [0, 0, 0] });
@@ -1426,12 +1422,8 @@ export class PiHost {
         if (shot.collapsed !== undefined && this.#transcriptCollapsed !== shot.collapsed)
             this.toggleTranscript();
         const railOpen = document.body.dataset.rail !== 'closed';
-        if (shot.rail === false && railOpen) {
-            this.toggleRail(false);
-            this.fitView(shot.padding);
-        }
-        if (shot.rail !== false && !railOpen) {
-            this.toggleRail(true);
+        if ((shot.rail !== false) !== railOpen) {
+            this.toggleRail(shot.rail !== false);
             this.fitView(shot.padding);
         }
         if (shot.inspectorTab) this.#inspector?.setTab(shot.inspectorTab);
@@ -1479,6 +1471,12 @@ export class PiHost {
         if (!this.#dissolving) return;
         this.#dissolving = undefined;
         this.paint();
+    }
+
+    private stopPlayback(): void {
+        this.#playback?.finish();
+        this.#playback = undefined;
+        this.clearDissolve();
     }
 
     private flyToPosition(target: Position, traceID?: string): void {
@@ -2525,8 +2523,7 @@ export class PiHost {
     }
 
     private sweep(ids: readonly string[]): readonly string[] {
-        this.#playback?.finish();
-        this.#playback = undefined;
+        this.stopPlayback();
         this.#traceIds = ids;
         this.#tracePositions = ids
             .map((nodeId) => this.#positions.get(nodeId))

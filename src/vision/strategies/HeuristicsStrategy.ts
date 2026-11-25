@@ -2,7 +2,7 @@
 // Vision analysis using WCAG, spatial indexing, and Fitts's law
 
 import { ErgonomicsAnalyzer, HierarchyAnalyzer, LegibilityAnalyzer, OverlapAnalyzer } from '..';
-import { gradeFor, type VisionGrade } from '../grade';
+import { gradeFor } from '../grade';
 import { nodesOf } from '../nodesOf';
 import { clamp } from '../../utils/math';
 import type {
@@ -11,7 +11,9 @@ import type {
     LegibilityResult,
     OverlapResult,
     VisionContext,
+    VisionIssue,
     VisionReport,
+    VisionScore,
     VisionStrategy,
 } from '../types';
 
@@ -22,13 +24,8 @@ export interface HeuristicsConfig {
 }
 
 function deduct(
-    issues: Array<{
-        severity: 'error' | 'warning' | 'info';
-        category: string;
-        message: string;
-        nodeIds?: string[];
-    }>,
-    category: string,
+    issues: VisionIssue[],
+    category: VisionIssue['category'],
     failures: Array<{ severity: string; nodeId: string }> | undefined,
     errorPenalty: number,
     warningPenalty: number,
@@ -40,7 +37,7 @@ function deduct(
         deduction += penalty;
         issues.push({
             severity: failure.severity === 'error' ? 'error' : 'warning',
-            category: category as 'legibility' | 'overlap' | 'hierarchy' | 'ergonomics',
+            category,
             message: `${failure.severity === 'error' ? 'Poor' : 'Low'} contrast on node ${failure.nodeId}`,
             nodeIds: [failure.nodeId],
         });
@@ -92,22 +89,8 @@ export class HeuristicsStrategy implements VisionStrategy {
         overlap: unknown;
         hierarchy: unknown;
         ergonomics: unknown;
-    }): {
-        score: number;
-        grade: VisionGrade;
-        issues: Array<{
-            severity: 'error' | 'warning' | 'info';
-            category: 'legibility' | 'overlap' | 'hierarchy' | 'ergonomics';
-            message: string;
-            nodeIds?: string[];
-        }>;
-    } {
-        const issues: Array<{
-            severity: 'error' | 'warning' | 'info';
-            category: 'legibility' | 'overlap' | 'hierarchy' | 'ergonomics';
-            message: string;
-            nodeIds?: string[];
-        }> = [];
+    }): VisionScore {
+        const issues: VisionIssue[] = [];
 
         let score = 100;
 
