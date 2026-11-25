@@ -75,13 +75,21 @@ export const HUD_STYLES = {
     },
 } as const;
 
+const CENTER_X = {
+    left: '16px',
+    right: '16px',
+    width: 'fit-content',
+    maxWidth: 'calc(100% - 32px)',
+    marginInline: 'auto',
+} as const;
+
 export const HUD_POSITIONS = {
     'top-left': { top: '16px', left: '16px' },
     'top-right': { top: '16px', right: '16px' },
     'bottom-left': { bottom: '44px', left: '16px' },
     'bottom-right': { bottom: '44px', right: '16px' },
-    'top-center': { top: '16px', left: '50%', transform: 'translateX(-50%)' },
-    'bottom-center': { bottom: '44px', left: '50%', transform: 'translateX(-50%)' },
+    'top-center': { top: '16px', ...CENTER_X },
+    'bottom-center': { bottom: '44px', ...CENTER_X },
     'left-center': { top: '50%', left: '16px', transform: 'translateY(-50%)' },
     'right-center': { top: '50%', right: '16px', transform: 'translateY(-50%)' },
     center: { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' },

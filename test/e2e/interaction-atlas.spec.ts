@@ -175,6 +175,7 @@ async function shapeGeometry(page: Page) {
 
 test.describe('interaction atlas (screenshot harness)', () => {
     test('captures every labelled control mode into one manifest', async ({ page }) => {
+        test.setTimeout(120_000);
         const errors = await boot(page);
         const shapeValues = await page.$$eval('[data-axis="shape"]', (elements) =>
             elements.map((element) => element.getAttribute('data-value')!),

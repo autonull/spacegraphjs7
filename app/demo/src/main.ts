@@ -367,7 +367,7 @@ function renderGallery() {
             button.className = 'capability';
             button.dataset.capability = capability.id;
             button.setAttribute('aria-pressed', 'false');
-            button.title = capability.modules.join(' · ');
+            button.title = `${capability.title} — ${capability.summary}\n${capability.modules.join(' · ')}`;
 
             const title = document.createElement('span');
             title.className = 'capability-title';

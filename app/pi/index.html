@@ -1629,6 +1629,8 @@
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
+                flex-wrap: wrap;
+                row-gap: var(--sg-spacing-hair);
             }
             #transcript-bar strong {
                 color: var(--sg-colors-foreground);
@@ -1638,7 +1640,8 @@
             #transcript-legend {
                 display: flex;
                 align-items: center;
-                gap: var(--sg-spacing-sm);
+                flex-wrap: wrap;
+                gap: var(--sg-spacing-hair) var(--sg-spacing-xs);
                 font-size: var(--sg-font-sizes-xs);
                 color: var(--sg-colors-muted-foreground);
             }

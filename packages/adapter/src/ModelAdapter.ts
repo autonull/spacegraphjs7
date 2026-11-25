@@ -105,7 +105,7 @@ export abstract class ModelAdapter<
             ? `<span style="opacity:.7">${escapeHtml(node.summary)}</span>`
             : '';
 
-        return `<div data-kind="${node.kind}" data-status="${node.status}" style="display:flex;flex-direction:column;gap:2px;padding:8px 10px;color:inherit;font-family:inherit"><span style="font-weight:600">${escapeHtml(node.label)}${badge}</span>${summary}</div>`;
+        return `<div data-kind="${node.kind}" data-status="${node.status}" title="${escapeHtml(node.label)}" style="display:flex;flex-direction:column;gap:2px;padding:8px 10px;color:inherit;font-family:inherit"><span style="font-weight:600">${escapeHtml(node.label)}${badge}</span>${summary}</div>`;
     }
 
     /** The markup of a band. Optional: the default is a translucent rounded box with a header. */

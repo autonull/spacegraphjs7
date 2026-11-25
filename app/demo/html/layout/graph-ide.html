@@ -14,7 +14,9 @@
             body {
                 margin: 0;
                 padding: 16px;
+                min-height: 100vh;
                 display: grid;
+                grid-template-rows: auto minmax(0, 1fr) auto;
                 gap: 12px;
             }
             header {
@@ -46,9 +48,16 @@
                 margin: 0 0 8px;
                 opacity: 0.75;
             }
+            .canvas-section {
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+            }
             #canvas {
                 width: 100%;
-                height: 420px;
+                height: 100%;
+                min-height: 420px;
+                flex: 1;
             }
             aside {
                 display: grid;
@@ -91,7 +100,7 @@
             <span id="status">initialising…</span>
         </header>
         <main>
-            <section>
+            <section class="canvas-section">
                 <h2>Graph canvas</h2>
                 <div id="canvas"></div>
             </section>
@@ -109,7 +118,7 @@
                     <h2>Sensory seam</h2>
                     <div id="sensory">sound: unsupported</div>
                 </section>
-                <section>
+                <section id="instruments-section" hidden>
                     <h2>Instruments</h2>
                     <div id="instrument-kit"></div>
                 </section>
@@ -239,6 +248,7 @@
                 model = buildModel(surface);
                 renderer.setModel(model);
                 instruments.refresh(surface === 'detail' ? model.nodes : []);
+                document.querySelector('#instruments-section').hidden = surface !== 'detail';
                 for (const button of document.querySelectorAll('[data-set-surface]')) {
                     button.dataset.active = String(button.dataset.setSurface === surface);
                 }

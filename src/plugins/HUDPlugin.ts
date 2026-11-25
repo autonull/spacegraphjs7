@@ -1,5 +1,4 @@
 import type { SelectionChangedPayload } from '../types';
-import { createLogger } from '../utils/logger';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 import { type AlertOptions, HUDAlerts } from './hud/HUDAlerts';
 import { HUDDOMFactory } from './hud/HUDDOMFactory';
@@ -7,8 +6,6 @@ import { HUDPerformanceMetrics } from './hud/HUDPerformanceMetrics';
 import { HUDStatusBar } from './hud/HUDStatusBar';
 import { HUD_COLORS, HUD_POSITIONS, HUD_ZINDEX } from './hud/HUDStyles';
 import type { HUDElementOptions } from './hud/types';
-
-const logger = createLogger('HUDPlugin');
 
 export type { AlertOptions, HUDElementOptions };
 
@@ -20,6 +17,8 @@ export class HUDPlugin extends BaseSystemPlugin {
     private statusBar: HUDStatusBar | null = null;
     private performanceMetrics: HUDPerformanceMetrics | null = null;
     private alerts: HUDAlerts | null = null;
+    private modal: HTMLElement | null = null;
+    private loading: HTMLElement | null = null;
     private elements: Map<string, { el: HTMLElement; options: HUDElementOptions }> = new Map();
 
     protected onInit(): void {
@@ -94,20 +93,73 @@ export class HUDPlugin extends BaseSystemPlugin {
         this.alerts?.show(options);
     }
 
-    showModal(_title: string, _content: string): void {
-        logger.warn('showModal() not yet implemented in refactored version');
+    showModal(title: string, content: string): void {
+        this.hideModal();
+        const overlay = document.createElement('div');
+        overlay.id = 'spacegraph-modal-overlay';
+        Object.assign(overlay.style, {
+            position: 'absolute',
+            inset: '0',
+            display: 'grid',
+            placeItems: 'center',
+            background: 'rgba(0, 0, 0, 0.6)',
+            zIndex: HUD_ZINDEX.MODAL,
+        });
+        const panel = document.createElement('div');
+        Object.assign(panel.style, {
+            maxWidth: 'min(420px, calc(100% - 32px))',
+            maxHeight: 'calc(100% - 32px)',
+            overflow: 'auto',
+            padding: '20px',
+            background: HUD_COLORS.surface,
+            border: `1px solid ${HUD_COLORS.border}`,
+            borderRadius: '8px',
+        });
+        const heading = document.createElement('h2');
+        heading.textContent = title;
+        const body = document.createElement('div');
+        body.innerHTML = content;
+        const close = document.createElement('button');
+        close.textContent = 'Close';
+        close.onclick = () => this.hideModal();
+        panel.append(heading, body, close);
+        overlay.addEventListener('click', (event) => {
+            if (event.target === overlay) this.hideModal();
+        });
+        overlay.append(panel);
+        HUDDOMFactory.appendToRenderer(this.sg, overlay);
+        this.modal = overlay;
     }
 
     hideModal(): void {
-        // Simplified modal
+        this.modal?.remove();
+        this.modal = null;
     }
 
-    showLoading(_message: string): void {
-        // Simplified loading
+    showLoading(message: string): void {
+        this.hideLoading();
+        const notice = document.createElement('div');
+        notice.id = 'spacegraph-loading';
+        notice.textContent = message;
+        Object.assign(notice.style, {
+            position: 'absolute',
+            top: '16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            maxWidth: 'calc(100% - 32px)',
+            padding: '10px 16px',
+            background: HUD_COLORS.surface,
+            border: `1px solid ${HUD_COLORS.border}`,
+            borderRadius: '8px',
+            zIndex: HUD_ZINDEX.LOADING,
+        });
+        HUDDOMFactory.appendToRenderer(this.sg, notice);
+        this.loading = notice;
     }
 
     hideLoading(): void {
-        // Simplified loading
+        this.loading?.remove();
+        this.loading = null;
     }
 
     showTooltip(_element: HTMLElement, _content: string): void {
@@ -135,6 +187,8 @@ export class HUDPlugin extends BaseSystemPlugin {
     }
 
     dispose(): void {
+        this.hideModal();
+        this.hideLoading();
         this.statusBar?.dispose();
         this.performanceMetrics?.dispose();
         this.alerts?.dispose();

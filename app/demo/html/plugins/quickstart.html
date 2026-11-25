@@ -23,6 +23,8 @@
                 border-radius: 12px;
                 padding: 14px 18px;
                 max-width: min(380px, calc(100vw - 40px));
+                max-height: calc(100vh - 40px);
+                overflow: auto;
             }
             .overlay[hidden] {
                 display: none;
@@ -229,18 +231,17 @@
                 forceLayout.init(sg, sg.graph, sg.events);
                 await forceLayout.apply();
 
-                // Focus camera on graph after layout is applied
-                setTimeout(() => {
-                    sg.fitView(150, 2.0);
-                }, 100);
+                // The guide panel overlays the lower left, so keep framed content clear of it.
+                const fitGraph = () =>
+                    sg.fitView(150, 2.0, undefined, {
+                        insets: { top: 0, right: 0, bottom: 0, left: 400 },
+                    });
+                setTimeout(fitGraph, 100);
 
                 // Handle meta actions
                 sg.events.on('node:metaaction', ({ node, action }) => {
                     console.log('Action:', action, 'on node:', node.id);
-
-                    if (action === 'focus') {
-                        sg.fitView(150, 2.0);
-                    }
+                    if (action === 'focus') fitGraph();
                 });
 
                 // Expose for debugging
