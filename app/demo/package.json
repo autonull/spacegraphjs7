@@ -9,7 +9,8 @@
         "test": "vitest run --config vitest.config.ts",
         "test:e2e": "playwright test --config playwright.config.ts",
         "test:publish": "tsx scripts/publish-check.ts",
-        "video:flagship": "tsx scripts/record-flagship-video.ts"
+        "video:flagship": "tsx scripts/record-flagship-video.ts",
+        "video:samples": "tsx scripts/record-samples.ts"
     },
     "dependencies": {
         "@spacegraphjs/adapter": "workspace:*",

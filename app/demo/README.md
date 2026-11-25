@@ -31,3 +31,25 @@ controller, and the capability gallery that runs each library surface against th
 feature pages import only the published library surface through the `spacegraphjs` and
 `@spacegraphjs/*` aliases. All media is bundled under `public/media/`, so the demo runs and deploys
 without network access. The build emits relative asset paths and works from any subpath.
+
+## Sample recordings
+
+```bash
+pnpm --filter pi dev            # http://localhost:5175
+pnpm --filter pi-durable dev    # http://localhost:5176
+pnpm --filter demo video:samples
+```
+
+Clips land in `recordings/samples/` (gitignored). `SAMPLES_ONLY=pi-cockpit,durable-fork-tabs`
+re-records a subset. `SAMPLES_FPS`, `SAMPLES_SECONDS`, `SAMPLES_CRF`, `PI_URL` and
+`PI_DURABLE_URL` override the capture defaults. Each clip gets burned-in commentary, a `.vtt`
+sidecar and a `.json` manifest; a full run also writes `reel.mp4` with crossfades.
+`SAMPLES_CAPTIONS=0` disables burn-in, `SAMPLES_REEL=0` skips the reel.
+
+The recorder is data-driven: `scripts/record-samples.ts` holds a `scenes` registry. Each scene names
+a `host` (`pi` or `durable`), a URL, `setup` calls, a `motion` recipe and timed `events`. Add a scene
+by adding one entry; add a host by extending the `Host` union and the ready check in `waitReady`.
+`prepare` reads live hook values (node IDs, edges, tabs) for events whose arguments are dynamic.
+Motion recipes (`pulse`, `swell`, `grow`, `drift`, `hold`) are shared across scenes. Commentary is
+generated from `setup`/`events` with `describeCall`, overridable through `label`, `summary` and
+`commentary`, so a new scene narrates itself without caption authoring.
