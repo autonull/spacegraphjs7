@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { call, settle } from './boot';
+import { call, expectSurface, settle } from './boot';
 import { STORIES, type Story, type StoryFrame } from '../src/stories';
 
 const OUT = process.env.SG_DURABLE_SHOTS ?? resolve(import.meta.dirname, '../../../docs/screenshots');
@@ -60,7 +60,7 @@ const apply = async (page: Page, frame: StoryFrame): Promise<void> => {
         if (frame.action === 'reveal')
             await expect(page.locator('#inspector')).toContainText(frame.value ?? '');
     }
-    await expect(page.locator('#canvas canvas').first()).toBeVisible({ timeout: 10_000 });
+    await expectSurface(page);
     await settle(page);
 };
 

@@ -8,8 +8,16 @@ export const boot = async (page: Page, query = ''): Promise<string[]> => {
     await expect
         .poll(() => call<number>(page, 'ops'), { timeout: 10_000 })
         .toBeGreaterThan(0);
-    await expect(page.locator('#canvas canvas').first()).toBeVisible({ timeout: 10_000 });
+    await expectSurface(page);
     return errors;
+};
+
+/** The canvas and the reader are alternate projections of the same fold. */
+export const expectSurface = async (page: Page): Promise<void> => {
+    const surface = await page.locator('#reader').isVisible()
+        ? page.locator('#reader')
+        : page.locator('#canvas canvas').first();
+    await expect(surface).toBeVisible({ timeout: 10_000 });
 };
 
 /** Opens the control panel through its accessible rail icon. */

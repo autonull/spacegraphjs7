@@ -83,8 +83,11 @@ in a browser canvas. Each cell is an engraved plate: a survey mark, landmark leg
 alongside its numbered caption. The active story follows `?story=<id>` or the first story containing `?shot`, and its frames are
 scrubbable through `setStory` / `chapters` /
 `scrub`; the PNG is the printed plate and the hooks are the film. Views `diff`, `trace`, `docs` and
-`transcript` re-place the same folded kernel and are represented inside those stories, not as new
-renderer contracts. `pnpm --filter pi-durable shots:all` captures heroes and stories; the contact
+`transcript` is a readable DOM projection of the same folded kernel, built by the shared
+`spacegraphjs/reading` helper: ordered sections, escaped committed text and a backlink on every
+fact that restores the graph selection. `diff`, `trace` and `docs` re-place the same kernel and are
+represented inside those stories, not as new renderer contracts.
+`pnpm --filter pi-durable shots:all` captures heroes and stories; the contact
 sheet keeps before/after pairs without writing a verdict.
 
 ## Environment

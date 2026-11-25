@@ -1,0 +1,92 @@
+# TODO16 — Graph as a complete reading and authoring surface
+
+> **Status: phase R/L landed (2026-11-25).** Goal: make SpaceGraphJS, not just the Pi Durable demo,
+> able to replace a conventional text or web UI. Pi Durable is the reference client; every capability
+> lands as a library primitive first and is then adopted by the demo. No second model, hidden filter
+> or parallel renderer contract is allowed.
+
+## 0. Thesis
+
+A graph UI replaces a text UI only when it can do everything a text UI does without leaving the
+graph: read a committed history in order, search and cite it, open rich documents, compose and
+edit, navigate by keyboard, and expose the same content to assistive technology. The graph is a
+projection of committed facts; text and web-like views must be additional projections of the same
+fold, never a second store or a lossy export.
+
+## 1. Invariants
+
+1. **One committed fold.** Reading, graph, diff and document views project the same kernel; ids,
+   edge kinds and order are unchanged.
+2. **Text is a projection, not an export.** Every paragraph, heading, code block and link maps back
+   to a node id; selecting it reveals that node in the graph.
+3. **Parity of interaction.** Every action available by pointer is reachable by keyboard and exposed
+   to assistive technology with a stable name.
+4. **Mutations stay committed.** Composer actions produce kernel ops through the same path as the
+   demo's prompt; no view holds private draft state that can silently diverge.
+5. **Library first.** A capability used by Pi Durable lives in a published SpaceGraphJS package or
+   root subpath with its own unit tests; the app keeps only vocabulary and theme choices.
+6. **Progressive disclosure.** Dense graph, readable document and focused inspection are views of
+   one surface; switching views changes representation, never placement authority or history.
+
+## 2. Candidate capabilities
+
+| Stream | Library capability | Pi Durable adoption | Why it matters |
+| ------ | ------------------ | ------------------- | -------------- |
+| R — reading order | Pure fold from kernel/model to ordered sections with stable ids, roles, timestamps and links | Upgrade `transcript` from a filtered node set to a real readable document with selectable text and node backlinks | A conventional UI reads top to bottom; the graph must offer the same without losing the map |
+| D — rich documents | Reusable markdown/code/image/table rendering primitive with theme tokens and safe HTML | Inspector and document view render committed content, not just summaries | Web UIs show documents; cards alone cannot |
+| A — keyboard and ARIA parity | Roving focus, arrow traversal, semantic list/tree roles and one announcer contract | Full keyboard journey: read, search, select, open, edit, back | Graph UIs commonly fail where text UIs succeed: keyboard and screen readers |
+| C — composer | Multi-line input, history, attachments and inline command grammar as a library control | Prompt footer becomes a real editor; drafts stay local until committed | Authoring is half of a text UI |
+| L — links and citations | Stable node-address links in both directions, including compact addresses | Text passages link to graph nodes; graph nodes link back to their passages | Citations are the bridge between the two projections |
+| G — evidence | Unit tests per primitive, one E2E ladder per phase, no new PNG unless a view changes shape | Verification recorded in §5 | Keep gates meaningful and bounded |
+
+## 3. Delivery order
+
+1. ~~**R and L together.**~~ Landed: `src/reading.ts` is published as `spacegraphjs/reading`; Pi
+   Durable's `transcript` view is now a readable document with a graph backlink on every fact.
+2. **D after R.** Rich documents need the reading primitive to place them in order.
+3. **A after D.** Keyboard parity must cover every renderer, including document content.
+4. **C last.** Authoring changes state; it lands only after reading and navigation are complete.
+
+## 4. Open questions
+
+- Should the reader be a renderer mode, a DOM overlay, or a node template? The choice must avoid a
+  second camera, model or placement authority.
+- How should timestamps, roles and provenance appear in a linear document without overwhelming it?
+- What is the minimum safe markdown subset for committed text, and where does sanitisation live?
+- Which browser shortcuts must remain stable across graph, reader and composer?
+
+## 5. Progress
+
+| Stream | State | Evidence |
+| ------ | ----- | -------- |
+| R/L — reading order and backlinks | Landed | `src/reading.ts` exports `readingOrder` and `readingHTML`. Order follows recorded edges from roots; unreachable facts follow in host order; cycles are visited once. HTML is escaped, semantic, and every section carries `data-node-id`. The root subpath `./reading` is generated from `script/library-entries.ts`, not hand-edited. Pi Durable's `transcript` view renders this DOM from the full folded kernel and hides the canvas; clicking a section returns to `graph` and reveals the node. `test/reading.test.ts` (4 tests) and `tests/reading.spec.ts` (1 gate) pass. |
+
+### Verification evidence for R/L (this change set)
+
+- `pnpm run write:exports` and `pnpm run build:lib` — generated manifests and `dist/reading.*` in sync; `pnpm run check:generated` — passed.
+- `pnpm exec vitest run test/reading.test.ts test/boundaries.test.ts` — 19 passed; the reader has no runtime dependency on the renderer contract.
+- `pnpm -r --if-present typecheck`, `pnpm --filter pi-durable test` (94), `pnpm --filter pi-durable verify` — clean.
+- `SG_DURABLE_PORT=5437 PI_DURABLE_SERVER_PORT=8921 pnpm --filter pi-durable test:e2e` — 66 passed, including the new reader gate and the updated transcript/composite gates. `boot` and story frames now accept either canvas or reader as the visible surface.
+- Eleven tracked PNGs were recaptured by the E2E run; turn-flow frame 4 now shows the readable transcript. `.prev` pairs and the contact sheet are retained; no verdict was written.
+
+## 6. Verification ladder
+
+```bash
+pnpm run write:exports
+pnpm run build:lib
+pnpm -r --if-present typecheck
+pnpm exec vitest run test/reading.test.ts test/boundaries.test.ts
+pnpm --filter pi-durable test
+pnpm --filter pi-durable verify
+pnpm --filter pi-durable test:e2e
+pnpm --filter pi-durable build
+```
+
+No test is retried to green without a cause fix. Human screenshot verdicts stay external.
+
+## 7. Remaining work
+
+1. **D — rich documents.** Give `readingHTML` a safe shared markdown/code/image card set, then render `docs` and inspector content through it. Decide the minimal markdown subset and where sanitisation lives; `MarkdownNode` currently uses raw `innerHTML`.
+2. **A — keyboard and ARIA parity.** The reader is semantic DOM, but focus management, section navigation and announce-on-reveal are not yet wired to the library a11y layer.
+3. **C — composer.** Multi-line editing with history and attachments, committing through the same kernel ops; drafts must not become a second store.
+4. **Library adoption.** Pi Durable still owns its own permalink codec, trail, announcer and card templates. Promote each to a library primitive only when a second host needs it, to avoid speculative abstraction.

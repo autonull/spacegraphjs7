@@ -101,6 +101,11 @@
             "import": "./dist/representations.js",
             "default": "./dist/representations.js"
         },
+        "./reading": {
+            "types": "./dist/reading.d.ts",
+            "import": "./dist/reading.js",
+            "default": "./dist/reading.js"
+        },
         "./salience": {
             "types": "./dist/salience.d.ts",
             "import": "./dist/salience.js",
