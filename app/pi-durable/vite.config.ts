@@ -33,6 +33,7 @@ export default defineConfig({
     },
     server: {
         port: Number(process.env.PI_DURABLE_WEB_PORT ?? 5176),
+        headers: process.env.SG_DURABLE_E2E === '1' ? { 'Cache-Control': 'public, max-age=3600' } : undefined,
         proxy: {
             '/events': { target: `http://127.0.0.1:${server}`, changeOrigin: false },
             '/api': { target: `http://127.0.0.1:${server}`, changeOrigin: false },

@@ -42,6 +42,7 @@ export default defineConfig({
         {
             command: `pnpm exec vite --config vite.config.ts --port ${PORT} --strictPort`,
             port: PORT,
+            env: { SG_DURABLE_E2E: '1' },
             timeout: 30_000,
             reuseExistingServer: false,
         },

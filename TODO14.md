@@ -1,6 +1,6 @@
 # TODO14 — Octave atlas: hierarchy, wayfinding and depth
 
-> **Status: complete (2026-11-24); post-close follow-up iteration landed (2026-11-25, §16).** All three phases, the ZUI follow-ups and the close-out landed; the full ladder is green and §15 records the non-blocking follow-ups. The follow-up iteration then raised density and legibility, recaptured the eleven PNGs, and left five pre-existing second-navigation E2E flakes documented rather than hidden. The close-out finished W1 dot-band usability, wired the guided route and compare pin into the drawer, fixed the muted-edge metric, and reconciled two overstated claims. TODO13 landed the durable atlas: continuous attention, one Lens,
+> **Status: complete (2026-11-24); post-close follow-up iteration landed (2026-11-25, §16).** All three phases, the ZUI follow-ups and the close-out landed; the full ladder is green and §15 records the non-blocking follow-ups. The follow-up iteration raised density and legibility, recaptured the eleven PNGs, and then fixed the pre-existing second-navigation E2E flake at its dev-server cause; the suite is green at one and eight workers. The close-out finished W1 dot-band usability, wired the guided route and compare pin into the drawer, fixed the muted-edge metric, and reconciled two overstated claims. TODO13 landed the durable atlas: continuous attention, one Lens,
 > a landmark trail and compact address, scrubbable story plates, two workshops, and budget/spatial
 > grace. Phase 1 fixed the fundamentals — octave sizing, focused address and provenance, and a
 > minimal icon rail. Phase 2 added depth inside that one drawer: full-text filtered Lens, a time
@@ -333,7 +333,7 @@ Keep TODO13 as the record of the landed atlas; record new work in a new plan, no
 
 ## 16. Post-close follow-up iteration (2026-11-25)
 
-The plan stayed closed. This change set lands the non-blocking density and legibility follow-ups from §14 and §15. No renderer contract, second camera, model or hidden filter was added.
+The plan stayed closed. This change set lands the non-blocking density and legibility follow-ups from §14 and §15, then stabilises the E2E harness. No renderer contract, second camera, model or hidden filter was added.
 
 | Follow-up | State | Evidence |
 | --------- | ----- | -------- |
@@ -341,20 +341,22 @@ The plan stayed closed. This change set lands the non-blocking density and legib
 | Legible hierarchy (O3/O4 caveats) | Landed | Message/action/artifact roles move from base octave 3 to 3.5, so landmark roles still lead while attached detail stays present. Card type uses `cqw` container units; `dot` cards show a short first word while `title`, `aria-label` and the inspector keep the full committed name. `NODE_GLYPHS` and glyph-prefixed edge captions use the flat monochrome grammar; recorded kinds gain directed arrowheads, with style and confidence channels unchanged. `tests/detail.spec.ts` asserts the glyph, an edge label and a hero label of at least 18px. |
 | Visual language | Landed | Warm ink on vellum-dark in `index.html` and `THEME`: square 4px corners, hairline rules, amber accent and theme-owned colour. The Lens command bar moved from a canvas overlay into the header, so it never covers a card; README documents both. |
 | `basic-turn` fixture | Landed | The shot carries a 15-entry turn sequence (boundary, user, tools, answers, follow-up, source and summary), so screenshots and gates exercise a full threaded conversation instead of one answer. |
+| E2E reload stability (§16 remaining item 1) | Landed | A production preview reloads cleanly, so the fault was Vite dev-server module revalidation under headless Chromium: a second navigation in one page revalidated hundreds of modules and hit `ERR_INSUFFICIENT_RESOURCES`. `vite.config.ts` sends a one-hour `Cache-Control` for dev responses only when `SG_DURABLE_E2E=1`; `playwright.config.ts` sets that flag for its web server. No product code or test assertion was weakened. |
 
 ### Verification evidence for the follow-up iteration (this change set)
 
 - `pnpm --filter pi-durable typecheck` — clean. `pnpm --filter pi-durable test` — 19 files, 94 tests passed. `pnpm --filter pi-durable verify` — guard passed.
 - `SG_DURABLE_PORT=5421 PI_DURABLE_SERVER_PORT=8911 pnpm --filter pi-durable test:e2e` (8 workers) — 41 passed, 24 failed under load with `Target crashed` and `ERR_INSUFFICIENT_RESOURCES` from headless Chromium. Reported, not retried to green.
 - `SG_DURABLE_PORT=5422 PI_DURABLE_SERVER_PORT=8912 pnpm --filter pi-durable test:e2e --workers=1` — 60 passed, 5 failed. Every failure is a second `page.goto()` in one page: `first-run.spec.ts:62`, `insights.spec.ts:23`, `provenance.spec.ts:17`, `stories.spec.ts:118`, `time-travel.spec.ts:4`. A reproduction on a clean `HEAD` worktree showed fresh-page navigation ready in under 1s and the second navigation in the same page failing with `Failed to fetch dynamically imported module: .../src/activity.ts` plus `ERR_INSUFFICIENT_RESOURCES`. The flake predates this change set.
-- `verify:visual` is redundant here: its screenshot and vision specs run inside `test:e2e` and passed in the single-worker run. Eleven tracked PNGs carry the new visual grammar, each keeps its `.prev` pair, and `pi-durable-index.html` is the contact sheet. No verdict was written.
+- With the E2E-only cache header: `SG_DURABLE_PORT=5428 PI_DURABLE_SERVER_PORT=8914 pnpm --filter pi-durable test:e2e --workers=1` — 65 passed in 1.7m; `SG_DURABLE_PORT=5429 PI_DURABLE_SERVER_PORT=8915 pnpm --filter pi-durable test:e2e` — 65 passed in 48s at the default eight workers. Both runs include the five reload gates that failed before the fix.
+- `verify:visual` is redundant here: its screenshot and vision specs run inside `test:e2e` and passed in both runs above. Eleven tracked PNGs carry the new visual grammar, each keeps its `.prev` pair, and `pi-durable-index.html` is the contact sheet. No verdict was written.
 - `pnpm --filter pi-durable build` and root `bun run check` — clean.
 - No Strobe run: the machine stayed loaded, so no clean measurement was available (§15).
 
 ### Remaining work (non-blocking follow-ups)
 
-1. Stabilise second-navigation boot under the Vite dev server. The failure reproduces at `HEAD`, so address it in a separate plan: isolate the `spacegraphjs/activity` dynamic import during reload and add a two-navigation regression gate. Do not relax this change set's gates to hide it.
+1. ~~Stabilise second-navigation boot under the Vite dev server.~~ Landed with the E2E-only cache header; the production preview already reloaded cleanly. Keep dev HMR uncached outside E2E, and revisit only if a real user-visible reload failure appears.
 2. Re-run Strobe on an idle machine only if a trustworthy cost figure is needed. Larger cards and the serpentine layout change the frame budget; reuse the §11 recipe and record the handle.
-3. Watch the 20–35% density band on loaded machines. The eight-worker crash run shows this view is sensitive to headless resource pressure; cap scale or lower worker count before raising density again.
+3. Watch the 20–35% density band on loaded machines. The pre-fix eight-worker crash run showed resource pressure, not a density regression; cap scale if a clean run ever leaves the band.
 4. Edge captions stay static per recorded kind and forks use a solid stroke; the renderer contract still has no per-caption attention channel or double-line style. No kind is invented and no hidden filter is added.
 
