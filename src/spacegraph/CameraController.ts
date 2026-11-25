@@ -65,14 +65,7 @@ export class CameraController {
                 width: this.sg.renderer.container?.clientWidth ?? 0,
                 height: this.sg.renderer.container?.clientHeight ?? 0,
             },
-            options?.insets
-                ? {
-                      top: options.insets.top ?? 0,
-                      right: options.insets.right ?? 0,
-                      bottom: options.insets.bottom ?? 0,
-                      left: options.insets.left ?? 0,
-                  }
-                : undefined,
+            options?.insets,
         );
         if (fit) {
             if (fit.zoom !== undefined) this.sg.cameraControls?.setOrthoZoomRange(fit.zoom);

@@ -291,9 +291,10 @@ export function calculateFitView(
     /** The surface the camera frames, in CSS pixels. */
     surface?: FitSurface,
     /** Screen-space margins the content must stay clear of, in CSS pixels. */
-    insets?: FitInsets,
+    insets?: Partial<FitInsets>,
 ): FitViewResult | null {
     if (!nodes || nodes.length === 0) return null;
+    const resolvedInsets = insets ? normalizeInsets(insets) : undefined;
 
     const box = new Box3();
     for (const node of nodes) {
@@ -320,8 +321,8 @@ export function calculateFitView(
         minDistance,
         minZoom,
         surface,
-        usable: usableRegion(surface, insets),
-        insets,
+        usable: usableRegion(surface, resolvedInsets),
+        insets: resolvedInsets,
     };
 
     const ortho = camera as OrthographicCamera;

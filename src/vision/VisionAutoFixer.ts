@@ -58,16 +58,7 @@ export class VisionAutoFixer {
             return;
         }
 
-        const forceLayout = this.sg.pluginManager.get('ForceLayout');
-        if (forceLayout && 'settings' in forceLayout && hasMethod(forceLayout, 'update')) {
-            const settings = forceLayout.settings as { repulsion?: number };
-            const originalRepulsion = settings.repulsion ?? 10000;
-            settings.repulsion = originalRepulsion * 5;
-            for (let i = 0; i < 50; i++) forceLayout.update();
-            settings.repulsion = originalRepulsion;
-        } else {
-            logger.warn('No suitable layout plugin found to perform autoFix.');
-        }
+        logger.warn('No suitable layout plugin found to perform autoFix.');
     }
 
     private async fixHierarchy(_report: VisionReport): Promise<void> {
@@ -87,16 +78,6 @@ export class VisionAutoFixer {
     }
 
     private async fixLayout(report: VisionReport): Promise<void> {
-        const autoLayoutPlugin = this.sg.pluginManager.get('AutoLayoutPlugin');
-        if (hasMethod(autoLayoutPlugin, 'applyVisionCorrection')) {
-            const formattedIssues = report.overlap.overlaps.map(
-                (o: { nodeA: string; nodeB: string }) => ({
-                    type: 'overlap' as const,
-                    nodeA: o.nodeA,
-                    nodeB: o.nodeB,
-                }),
-            );
-            autoLayoutPlugin.applyVisionCorrection(formattedIssues);
-        }
+        await this.fixOverlap(report);
     }
 }

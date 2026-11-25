@@ -1,6 +1,5 @@
 import { createLogger } from '../utils/logger';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
-import type { ForceLayout } from './layouts/ForceLayout';
 
 const logger = createLogger('AutoLayoutPlugin');
 
@@ -19,11 +18,7 @@ export class AutoLayoutPlugin extends BaseSystemPlugin {
         logger.debug(`Initialized ${this.name} v${this.version}`);
     }
 
-    onPreRender(_delta: number): void {
-        // This plugin will serve as a skeleton for AI vision layout adjustments.
-        // In the future, VisionManager will call methods on this plugin to auto-correct
-        // overlapping nodes and poor visual groupings.
-    }
+    onPreRender(_delta: number): void {}
 
     public applyVisionCorrection(issues: VisionIssue[]): void {
         logger.debug(`Received ${issues.length} vision issues to auto-fix.`);
@@ -35,30 +30,7 @@ export class AutoLayoutPlugin extends BaseSystemPlugin {
 
     public fixOverlaps(overlaps: VisionIssue[]): void {
         logger.debug(`Auto-fixing ${overlaps.length} overlaps...`);
-        const layoutPlugin = this.sg.pluginManager.get('ForceLayout') as
-            ForceLayout | undefined;
-
-        if (
-            layoutPlugin &&
-            typeof (layoutPlugin as ForceLayout & { step?: () => void }).step === 'function'
-        ) {
-            const layout = layoutPlugin as ForceLayout & {
-                step: () => void;
-                config: Record<string, unknown>;
-            };
-            const originalRepulsion = (layout.config?.repulsion as number) ?? 10000;
-            layout.config.repulsion = originalRepulsion * 5;
-
-            for (let i = 0; i < 50; i++) {
-                layout.step();
-            }
-
-            layout.config.repulsion = originalRepulsion;
-        } else {
-            for (const issue of overlaps) {
-                this.fixSingleOverlap(issue);
-            }
-        }
+        for (const issue of overlaps) this.fixSingleOverlap(issue);
     }
 
     dispose(): void {

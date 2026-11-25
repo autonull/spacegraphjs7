@@ -38,6 +38,18 @@ export interface ForceLayoutConfig extends LayoutConfig {
     barnesHutMinCellSize?: number;
 }
 
+export const DEFAULT_FORCE_LAYOUT = {
+    repulsion: 10000,
+    attraction: 0.01,
+    damping: 0.9,
+    gravity: 0.1,
+    minDistance: 50,
+    maxDistance: 1000,
+    iterations: 50,
+    temperature: 100,
+    spacing: 120,
+} as const;
+
 /**
  * Force-directed layout using spring-electrical model.
  * Simulates physical forces (repulsion between nodes, attraction along edges)
@@ -59,18 +71,18 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
 
     #coreConfig(config: Partial<ForceLayoutConfig>): ForceCoreConfig {
         return {
-            spacing: config.spacing ?? 120,
-            iterations: config.iterations ?? 50,
+            spacing: config.spacing ?? DEFAULT_FORCE_LAYOUT.spacing,
+            iterations: config.iterations ?? DEFAULT_FORCE_LAYOUT.iterations,
             seed: config.seed ?? 42,
             depthStep: 64,
             nodePadding: this.nodePadding(config),
-            attraction: config.attraction ?? 0.01,
-            repulsion: config.repulsion ?? 10000,
-            damping: config.damping ?? 0.9,
-            gravity: config.gravity ?? 0.1,
-            minDistance: config.minDistance ?? 50,
-            maxDistance: config.maxDistance ?? 1000,
-            temperature: config.temperature ?? 100,
+            attraction: config.attraction ?? DEFAULT_FORCE_LAYOUT.attraction,
+            repulsion: config.repulsion ?? DEFAULT_FORCE_LAYOUT.repulsion,
+            damping: config.damping ?? DEFAULT_FORCE_LAYOUT.damping,
+            gravity: config.gravity ?? DEFAULT_FORCE_LAYOUT.gravity,
+            minDistance: config.minDistance ?? DEFAULT_FORCE_LAYOUT.minDistance,
+            maxDistance: config.maxDistance ?? DEFAULT_FORCE_LAYOUT.maxDistance,
+            temperature: config.temperature ?? DEFAULT_FORCE_LAYOUT.temperature,
             randomize: config.randomize ?? false,
             onProgress: config.onProgress,
             useBarnesHut: config.useBarnesHut,
@@ -118,17 +130,6 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
     }
 
     protected defaultConfig(): ForceLayoutConfig {
-        return {
-            repulsion: 10000,
-            attraction: 0.01,
-            damping: 0.9,
-            gravity: 0.1,
-            minDistance: 50,
-            maxDistance: 1000,
-            iterations: 50,
-            temperature: 100,
-            spacing: 120,
-            duration: 1.0,
-        };
+        return { ...DEFAULT_FORCE_LAYOUT, duration: 1.0 };
     }
 }

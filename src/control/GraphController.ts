@@ -6,6 +6,7 @@
 
 import { Trail, type TrailNode, type TrailOptions } from '../navigation';
 import { searchBy } from '../navigation/search';
+import { appendTo } from '../utils/collection';
 import { ZoomBands, type ZoomBand, type ZoomBandChange, type ZoomBandsConfig } from '../zoom';
 
 export type ControlProjection = '2d' | '3d';
@@ -172,8 +173,8 @@ export class GraphController {
             const source = this.#nodesById.get(edge.source);
             const target = this.#nodesById.get(edge.target);
             if (source && target) {
-                this.#addConnection(edge.source, { edge, node: target });
-                this.#addConnection(edge.target, { edge, node: source });
+                appendTo(this.#connectionsById, edge.source, { edge, node: target });
+                appendTo(this.#connectionsById, edge.target, { edge, node: source });
             }
         }
         this.#selection = this.#selection.filter((id) => this.#nodesById.has(id));
@@ -271,12 +272,6 @@ export class GraphController {
         if (node.kind?.toLowerCase().includes(needle)) return 3;
         if (node.id.toLowerCase().includes(needle)) return 4;
         return -1;
-    }
-
-    #addConnection(id: string, connection: Connection): void {
-        const list = this.#connectionsById.get(id);
-        if (list) list.push(connection);
-        else this.#connectionsById.set(id, [connection]);
     }
 
     #emit(): void {

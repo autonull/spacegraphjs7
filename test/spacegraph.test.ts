@@ -1645,10 +1645,10 @@ describe('VisionManager Auto-Correction Loop', () => {
 
     beforeEach(() => {
 
-        // Setup AutoLayoutPlugin mock
+        // Setup AutoLayoutPlugin double
         autoLayout = {
             id: 'AutoLayoutPlugin',
-            applyVisionCorrection: vi.fn(),
+            fixOverlaps: vi.fn(),
         };
         sg.pluginManager.register('AutoLayoutPlugin', autoLayout);
 
@@ -1692,18 +1692,15 @@ describe('VisionManager Auto-Correction Loop', () => {
         sg.visionManager.startAutonomousCorrection(10000);
 
         // Should not have fired yet
-        expect(autoLayout.applyVisionCorrection).not.toHaveBeenCalled();
+        expect(autoLayout.fixOverlaps).not.toHaveBeenCalled();
 
         // Fast forward time and flush all resulting promises queued by the interval
         await vi.advanceTimersByTimeAsync(11000);
 
-        expect(autoLayout.applyVisionCorrection).toHaveBeenCalledTimes(1);
-
-        // Verify it passed the right issue format
-        const args = autoLayout.applyVisionCorrection.mock.calls[0][0];
-        expect(args[0].type).toBe('overlap');
-        expect(args[0].nodeA).toBe('v1');
-        expect(args[0].nodeB).toBe('v2');
+        expect(autoLayout.fixOverlaps).toHaveBeenCalledTimes(1);
+        expect(autoLayout.fixOverlaps).toHaveBeenCalledWith([
+            { nodeA: 'v1', nodeB: 'v2', penetration: 5 },
+        ]);
     });
 });
 

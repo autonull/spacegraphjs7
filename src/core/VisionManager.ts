@@ -63,7 +63,6 @@ export class VisionManager {
 
         const report = await this.visionSystem.analyze(this.sg.graph, this.sg.renderer.camera);
 
-        logger.info('Analysis complete. Overall Score: %d', report.overall.score);
         logger.info(
             '[VisionManager] Analysis complete. Overall Score: %d, Overlaps: %d',
             report.overall.score,
