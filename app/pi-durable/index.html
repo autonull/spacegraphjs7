@@ -247,8 +247,9 @@
             footer { display: flex; gap: 10px; align-items: flex-end; padding: 8px 12px;
                 border-top: 1px solid var(--line); background: var(--panel); }
             #prompt-form { display: flex; flex: 1; min-width: 0; gap: 8px; align-items: flex-end; }
-            #prompt-input { flex: 1; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line);
-                border-radius: var(--radius); background: var(--bg); resize: none; }
+            #prompt-input { flex: 1; min-width: 0; min-height: 44px; max-height: 160px; padding: 10px 12px;
+                border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg);
+                color: var(--text); font: inherit; resize: none; overflow-y: auto; }
             #prompt-mode { min-height: 44px; padding: 0 10px; border: 1px solid var(--line);
                 border-radius: var(--radius); background: var(--bg); }
             #prompt-submit { min-width: 96px; border: 0; border-radius: var(--radius); background: var(--accent);
@@ -483,7 +484,7 @@
             </main>
             <footer>
                 <form id="prompt-form">
-                    <input id="prompt-input" autocomplete="off" placeholder="Ask something — no API key needed" aria-label="Prompt" />
+                    <textarea id="prompt-input" rows="1" autocomplete="off" placeholder="Ask something — no API key needed (Enter sends, Shift+Enter adds a line)" aria-label="Prompt"></textarea>
                     <select id="prompt-mode" aria-label="Prompt mode">
                         <option value="steer">steer</option><option value="followUp">followUp</option>
                     </select>

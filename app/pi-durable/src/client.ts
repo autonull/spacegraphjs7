@@ -1,4 +1,5 @@
 import { addEdge, addNode } from '@spacegraphjs/kernel';
+import { mountComposer, type ComposerController } from 'spacegraphjs/composer';
 import { demuxOp, TabRegistry, type KernelOp } from 'pi-kit';
 import { entryIDFromNode } from './actions';
 import { getJSON, postJSON, type ConversationInfo, type Health, type Scenario } from './api';
@@ -92,40 +93,47 @@ const cancelPrompt = async (): Promise<boolean> => {
     }
 };
 
+let composer: ComposerController | undefined;
+
 const bindPrompt = (): void => {
     el('prompt-cancel').addEventListener('click', () => void cancelPrompt());
-    el<HTMLFormElement>('prompt-form').addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const input = el<HTMLInputElement>('prompt-input');
-        const text = input.value.trim();
-        if (!text) return;
-        if (observer || asOf !== undefined) {
-            host.announce('read-only — commit through the owner server');
-            return;
-        }
-        input.value = '';
-        const mode = el<HTMLSelectElement>('prompt-mode').value as 'steer' | 'followUp';
-        const button = el<HTMLButtonElement>('prompt-submit');
-        button.dataset['busy'] = 'true';
-        try {
-            if (offline) {
-                localPrompt(registry.activeID(), text);
-                host.announce(`Local answer accepted ui-local-${localOrdinal}`);
-            } else {
-                const requestID = `ui-${crypto.randomUUID()}`;
-                pendingRequestID = requestID;
-                const result = await postJSON<{ status: string; requestId: string }>(
-                    `/api/conversations/${registry.activeID()}/prompt`,
-                    { text, mode, requestId: requestID },
-                );
-                host.announce(`Prompt ${result.status} ${result.requestId}`);
-            }
-        } catch (error) {
-            host.announce(error instanceof Error ? error.message : String(error));
-        } finally {
-            button.dataset['busy'] = 'false';
-        }
+    composer = mountComposer(el<HTMLTextAreaElement>('prompt-input'), {
+        onSubmit: (text) => void submitPrompt(text),
     });
+    el<HTMLFormElement>('prompt-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        void submitPrompt(composer?.value().trim() ?? '');
+    });
+};
+
+const submitPrompt = async (text: string): Promise<void> => {
+    if (!text) return;
+    if (observer || asOf !== undefined) {
+        host.announce('read-only — commit through the owner server');
+        return;
+    }
+    composer?.clear();
+    const mode = el<HTMLSelectElement>('prompt-mode').value as 'steer' | 'followUp';
+    const button = el<HTMLButtonElement>('prompt-submit');
+    button.dataset['busy'] = 'true';
+    try {
+        if (offline) {
+            localPrompt(registry.activeID(), text);
+            host.announce(`Local answer accepted ui-local-${localOrdinal}`);
+        } else {
+            const requestID = `ui-${crypto.randomUUID()}`;
+            pendingRequestID = requestID;
+            const result = await postJSON<{ status: string; requestId: string }>(
+                `/api/conversations/${registry.activeID()}/prompt`,
+                { text, mode, requestId: requestID },
+            );
+            host.announce(`Prompt ${result.status} ${result.requestId}`);
+        }
+    } catch (error) {
+        host.announce(error instanceof Error ? error.message : String(error));
+    } finally {
+        button.dataset['busy'] = 'false';
+    }
 };
 
 const forkConversation = async (): Promise<boolean> => {
@@ -392,7 +400,7 @@ const KEY_BINDINGS: readonly KeyBinding[] = [
     { keys: 'Alt+← / →', label: 'View history back and forward', whileTyping: true,
       match: (event) => event.altKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight'),
       run: (event) => { if (event.key === 'ArrowLeft') host.historyBack(); else host.historyForward(); } },
-    { keys: '/', label: 'Focus prompt', match: plain('/'), run: () => el<HTMLInputElement>('prompt-input').focus() },
+    { keys: '/', label: 'Focus prompt', match: plain('/'), run: () => composer?.focus() },
     { keys: '?', label: 'Show shortcuts',
       match: (event) => event.key === '?' && !event.ctrlKey && !event.metaKey && !event.altKey,
       run: () => host.toggleHelp() },
@@ -500,7 +508,7 @@ const bindChrome = (): void => {
     renderShortcuts();
     document.addEventListener('keydown', (event) => {
         const target = event.target as HTMLElement;
-        const typing = target.tagName === 'INPUT' || target.tagName === 'SELECT';
+        const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
         for (const binding of KEY_BINDINGS) {
             if (!binding.match(event) || (typing && !binding.whileTyping)) continue;
             event.preventDefault();

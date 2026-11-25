@@ -48,10 +48,12 @@ OpenAI-compatible provider to a local `llama-server` (no key, no network); start
    returns the original submission and adds no second answer.
 7. `[` / `]` switch tabs; **Copy** writes a permalink carrying the active tab, view, landmark,
    layout, time and camera. `?at=<codec>` is the compact form of the same address.
-8. `/` focuses the prompt, `Ctrl/⌘ K` focuses the Lens (`view diff`, `rung grain`, `as of 2`,
+8. `/` focuses the prompt, `Enter` submits and `Shift+Enter` adds a line; `↑`/`↓` recall submitted
+   drafts. `Ctrl/⌘ K` focuses the Lens (`view diff`, `rung grain`, `as of 2`,
    `tab 2`, `layout radial`, `find Paris`), `?` toggles help, `g` cycles views, `f` focuses the
    selection, `0` resets the view, `Shift+F` enters presentation mode, `Esc` clears overlays,
    `Ctrl+Enter` cancels a prompt, `Shift+R` forks at the selection and `n` opens a new conversation.
+   Shortcuts never fire while the composer or another text field has focus.
    Landmarks grade attention on one kernel; they never filter committed facts. The survey plate maps
    node positions through `Navigation.project`; click or arrow keys pan. Export produces JSON, a
    session document, SVG or Markdown.

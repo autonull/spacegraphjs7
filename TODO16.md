@@ -1,6 +1,6 @@
 # TODO16 — Graph as a complete reading and authoring surface
 
-> **Status: phases R/L, D and A landed (2026-11-25).** Goal: make SpaceGraphJS, not just the Pi Durable demo,
+> **Status: phases R/L, D, A and C landed (2026-11-25).** Goal: make SpaceGraphJS, not just the Pi Durable demo,
 > able to replace a conventional text or web UI. Pi Durable is the reference client; every capability
 > lands as a library primitive first and is then adopted by the demo. No second model, hidden filter
 > or parallel renderer contract is allowed.
@@ -47,7 +47,8 @@ fold, never a second store or a lossy export.
    links) renders only when the host opts in with `format: 'markdown'`; raw HTML is never trusted.
 3. ~~**A after D.**~~ Landed: `mountReading` owns section focus, arrow/Home/End navigation, Enter/Space
    reveal and listener teardown. Pi Durable supplies only the reveal callback.
-4. **C last.** Authoring changes state; it lands only after reading and navigation are complete.
+4. ~~**C last.**~~ Landed: `spacegraphjs/composer` owns multiline editing, history recall and
+   submit intent. Pi Durable keeps the commit path; drafts never become a second store.
 
 ## 4. Open questions
 
@@ -63,13 +64,14 @@ fold, never a second store or a lossy export.
 | ------ | ----- | -------- |
 | R/L — reading order and backlinks | Landed | `src/reading.ts` exports `readingOrder` and `readingHTML`. Order follows recorded edges from roots; unreachable facts follow in host order; cycles are visited once. HTML is escaped, semantic, and every section carries `data-node-id`. The root subpath `./reading` is generated from `script/library-entries.ts`, not hand-edited. Pi Durable's `transcript` view renders this DOM from the full folded kernel and hides the canvas; clicking a section returns to `graph` and reveals the node. `test/reading.test.ts` and `tests/reading.spec.ts` pass. |
 | D/A — rich text and keyboard parity | Landed | `readingTextHTML` handles inline code, strong, emphasis, safe links and fenced code; unsafe links and raw markup are dropped. `mountReading` mounts the document, gives sections `tabindex="0"`, implements ↑/↓, Home/End and Enter/Space, and returns `reveal`/`destroy`. Pi Durable removed its own reader click handler and passes one `onReveal` callback. `test/reading-view.test.ts` (2 jsdom tests) and a second `tests/reading.spec.ts` keyboard gate pass. |
+| C — composer | Landed | `src/composer.ts` is published as `spacegraphjs/composer`. It grows a textarea to 160px, submits on Enter, inserts a newline on Shift+Enter, recalls submissions with ↑/↓ and exposes `focus`/`clear`/`value`/`destroy`. Pi Durable's prompt form delegates to it and keeps the same kernel commit path; global shortcuts now ignore textareas and contenteditable fields. `test/composer.test.ts` (2 tests) and `tests/composer.spec.ts` (1 gate) pass. |
 
 ### Verification evidence for R/L (this change set)
 
 - `pnpm run write:exports` and `pnpm run build:lib` — generated manifests and `dist/reading.*` in sync; `pnpm run check:generated` — passed.
-- `pnpm exec vitest run test/reading.test.ts test/reading-view.test.ts test/boundaries.test.ts` — 23 passed; the reader has no runtime dependency on the renderer contract.
+- `pnpm exec vitest run test/reading.test.ts test/reading-view.test.ts test/composer.test.ts test/boundaries.test.ts` — 25 passed; neither new module depends on the renderer contract.
 - `pnpm -r --if-present typecheck`, `pnpm --filter pi-durable test` (94), `pnpm --filter pi-durable verify` — clean.
-- `SG_DURABLE_PORT=5438 PI_DURABLE_SERVER_PORT=8922 pnpm --filter pi-durable test:e2e` — 67 passed, including both reader gates and the updated transcript/composite gates. `boot` and story frames now accept either canvas or reader as the visible surface.
+- `SG_DURABLE_PORT=5441 PI_DURABLE_SERVER_PORT=8925 pnpm --filter pi-durable test:e2e` — 68 passed, including both reader gates, the composer gate and the updated transcript/composite gates. `boot` and story frames now accept either canvas or reader as the visible surface.
 - Eleven tracked PNGs were recaptured by the E2E run; turn-flow frame 4 now shows the readable transcript. `.prev` pairs and the contact sheet are retained; no verdict was written.
 
 ## 6. Verification ladder
@@ -91,5 +93,5 @@ No test is retried to green without a cause fix. Human screenshot verdicts stay 
 
 1. **D extension — images, tables and documents.** The reader handles inline/fenced text; image plates, tables and the `docs` view still need a shared safe card set. Replace `MarkdownNode`'s raw `innerHTML` with the same escape-first renderer.
 2. **A extension — library a11y bridge.** `mountReading` handles local focus and activation; wire it to `spacegraphjs/a11y` announcements and to the host's global shortcut table so screen-reader users hear view and reveal changes.
-3. **C — composer.** Multi-line editing with history and attachments, committing through the same kernel ops; drafts must not become a second store.
+3. **C extension — attachments and draft persistence.** The composer owns in-memory history only; attachments and cross-reload drafts still need a committed path if they are ever wanted. Do not add local draft state without an explicit contract.
 4. **Library adoption.** Pi Durable still owns its own permalink codec, trail, announcer and card templates. Promote each to a library primitive only when a second host needs it, to avoid speculative abstraction.
