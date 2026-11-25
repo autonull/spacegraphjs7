@@ -33,6 +33,8 @@ test('chrome announces every outcome and has no dead control offline', async ({ 
     await expect(announcer).toContainText('Approved');
     await page.click('#fork-button');
     await expect(announcer).toContainText('Forked');
+    await page.click('#new-button');
+    await expect(announcer).toContainText('New conversation');
     await page.click('#catalog-button');
     await expect(page.locator('#catalog')).toBeVisible();
     await expect(page.locator('#scenario-list button').first()).toBeVisible();
@@ -75,7 +77,7 @@ test('shortcut overlay lists the real bindings behind every control', async ({ p
     await page.keyboard.press('?');
     await expect(page.locator('#help')).toBeVisible();
     const text = await page.locator('#help-shortcuts').innerText();
-    for (const label of ['Ctrl/⌘ K', 'Shift+F', 'Alt+← / →', 'Esc', 'g', 'f', '0'])
+    for (const label of ['Ctrl/⌘ K', 'Shift+F', 'Alt+← / →', 'Esc', 'g', 'f', '0', 'Ctrl+Enter', 'Shift+R', 'n'])
         expect(text).toContain(label);
     await page.locator('#help-close').click();
     await expect(page.locator('#help')).toBeHidden();
@@ -105,6 +107,7 @@ test('narrow viewport keeps controls and graph reachable', async ({ page }) => {
     await expect(page.locator('#canvas canvas').first()).toBeVisible();
     await expect(page.locator('#prompt-submit')).toBeInViewport();
     await expect(page.locator('#prompt-submit')).toHaveCSS('min-height', '44px');
+    await expect(page.locator('#prompt-cancel')).toHaveCSS('min-height', '44px');
     await page.click('#menu-button');
     await expect(page.locator('#rail')).toBeVisible();
     await openPanel(page);

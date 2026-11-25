@@ -1,14 +1,17 @@
 import { addEdge, addNode } from '@spacegraphjs/kernel';
 import { demuxOp, TabRegistry, type KernelOp } from 'pi-kit';
+import { entryIDFromNode } from './actions';
 import { getJSON, postJSON, type ConversationInfo, type Health, type Scenario } from './api';
 import { decodeAddress } from './address';
 import { DurableHost } from './host';
 import { lensCompletions } from './lens';
 import { localFeed } from './local-feed';
 import { replayFeed } from './replay';
+import { provenanceFor } from './provenance';
 import { isRung } from './rungs';
 import { SCENARIOS } from './scenarios';
 import { asOfFeed } from './time-travel';
+import { forkOps } from './translator';
 
 const params = new URLSearchParams(location.search);
 const compact = decodeAddress(params.get('at'));
@@ -42,6 +45,7 @@ host.onScrub = (seq) => {
 if (asOf !== undefined) host.setAsOf(asOf);
 
 let localOrdinal = 0;
+let pendingRequestID: string | undefined;
 
 const localPrompt = (id: string, text: string): void => {
     const ordinal = ++localOrdinal;
@@ -63,7 +67,30 @@ const localPrompt = (id: string, text: string): void => {
     host.announce(`Local answer for conversation ${id}`);
 };
 
+const cancelPrompt = async (): Promise<boolean> => {
+    if (observer || asOf !== undefined) {
+        host.announce('read-only — cancel through the owner server');
+        return false;
+    }
+    const requestID = pendingRequestID;
+    if (!requestID) {
+        host.announce(offline ? 'Local answers are immediate — nothing to cancel' : 'No prompt to cancel');
+        return false;
+    }
+    pendingRequestID = undefined;
+    el<HTMLButtonElement>('prompt-submit').dataset['busy'] = 'false';
+    try {
+        if (!offline) await postJSON(`/api/conversations/${registry.activeID()}/abort`);
+        host.announce(`Cancelled ${requestID}`);
+        return true;
+    } catch (error) {
+        host.announce(error instanceof Error ? error.message : String(error));
+        return false;
+    }
+};
+
 const bindPrompt = (): void => {
+    el('prompt-cancel').addEventListener('click', () => void cancelPrompt());
     el<HTMLFormElement>('prompt-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         const input = el<HTMLInputElement>('prompt-input');
@@ -80,13 +107,15 @@ const bindPrompt = (): void => {
         try {
             if (offline) {
                 localPrompt(registry.activeID(), text);
+                host.announce(`Local answer accepted ui-local-${localOrdinal}`);
             } else {
-                const result = await postJSON<{ status: string }>(`/api/conversations/${registry.activeID()}/prompt`, {
-                    text,
-                    mode,
-                    requestId: `ui-${Date.now()}`,
-                });
-                host.announce(`Prompt ${result.status}`);
+                const requestID = `ui-${crypto.randomUUID()}`;
+                pendingRequestID = requestID;
+                const result = await postJSON<{ status: string; requestId: string }>(
+                    `/api/conversations/${registry.activeID()}/prompt`,
+                    { text, mode, requestId: requestID },
+                );
+                host.announce(`Prompt ${result.status} ${result.requestId}`);
             }
         } catch (error) {
             host.announce(error instanceof Error ? error.message : String(error));
@@ -96,28 +125,68 @@ const bindPrompt = (): void => {
     });
 };
 
-const bindFork = (): void => {
-    el('fork-button').addEventListener('click', async () => {
-        if (observer || asOf !== undefined) return host.announce('read-only — fork through the owner server');
-        const from = registry.activeID();
-        const to = String(Number(from) + Math.max(10, registry.list().length * 10));
-        try {
-            if (offline) {
-                registry.fork(from, to);
-                host.setTab(to);
-                host.announce(`Forked conversation ${from} at the current entry`);
-            } else {
-                const result = await postJSON<{ id: string }>(`/api/conversations/${from}/fork`, {
-                    entryId: undefined,
-                });
-                if (!registry.get(result.id)) registry.add(result.id);
-                host.setTab(result.id);
-                host.announce(`Forked conversation ${from}`);
-            }
-        } catch (error) {
-            host.announce(error instanceof Error ? error.message : String(error));
+const forkConversation = async (): Promise<boolean> => {
+    if (observer || asOf !== undefined) {
+        host.announce('read-only — fork through the owner server');
+        return false;
+    }
+    const from = registry.activeID();
+    const focus = host.address().focus;
+    const entryID = entryIDFromNode(focus);
+    const version = focus ? provenanceFor(registry.get(from)!, focus)?.sequence : undefined;
+    const to = String(Number(from) + Math.max(10, registry.list().length * 10));
+    try {
+        if (offline) {
+            registry.fork(from, to, version);
+            if (entryID) for (const op of forkOps(from, to, entryID)) host.consume(to, op);
+            host.setTab(to);
+            host.announce(entryID
+                ? `Forked conversation ${from} at ${entryID}`
+                : `Forked conversation ${from} at the current entry`);
+        } else {
+            const result = await postJSON<{ id: string; entryId: string }>(
+                `/api/conversations/${from}/fork`,
+                entryID ? { entryId: entryID } : {},
+            );
+            if (!registry.get(result.id)) registry.add(result.id);
+            host.setTab(result.id);
+            host.announce(`Forked conversation ${from} at ${result.entryId}`);
         }
-    });
+        return true;
+    } catch (error) {
+        host.announce(error instanceof Error ? error.message : String(error));
+        return false;
+    }
+};
+
+const newConversation = async (): Promise<boolean> => {
+    if (observer || asOf !== undefined) {
+        host.announce('read-only — create through the owner server');
+        return false;
+    }
+    try {
+        if (offline) {
+            const ids = registry.list().map((tab) => Number(tab.id)).filter(Number.isFinite);
+            const to = String(Math.max(0, ...ids) + 1);
+            registry.add(to);
+            host.setTab(to);
+            host.announce(`New conversation ${to} in the local feed`);
+        } else {
+            const result = await postJSON<{ id: string }>('/api/conversations');
+            if (!registry.get(result.id)) registry.add(result.id);
+            host.setTab(result.id);
+            host.announce(`New conversation ${result.id}`);
+        }
+        return true;
+    } catch (error) {
+        host.announce(error instanceof Error ? error.message : String(error));
+        return false;
+    }
+};
+
+const bindFork = (): void => {
+    el('fork-button').addEventListener('click', () => void forkConversation());
+    el('new-button').addEventListener('click', () => void newConversation());
 };
 
 const bindApprove = (): void => {
@@ -280,6 +349,9 @@ type KeyBinding = {
 const plain = (key: string) => (event: KeyboardEvent): boolean =>
     !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && event.key === key;
 
+const shifted = (key: string) => (event: KeyboardEvent): boolean =>
+    !event.ctrlKey && !event.metaKey && !event.altKey && event.shiftKey && event.key.toLowerCase() === key;
+
 const closePriority = (): void => {
     if (host.threadActive()) {
         host.exitThread();
@@ -329,6 +401,11 @@ const KEY_BINDINGS: readonly KeyBinding[] = [
     { keys: '0', label: 'Reset view', match: plain('0'), run: () => host.resetView() },
     { keys: 'm', label: 'Reset muting filters', match: plain('m'), run: () => host.resetFilters() },
     { keys: 'e', label: 'Focus neighbourhood', match: plain('e'), run: () => host.toggleFocusLens() },
+    { keys: 'Ctrl+Enter', label: 'Cancel prompt', whileTyping: true,
+      match: (event) => (event.ctrlKey || event.metaKey) && event.key === 'Enter',
+      run: () => void cancelPrompt() },
+    { keys: 'Shift+R', label: 'Fork at selected entry', match: shifted('r'), run: () => void forkConversation() },
+    { keys: 'n', label: 'New conversation', match: plain('n'), run: () => void newConversation() },
     { keys: '[ / ]', label: 'Switch tabs',
       match: (event) => event.key === '[' || event.key === ']', run: switchTab },
 ];
@@ -365,6 +442,9 @@ const bindPanelChrome = (): void => {
 };
 
 const bindChrome = (): void => {
+    host.onAbort = cancelPrompt;
+    host.onFork = forkConversation;
+    host.onNew = newConversation;
     bindPrompt();
     bindLens();
     bindFork();
@@ -386,6 +466,9 @@ const bindChrome = (): void => {
     el('route-prev').addEventListener('click', () => host.routeStep(-1));
     el('route-next').addEventListener('click', () => host.routeStep(1));
     el('filter-reset').addEventListener('click', () => host.resetFilters());
+    el('inspector').addEventListener('click', (event) => {
+        if ((event.target as HTMLElement).id === 'fork-here') void forkConversation();
+    });
     el('thread-follow').addEventListener('click', () => {
         const id = host.address().focus;
         if (id) host.followThread(id);

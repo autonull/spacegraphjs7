@@ -38,17 +38,20 @@ OpenAI-compatible provider to a local `llama-server` (no key, no network); start
 2. First paint shows the **root** tab, a seeded transcript with order edges, a run node, and one
    sleeping approval task. Badges report `provider: faux · storage: jsonl · 1 task sleeping`.
 3. Prompt "Capital of France?" → a user node, then the deterministic "Paris." answer. The form
-   stays usable while the run settles; select `steer` or `followUp`, or cancel with the API.
+   stays usable while the run settles; select `steer` or `followUp`, or press **Cancel**
+   (`Ctrl+Enter`) to abort the request. The request id is announced and never becomes a fact.
 4. The **Tasks** view shows the signal and deadline. **Approve** wakes the task and records its result.
-5. Select an entry and press **Fork** → a new tab with a `fork` edge back; each tab keeps its own
-   selection, camera, view and transcript position.
+5. Select an entry and press **Fork** (`Shift+R`, or **Fork here** in the inspector) → a new tab
+   with a `fork` edge back to that entry; each tab keeps its own selection, camera, view and
+   transcript position. **New** (`n`) opens an empty conversation in the same tab strip.
 6. `Ctrl+C`, restart: conversations and tasks are recovered from storage; a retried `requestId`
    returns the original submission and adds no second answer.
 7. `[` / `]` switch tabs; **Copy** writes a permalink carrying the active tab, view, landmark,
    layout, time and camera. `?at=<codec>` is the compact form of the same address.
 8. `/` focuses the prompt, `Ctrl/⌘ K` focuses the Lens (`view diff`, `rung grain`, `as of 2`,
    `tab 2`, `layout radial`, `find Paris`), `?` toggles help, `g` cycles views, `f` focuses the
-   selection, `0` resets the view, `Shift+F` enters presentation mode, `Esc` clears overlays.
+   selection, `0` resets the view, `Shift+F` enters presentation mode, `Esc` clears overlays,
+   `Ctrl+Enter` cancels a prompt, `Shift+R` forks at the selection and `n` opens a new conversation.
    Landmarks grade attention on one kernel; they never filter committed facts. The survey plate maps
    node positions through `Navigation.project`; click or arrow keys pan. Export produces JSON, a
    session document, SVG or Markdown.

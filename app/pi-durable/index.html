@@ -196,11 +196,15 @@
             #prompt-submit { min-width: 96px; border: 0; border-radius: var(--radius); background: var(--accent);
                 color: #06141a; font-weight: 700; }
             #prompt-submit[data-busy="true"] { opacity: 0.65; }
+            #prompt-cancel { min-height: 44px; padding: 0 12px; border: 1px solid var(--line);
+                border-radius: var(--radius); background: var(--panel); color: var(--text); }
             #app[data-observer="true"] #prompt-form,
             #app[data-observer="true"] #fork-button,
+            #app[data-observer="true"] #new-button,
             #app[data-observer="true"] #approve-button { display: none; }
             #app[data-asof] #prompt-form,
             #app[data-asof] #fork-button,
+            #app[data-asof] #new-button,
             #app[data-asof] #approve-button { display: none; }
             #instruments-block[hidden] { display: none; }
             .insight-block { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
@@ -343,7 +347,9 @@
                     <div class="rail-section" data-section="controls">
                         <h2>Controls</h2>
                         <div class="row"><span class="label">Fork here</span>
-                            <button type="button" class="action" id="fork-button">Fork</button></div>
+                            <button type="button" class="action" id="fork-button" title="Fork at the selected entry (Shift+R)">Fork</button></div>
+                        <div class="row"><span class="label">New conversation</span>
+                            <button type="button" class="action" id="new-button" title="New conversation (n)">New</button></div>
                         <div class="row"><span class="label">Approve task</span>
                             <button type="button" class="action primary" id="approve-button">Approve</button></div>
                         <div class="row"><span class="label">Export</span>
@@ -412,6 +418,7 @@
                         <option value="steer">steer</option><option value="followUp">followUp</option>
                     </select>
                     <button id="prompt-submit" type="submit">Send</button>
+                    <button id="prompt-cancel" type="button" title="Cancel prompt (Ctrl+Enter)" aria-label="Cancel prompt">Cancel</button>
                 </form>
             </footer>
         </div>

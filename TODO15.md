@@ -1,6 +1,6 @@
 # TODO15 — Durable action lifecycle: cancel, fork at entry, new conversation
 
-> **Status: drafted (2026-11-24); no work landed yet.** TODO14 finished the atlas: octave sizing,
+> **Status: all three phases landed (2026-11-24).** TODO14 finished the atlas: octave sizing,
 > wayfinding, minimal chrome, depth add-ons, engagement, and the ZUI follow-ups. Its only open items
 > are measurement and density tuning, which this plan deliberately excludes. TODO15 closes the Core
 > journey steps that TODO10–TODO14 recorded but never wired into the UI: prompt mode with cancel,
@@ -151,22 +151,30 @@ default frame changed.
 
 | Stream | Phase | State | Evidence |
 | ------ | ----- | ----- | -------- |
-| A — cancel and accepted feedback | 1 | Planned | Server route and prompt mode exist; no client cancel. |
-| F — fork at selected entry | 2 | Planned | Server parameter, `forkOps` and address focus exist; client passes no entry id. |
-| N — new conversation | 3 | Planned | Server route and `registry.add` exist; no client control. |
-| G — evidence | all | Planned | Ladder in §7; no gate has run for this plan. |
+| A — cancel and accepted feedback | 1 | Landed | `src/client.ts` announces `Prompt accepted <requestId>` and posts abort through `postJSON`; `Cancel` (`Ctrl+Enter`) clears busy state online and announces the local no-op offline. `host.abort()` and the `onAbort` callback keep the hook on the same path; a retried request id still yields one answer. |
+| F — fork at selected entry | 2 | Landed | `src/actions.ts` derives an entry id from the focused node; `forkConversation` sends it to the server route offline and online, forks the local session at that entry's provenance sequence, and adds `forkOps` with only `fork`/`forkedFrom` edges. The drawer button, inspector **Fork here** action, `Shift+R` and `host.forkAt(id)` share one path. |
+| N — new conversation | 3 | Landed | `New` (`n`) posts to `/api/conversations` online and adds an empty local tab offline. `newConversation()` joins `abort()` and `forkAt()` in `hooks()`; `KEY_BINDINGS` generates all three help rows and `README.md` lists them. Read-only and past states hide the controls and the hooks announce the refusal. |
+| G — evidence | all | Complete | Full ladder green once on this change set; eleven PNGs recaptured with `.prev` pairs and a refreshed contact sheet. No verdict written. |
 
-### Verification evidence
+### Verification evidence for this change set
 
-None yet. Record each phase's command output here once, including free ports and any fixed cause.
+- `pnpm --filter pi-durable typecheck` — clean.
+- `pnpm --filter pi-durable test` — 19 files, 94 tests passed (2 new pure action tests in `tests/actions.test.ts`).
+- `pnpm --filter pi-durable verify` — guard passed; no new dependency and `README.md` documents cancel, fork-at-entry and new conversation.
+- `SG_DURABLE_PORT=5324 PI_DURABLE_SERVER_PORT=8853 pnpm --filter pi-durable test:e2e` — 63/63 passed. Focused `tests/actions.spec.ts` ran once first on `5323/8852` (7/7 after two cause fixes).
+- `SG_DURABLE_PORT=5325 PI_DURABLE_SERVER_PORT=8854 pnpm --filter pi-durable verify:visual` — 5/5 passed.
+- `pnpm --filter pi-durable build` — static bundle built.
+- `bun run check` — root lint and types clean.
+- `PI_DURABLE_FAUX_SEED=fixed SG_DURABLE_PORT=5326 PI_DURABLE_SERVER_PORT=8855 pnpm --filter pi-durable shots:all` — four heroes and seven plates recaptured with eleven `.prev` pairs and a refreshed contact sheet.
+- Iteration fixed two causes: tests used fixture entry ids `basic-turn-*` instead of the real `1-*`, and the online tab-count assertion assumed the server had no pre-existing conversations. No test was retried to green without a change.
 
 ## 10. Remaining work and decisions
 
-1. Implement Stream A, then run the full ladder and record the result before starting Stream F.
-2. Implement Stream F with the selected-entry check and offline fork version; run the ladder again.
-3. Implement Stream N and the keyboard-only nine-step journey; run the final ladder once.
-4. Recapture only if default chrome changed; keep `.prev` pairs and leave verdicts to a human.
-5. Carry performance and density tuning back to TODO14; do not add them here.
+1. ~~Implement Stream A, run the ladder.~~ Landed.
+2. ~~Implement Stream F with the selected-entry check and offline fork version.~~ Landed.
+3. ~~Implement Stream N and the keyboard-only nine-step journey.~~ Landed; shortcuts and click paths are both gated.
+4. ~~Recapture if default chrome changed.~~ Done with `.prev` pairs; human verdicts stay external in `docs/screenshots/pi-durable-index.html`.
+5. Performance and density tuning remain in TODO14; this plan adds no measurement and writes no verdict.
 
 Keep TODO13 as the record of the landed atlas and TODO14 as the record of the finished octaves and
 wayfinding work. Record new work here only.

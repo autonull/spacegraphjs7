@@ -438,7 +438,9 @@ export class DurableHost {
         layout: { seed: 7, strategy: 'grid', gap: 300, depthStep: 170, nodePadding: 28 },
     });
 
-    onFork: (() => Promise<void>) | undefined;
+    onFork: (() => Promise<boolean>) | undefined;
+    onAbort: (() => Promise<boolean>) | undefined;
+    onNew: (() => Promise<boolean>) | undefined;
     onApprove: (() => Promise<void>) | undefined;
     onScrub: ((seq?: number) => void) | undefined;
     lensHistorySource: (() => readonly string[]) | undefined;
@@ -553,7 +555,7 @@ export class DurableHost {
         const why = provenance
             ? `<br><br>why is this here?<br>commit ${provenance.sequence} · source ${escapeHTML(provenance.source)}${provenance.at ? ` · at ${new Date(provenance.at).toISOString().slice(0, 16)}Z` : ''}${provenance.predecessor ? `<br>after ${escapeHTML(provenance.predecessor)}` : ''}${provenance.successor ? `<br>before ${escapeHTML(provenance.successor)}` : ''}<br>facet ${escapeHTML(provenance.facets.join(', '))}<br>edges ${escapeHTML(provenance.edgeKinds.join(', '))}`
             : '';
-        el('inspector').innerHTML = `<strong>${escapeHTML(labelForNode(durable))}</strong><br>${escapeHTML(node.kind)} · ${escapeHTML(String(node.data?.['status'] ?? 'committed'))}${summaryForNode(durable) ? `<br>${escapeHTML(summaryForNode(durable))}` : ''}<br><code>${escapeHTML(node.id)}</code>${links.length ? `<br>links: ${escapeHTML([...new Set(links)].join(', '))}` : ''}${why}`;
+        el('inspector').innerHTML = `<strong>${escapeHTML(labelForNode(durable))}</strong><br>${escapeHTML(node.kind)} · ${escapeHTML(String(node.data?.['status'] ?? 'committed'))}${summaryForNode(durable) ? `<br>${escapeHTML(summaryForNode(durable))}` : ''}<br><code>${escapeHTML(node.id)}</code>${links.length ? `<br>links: ${escapeHTML([...new Set(links)].join(', '))}` : ''}${why}${provenance ? '<br><button type="button" class="action" id="fork-here" title="Fork at this committed entry (Shift+R)">Fork here</button>' : ''}`;
     }
 
     reveal(id: string): void {
@@ -1450,6 +1452,9 @@ export class DurableHost {
             },
             export: (format: string) => this.export(format),
             health: () => ({ ...this.#status, offline: this.#offline }),
+            abort: () => this.abort(),
+            forkAt: (id?: string) => this.forkAt(id),
+            newConversation: () => this.newConversation(),
             prompt: async (text: string, mode: 'steer' | 'followUp' = 'steer') => {
                 const input = el<HTMLInputElement>('prompt-input');
                 input.value = text;
@@ -1511,6 +1516,34 @@ export class DurableHost {
         const cards = el('canvas').querySelectorAll('[data-kind]').length;
         const score = canvas && this.opsCount > 0 ? Math.min(1, 0.5 + cards / 40 + this.opsCount / 100) : 0;
         return { score, nodes: this.opsCount, edges: this.#edgeCount, canvas };
+    }
+
+    async abort(): Promise<boolean> {
+        if (!this.#ready) return false;
+        if (!this.onAbort) {
+            this.announce('Nothing to cancel');
+            return false;
+        }
+        return this.onAbort();
+    }
+
+    async forkAt(id?: string): Promise<boolean> {
+        if (!this.#ready) return false;
+        if (id) this.reveal(id);
+        if (!this.onFork) {
+            this.announce('Fork is unavailable');
+            return false;
+        }
+        return this.onFork();
+    }
+
+    async newConversation(): Promise<boolean> {
+        if (!this.#ready) return false;
+        if (!this.onNew) {
+            this.announce('New conversation is unavailable');
+            return false;
+        }
+        return this.onNew();
     }
 
     export(format: string): void {
