@@ -83,6 +83,7 @@ fold, never a second store or a lossy export.
 | R/L | library vitest 110; `pi-durable test` 94 | E2E 68 |
 | A/cleanup | library vitest 125; `pi-durable test` 94 | E2E 68 |
 | Typed paths / reading loop | library vitest 45; `pi check:fast` 181; `pi-durable test` 94 | E2E 71 |
+| Final re-verification (2026-11-25) | `pnpm run check` (all workspaces), targeted vitest 45, `pi check:fast` 181, `pi-durable test` 94 | Not rerun; the E2E 71 browser gate above is still current |
 
 `write:exports`, `build:lib` and `check:generated` resynced the two library change sets;
 `pnpm run check`, `pi-durable verify` and `pi-durable build` passed in each. Tracked PNGs were
@@ -124,12 +125,23 @@ external.
 
 1. ~~**D extension — images, tables and documents.**~~ Landed: `spacegraphjs/documents` parses and renders a safe subset (headings, paragraphs, code, quotes, lists, tables, images) with escape-first HTML. `MarkdownNode` now uses it synchronously instead of raw `marked` output; the reader delegates its markdown formatting to the same renderer.
 2. ~~**A extension — library a11y bridge.**~~ Landed: `spacegraphjs/a11y` owns `createAnnouncer`; `AccessibilityLayer`, `mountReading` and Pi Durable's global announcement path share it. Reader navigation and programmatic reveal speak passage position and label; view and reveal changes still pass through the host channel used by the shortcut table.
-3. **C extension — attachments and draft persistence — deferred.** The composer owns in-memory history only. Before adding anything here, write the contract: which kernel op commits a draft, where attachment bytes live, and how a reload reconciles them. No local draft state without that contract.
+3. **C extension — attachments and draft persistence — gated on a contract and a host need.** The composer owns in-memory history only; neither the kernel nor either host defines a draft. Land no code until all four decisions below are recorded here:
+   - **Kernel op:** a draft is a committed fact, not private composer state. Specify the op that creates/updates it, the edge that supersedes the previous draft, and which submit op consumes it. `onSubmit` must remain the only commit path.
+   - **Bytes:** attachments are content-addressed bytes outside the folded kernel. The draft op stores references, media type and size, never inline bytes; specify the byte store and garbage collection owner.
+   - **Reload:** the host reads the latest live draft op and hydrates the composer through a library API; an absent or superseded draft leaves the field empty. No `localStorage` mirror of composer text — it would create the second store invariant 4 forbids.
+   - **Adoption:** ship the API under `spacegraphjs/composer` with unit tests, then let Pi Durable opt in behind one E2E gate.
+
+   Trigger: a concrete host requirement for reload-safe drafts or file attachments. Without it this stays deferred; the contract above is the checklist to fill in when the trigger fires.
 4. ~~**Remove the unused `marked` peer.**~~ Landed: no source or published consumer imports it; peer metadata, dev dependencies, bundler externals, README claim and the stale test were removed, and the lockfile regenerated.
-5. **Library adoption — partly landed.** ~~Announcer and semantic edge paths~~ are library-owned and adopted by both Pi hosts; the second-host trigger is satisfied. Pi Durable still owns its permalink codec, trail and card templates. Promote those only when a second host actually needs them, to avoid speculative abstraction.
+5. **Library adoption — partly landed.** ~~Announcer and semantic edge paths~~ are library-owned and adopted by both Pi hosts; the second-host trigger is satisfied there. The remaining candidates are host-specific and still lack a shared shape:
+   - **Permalink codec:** `app/pi/src/permalink.ts` encodes validated full-state JSON behind `#s=`; `app/pi-durable/src/address.ts` encodes a base64url key/value address over view, rung, layout, time and focus. Different state shapes, so no shared codec exists to promote. Trigger: both hosts encode the same state shape.
+   - **Trail:** only Pi Durable renders a node trail. Trigger: a second host renders trails.
+   - **Card templates:** only Pi Durable owns card markup. Trigger: a second host renders the same card kinds with the same theme tokens.
+
+   When a trigger fires, move only the pure logic into `src/` with unit tests and leave host vocabulary in the host.
 
 **Plan status:** complete for all ungated work. Streams R/L/D/A/C, their extensions, the shared
-announcer, typed-edge paths and the reading/docs loop are landed and adopted by Pi Durable. Only two
-gated items remain: item 3 starts with a written draft contract (kernel op, byte storage, reload
-reconciliation); the rest of item 5 starts with a second host needing permalinks, trail or card
-templates. Neither has a trigger today, so neither is in flight.
+announcer, typed-edge paths and the reading/docs loop are landed and adopted by Pi Durable. A final
+Tier 1 re-verification on 2026-11-25 passed all gates with no code changes needed. Items 3 and 5 now
+state their contracts and triggers explicitly above; neither trigger exists today, so neither is in
+flight.
