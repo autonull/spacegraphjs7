@@ -197,7 +197,9 @@ const Patterns = {
     tree(children: number[], spacingX = 80, spacingY = 100): GraphBuilder {
         const builder = new GraphBuilder();
         let nodeId = 0;
-        const bfs = (level: number, startIdx: number, count: number) => {
+        let parentStart = 0;
+        children.forEach((count, level) => {
+            const levelStart = nodeId;
             const y = level * spacingY;
             const width = count * spacingX;
             for (let i = 0; i < count; i++) {
@@ -205,7 +207,7 @@ const Patterns = {
                 const id = `node-${nodeId++}`;
                 builder.node(id).type('ShapeNode').label(id).position(x, 0, y);
                 if (level > 0) {
-                    const parentIdx = startIdx + Math.floor((i * children[level - 1]) / count);
+                    const parentIdx = parentStart + Math.floor((i * children[level - 1]) / count);
                     builder.addEdge({
                         id: `e-${id}-parent`,
                         source: `node-${parentIdx}`,
@@ -213,8 +215,8 @@ const Patterns = {
                     });
                 }
             }
-        };
-        children.forEach((count, level) => bfs(level, 0, count));
+            parentStart = levelStart;
+        });
         return builder;
     },
 
@@ -333,13 +335,11 @@ const Patterns = {
         for (let i = 0; i < bridgeLength; i++)
             builder.node(`bridge-${i}`).position(i * 50 + 50, 0, 0);
         builder.connect(`left-${cliqueSize - 1}`, 'bridge-0');
-        if (bridgeLength > 1) {
-            for (let i = 0; i < bridgeLength - 1; i++)
-                builder.connect(`bridge-${i}`, `bridge-${i + 1}`);
-            builder.connect(`bridge-${bridgeLength - 1}`, `right-0`);
-        }
+        for (let i = 0; i < bridgeLength - 1; i++)
+            builder.connect(`bridge-${i}`, `bridge-${i + 1}`);
         for (let i = 0; i < cliqueSize; i++)
             builder.node(`right-${i}`).position(bridgeLength * 50 + 50 + i * 50 + 50, 0, 0);
+        builder.connect(`bridge-${bridgeLength - 1}`, 'right-0');
         for (let i = 0; i < cliqueSize; i++) {
             for (let j = i + 1; j < cliqueSize; j++) builder.connect(`right-${i}`, `right-${j}`);
         }

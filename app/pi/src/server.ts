@@ -60,6 +60,16 @@ const readBody = async (request: IncomingMessage): Promise<string> => {
     return Buffer.concat(chunks).toString('utf8');
 };
 
+type PromptBody = { client?: string; text?: string; mode?: 'steer' | 'followUp' };
+
+const parseBody = (raw: string): PromptBody | undefined => {
+    try {
+        return JSON.parse(raw) as PromptBody;
+    } catch {
+        return undefined;
+    }
+};
+
 const server = createServer(async (request, response) => {
     const url = new URL(request.url ?? '/', `http://127.0.0.1:${PORT}`);
     const clientID = url.searchParams.get('client') ?? '';
@@ -82,11 +92,8 @@ const server = createServer(async (request, response) => {
     }
 
     if (url.pathname === '/prompt' && request.method === 'POST') {
-        const body = JSON.parse(await readBody(request)) as {
-            client?: string;
-            text?: string;
-            mode?: 'steer' | 'followUp';
-        };
+        const body = parseBody(await readBody(request));
+        if (!body) return json(response, 400, { error: 'invalid JSON' });
         const client = clients.get(body.client ?? clientID);
         if (!client) return json(response, 400, { error: 'no connected page' });
         const text = body.text?.trim();

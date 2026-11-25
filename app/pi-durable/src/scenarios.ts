@@ -441,8 +441,6 @@ export const SCENARIOS: readonly Scenario[] = [
 export const scenarioByID = (id: string | null | undefined): Scenario | undefined =>
     SCENARIOS.find((entry) => entry.id === id);
 
-export const CORE_SCENARIOS = SCENARIOS.filter((entry) => entry.tier === 'Core');
-export const NEXT_SCENARIOS = SCENARIOS.filter((entry) => entry.tier === 'Next');
 
 /** Every row in TODO12 §2 that claims Core coverage names a scenario and its test. */
 export const CORE_COVERAGE: readonly { readonly row: string; readonly scenario: string; readonly test: string }[] = [

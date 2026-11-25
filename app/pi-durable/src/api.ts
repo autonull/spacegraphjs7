@@ -22,8 +22,6 @@ export type ConversationInfo = {
 
 export type Scenario = { readonly id: string; readonly question: string; readonly description: string };
 
-export type APIResult = { readonly ok: boolean; readonly error?: string; readonly recovery?: string };
-
 const parse = async <T>(response: Response): Promise<T> => {
     if (!response.ok) {
         const body = (await response.json()) as { error?: string; recovery?: string };
@@ -40,5 +38,3 @@ export const postJSON = <T>(path: string, body: object = {}): Promise<T> =>
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),
     }).then((response) => parse<T>(response));
-
-export const exportURL = (format: string, id: string): string => `/api/export?format=${format}&id=${id}`;

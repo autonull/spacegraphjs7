@@ -4,7 +4,6 @@ import { gridPoint, polarPoint } from './points';
 
 export interface GraphGeneratorOptions {
     nodeCount?: number;
-    edgeProbability?: number;
     seed?: number;
 }
 
@@ -13,20 +12,16 @@ export const randomTree = (
     maxChildren: number,
     opts?: GraphGeneratorOptions,
 ): NodeSpec[] => {
-    const rand = opts?.seed ? seededRandom31(opts.seed) : Math.random;
+    const rand = opts?.seed !== undefined ? seededRandom31(opts.seed) : Math.random;
     const nodes: NodeSpec[] = [];
-    const addNode = (parentId: string | null, d: number): void => {
+    const addNode = (parent: readonly number[] | null, d: number): void => {
         if (d >= depth) return;
         const id = `node-${nodes.length}`;
-        const pos: [number, number, number] = parentId
-            ? [
-                  (nodes.find((n) => n.id === parentId)?.position?.[0] ?? 0) + (rand() - 0.5) * 100,
-                  (nodes.find((n) => n.id === parentId)?.position?.[1] ?? 0) + (rand() - 0.5) * 100,
-                  0,
-              ]
+        const pos: [number, number, number] = parent
+            ? [parent[0] + (rand() - 0.5) * 100, parent[1] + (rand() - 0.5) * 100, 0]
             : [rand() * 100, rand() * 100, 0];
         nodes.push({ id, type: 'shape', position: pos, data: { depth: d } });
-        for (let i = 0; i < Math.floor(rand() * (maxChildren + 1)); i++) addNode(id, d + 1);
+        for (let i = 0; i < Math.floor(rand() * (maxChildren + 1)); i++) addNode(pos, d + 1);
     };
     addNode(null, 0);
     return nodes;
@@ -40,7 +35,7 @@ export const randomMesh = (width: number, height: number, spacing = 50): NodeSpe
     }));
 
 export const scaleFreeGraph = (nodeCount: number, opts?: GraphGeneratorOptions): NodeSpec[] => {
-    const rand = opts?.seed ? seededRandom31(opts.seed) : Math.random;
+    const rand = opts?.seed !== undefined ? seededRandom31(opts.seed) : Math.random;
     return Array.from({ length: nodeCount }, (_, i) => ({
         id: `node-${i}`,
         type: 'shape',
@@ -55,7 +50,7 @@ export const smallWorld = (
     beta: number,
     opts?: GraphGeneratorOptions,
 ): { nodes: NodeSpec[]; edges: Array<{ source: string; target: string }> } => {
-    const rand = opts?.seed ? seededRandom31(opts.seed) : Math.random;
+    const rand = opts?.seed !== undefined ? seededRandom31(opts.seed) : Math.random;
     const radius = nodeCount / (2 * Math.PI);
     const nodes: NodeSpec[] = Array.from({ length: nodeCount }, (_, i) => ({
         id: `node-${i}`,

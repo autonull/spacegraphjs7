@@ -166,11 +166,14 @@ export function checkQuality(model: QualityModel, options: QualityOptions = {}):
     }
 
     const score = Math.max(0, 100 - issues.reduce((total, issue) => total + WEIGHTS[issue.code], 0));
-    if (options.minScore !== undefined && score < options.minScore) {
-        throw new Error(`quality floor ${options.minScore} not met (score ${score}): ${issues.map((issue) => issue.code).join(', ')}`);
-    }
+    assertFloor(options.minScore, score, issues.map((issue) => issue.code));
     return { score, issues, budgets: { domNodes, maxDomNodes } };
 }
+
+const assertFloor = (minScore: number | undefined, score: number, codes: string[]): void => {
+    if (minScore === undefined || score >= minScore) return;
+    throw new Error(`quality floor ${minScore} not met (score ${score}): ${codes.join(', ')}`);
+};
 
 function clone(model: QualityModel): QualityModel {
     return {
@@ -247,9 +250,7 @@ export function visionAssert(model: QualityModel, options: QualityOptions = {}):
         ]),
         meetsFloor: (minScore = 80) => {
             const report = checkQuality(model, checkOptions);
-            if (report.score < minScore) {
-                throw new Error(`quality floor ${minScore} not met (score ${report.score}): ${report.issues.map((issue) => issue.code).join(', ')}`);
-            }
+            assertFloor(minScore, report.score, report.issues.map((issue) => issue.code));
         },
     };
 }

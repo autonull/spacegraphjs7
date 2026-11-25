@@ -9,7 +9,6 @@ import type { LayoutOptionsFor, LayoutOptionsMap } from '../types/layout';
 type NodePredicate = Predicate<Node>;
 
 export class ErgonomicsAPI {
-    // ============= Graph Topology =============
     constructor(readonly sg: SpaceGraph) {}
 
     get first(): Node | undefined {
@@ -23,8 +22,6 @@ export class ErgonomicsAPI {
     get selected(): Node[] {
         return this.sg.selectedNodes;
     }
-
-    // ============= Aggregates =============
     get count(): number {
         return this.sg.graph.nodes.size;
     }
@@ -38,8 +35,6 @@ export class ErgonomicsAPI {
         if (!arr.length) return null;
         return { min: arr[0], max: arr[arr.length - 1] };
     }
-
-    // ============= Quick Access ($ = get node) =============
     $(id: string): Node | undefined {
         return this.sg.graph.queryEngine.getNode(id);
     }
@@ -51,8 +46,6 @@ export class ErgonomicsAPI {
     $optional(id: string): Node | null {
         return this.sg.graph.queryEngine.getNode(id) ?? null;
     }
-
-    // ============= Query =============
     findNodes(predicate: NodePredicate): Node[] {
         return this.sg.graph.query(predicate);
     }
@@ -95,8 +88,6 @@ export class ErgonomicsAPI {
     outEdges(nodeId: string): Edge[] {
         return this.sg.graph.getEdgesForNode(nodeId, 'outgoing');
     }
-
-    // ============= Iterator =============
     forNodes(callback: (node: Node) => void): void {
         this.sg.graph.forEachNode(callback);
     }
@@ -104,8 +95,6 @@ export class ErgonomicsAPI {
     forEdges(callback: (edge: Edge) => void): void {
         this.sg.graph.forEachEdge(callback);
     }
-
-    // ============= Array Methods =============
     map<T>(callback: (node: Node) => T): T[] {
         return this.sg.graph.mapNodes(callback);
     }
@@ -125,8 +114,6 @@ export class ErgonomicsAPI {
     reduce<T>(callback: (acc: T, node: Node) => T, initial: T): T {
         return [...this.sg.graph.getNodes()].reduce(callback, initial);
     }
-
-    // ============= Node Manipulation =============
     add(spec: NodeSpec | Node): Node | null {
         return this.sg.graph.addNode(spec);
     }
@@ -158,8 +145,6 @@ export class ErgonomicsAPI {
             .map((n: Node) => this.sg.graph.updateNode(n.id, updates))
             .filter(Boolean) as Node[];
     }
-
-    // ============= Edge Manipulation =============
     connect(source: string, target: string, data?: Record<string, unknown>): Edge | null {
         return this.sg.graph.addEdge({ id: `edge-${source}-${target}`, source, target, data });
     }
@@ -182,8 +167,6 @@ export class ErgonomicsAPI {
     addEdges(specs: EdgeSpec[]): Edge[] {
         return this.sg.graph.addEdges(specs);
     }
-
-    // ============= Traversal =============
     traverse(callback: (node: Node, depth: number) => void, startId?: string): void {
         this.sg.graph.traverse(callback, startId);
     }
@@ -195,9 +178,6 @@ export class ErgonomicsAPI {
     dfs(callback: (node: Node, depth: number) => void, startId?: string): void {
         this.sg.graph.dfs(callback, startId);
     }
-
-    // ============= Shortcuts for Common Operations =============
-
     getSubgraph(centerId: string, radius: number): { nodes: Node[]; edges: Edge[] } {
         return this.sg.graph.getConnectedComponentInRadius(centerId, radius);
     }
@@ -205,15 +185,11 @@ export class ErgonomicsAPI {
     path(from: string, to: string): Node[] | null {
         return this.sg.graph.findPath(from, to);
     }
-
-    // ============= Quick Access =============
     require(id: string): Node {
         const node = this.sg.graph.queryEngine.getNode(id);
         if (!node) throw new Error(`Node not found: ${id}`);
         return node;
     }
-
-    // ============= Batch Operations =============
     batch(fn: (sg: SpaceGraph) => void): void {
         fn(this.sg);
     }
@@ -239,8 +215,6 @@ export class ErgonomicsAPI {
             this.sg.render();
         }
     }
-
-    // Node creation shortcuts
     node(
         id: string,
         position?: [number, number, number],
@@ -293,8 +267,6 @@ export class ErgonomicsAPI {
             position,
         );
     }
-
-    // ============= Node Utilities =============
     clone(id: string, newId?: string): Node | null {
         const orig = this.sg.graph.queryEngine.getNode(id);
         return orig?.clone(newId ?? `${id}-copy`, [50, 0, 50]) ?? null;
@@ -325,8 +297,6 @@ export class ErgonomicsAPI {
     color(id: string, color: string | number): Node | null {
         return this.withNode(id, (node) => node.updateSpec({ data: { color } }));
     }
-
-    // ============= Visibility =============
     show(id: string, visible = true): Node | null {
         return this.withNode(id, (node) => node.setVisible(visible));
     }
@@ -362,8 +332,6 @@ export class ErgonomicsAPI {
     selectable(id: string, selectable = true): Node | null {
         return this.#writeFlag(id, 'selectable', selectable);
     }
-
-    // ============= Data Access =============
     data(id: string, key: string, value?: unknown): unknown {
         const n = this.sg.graph.queryEngine.getNode(id);
         if (!n) return undefined;
@@ -397,8 +365,6 @@ export class ErgonomicsAPI {
     height(id: string, height: number): Node | null {
         return this.#writeFlag(id, 'height', height);
     }
-
-    // ============= Position Utilities =============
     position(id: string, x: number, y: number, z = 0): Node | null {
         return this.move(id, x, y, z);
     }
@@ -433,8 +399,6 @@ export class ErgonomicsAPI {
         const n = this.sg.graph.nodes.size || 1;
         return { x: x / n, y: y / n, z: z / n };
     }
-
-    // ============= Selection =============
     select(nodeId: string): this {
         this.sg.selection.select(nodeId);
         return this;
@@ -454,14 +418,10 @@ export class ErgonomicsAPI {
         this.sg.selection.clear();
         return this;
     }
-
-    // ============= Chain =============
     then(callback: (ergo: this) => void): this {
         callback(this);
         return this;
     }
-
-    // ============= Edge Shortcuts =============
     edge(source: string, target: string, data?: Record<string, unknown>): Edge | null {
         return this.connect(source, target, data);
     }
@@ -469,8 +429,6 @@ export class ErgonomicsAPI {
     arrow(source: string, target: string): Edge | null {
         return this.connect(source, target, { arrowhead: true });
     }
-
-    // ============= Layout Shortcuts =============
     layout(
         type: 'force' | 'grid' | 'circular' | 'tree' | 'radial',
         options?: Record<string, unknown>,
@@ -478,8 +436,6 @@ export class ErgonomicsAPI {
         const name = `${type}-layout` as keyof LayoutOptionsMap;
         return this.sg.layout(name, options as Partial<LayoutOptionsFor<typeof name>>);
     }
-
-    // ============= Camera Shortcuts =============
     fit(padding = 100): this {
         this.sg.fitView(padding);
         return this;
@@ -499,8 +455,6 @@ export class ErgonomicsAPI {
         this.sg.focusNode(id, padding);
         return this;
     }
-
-    // ============= Utility Shortcuts =============
     clear(): void {
         this.sg.clear();
     }

@@ -122,21 +122,15 @@ export class SpaceGraph {
             plugins: this.pluginManager.plugins.size,
         };
     }
-
-    // ============= Static Factory Methods (delegated to StaticMethods) =============
     static getContainerElement = StaticMethods.getContainerElement;
     static create = StaticMethods.create;
     static load = StaticMethods.load;
     static fromURL = StaticMethods.fromURL;
     static quickGraph = StaticMethods.quickGraph;
     static fromManifest = StaticMethods.fromManifest;
-
-    // ============= Instance Methods =============
     async init(): Promise<void> {
         return this.lifecycleController.init();
     }
-
-    // --- Graph Manipulation ---
     loadSpec(spec: GraphSpec): this {
         spec.nodes?.forEach((node) => this.graph.addNode(node));
         spec.edges?.forEach((edge) => this.graph.addEdge(edge));
@@ -167,8 +161,6 @@ export class SpaceGraph {
         }
         if (data.plugins) this.pluginManager.import(data.plugins as Record<string, unknown>);
     }
-
-    // --- Node/Edge Access ---
     getNode(id: string): Node | undefined {
         return this.graph.nodes.get(id);
     }
@@ -184,8 +176,6 @@ export class SpaceGraph {
     clear(): void {
         this.graph.clear();
     }
-
-    // --- Camera Controls (delegated) ---
     fitView(
         padding = 100,
         duration = 1.5,
@@ -212,8 +202,6 @@ export class SpaceGraph {
     setPolar(phi: number, theta: number, duration = 0): SpaceGraph {
         return this.cameraController.setPolar(phi, theta, duration);
     }
-
-    // --- Animation Loop (delegated) ---
     animate(timestamp = 0): void {
         this.animationController.animate(timestamp);
     }
@@ -229,16 +217,12 @@ export class SpaceGraph {
     resume(): SpaceGraph {
         return this.animationController.resume();
     }
-
-    // --- Lifecycle (delegated) ---
     dispose(): void {
         this.lifecycleController.dispose();
     }
     destroy(): void {
         this.lifecycleController.destroy();
     }
-
-    // --- Fluent Graph API ---
     addNode(spec: NodeSpec | Node): Node | null {
         return this.graph.addNode(spec);
     }
@@ -251,8 +235,6 @@ export class SpaceGraph {
     removeEdge(id: string): void {
         this.graph.removeEdge(id);
     }
-
-    // --- Selection (fluent) ---
     select(target: string | readonly string[] | null): this {
         this.selection.select(target);
         return this;
@@ -269,8 +251,6 @@ export class SpaceGraph {
         this.selection.deselect(id);
         return this;
     }
-
-    // --- Visibility ---
     show(id: string, visible = true): this {
         const node = this.graph.nodes.get(id);
         if (node) node.setVisible(visible);
@@ -279,8 +259,6 @@ export class SpaceGraph {
     hide(id: string): this {
         return this.show(id, false);
     }
-
-    // --- Watch ---
     watch<K extends keyof SpaceGraphEvents>(
         type: K,
         callback: (data: SpaceGraphEvents[K]) => void,
@@ -289,8 +267,6 @@ export class SpaceGraph {
         this.events.on(type, handler);
         return () => this.events.off(type, handler);
     }
-
-    // --- Layout ---
     /** Apply a layout by name with typed options */
     async layout<Name extends keyof LayoutOptionsMap>(
         name: Name,
@@ -330,16 +306,12 @@ export class SpaceGraph {
         this.graph.pinAll(pinned);
         return this;
     }
-
-    // --- Projection ---
     get projection(): Projection {
         return this.renderer.projection;
     }
     setProjection(projection: Projection): SpaceGraph {
         return this.depthController.setProjection(projection);
     }
-
-    // --- Depth Spectrum ---
     get depth(): DepthMode {
         return this.depthController.depth;
     }
@@ -355,8 +327,6 @@ export class SpaceGraph {
     applySceneFade(): SpaceGraph {
         return this.depthController.applySceneFade();
     }
-
-    // --- Zoom ---
     get zoom(): number {
         return this.renderer.getZoom();
     }
@@ -369,8 +339,6 @@ export class SpaceGraph {
     get viewport(): CameraViewport {
         return this.renderer.getViewport();
     }
-
-    // --- Input ---
     registerFingerings(): void {
         this.input.registerFingering(
             createCameraFingering(this.cameraControls),
@@ -387,8 +355,6 @@ export class SpaceGraph {
             e as { originalEvent?: { preventDefault?: () => void } }
         ).originalEvent?.preventDefault?.();
     }
-
-    // --- Internal helpers ---
     /** Common pattern: update cameraControls, report viewport, request frame. */
     commitCamera(): this {
         this.cameraControls?.update();
@@ -434,8 +400,6 @@ export class SpaceGraph {
         this.cameraControls.spherical.theta = Math.atan2(diff.x, diff.z);
         mathPool.releaseVector3(diff);
     }
-
-    // --- Initialization ---
     #init(): void {
         this.animationController.setContinuousMode(
             (this.options.render?.renderMode ?? 'on-demand') === 'continuous',

@@ -3,7 +3,7 @@
  */
 
 import type { JSX } from 'solid-js';
-import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
+import type { IconComponent } from '@spacegraphjs/shared/icons';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import { GraphIconButton } from './GraphIconButton';
 
@@ -20,7 +20,6 @@ export interface GraphZoomControlProps {
 
 export function GraphZoomControl(props: GraphZoomControlProps): JSX.Element {
     const { zoomPercent, onZoomOut, onZoomIn, zoomOutDisabled, zoomInDisabled, i18n, Icon } = props;
-    const renderIcon = Icon ?? createIconRenderer();
 
     return (
         <div class="flex items-center gap-1">
@@ -29,7 +28,7 @@ export function GraphZoomControl(props: GraphZoomControlProps): JSX.Element {
                 icon="expand"
                 disabled={zoomOutDisabled}
                 onClick={() => onZoomOut?.()}
-                Icon={renderIcon}
+                Icon={Icon}
             />
             <span
                 data-slot="graph-zoom-level"
@@ -45,7 +44,7 @@ export function GraphZoomControl(props: GraphZoomControlProps): JSX.Element {
                 icon="plus"
                 disabled={zoomInDisabled}
                 onClick={() => onZoomIn?.()}
-                Icon={renderIcon}
+                Icon={Icon}
             />
         </div>
     );

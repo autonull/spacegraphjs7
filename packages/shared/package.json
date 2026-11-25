@@ -61,11 +61,6 @@
             "import": "./dist/css.js",
             "default": "./dist/css.js"
         },
-        "./portal": {
-            "types": "./dist/portal.d.ts",
-            "import": "./dist/portal.js",
-            "default": "./dist/portal.js"
-        },
         "./hooks": {
             "types": "./dist/hooks.d.ts",
             "import": "./dist/hooks.js",

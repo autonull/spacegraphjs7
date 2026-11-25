@@ -4,7 +4,7 @@
 
 import type { JSX } from 'solid-js';
 import { Show, createSignal, onMount, onCleanup } from 'solid-js';
-import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
+import type { IconComponent } from '@spacegraphjs/shared/icons';
 import type { PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { GraphViewData } from '@spacegraphjs/shared/types';
@@ -22,7 +22,6 @@ export interface GraphTimeControlProps {
 
 export function GraphTimeControl(props: GraphTimeControlProps): JSX.Element {
     const { i18n, Icon, ...rest } = props;
-    const renderIcon = Icon ?? createIconRenderer();
     const [timeOpen, setTimeOpen] = createSignal<boolean>();
     const offLive = () =>
         rest.checkpoint !== undefined &&
@@ -55,7 +54,7 @@ export function GraphTimeControl(props: GraphTimeControlProps): JSX.Element {
                 pressed={timeShown()}
                 slot="graph-time-toggle"
                 onClick={() => setTimeOpen(!timeShown())}
-                Icon={renderIcon}
+                Icon={Icon}
             />
             <Show when={timeShown()}>
                 <label

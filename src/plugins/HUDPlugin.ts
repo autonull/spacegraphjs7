@@ -164,10 +164,7 @@ export class HUDPlugin extends BaseSystemPlugin {
         this.on('edge:added', () => this.updateNodeCount());
         this.on('edge:removed', () => this.updateNodeCount());
         this.on('selection:changed', (e) => this.updateSelection(e));
-        this.on('camera:moved', () => this.updateCamera());
-
         this.on('fractal:level-change', (e: any) => this.updateFractalLevel(e));
-        this.on('fractal:transition-progress', (p: number) => this.updateFractalProgress(p));
     }
 
     private updateNodeCount(): void {
@@ -196,29 +193,4 @@ export class HUDPlugin extends BaseSystemPlugin {
         }
     }
 
-    private updateFractalProgress(progress: number): void {
-        let progressBar = document.getElementById('fractal-zoom-progress');
-        if (!progressBar) {
-            const container = document.querySelector('.fractal-level-indicator');
-            if (container) {
-                const wrapper = document.createElement('div');
-                wrapper.style.cssText =
-                    'height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 10px; overflow: hidden;';
-                progressBar = document.createElement('div');
-                progressBar.id = 'fractal-zoom-progress';
-                progressBar.style.cssText =
-                    'height: 100%; width: 0%; background: #8b5cf6; transition: width 0.1s ease;';
-                wrapper.appendChild(progressBar);
-                container.appendChild(wrapper);
-            }
-        }
-        if (progressBar) {
-            progressBar.style.width = `${progress * 100}%`;
-            if (progress >= 1 || progress <= 0) {
-                setTimeout(() => {
-                    if (progressBar) progressBar.style.width = '0%';
-                }, 200);
-            }
-        }
-    }
 }

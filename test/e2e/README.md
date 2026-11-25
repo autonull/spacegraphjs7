@@ -70,7 +70,8 @@ SG_DEMO_ATLAS_DIR=/tmp/demo-atlas pnpm run test:demo-atlas
 Both screenshot specs and `demo-errors.spec.ts` now import the same registry, so adding a demo to a
 category folder automatically adds it to every test and to the report. Regenerate the registry with
 `pnpm exec tsx script/generate-demo-registry.ts` after adding or recategorizing a demo. The older
-`demo-verification.spec.ts` and five overlapping `verification/capture_*.ts` scripts were retired;
+`demo-verification.spec.ts`, five overlapping `verification/capture_*.ts` scripts and five
+overlapping or self-writing specs were retired; see TODO8.md §6 for the reasons and surviving gates.
 `pnpm run verify` now uses the single parameterized `verification/capture.ts`.
 
 ## Further development

@@ -4,7 +4,7 @@
 
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
-import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
+import type { IconComponent } from '@spacegraphjs/shared/icons';
 import type { PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { DetailMode, GraphViewData } from '@spacegraphjs/shared/types';
@@ -40,7 +40,6 @@ export interface GraphShowControlProps {
 
 export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
     const { i18n, Icon, ...rest } = props;
-    const renderIcon = Icon ?? createIconRenderer();
 
     return (
         <>
@@ -56,7 +55,7 @@ export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
                         onClick={rest.onUndoManual ?? (() => {})}
                         disabled={(rest.manualHistoryLength ?? 0) === 0}
                         slot="graph-undo-option"
-                        Icon={renderIcon}
+                        Icon={Icon}
                     />
                     <GraphIconButton
                         label={i18n.t('ui.toolbar.redo')}
@@ -64,7 +63,7 @@ export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
                         onClick={rest.onRedoManual ?? (() => {})}
                         disabled={(rest.manualFutureLength ?? 0) === 0}
                         slot="graph-redo-option"
-                        Icon={renderIcon}
+                        Icon={Icon}
                     />
                 </div>
             </Show>
@@ -120,7 +119,7 @@ export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
                     label={i18n.t('ui.toolbar.minimap')}
                     icon="layout-bottom"
                     onClick={() => rest.onOpenWindow?.('minimap')}
-                    Icon={renderIcon}
+                    Icon={Icon}
                 />
             </Show>
             <Show when={rest.onOpenWindow && rest.model?.workspaceRoot}>
@@ -128,7 +127,7 @@ export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
                     label={i18n.t('ui.toolbar.filesystem')}
                     icon="folder-tree"
                     onClick={() => rest.onOpenWindow?.('filesystem')}
-                    Icon={renderIcon}
+                    Icon={Icon}
                 />
             </Show>
             <Show when={rest.onToggleLegend}>
@@ -137,7 +136,7 @@ export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
                     icon="outline-sliders"
                     pressed={rest.legend}
                     onClick={() => rest.onToggleLegend?.()}
-                    Icon={renderIcon}
+                    Icon={Icon}
                 />
             </Show>
             <Show when={rest.onToggleGallery}>
@@ -146,7 +145,7 @@ export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
                     icon="dot-grid"
                     pressed={rest.gallery}
                     onClick={() => rest.onToggleGallery?.()}
-                    Icon={renderIcon}
+                    Icon={Icon}
                 />
             </Show>
             <Show when={rest.onTurnMap}>
@@ -154,7 +153,7 @@ export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
                     label={i18n.t('ui.toolbar.turnMap')}
                     icon="outline-worktree"
                     onClick={() => rest.onTurnMap?.()}
-                    Icon={renderIcon}
+                    Icon={Icon}
                 />
             </Show>
             <Show when={rest.onExpandGraph}>
@@ -162,7 +161,7 @@ export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
                     label={i18n.t('ui.toolbar.expandGraph')}
                     icon="arrow-up-right"
                     onClick={() => rest.onExpandGraph?.()}
-                    Icon={renderIcon}
+                    Icon={Icon}
                 />
             </Show>
         </>

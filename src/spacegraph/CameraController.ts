@@ -145,6 +145,15 @@ export class CameraController {
             this.sg.events.emit('zoom:change', { zoom: viewport.zoom, previous: this.#lastZoom });
         }
         this.sg.events.emit('camera:change', viewport);
+        this.sg.events.emit('camera:move', {
+            position: [
+                this.sg.renderer.camera.position.x,
+                this.sg.renderer.camera.position.y,
+                this.sg.renderer.camera.position.z,
+            ],
+            target: camera.center,
+            timestamp: Date.now(),
+        });
         this.#lastZoom = viewport.zoom;
         this.#lastCenter = viewport.center;
     }
