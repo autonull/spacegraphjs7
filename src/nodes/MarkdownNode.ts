@@ -50,14 +50,15 @@ export class MarkdownNode extends BaseContentNode {
 
         this._renderMarkdown(md);
 
+        if (spec.data?.height === undefined) {
+            Object.assign(this.domElement.style, { height: 'auto', overflow: 'visible' });
+        }
+
         if (typeof ResizeObserver !== 'undefined') {
-            const ro = new ResizeObserver((entries) => {
-                for (const entry of entries) {
-                    const rect = entry.contentRect;
-                    if (rect.height > 0 && rect.width > 0) {
-                        const w = Math.max(rect.width, (this.data?.width as number) ?? 300);
-                        this.updateBackingGeometry(w, rect.height);
-                    }
+            const ro = new ResizeObserver(() => {
+                const { offsetWidth, offsetHeight } = this.domElement;
+                if (offsetWidth > 0 && offsetHeight > 0) {
+                    this.updateBackingGeometry(offsetWidth, offsetHeight);
                 }
             });
             ro.observe(this.domElement);

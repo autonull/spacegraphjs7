@@ -15,34 +15,51 @@
             }
             .overlay {
                 position: fixed;
-                top: 20px;
+                bottom: 20px;
                 left: 20px;
                 z-index: 1000;
                 background: rgba(15, 23, 42, 0.95);
                 border: 1px solid #334155;
                 border-radius: 12px;
-                padding: 20px;
-                max-width: 380px;
+                padding: 14px 18px;
+                max-width: min(380px, calc(100vw - 40px));
+            }
+            .overlay[hidden] {
+                display: none;
+            }
+            .overlay .dismiss {
+                position: absolute;
+                top: 8px;
+                right: 10px;
+                border: 0;
+                background: none;
+                color: #94a3b8;
+                font-size: 20px;
+                cursor: pointer;
+            }
+            .overlay .dismiss:focus-visible {
+                outline: 2px solid #7dd3fc;
+                outline-offset: 2px;
             }
             .overlay h1 {
                 font-size: 18px;
                 color: #fff;
-                margin-bottom: 8px;
+                margin-bottom: 4px;
             }
             .overlay p {
                 font-size: 13px;
                 color: #94a3b8;
-                margin-bottom: 16px;
+                margin-bottom: 8px;
                 line-height: 1.5;
             }
             .feature-list {
-                margin-top: 16px;
+                margin-top: 8px;
             }
             .feature {
                 display: flex;
                 align-items: center;
                 gap: 10px;
-                margin-bottom: 10px;
+                margin-bottom: 6px;
                 font-size: 13px;
                 color: #cbd5e1;
             }
@@ -50,13 +67,14 @@
                 font-size: 18px;
             }
             .code-block {
-                margin-top: 16px;
-                padding: 12px;
+                margin-top: 8px;
+                padding: 10px 12px;
                 background: rgba(30, 41, 59, 0.8);
                 border-radius: 6px;
                 font-family: monospace;
-                font-size: 11px;
-                color: #34d399;
+                font-size: 12px;
+                line-height: 1.5;
+                color: #6ee7b7;
                 overflow-x: auto;
             }
         </style>
@@ -64,7 +82,8 @@
     <body>
         <div id="container"></div>
 
-        <div class="overlay">
+        <div class="overlay" id="quickstart-guide">
+            <button class="dismiss" type="button" aria-label="Dismiss quick start guide">×</button>
             <h1>Quick Start Guide</h1>
             <p>
                 This demo shows the essential SpaceGraphJS setup with the most commonly used
@@ -101,6 +120,13 @@
         </div>
 
         <script type="module">
+            const guide = document.getElementById('quickstart-guide');
+            if (sessionStorage.getItem('sg-quickstart-dismissed') === '1') guide.hidden = true;
+            guide.querySelector('.dismiss').addEventListener('click', () => {
+                guide.hidden = true;
+                sessionStorage.setItem('sg-quickstart-dismissed', '1');
+            });
+
             import {
                 ForceLayout,
                 HistoryPlugin,

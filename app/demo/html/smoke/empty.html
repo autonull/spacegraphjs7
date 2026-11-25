@@ -16,21 +16,45 @@
                 position: absolute;
                 inset: 0;
                 display: grid;
-                place-items: center;
+                place-content: center;
+                gap: 8px;
+                text-align: center;
                 color: #94a3b8;
-                font: 14px system-ui, sans-serif;
+                font: 14px/1.5 system-ui, sans-serif;
                 pointer-events: none;
+            }
+            #empty-state[hidden] {
+                display: none;
+            }
+            #empty-state strong {
+                color: #e2e8f0;
+                font-size: 18px;
+            }
+            #empty-state a {
+                pointer-events: auto;
+                color: #7dd3fc;
             }
         </style>
     </head>
     <body>
         <div id="container"></div>
-        <div id="empty-state">Empty graph — add nodes to begin</div>
+        <div id="empty-state" role="status" aria-live="polite">
+            <strong>No nodes yet</strong>
+            <span>
+                Add a node to begin, or follow the
+                <a href="../plugins/quickstart.html">quick start guide</a>.
+            </span>
+        </div>
         <script type="module">
             import { SpaceGraph } from '@src/index.ts';
 
             try {
+                const frame = document.getElementById('empty-state');
                 const graph = await SpaceGraph.create('#container', { nodes: [], edges: [] });
+                const sync = () => (frame.hidden = graph.graph.nodes.size > 0);
+                sync();
+                graph.events.on('node:added', sync);
+                graph.events.on('node:removed', sync);
                 window._sg = graph;
                 console.log('✓ Empty graph works');
                 window.addEventListener('beforeunload', () => graph.dispose());

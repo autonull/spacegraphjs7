@@ -176,6 +176,8 @@ test.describe('the demo host (T6.12)', () => {
     });
 
     test('captures the gallery for the review packet', async ({ page }) => {
+        test.skip(!process.env.DEMO_SHOTS, 'capture-only: set DEMO_SHOTS to regenerate the review packet');
+
         const errors = await boot(page, '/', { viewport: false });
 
         // The camera flies to a new frame over 1.5s, so a capture taken sooner catches it mid-flight.
