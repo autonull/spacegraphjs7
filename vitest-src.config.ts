@@ -5,7 +5,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
     test: {
         include: ['src/**/*.test.ts'],
-        environment: 'jsdom',
+        // Most source-colocated tests are pure logic; DOM tests opt into jsdom per file.
+        environment: 'node',
         pool: 'vmThreads',
         passWithNoTests: true,
         setupFiles: [resolve(import.meta.dirname, 'test/setupTests.ts')],

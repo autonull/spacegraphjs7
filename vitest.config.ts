@@ -70,6 +70,10 @@ export default defineConfig({
                 find: new RegExp(`^@spacegraphjs/${name}$`),
                 replacement: resolve(import.meta.dirname, `packages/domain/${name}/src/index.ts`),
             })),
+            {
+                find: /^pi-kit$/,
+                replacement: resolve(import.meta.dirname, 'app/pi-kit/src/index.ts'),
+            },
             // Solid ships server and browser builds behind export conditions; Vitest resolves the server build,
             // which rejects client-only APIs. Point the framework binding tests at the browser builds.
             {
@@ -98,8 +102,8 @@ export default defineConfig({
         include: ['test/**/*.test.ts', 'packages/*/test/**/*.test.ts', 'app/*/tests/**/*.test.ts'],
         exclude: [...configDefaults.exclude],
         globals: false,
-        // Setup files to provide node-canvas and DOM shims for jsdom, plus jest-dom matchers
-        setupFiles: ['test/setupTests.ts', 'test/vitest.setup.ts'],
+        // Provides node-canvas and DOM shims for jsdom. jest-dom matchers are registered by vite-plugin-solid.
+        setupFiles: ['test/setupTests.ts'],
         coverage: {
             provider: 'v8',
             include: ['src/**/*.ts'],

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, test } from 'vitest';
 import { KernelCodec, KERNEL_FORMAT } from './codec';
 import { Kernel } from './kernel';
