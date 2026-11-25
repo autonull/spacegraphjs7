@@ -4,7 +4,12 @@
  */
 
 import type { JSX } from 'solid-js';
-import { createIconRenderer, type IconComponent, type I18n } from '@spacegraphjs/shared';
+import {
+    createIconRenderer,
+    GraphIconButton,
+    type IconComponent,
+    type I18n,
+} from '@spacegraphjs/shared';
 import { createPopoverRenderer } from '@spacegraphjs/shared/popover';
 import { ToolbarMenu } from './ToolbarMenu';
 import { GraphLayersControl } from './GraphLayersControl';
@@ -327,21 +332,6 @@ interface GraphToolbarCommandControlsProps {
     Icon?: IconComponent;
 }
 
-const iconButton = (
-    renderIcon: IconComponent,
-    icon: string,
-    label: string,
-    onClick: () => void,
-) => (
-    <button
-        type="button"
-        class="flex h-6 w-6 items-center justify-center rounded-sm text-text-base hover:bg-surface-base-hover"
-        onClick={onClick}
-        aria-label={label}
-    >
-        {renderIcon({ name: icon, size: 'small' })}
-    </button>
-);
 
 const RENDERER_LABELS: Record<string, string> = {
     spacegraph: 'SpaceGraph',
@@ -355,7 +345,12 @@ function GraphToolbarCommandControls(props: GraphToolbarCommandControlsProps): J
     return (
         <>
             <GraphZoomControl {...rest} i18n={i18n} Icon={renderIcon} />
-            {iconButton(renderIcon, 'expand', i18n.t('ui.toolbar.fit'), rest.onFit)}
+            <GraphIconButton
+                icon="expand"
+                label={i18n.t('ui.toolbar.fit')}
+                onClick={rest.onFit}
+                Icon={renderIcon}
+            />
 
             {rest.onSplitView && (
                 <GraphRendererStatus
@@ -401,10 +396,22 @@ function GraphRendererStatus(props: GraphRendererStatusProps): JSX.Element {
                     {rendererLabel}
                 </span>
             )}
-            {onSplitView &&
-                iconButton(renderIcon, 'split', i18n.t('ui.toolbar.split'), onSplitView)}
-            {onBack &&
-                iconButton(renderIcon, 'outline-arrow-left', i18n.t('ui.toolbar.back'), onBack)}
+            {onSplitView && (
+                <GraphIconButton
+                    icon="split"
+                    label={i18n.t('ui.toolbar.split')}
+                    onClick={onSplitView}
+                    Icon={renderIcon}
+                />
+            )}
+            {onBack && (
+                <GraphIconButton
+                    icon="outline-arrow-left"
+                    label={i18n.t('ui.toolbar.back')}
+                    onClick={onBack}
+                    Icon={renderIcon}
+                />
+            )}
         </div>
     );
 }

@@ -600,9 +600,6 @@ export abstract class Node extends Surface {
         };
     }
 
-    toggle(): this {
-        return this.toggleVisible();
-    }
 
     enable(): this {
         return this.setVisibleFlag(true, true);
@@ -705,9 +702,6 @@ export abstract class Node extends Surface {
         return this.setDataFlag('draggable', draggable);
     }
 
-    isDraggableFlag(): boolean {
-        return this.isDraggable();
-    }
 
     /** Normalize tags from array or comma-separated string to a clean array. */
     #normalizeTags(): string[] {
@@ -742,31 +736,35 @@ export abstract class Node extends Surface {
         return this.#normalizeTags();
     }
 
+    #spec(overrides: Partial<NodeSpec> = {}): NodeSpec {
+        return {
+            id: this.id,
+            type: this.type,
+            label: this.label,
+            position: [this.position.x, this.position.y, this.position.z],
+            data: { ...this.data },
+            ...overrides,
+        };
+    }
+
     clone(newId: string, offset: readonly [number, number, number] = [20, 20, 0]): Node | null {
         return (
-            this.sg?.graph.addNode({
-                id: newId,
-                type: this.type,
-                label: this.label,
-                position: [
-                    this.position.x + offset[0],
-                    this.position.y + offset[1],
-                    this.position.z + offset[2],
-                ],
-                data: { ...this.data },
-            }) ?? null
+            this.sg?.graph.addNode(
+                this.#spec({
+                    id: newId,
+                    position: [
+                        this.position.x + offset[0],
+                        this.position.y + offset[1],
+                        this.position.z + offset[2],
+                    ],
+                }),
+            ) ?? null
         );
     }
 
     replaceWith(newType: string): Node | null {
         if (!this.sg) return null;
-        const newNode = this.sg.graph.addNode({
-            id: this.id,
-            type: newType,
-            label: this.label,
-            position: [this.position.x, this.position.y, this.position.z],
-            data: { ...this.data },
-        });
+        const newNode = this.sg.graph.addNode(this.#spec({ type: newType }));
         this.dispose();
         return newNode;
     }

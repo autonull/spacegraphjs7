@@ -6,6 +6,7 @@
 
 import { boundsFromExtents } from './bounds';
 import type { Position } from './placement';
+import { repulsionForce } from './repulsion';
 import { resolveScopeRef, scopeOf, type ScopeSpec, type ScopeTree } from './scope';
 import {
     ScopeHost,
@@ -498,8 +499,12 @@ export class ScopeSimulation {
                     const dy = a.position.y - b.position.y;
                     const dz = a.position.z - b.position.z;
                     const distance = Math.hypot(dx, dy, dz) || 1e-3;
-                    const effective = Math.max(distance, a.radius + b.radius);
-                    const force = Math.min(repulsion / (effective * effective), maxAcceleration);
+                    const force = repulsionForce(
+                        distance * distance,
+                        repulsion,
+                        a.radius + b.radius,
+                        maxAcceleration,
+                    );
                     const fx = (dx / distance) * force;
                     const fy = (dy / distance) * force;
                     const fz = (dz / distance) * force;

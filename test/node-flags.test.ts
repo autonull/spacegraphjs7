@@ -13,7 +13,7 @@ describe('node visibility wrappers', () => {
         expect(n.visible).toBe(false);
         n.show();
         expect(n.visible).toBe(true);
-        n.toggle();
+        n.toggleVisible();
         expect(n.visible).toBe(false);
         n.toggleVisible();
         expect(n.visible).toBe(true);
@@ -50,7 +50,7 @@ describe('node data flags', () => {
         expect(n.isFixed()).toBe(false);
         expect(n.isPinned()).toBe(false);
         expect(n.isSelectable()).toBe(true);
-        expect(n.isDraggableFlag()).toBe(true);
+        expect(n.isDraggable()).toBe(true);
     });
 
     it('setters flip each flag independently', () => {
@@ -59,7 +59,7 @@ describe('node data flags', () => {
         expect(n.isFixed()).toBe(true);
         expect(n.isPinned()).toBe(true);
         expect(n.isSelectable()).toBe(false);
-        expect(n.isDraggableFlag()).toBe(false);
+        expect(n.isDraggable()).toBe(false);
     });
 
     it('keeps strict equality for opt-in flags', () => {

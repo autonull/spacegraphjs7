@@ -4,7 +4,12 @@
 import { Vector3 } from 'three';
 import { BaseSystemPlugin } from '../BaseSystemPlugin';
 import type { Node } from '../../nodes/Node';
-import { DEFAULT_NODE_PADDING, diagonalRadius } from '../../layout/node-bounds';
+import {
+    DEFAULT_NODE_PADDING,
+    diagonalRadius,
+    resolveNodeBounds,
+    type NodeBounds,
+} from '../../layout/node-bounds';
 
 /**
  * Layout options for apply()
@@ -66,9 +71,15 @@ export abstract class BaseLayout<
         children: ReadonlyMap<string, readonly string[]>,
     ): Map<number, number> {
         const heights = new Map<number, number>();
+        const visited = new Set<string>();
         const visit = (id: string, depth: number): void => {
-            const bounds = this.graph.nodes.get(id)?.getLayoutBounds();
-            if (bounds) heights.set(depth, Math.max(heights.get(depth) ?? 0, bounds.height));
+            if (visited.has(id)) return;
+            visited.add(id);
+            const node = this.graph.nodes.get(id);
+            if (!node) return;
+            const carrier = node as { getLayoutBounds?: () => NodeBounds };
+            const bounds = resolveNodeBounds(node, () => carrier.getLayoutBounds?.());
+            heights.set(depth, Math.max(heights.get(depth) ?? 0, bounds.height));
             for (const child of children.get(id) ?? []) visit(child, depth + 1);
         };
         roots.forEach((id) => visit(id, 0));

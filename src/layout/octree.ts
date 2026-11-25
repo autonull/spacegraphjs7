@@ -5,6 +5,7 @@
  * distant nodes into cells and treating them as single bodies with aggregated
  * mass and center of mass.
  */
+import { repulsionForce } from './repulsion';
 
 export interface OctreeNode {
     /** Bounds of this cell */
@@ -205,7 +206,7 @@ export const addRepulsion = (
     minDistance: number,
     maxForce: number,
 ): void => {
-    const capped = Math.min(strength / Math.max(distSq, minDistance * minDistance), maxForce);
+    const capped = repulsionForce(distSq, strength, minDistance, maxForce);
     force.x += (dx / dist) * capped;
     force.y += (dy / dist) * capped;
     force.z += (dz / dist) * capped;
