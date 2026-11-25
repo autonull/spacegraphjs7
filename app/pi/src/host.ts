@@ -174,7 +174,7 @@ import {
 import { SHORTCUT_HELP } from './help';
 import { ChromeController, installPulldowns } from './chrome';
 import { downloadBlob } from '../../pi-kit/src/download';
-import { clampZoom } from '../../pi-kit/src/viewport';
+import { createViewportController } from '../../pi-kit/src/viewport';
 import { button, el, ensureChild, pruneChildren } from './dom';
 import { FocusLens } from './focus-lens';
 import {
@@ -224,6 +224,7 @@ export { el } from './dom';
  */
 export class PiHost {
     readonly renderer = new SpaceGraphRenderer();
+    readonly viewOps = createViewportController(this.renderer, { min: 0.1, max: 6 });
     readonly simulation: ScopeSimulation;
     readonly director = new MotionDirector();
     readonly playSession: PhysicsPlaySession;
@@ -1696,9 +1697,7 @@ export class PiHost {
     }
 
     zoomBy(factor: number): number {
-        const viewport = this.renderer.getViewport();
-        const zoom = clampZoom(viewport.zoom, factor, { min: 0.1, max: 6 });
-        this.renderer.setViewport({ ...viewport, zoom });
+        const zoom = this.viewOps.zoomBy(factor);
         this.renderMinimap();
         const direction = Math.sign(factor - 1);
         if (direction && this.#lastZoomDirection && direction !== this.#lastZoomDirection) {
@@ -2842,7 +2841,7 @@ export class PiHost {
         const height = canvas?.clientHeight || window.innerHeight || 1000;
         this.#fit = fitMetrics(width, height, padding, this.#resolved.values);
         this.#refits++;
-        this.renderer.fit(ids, { padding, insets: adaptiveInsets(width, height, padding) });
+        this.viewOps.fit(ids, { padding, insets: adaptiveInsets(width, height, padding) });
     }
 
     /** Refit only on a material aspect change; small resizes keep the user's chosen camera. */

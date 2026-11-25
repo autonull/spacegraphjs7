@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { dataText, el, escapeHTML } from '../src/dom';
 import { dispatchKeys, plainKey, renderShortcuts, shiftedKey, type KeyBinding } from '../src/keyboard';
-import { clampZoom } from '../src/viewport';
+import { clampZoom, createViewportController } from '../src/viewport';
 const event = (key: string, extra: Partial<KeyboardEvent> = {}): KeyboardEvent => {
     const target = document.createElement('body');
     return {
@@ -55,6 +55,22 @@ describe('zoom clamping', () => {
         expect(clampZoom(1, 16, range)).toBe(4);
         expect(clampZoom(1, 0.01, range)).toBe(0.25);
         expect(clampZoom(1, 1.2, range)).toBeCloseTo(1.2);
+    });
+});
+describe('viewport controller', () => {
+    it('clamps zoom through the shared renderer verbs and forwards fit', () => {
+        const viewport = { zoom: 1, center: [0, 0, 0] as [number, number, number] };
+        const fitted: unknown[] = [];
+        const renderer = {
+            getViewport: () => viewport,
+            setViewport: (next: typeof viewport) => Object.assign(viewport, next),
+            fit: (ids: readonly string[] | undefined, options?: unknown) => fitted.push([ids, options]),
+        };
+        const view = createViewportController(renderer, { min: 0.25, max: 4 });
+        expect(view.zoomBy(16)).toBe(4);
+        expect(viewport.zoom).toBe(4);
+        view.fit(['a'], { padding: 10 });
+        expect(fitted).toEqual([[['a'], { padding: 10 }]]);
     });
 });
 describe('host DOM helpers', () => {

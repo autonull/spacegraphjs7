@@ -46,7 +46,7 @@ import { bandForOctave, octaveFor, octaveSizeFor, sizeForOctave, type OctaveBand
 import { provenanceFor } from './provenance';
 import {
     buildScopes,
-    clampZoom,
+    createViewportController,
     dataText,
     DEFAULT_FIT_OPTIONS,
     downloadBlob,
@@ -400,6 +400,7 @@ const detailFor = (
 
 export class DurableHost {
     readonly renderer = new SpaceGraphRenderer();
+    readonly viewOps = createViewportController(this.renderer, ZOOM_RANGE);
     readonly registry: TabRegistry;
     readonly #announcer = createAnnouncer(el('announcer'));
     #groups: readonly DurableGroup[] = [];
@@ -561,7 +562,7 @@ export class DurableHost {
         this.#ready = true;
         this.refresh();
         this.#recordHistory();
-        this.renderer.fit(undefined, DEFAULT_FIT_OPTIONS);
+        this.viewOps.fit(undefined, DEFAULT_FIT_OPTIONS);
     }
 
     ready(): boolean {
@@ -791,7 +792,7 @@ export class DurableHost {
         this.#edgeLabels = model.edges.flatMap((edge) => (edge.label ? [edge.label] : []));
         if (!this.#fitted && presented.nodes.length) {
             this.#fitted = true;
-            requestAnimationFrame(() => this.renderer.fit(undefined, DEFAULT_FIT_OPTIONS));
+            requestAnimationFrame(() => this.viewOps.fit(undefined, DEFAULT_FIT_OPTIONS));
         }
         this.renderTabs();
         this.renderStatus();
@@ -813,7 +814,7 @@ export class DurableHost {
         if (name === this.#viewName) return;
         this.#viewName = name;
         this.refresh();
-        requestAnimationFrame(() => this.renderer.fit(undefined, DEFAULT_FIT_OPTIONS));
+        requestAnimationFrame(() => this.viewOps.fit(undefined, DEFAULT_FIT_OPTIONS));
         this.renderView();
         this.announce(`${name} view`);
         this.#recordHistory();
@@ -848,20 +849,17 @@ export class DurableHost {
     }
 
     zoomBy(factor: number): void {
-        const viewport = this.renderer.getViewport?.();
-        if (!viewport) return;
-        const zoom = clampZoom(viewport.zoom, factor, ZOOM_RANGE);
+        const zoom = this.viewOps.zoomBy(factor);
         this.#rungPinned = false;
         this.#bands.feed(zoom, ZOOM_RANGE);
         this.#sample = this.#scale.feed(zoom);
         this.#rungPinned = true;
-        this.renderer.setViewport({ zoom, center: viewport.center });
     }
 
     resetView(): void {
         this.setRung('fact');
         this.#rungPinned = false;
-        this.renderer.fit(undefined, DEFAULT_FIT_OPTIONS);
+        this.viewOps.fit(undefined, DEFAULT_FIT_OPTIONS);
         this.announce('View reset');
     }
 
