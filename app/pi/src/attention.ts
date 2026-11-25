@@ -1,4 +1,5 @@
 import type { RenderEdge, RenderNode } from '@spacegraphjs/renderer';
+import { clamp01 } from 'spacegraphjs/utils';
 import {
     applyEdgeEmphasis,
     applyEmphasis,
@@ -29,7 +30,7 @@ const CAUSAL_KINDS = new Set(['writes', 'delegates', 'orders']);
 export const edgeRank = (kind: string): number => EDGE_RANK[kind] ?? 0.2;
 
 export const salienceScore = (activity: number, emphasis = 0): number =>
-    Math.min(1, Math.max(0, Math.max(activity, emphasis)));
+    clamp01(Math.max(activity, emphasis));
 
 /** One mapping owns the salience channels; policy only chooses their bounds. */
 export const attentionMapping = (salienceSize: number): EmphasisMapping =>

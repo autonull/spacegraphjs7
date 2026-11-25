@@ -1,3 +1,5 @@
+import { clamp } from '../utils/math';
+
 /** A node box, in layout units, as fed to the density solver. */
 export interface DensityNode {
     readonly width?: number;
@@ -24,9 +26,6 @@ export interface NodeAreaDensity {
     readonly measured: number;
     readonly passes: number;
 }
-
-const clamp = (value: number, min: number, max: number): number =>
-    Math.min(max, Math.max(min, value));
 
 const DEFAULT_NODE = 64;
 const areaOf = (node: DensityNode): number =>

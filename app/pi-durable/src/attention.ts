@@ -1,4 +1,5 @@
 import type { ScopeNode } from 'pi-kit';
+import { clamp01 } from 'spacegraphjs/utils';
 import { ScaleDomain, type ScaleSample } from 'spacegraphjs/zoom';
 import { RUNGS, type Rung } from './rungs';
 
@@ -17,8 +18,6 @@ const KIND_RANK: Readonly<Record<string, number>> = {
 };
 
 const TIER_BIAS = { hero: 0.08, medium: 0, compact: -0.08 } as const;
-
-const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
 /** Landmarks are samples of one scale; zoom interpolates between them. */
 export const createScaleDomain = (): ScaleDomain =>

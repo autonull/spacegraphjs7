@@ -20,13 +20,17 @@ export const boundsFromExtents = (
     size: [maxX - minX, maxY - minY, maxZ - minZ],
 });
 
-/** Accumulate extents over points; undefined when there are none. */
-export const accumulateBounds = (points: Iterable<Position>): CenterBounds | undefined => {
+/** Accumulate extents over projected items; undefined when there are none. */
+export const accumulateBoundsFrom = <T>(
+    items: Iterable<T>,
+    pointOf: (item: T) => Position,
+): CenterBounds | undefined => {
     let minX = Infinity, minY = Infinity, minZ = Infinity;
     let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
     let any = false;
-    for (const point of points) {
+    for (const item of items) {
         any = true;
+        const point = pointOf(item);
         minX = Math.min(minX, point.x);
         minY = Math.min(minY, point.y);
         minZ = Math.min(minZ, point.z);
@@ -36,6 +40,10 @@ export const accumulateBounds = (points: Iterable<Position>): CenterBounds | und
     }
     return any ? boundsFromExtents(minX, minY, minZ, maxX, maxY, maxZ) : undefined;
 };
+
+/** Accumulate extents over points; undefined when there are none. */
+export const accumulateBounds = (points: Iterable<Position>): CenterBounds | undefined =>
+    accumulateBoundsFrom(points, (point) => point);
 
 /** Affinely move and scale the extents of a bounds value. */
 export const transformBounds = (

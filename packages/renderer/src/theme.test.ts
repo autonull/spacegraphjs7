@@ -47,6 +47,7 @@ describe('contrast auditor', () => {
     test('computes WCAG ratios and ignores unparseable colours', () => {
         expect(contrastRatio('#000000', '#ffffff')).toBeCloseTo(21, 5);
         expect(contrastRatio('#ffffff', '#ffffff')).toBeCloseTo(1, 5);
+        expect(contrastRatio('#000', 'rgb(255, 255, 255)')).toBeCloseTo(21, 5);
         expect(contrastRatio('var(--x)', '#ffffff')).toBeUndefined();
     });
 

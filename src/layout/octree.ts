@@ -5,6 +5,7 @@
  * distant nodes into cells and treating them as single bodies with aggregated
  * mass and center of mass.
  */
+import { accumulateBoundsFrom, boundsFromExtents } from './bounds';
 import { repulsionForce } from './repulsion';
 
 export interface OctreeNode {
@@ -60,42 +61,23 @@ export function buildOctree<P extends { id: string; position: { x: number; y: nu
 ): OctreeNode {
     const { maxDepth, minCellSize } = { ...DEFAULT_BH_CONFIG, ...config };
 
-    // Find bounds
-    let minX = Infinity, minY = Infinity, minZ = Infinity;
-    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
-
-    for (const node of nodes) {
-        const { x, y, z } = node.position;
-        if (x < minX) minX = x;
-        if (y < minY) minY = y;
-        if (z < minZ) minZ = z;
-        if (x > maxX) maxX = x;
-        if (y > maxY) maxY = y;
-        if (z > maxZ) maxZ = z;
-    }
-
-    // Add padding
-    const padding = Math.max(maxX - minX, maxY - minY, maxZ - minZ) * 0.1 + 10;
-    minX -= padding; minY -= padding; minZ -= padding;
-    maxX += padding; maxY += padding; maxZ += padding;
-
-    // Ensure cubic bounds
-    const size = Math.max(maxX - minX, maxY - minY, maxZ - minZ);
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
-    const centerZ = (minZ + maxZ) / 2;
-    minX = centerX - size / 2;
-    minY = centerY - size / 2;
-    minZ = centerZ - size / 2;
-    maxX = centerX + size / 2;
-    maxY = centerY + size / 2;
-    maxZ = centerZ + size / 2;
+    const raw = accumulateBoundsFrom(nodes, (node) => node.position)
+        ?? boundsFromExtents(Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity);
+    const padding = Math.max(...raw.size) * 0.1 + 10;
+    const padded = boundsFromExtents(
+        raw.min.x - padding, raw.min.y - padding, raw.min.z - padding,
+        raw.max.x + padding, raw.max.y + padding, raw.max.z + padding,
+    );
+    const halfSize = Math.max(...padded.size) / 2;
+    const centerX = padded.center.x, centerY = padded.center.y, centerZ = padded.center.z;
+    const minX = centerX - halfSize, minY = centerY - halfSize, minZ = centerZ - halfSize;
+    const maxX = centerX + halfSize, maxY = centerY + halfSize, maxZ = centerZ + halfSize;
 
     const root: OctreeNode = {
         minX, minY, minZ,
         maxX, maxY, maxZ,
         centerX, centerY, centerZ,
-        halfSize: size / 2,
+        halfSize,
         mass: 0,
         comX: 0, comY: 0, comZ: 0,
         children: null,
