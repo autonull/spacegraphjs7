@@ -6,27 +6,27 @@ import { execFileSync } from 'node:child_process';
 import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { createPackedConsumer, RUNTIME_DEPENDENCIES } from '../../../script/publish-check/pack.js';
+import { createPackedConsumer, pickPackages, RUNTIME_DEPENDENCIES } from '../../../script/publish-check/pack.js';
 
 const root = resolve(import.meta.dirname, '../../..');
 const tsx = resolve(root, 'node_modules/.bin/tsx');
-const packages = [
-    { name: 'spacegraphjs', dir: root },
-    { name: '@spacegraphjs/adapter', dir: join(root, 'packages/adapter') },
-    { name: '@spacegraphjs/agent', dir: join(root, 'packages/domain/agent') },
-    { name: '@spacegraphjs/data', dir: join(root, 'packages/domain/data') },
-    { name: '@spacegraphjs/filesystem', dir: join(root, 'packages/domain/filesystem') },
-    { name: '@spacegraphjs/workflow', dir: join(root, 'packages/domain/workflow') },
-    { name: '@spacegraphjs/cytoscape-renderer', dir: join(root, 'packages/cytoscape-renderer') },
-    { name: '@spacegraphjs/kernel', dir: join(root, 'packages/kernel') },
-    { name: '@spacegraphjs/overlays', dir: join(root, 'packages/overlays') },
-    { name: '@spacegraphjs/renderer', dir: join(root, 'packages/renderer') },
-    { name: '@spacegraphjs/search', dir: join(root, 'packages/search') },
-    { name: '@spacegraphjs/shared', dir: join(root, 'packages/shared') },
-    { name: '@spacegraphjs/spacegraph-renderer', dir: join(root, 'packages/spacegraph-renderer') },
-    { name: '@spacegraphjs/svg-renderer', dir: join(root, 'packages/svg-renderer') },
-    { name: '@spacegraphjs/trace', dir: join(root, 'packages/trace') },
-];
+const packages = pickPackages(root, [
+    'library',
+    'adapter',
+    'agent',
+    'data',
+    'filesystem',
+    'workflow',
+    'cytoscapeRenderer',
+    'kernel',
+    'overlays',
+    'renderer',
+    'search',
+    'shared',
+    'spaceRenderer',
+    'svgRenderer',
+    'trace',
+]);
 
 const workspace = mkdtempSync(join(tmpdir(), 'spacegraph-demo-'));
 const consumer = join(workspace, 'consumer');

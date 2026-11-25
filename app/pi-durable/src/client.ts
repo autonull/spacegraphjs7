@@ -32,6 +32,13 @@ const offline = Boolean(shot) || Boolean(scenario) || Boolean(replayID)
 const registry = new TabRegistry();
 const host = new DurableHost(registry, offline, shot, seed, initialRung);
 const el = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
+const readOnly = (action: string): boolean => {
+    if (!observer && asOf === undefined) return false;
+    host.announce(`read-only — ${action} through the owner server`);
+    return true;
+};
+const announceError = (error: unknown): void =>
+    host.announce(error instanceof Error ? error.message : String(error));
 if (observer) el('app').dataset['observer'] = 'true';
 
 const initialID = scenario ?? shot ?? replayID ?? (asOf === undefined ? undefined : 'time-travel') ?? 'basic-turn';
@@ -72,10 +79,7 @@ const localPrompt = (id: string, text: string): void => {
 };
 
 const cancelPrompt = async (): Promise<boolean> => {
-    if (observer || asOf !== undefined) {
-        host.announce('read-only — cancel through the owner server');
-        return false;
-    }
+    if (readOnly('cancel')) return false;
     const requestID = pendingRequestID;
     if (!requestID) {
         host.announce(offline ? 'Local answers are immediate — nothing to cancel' : 'No prompt to cancel');
@@ -88,7 +92,7 @@ const cancelPrompt = async (): Promise<boolean> => {
         host.announce(`Cancelled ${requestID}`);
         return true;
     } catch (error) {
-        host.announce(error instanceof Error ? error.message : String(error));
+        announceError(error);
         return false;
     }
 };
@@ -108,10 +112,7 @@ const bindPrompt = (): void => {
 
 const submitPrompt = async (text: string): Promise<void> => {
     if (!text) return;
-    if (observer || asOf !== undefined) {
-        host.announce('read-only — commit through the owner server');
-        return;
-    }
+    if (readOnly('commit')) return;
     composer?.clear();
     const mode = el<HTMLSelectElement>('prompt-mode').value as 'steer' | 'followUp';
     const button = el<HTMLButtonElement>('prompt-submit');
@@ -130,17 +131,14 @@ const submitPrompt = async (text: string): Promise<void> => {
             host.announce(`Prompt ${result.status} ${result.requestId}`);
         }
     } catch (error) {
-        host.announce(error instanceof Error ? error.message : String(error));
+        announceError(error);
     } finally {
         button.dataset['busy'] = 'false';
     }
 };
 
 const forkConversation = async (): Promise<boolean> => {
-    if (observer || asOf !== undefined) {
-        host.announce('read-only — fork through the owner server');
-        return false;
-    }
+    if (readOnly('fork')) return false;
     const from = registry.activeID();
     const focus = host.address().focus;
     const entryID = entryIDFromNode(focus);
@@ -165,16 +163,13 @@ const forkConversation = async (): Promise<boolean> => {
         }
         return true;
     } catch (error) {
-        host.announce(error instanceof Error ? error.message : String(error));
+        announceError(error);
         return false;
     }
 };
 
 const newConversation = async (): Promise<boolean> => {
-    if (observer || asOf !== undefined) {
-        host.announce('read-only — create through the owner server');
-        return false;
-    }
+    if (readOnly('create')) return false;
     try {
         if (offline) {
             const ids = registry.list().map((tab) => Number(tab.id)).filter(Number.isFinite);
@@ -190,7 +185,7 @@ const newConversation = async (): Promise<boolean> => {
         }
         return true;
     } catch (error) {
-        host.announce(error instanceof Error ? error.message : String(error));
+        announceError(error);
         return false;
     }
 };
@@ -202,7 +197,7 @@ const bindFork = (): void => {
 
 const bindApprove = (): void => {
     el('approve-button').addEventListener('click', async () => {
-        if (observer || asOf !== undefined) return host.announce('read-only — approve through the owner server');
+        if (readOnly('approve')) return;
         const id = registry.activeID();
         try {
             if (offline) {
@@ -224,7 +219,7 @@ const bindApprove = (): void => {
                 host.announce(`Approval ${result.status}`);
             }
         } catch (error) {
-            host.announce(error instanceof Error ? error.message : String(error));
+            announceError(error);
         }
     });
 };
@@ -263,7 +258,7 @@ const bindCatalog = (): void => {
                         catalog.hidden = true;
                         host.announce(`Loaded ${scenario.id}`);
                     } catch (error) {
-                        host.announce(error instanceof Error ? error.message : String(error));
+                        announceError(error);
                     }
                 });
                 return button;
@@ -556,7 +551,7 @@ const connect = async (): Promise<void> => {
     } catch (error) {
         host.loadFeed(localFeed(shot, seed));
         host.setStatus({ provider: 'local feed', storage: 'fixture', tasks: 1 });
-        host.announce(error instanceof Error ? error.message : String(error));
+        announceError(error);
         return;
     }
     const events = new EventSource('/events');

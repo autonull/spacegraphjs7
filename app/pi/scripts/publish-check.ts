@@ -4,20 +4,20 @@ import { execFileSync } from 'node:child_process';
 import { copyFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { createPackedConsumer, RUNTIME_DEPENDENCIES } from '../../../script/publish-check/pack.js';
+import { createPackedConsumer, pickPackages, RUNTIME_DEPENDENCIES } from '../../../script/publish-check/pack.js';
 
 const root = resolve(import.meta.dirname, '../../..');
 const tsx = resolve(root, 'node_modules/.bin/tsx');
-const packages = [
-    { name: 'spacegraphjs', dir: root },
-    { name: '@spacegraphjs/agent', dir: join(root, 'packages/domain/agent') },
-    { name: '@spacegraphjs/adapter', dir: join(root, 'packages/adapter') },
-    { name: '@spacegraphjs/config', dir: join(root, 'packages/config') },
-    { name: '@spacegraphjs/kernel', dir: join(root, 'packages/kernel') },
-    { name: '@spacegraphjs/search', dir: join(root, 'packages/search') },
-    { name: '@spacegraphjs/shared', dir: join(root, 'packages/shared') },
-    { name: '@spacegraphjs/trace', dir: join(root, 'packages/trace') },
-];
+const packages = pickPackages(root, [
+    'library',
+    'agent',
+    'adapter',
+    'config',
+    'kernel',
+    'search',
+    'shared',
+    'trace',
+]);
 
 const workspace = mkdtempSync(join(tmpdir(), 'spacegraph-pi-consumer-'));
 const consumer = join(workspace, 'consumer');

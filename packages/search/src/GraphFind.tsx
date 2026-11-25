@@ -9,6 +9,7 @@ import type {
 } from '@spacegraphjs/shared';
 import { facetCount, mergeFacets, toggleFacet } from '@spacegraphjs/shared';
 import { rankedSearch, sessionOutline, facetCounts } from './search';
+import { navigateResults } from './keyboard';
 import { createComponent, getNextElement, insert, setAttribute, template, memo } from 'solid-js/web';
 
 export type GraphFindProps = {
@@ -215,6 +216,14 @@ export const GraphFind = (props: GraphFindProps) => {
             setQuery(target.value);
             setActiveIndex(0);
         };
+        input.onkeydown = (event) =>
+            navigateResults(
+                event,
+                searchResults().length,
+                activeIndex(),
+                setActiveIndex,
+                (index) => handleSelectResult(searchResults()[index]!),
+            );
         button.onclick = () => {
             setQuery('');
             setActiveIndex(0);

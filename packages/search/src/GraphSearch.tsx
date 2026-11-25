@@ -1,6 +1,7 @@
 import type { GraphViewData, GraphNode } from '@spacegraphjs/shared';
 import { navigationHelp, navigationResults } from './navigation';
 import { rankedSearch } from './search';
+import { navigateResults } from './keyboard';
 import type { IconComponent } from '@spacegraphjs/shared';
 import type { I18n } from '@spacegraphjs/shared';
 import { useDebounce } from '@spacegraphjs/shared';
@@ -111,6 +112,14 @@ export const GraphSearch = (props: GraphSearchProps) => {
             const target = e.target as HTMLInputElement;
             setQueryRaw(target.value);
         };
+        input.onkeydown = (event) =>
+            navigateResults(
+                event,
+                results().length,
+                active(),
+                setActive,
+                (index) => props.onSelect(results()[index]!),
+            );
         button.onclick = props.onClose;
 
         return el;

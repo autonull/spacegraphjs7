@@ -25,6 +25,40 @@ export interface PackageRef {
     /** Source-only packages (for example a scaffold) have no dist to require. */
     readonly requiresDist?: boolean;
 }
+const catalog = (root: string) => ({
+    library: { name: 'spacegraphjs', dir: root },
+    renderer: { name: '@spacegraphjs/renderer', dir: join(root, 'packages/renderer') },
+    shared: { name: '@spacegraphjs/shared', dir: join(root, 'packages/shared') },
+    kernel: { name: '@spacegraphjs/kernel', dir: join(root, 'packages/kernel') },
+    adapter: { name: '@spacegraphjs/adapter', dir: join(root, 'packages/adapter') },
+    spaceRenderer: {
+        name: '@spacegraphjs/spacegraph-renderer',
+        dir: join(root, 'packages/spacegraph-renderer'),
+    },
+    cytoscapeRenderer: {
+        name: '@spacegraphjs/cytoscape-renderer',
+        dir: join(root, 'packages/cytoscape-renderer'),
+    },
+    svgRenderer: { name: '@spacegraphjs/svg-renderer', dir: join(root, 'packages/svg-renderer') },
+    workflow: { name: '@spacegraphjs/workflow', dir: join(root, 'packages/domain/workflow') },
+    filesystem: { name: '@spacegraphjs/filesystem', dir: join(root, 'packages/domain/filesystem') },
+    data: { name: '@spacegraphjs/data', dir: join(root, 'packages/domain/data') },
+    agent: { name: '@spacegraphjs/agent', dir: join(root, 'packages/domain/agent') },
+    overlays: { name: '@spacegraphjs/overlays', dir: join(root, 'packages/overlays') },
+    search: { name: '@spacegraphjs/search', dir: join(root, 'packages/search') },
+    trace: { name: '@spacegraphjs/trace', dir: join(root, 'packages/trace') },
+    config: { name: '@spacegraphjs/config', dir: join(root, 'packages/config') },
+    create: { name: 'create-spacegraph', dir: join(root, 'packages/create-spacegraph') },
+});
+export type PackageKey = keyof ReturnType<typeof catalog>;
+export const pickPackages = (
+    root: string,
+    keys: readonly PackageKey[],
+    overrides: Partial<Record<PackageKey, Partial<PackageRef>>> = {},
+): PackageRef[] => {
+    const packages = catalog(root);
+    return keys.map((key) => ({ ...packages[key], ...overrides[key] }));
+};
 
 export function createPackedConsumer(
     root: string,

@@ -1,3 +1,4 @@
+import { adjacencyOf } from './adjacency';
 import type { Kernel, Node, NodeID, EdgeID } from './kernel';
 
 /**
@@ -34,16 +35,13 @@ export function walk(kernel: Kernel, spec: WalkSpec): WalkResult {
     const edgeOrder: EdgeID[] = [];
 
     // Build adjacency map for the specified edge kinds
-    const adjacency = new Map<NodeID, { target: NodeID; edgeId: EdgeID; kind: string }[]>();
-
-    for (const edge of kernel.edges) {
-        if (steps.length > 0 && !steps.includes(edge.kind)) continue;
-
-        const list = adjacency.get(edge.source);
-        if (list) list.push({ target: edge.target, edgeId: edge.id, kind: edge.kind });
-        else
-            adjacency.set(edge.source, [{ target: edge.target, edgeId: edge.id, kind: edge.kind }]);
-    }
+    const adjacency = adjacencyOf<{ target: NodeID; edgeId: EdgeID; kind: string }>(
+        kernel.edges,
+        (edge, add) => {
+            if (steps.length === 0 || steps.includes(edge.kind))
+                add(edge.source, { target: edge.target, edgeId: edge.id, kind: edge.kind });
+        },
+    );
 
     // BFS traversal - only start from nodes that exist in the kernel
     const queue: { id: NodeID; depth: number }[] = [];
@@ -92,12 +90,9 @@ export function pathsBetween(kernel: Kernel, from: NodeID, to: NodeID): NodeID[]
     if (from === to) return [[from]];
 
     // Build adjacency (directed: source -> target)
-    const adjacency = new Map<NodeID, NodeID[]>();
-    for (const edge of kernel.edges) {
-        const list = adjacency.get(edge.source);
-        if (list) list.push(edge.target);
-        else adjacency.set(edge.source, [edge.target]);
-    }
+    const adjacency = adjacencyOf<NodeID>(kernel.edges, (edge, add) =>
+        add(edge.source, edge.target),
+    );
 
     const paths: NodeID[][] = [];
     const queue: { path: NodeID[]; visited: Set<NodeID> }[] = [

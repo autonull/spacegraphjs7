@@ -1,3 +1,4 @@
+import { adjacencyOf } from './adjacency';
 import type { Edge, Kernel, Node, NodeID } from './kernel';
 import { SpatialIndex2D, type Point2D } from './spatial';
 
@@ -27,20 +28,12 @@ const adjacency = (
     kernel: Kernel,
     direction: QueryDirection,
     edgeKind?: string,
-): Map<NodeID, NodeID[]> => {
-    const map = new Map<NodeID, NodeID[]>();
-    const add = (from: NodeID, to: NodeID) => {
-        const list = map.get(from);
-        if (list) list.push(to);
-        else map.set(from, [to]);
-    };
-    for (const edge of kernel.edges) {
-        if (edgeKind !== undefined && edge.kind !== edgeKind) continue;
+): Map<NodeID, NodeID[]> =>
+    adjacencyOf<NodeID>(kernel.edges, (edge, add) => {
+        if (edgeKind !== undefined && edge.kind !== edgeKind) return;
         if (direction === 'out' || direction === 'both') add(edge.source, edge.target);
         if (direction === 'in' || direction === 'both') add(edge.target, edge.source);
-    }
-    return map;
-};
+    });
 
 const traverseFrom = (kernel: Kernel, start: NodeID, options: TraverseOptions): NodeID[] => {
     if (!kernel.nodes.some((node) => node.id === start)) return [];

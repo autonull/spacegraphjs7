@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { createPackedConsumer, RUNTIME_DEPENDENCIES, type PackageRef } from './publish-check/pack.js';
+import { createPackedConsumer, pickPackages, RUNTIME_DEPENDENCIES } from './publish-check/pack.js';
 
 const root = resolve(import.meta.dirname, '..');
 const guide = readFileSync(resolve(root, 'docs/QUICKSTART.md'), 'utf8');
@@ -20,17 +20,21 @@ if (DEFAULT_SPEC !== version) {
     throw new Error(`scaffold default ^${DEFAULT_SPEC} is out of sync with spacegraphjs ${version}`);
 }
 
-const packages: PackageRef[] = [
-    { name: 'spacegraphjs', dir: root },
-    { name: '@spacegraphjs/renderer', dir: join(root, 'packages/renderer') },
-    { name: '@spacegraphjs/shared', dir: join(root, 'packages/shared') },
-    { name: '@spacegraphjs/kernel', dir: join(root, 'packages/kernel') },
-    { name: '@spacegraphjs/adapter', dir: join(root, 'packages/adapter') },
-    { name: '@spacegraphjs/spacegraph-renderer', dir: join(root, 'packages/spacegraph-renderer') },
-    { name: '@spacegraphjs/cytoscape-renderer', dir: join(root, 'packages/cytoscape-renderer') },
-    { name: '@spacegraphjs/svg-renderer', dir: join(root, 'packages/svg-renderer') },
-    { name: 'create-spacegraph', dir: join(root, 'packages/create-spacegraph'), requiresDist: false },
-];
+const packages = pickPackages(
+    root,
+    [
+        'library',
+        'renderer',
+        'shared',
+        'kernel',
+        'adapter',
+        'spaceRenderer',
+        'cytoscapeRenderer',
+        'svgRenderer',
+        'create',
+    ],
+    { create: { requiresDist: false } },
+);
 
 function blockAfter(heading: string): string {
     const marker = `### ${heading}`;

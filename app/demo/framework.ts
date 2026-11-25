@@ -19,21 +19,28 @@ export async function createDemo(
     return sg;
 }
 
+const demoNode = (
+    id: string,
+    type: string,
+    position: [number, number, number] = [0, 0, 0],
+    data: Record<string, unknown> = {},
+) => ({ id, type, position, data });
+
 export async function createDemoWithNodes(
     nodes: any[],
     edges: any[] = [],
     options?: Record<string, unknown>,
 ): Promise<SpaceGraph> {
     return createDemo({
-        nodes: nodes.map((n) => ({
-            id: n.id,
-            type: n.type ?? 'ShapeNode',
-            position: n.position ?? [0, 0, 0],
-            data: n.data ?? {},
-        })),
-        edges: edges.map((e: any) => ({
-            ...e,
-            type: e.type ?? 'CurvedEdge',
+        nodes: nodes.map((node) => demoNode(
+            node.id,
+            node.type ?? 'ShapeNode',
+            node.position ?? [0, 0, 0],
+            node.data ?? {},
+        )),
+        edges: edges.map((edge) => ({
+            ...edge,
+            type: edge.type ?? 'CurvedEdge',
         })),
     }, options);
 }
@@ -101,16 +108,16 @@ export function shapeNode(
     id: string,
     position: [number, number, number] = [0, 0, 0],
     data: Record<string, unknown> = {},
-): { id: string; type: string; position: [number, number, number]; data: Record<string, unknown> } {
-    return { id, type: 'ShapeNode', position, data };
+) {
+    return demoNode(id, 'ShapeNode', position, data);
 }
 
 export function htmlNode(
     id: string,
     position: [number, number, number] = [0, 0, 0],
     data: Record<string, unknown> = {},
-): { id: string; type: string; position: [number, number, number]; data: Record<string, unknown> } {
-    return { id, type: 'HtmlNode', position, data: { width: 200, height: 100, ...data } };
+) {
+    return demoNode(id, 'HtmlNode', position, { width: 200, height: 100, ...data });
 }
 
 export function edge(
