@@ -1,6 +1,6 @@
 # TODO14 — Octave atlas: hierarchy, wayfinding and depth
 
-> **Status: all three phases and the ZUI follow-ups landed; close-out completed (2026-11-24).** The close-out finished W1 dot-band usability, wired the guided route and compare pin into the drawer, fixed the muted-edge metric, and reconciled two overstated claims; only measurement and density tuning remain (§15). TODO13 landed the durable atlas: continuous attention, one Lens,
+> **Status: complete (2026-11-24).** All three phases, the ZUI follow-ups and the close-out landed; the full ladder is green and §15 records the non-blocking follow-ups. The close-out finished W1 dot-band usability, wired the guided route and compare pin into the drawer, fixed the muted-edge metric, and reconciled two overstated claims. TODO13 landed the durable atlas: continuous attention, one Lens,
 > a landmark trail and compact address, scrubbable story plates, two workshops, and budget/spatial
 > grace. Phase 1 fixed the fundamentals — octave sizing, focused address and provenance, and a
 > minimal icon rail. Phase 2 added depth inside that one drawer: full-text filtered Lens, a time
@@ -321,11 +321,13 @@ Phase 3 landed in the order below, with one verification gate at the end. No ren
 8. **ZUI follow-ups delivered.** Nested scopes fold through `setPolicy({band})`; per-rung emphasis mutes without hiding; group counts are committed facts; a density measurement guards the working band. Captions changed, so eleven PNGs were recaptured with `.prev` pairs; no renderer contract was added and no verdict was written.
 9. **Close-out delivered.** W1 dot-band focus and summaries are live; `?story=` or the shot selects the guided route, and the drawer pins or clears a tab/node reference; `mutedEdges` counts real muted edges. The full ladder ran once and eleven PNGs were recaptured again after the caption change; no renderer contract, second camera, model or hidden filter was added.
 
+This plan is closed. The follow-ups below are recorded for a future plan, not for further work here.
+
 Open follow-ups (not blocking this plan):
 
-- A clean idle-machine Strobe run is still unavailable: `rec_0d8091` (20.13% main-busy) and `rec_d96ac7` (10.93%) were both taken with other workloads at high CPU. Pause those workloads and record once more only if a trustworthy cost figure is needed; this plan does not add another run.
+- A clean idle-machine Strobe run is still unavailable: `rec_0d8091` (20.13% main-busy) and `rec_d96ac7` (10.93%) were both taken with other workloads at high CPU. Pause those workloads and record once more only if a trustworthy cost figure is needed; this plan adds no run. At close-out the machine was still loaded (load average 2.74 and several processes above 90% CPU), so no further measurement was attempted.
 - Tune `NODES_AREA_DENSITY` (item 8) only if the new E2E density gate moves outside 7–13% measured coverage; the working band stays 8–12%. The close-out run stayed inside that band, so no tuning was applied.
 - Coverage not landed by design: edge captions are static per recorded kind and fork edges use a solid stroke because the renderer contract has no double-line style or per-caption attention channel; instrument histograms report band counts. None of these changes the fold or invents a kind.
 
-Keep TODO13 as the record of the landed atlas; record new work here only.
+Keep TODO13 as the record of the landed atlas; record new work in a new plan, not here.
 
