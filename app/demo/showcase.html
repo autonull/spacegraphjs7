@@ -150,14 +150,21 @@
 
         <script type="module">
             import { SpaceGraph } from 'spacegraphjs';
+            import { CATEGORIES } from './src/registry';
 
             const DEMOS = import.meta.glob('./demos/**/*.ts', { eager: true });
 
-            const demoList = Object.keys(DEMOS).map((path) => {
-                const name = path.split('/').pop().replace('.ts', '');
-                const mod = DEMOS[path];
-                return { name, create: mod.default || mod };
-            });
+            const demoList = Object.keys(DEMOS)
+                .map((path) => {
+                    const parts = path.split('/');
+                    const name = parts.pop().replace('.ts', '');
+                    const mod = DEMOS[path];
+                    return { name, group: parts.pop() ?? 'core', create: mod.default || mod };
+                })
+                .sort(
+                    (a, b) =>
+                        a.group.localeCompare(b.group) || a.name.localeCompare(b.name),
+                );
 
             let currentDemo = null;
 
@@ -165,17 +172,31 @@
             const title = document.getElementById('demo-title');
 
             function updateSelect(filter = '') {
+                const previous = select.value;
                 select.innerHTML = '';
                 const filtered = demoList.filter((d) =>
-                    d.name.toLowerCase().includes(filter.toLowerCase()),
+                    `${d.name} ${d.group}`.toLowerCase().includes(filter.toLowerCase()),
                 );
 
-                filtered.forEach((d) => {
-                    const opt = document.createElement('option');
-                    opt.value = d.name;
-                    opt.textContent = d.name;
-                    select.appendChild(opt);
-                });
+                const groups = new Map();
+                for (const demo of filtered) {
+                    if (!groups.has(demo.group)) groups.set(demo.group, []);
+                    groups.get(demo.group).push(demo);
+                }
+                for (const [group, entries] of groups) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = CATEGORIES[group] ?? group;
+                    optgroup.append(
+                        ...entries.map((d) => {
+                            const opt = document.createElement('option');
+                            opt.value = d.name;
+                            opt.textContent = d.name;
+                            return opt;
+                        }),
+                    );
+                    select.appendChild(optgroup);
+                }
+                if (filtered.some((d) => d.name === previous)) select.value = previous;
                 return filtered;
             }
 
@@ -213,12 +234,9 @@
                 loadDemo(e.target.value);
             });
 
-            document.getElementById('demo-search').addEventListener('input', (e) => {
-                const filtered = updateSelect(e.target.value);
-                if (filtered.length > 0) {
-                    // Don't auto-load while typing, but update selection if current is gone
-                }
-            });
+            document
+                .getElementById('demo-search')
+                .addEventListener('input', (e) => updateSelect(e.target.value));
 
             const params = new URLSearchParams(window.location.search);
             const initialDemo = params.get('demo') || 'system-architecture';

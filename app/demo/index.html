@@ -136,13 +136,28 @@
                 display: flex;
                 min-height: 0;
             }
-            #gallery {
+            #gallery-panel {
                 width: 260px;
                 flex: 0 0 260px;
                 border-inline-end: 1px solid var(--sh-border);
                 background: var(--sh-surface);
-                overflow: auto;
                 padding: 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                min-height: 0;
+            }
+            #gallery-filter {
+                width: 100%;
+                padding: 6px 8px;
+                border: 1px solid var(--sh-border);
+                background: var(--sh-background);
+                color: var(--sh-text);
+                font: inherit;
+            }
+            #gallery {
+                flex: 1;
+                overflow: auto;
                 display: flex;
                 flex-direction: column;
                 gap: 6px;
@@ -462,7 +477,15 @@
         </header>
 
         <main>
-            <nav id="gallery" aria-label="Capability gallery"></nav>
+            <div id="gallery-panel">
+                <input
+                    id="gallery-filter"
+                    type="search"
+                    placeholder="Filter capabilities…"
+                    aria-label="Filter capabilities"
+                />
+                <nav id="gallery" aria-label="Capability gallery"></nav>
+            </div>
 
             <div id="stage" data-renderer="spacegraph">
                 <div id="canvas"></div>

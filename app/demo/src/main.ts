@@ -359,9 +359,17 @@ function rendererName(): string {
     return 'SpaceGraph';
 }
 
-function renderGallery() {
+function renderGallery(query = '') {
+    const needle = query.trim().toLowerCase();
+    const matches = needle
+        ? CAPABILITIES.filter((capability) =>
+              `${capability.title} ${capability.summary} ${capability.modules.join(' ')}`
+                  .toLowerCase()
+                  .includes(needle),
+          )
+        : CAPABILITIES;
     el('gallery').replaceChildren(
-        ...CAPABILITIES.map((capability) => {
+        ...matches.map((capability) => {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'capability';
@@ -460,6 +468,9 @@ async function main(): Promise<void> {
 
     el<HTMLInputElement>('search').addEventListener('input', (event) =>
         renderSearch((event.target as HTMLInputElement).value),
+    );
+    el<HTMLInputElement>('gallery-filter').addEventListener('input', (event) =>
+        renderGallery((event.target as HTMLInputElement).value),
     );
     el('overlay-close').addEventListener('click', () => closeOverlay());
     el('diff-close').addEventListener('click', () => closeDiff());
