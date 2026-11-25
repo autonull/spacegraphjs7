@@ -1,6 +1,6 @@
 # TODO16 — Graph as a complete reading and authoring surface
 
-> **Status: phases R/L, D, A and C landed; document renderer extension landed (2026-11-25).** Goal: make SpaceGraphJS, not just the Pi Durable demo,
+> **Status: phases R/L, D, A and C landed; document renderer, a11y bridge and `marked` peer removal landed (2026-11-25).** Goal: make SpaceGraphJS, not just the Pi Durable demo,
 > able to replace a conventional text or web UI. Pi Durable is the reference client; every capability
 > lands as a library primitive first and is then adopted by the demo. No second model, hidden filter
 > or parallel renderer contract is allowed.
@@ -66,6 +66,8 @@ fold, never a second store or a lossy export.
 | D/A — rich text and keyboard parity | Landed | `readingTextHTML` handles inline code, strong, emphasis, safe links and fenced code; unsafe links and raw markup are dropped. `mountReading` mounts the document, gives sections `tabindex="0"`, implements ↑/↓, Home/End and Enter/Space, and returns `reveal`/`destroy`. Pi Durable removed its own reader click handler and passes one `onReveal` callback. `test/reading-view.test.ts` (2 jsdom tests) and a second `tests/reading.spec.ts` keyboard gate pass. |
 | C — composer | Landed | `src/composer.ts` is published as `spacegraphjs/composer`. It grows a textarea to 160px, submits on Enter, inserts a newline on Shift+Enter, recalls submissions with ↑/↓ and exposes `focus`/`clear`/`value`/`destroy`. Pi Durable's prompt form delegates to it and keeps the same kernel commit path; global shortcuts now ignore textareas and contenteditable fields. `test/composer.test.ts` (2 tests) and `tests/composer.spec.ts` (1 gate) pass. |
 | D extension — documents | Landed | `src/documents.ts` is published as `spacegraphjs/documents`. `parseDocument` and `documentHTML` handle headings, paragraphs, fenced code, quotes, lists, tables and images; `safeDocumentHTML` drops unsafe links/images and never trusts raw HTML. Shared `src/markup.ts` holds escaping and safe-URL checks. `MarkdownNode` uses the renderer directly, eliminating its async `marked` path and raw `innerHTML`. `test/documents.test.ts` (2 tests) passes. |
+| A extension — a11y bridge | Landed | `spacegraphjs/a11y` exports `createAnnouncer`, one polite live-region contract shared by `AccessibilityLayer`, `mountReading` and Pi Durable's `announce`. `mountReading` accepts `announce`; arrow/Home/End and `reveal` speak passage position and label, and `destroy` removes a library-owned region. Pi Durable routes chrome, view and reveal messages through the same channel. `test/a11y.test.ts`, `test/reading-view.test.ts` and the reader keyboard E2E gate cover it. |
+| Cleanup — `marked` peer | Landed | No source imports `marked`. Removed the optional peer and metadata, the dev dependency, `@types/marked`, bundler external entries and the README claim. The stale sleep-based `MarkdownNode` test now asserts rendered `<h1>` directly. `pnpm-lock.yaml` regenerated; `marked` remains only as a transitive Pi dependency. |
 
 ### Verification evidence for R/L (this change set)
 
@@ -74,6 +76,14 @@ fold, never a second store or a lossy export.
 - `pnpm -r --if-present typecheck`, `pnpm --filter pi-durable test` (94), `pnpm --filter pi-durable verify` — clean.
 - `SG_DURABLE_PORT=5442 PI_DURABLE_SERVER_PORT=8926 pnpm --filter pi-durable test:e2e` — 68 passed, including both reader gates, the composer gate and the updated transcript/composite gates. `boot` and story frames now accept either canvas or reader as the visible surface. `pnpm --filter pi-durable build` — clean.
 - Eleven tracked PNGs were recaptured by the E2E run; turn-flow frame 4 now shows the readable transcript. `.prev` pairs and the contact sheet are retained; no verdict was written.
+
+### Verification evidence for A extension and cleanup (this change set)
+
+- `pnpm run write:exports`, `pnpm run build:lib`, `pnpm run check:generated` and `pnpm run check` — passed.
+- `pnpm -r --if-present typecheck` — passed.
+- `pnpm exec vitest run test/reading-view.test.ts test/a11y.test.ts test/documents.test.ts test/reading.test.ts test/composer.test.ts test/spacegraph.test.ts test/boundaries.test.ts` — 125 passed across 7 files.
+- `pnpm --filter pi-durable test` (94), `pnpm --filter pi-durable verify` and `pnpm --filter pi-durable build` — clean.
+- `SG_DURABLE_PORT=5442 PI_DURABLE_SERVER_PORT=8926 pnpm --filter pi-durable test:e2e` — 68 passed; the reader keyboard gate now checks the announcement. Nine tracked PNGs were recaptured; no verdict was written.
 
 ## 6. Verification ladder
 
@@ -93,7 +103,9 @@ No test is retried to green without a cause fix. Human screenshot verdicts stay 
 ## 7. Remaining work
 
 1. ~~**D extension — images, tables and documents.**~~ Landed: `spacegraphjs/documents` parses and renders a safe subset (headings, paragraphs, code, quotes, lists, tables, images) with escape-first HTML. `MarkdownNode` now uses it synchronously instead of raw `marked` output; the reader delegates its markdown formatting to the same renderer.
-2. **A extension — library a11y bridge.** `mountReading` handles local focus and activation; wire it to `spacegraphjs/a11y` announcements and to the host's global shortcut table so screen-reader users hear view and reveal changes.
-3. **C extension — attachments and draft persistence.** The composer owns in-memory history only; attachments and cross-reload drafts still need a committed path if they are ever wanted. Do not add local draft state without an explicit contract.
-4. **Remove the unused `marked` peer.** `MarkdownNode` no longer calls it; drop the optional peer, dev dependency and bundler external entry only after checking no published consumer relies on the import.
-5. **Library adoption.** Pi Durable still owns its own permalink codec, trail, announcer and card templates. Promote each to a library primitive only when a second host needs it, to avoid speculative abstraction.
+2. ~~**A extension — library a11y bridge.**~~ Landed: `spacegraphjs/a11y` owns `createAnnouncer`; `AccessibilityLayer`, `mountReading` and Pi Durable's global announcement path share it. Reader navigation and programmatic reveal speak passage position and label; view and reveal changes still pass through the host channel used by the shortcut table.
+3. **C extension — attachments and draft persistence — deferred.** The composer owns in-memory history only. Before adding anything here, write the contract: which kernel op commits a draft, where attachment bytes live, and how a reload reconciles them. No local draft state without that contract.
+4. ~~**Remove the unused `marked` peer.**~~ Landed: no source or published consumer imports it; peer metadata, dev dependencies, bundler externals, README claim and the stale test were removed, and the lockfile regenerated.
+5. **Library adoption — opportunistic.** Pi Durable still owns its permalink codec, trail and card templates. The announcer is now library-owned. Promote the remaining three only when a second host actually needs them, to avoid speculative abstraction.
+
+**Entry criteria:** item 3 starts only with the written draft contract; item 5 starts only with a second host. Neither has a trigger today, so neither is in flight.

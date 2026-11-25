@@ -670,22 +670,14 @@ describe('IFrameNode', () => {
 });
 
 describe('MarkdownNode', () => {
-    it('creates CSS3D element and attempts to load markdown', async () => {
+    it('renders committed markdown with the shared safe renderer', () => {
         const n = new MarkdownNode(sg, {
             id: 'mn',
             type: 'MarkdownNode',
             data: { markdown: '# Hello' },
         });
-        expect(n.domElement).toBeTruthy();
-
-        // Wait for dynamic import to complete or fail
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        // It should either contain the parsed HTML (if 'marked' is installed)
-        // or the failure message since 'marked' is now an optional peer dependency.
-        const content = n.domElement.innerHTML;
-        expect(
-            content.includes('Hello') || content.includes('Failed to load markdown renderer'),
-        ).toBe(true);
+        expect(n.domElement.querySelector('h1')?.textContent).toBe('Hello');
+        n.dispose();
     });
 });
 

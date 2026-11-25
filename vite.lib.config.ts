@@ -29,7 +29,6 @@ export default defineConfig({
                 'three-mesh-bvh',
                 'chart.js',
                 'katex',
-                'marked',
                 '@monaco-editor/loader',
             ],
             output: {

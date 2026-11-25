@@ -1,3 +1,4 @@
+export { createAnnouncer, type Announcer } from './announcer';
 export {
     AccessibilityLayer,
     bindA11yFocus,

@@ -30,7 +30,6 @@ const EXTERNAL = [
     'three-mesh-bvh',
     'chart.js',
     'katex',
-    'marked',
     'cytoscape',
     '@monaco-editor/loader',
 ];

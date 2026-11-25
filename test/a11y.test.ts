@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccessibilityLayer, bindA11yFocus } from '../src/a11y/AccessibilityLayer';
+import { createAnnouncer } from '../src/a11y/announcer';
 import { EventEmitter } from '../src/core/EventEmitter';
 import type { SpaceGraphEvents } from '../src/types';
 
@@ -227,5 +228,31 @@ describe('a11y focus bridge', () => {
         events.emit('focus:changed', { node: { id: 'a' } as never, focused: true });
         expect(layer.currentId).toBe('b');
         layer.dispose();
+    });
+});
+
+describe('createAnnouncer', () => {
+    it('adopts a host region and clears it on destroy', () => {
+        const region = document.createElement('div');
+        container.append(region);
+        const announcer = createAnnouncer(region);
+        expect(region).toHaveAttribute('role', 'status');
+        expect(region).toHaveAttribute('aria-live', 'polite');
+        announcer.announce('Shown in graph');
+        expect(region.textContent).toBe('Shown in graph');
+        announcer.destroy();
+        expect(region.textContent).toBe('');
+        expect(region.isConnected).toBe(true);
+    });
+
+    it('owns a hidden region when the host supplies none', () => {
+        const announcer = createAnnouncer();
+        const regions = document.body.querySelectorAll('[role="status"][aria-live="polite"]');
+        const region = regions[regions.length - 1] as HTMLElement;
+        expect(region).toHaveStyle({ position: 'absolute', clipPath: 'inset(50%)' });
+        announcer.announce('Reading passage 1 of 2');
+        expect(region.textContent).toBe('Reading passage 1 of 2');
+        announcer.destroy();
+        expect(region.isConnected).toBe(false);
     });
 });

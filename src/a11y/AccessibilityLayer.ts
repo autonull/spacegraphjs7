@@ -6,6 +6,7 @@
 import type { EventEmitter } from '../core/EventEmitter';
 import type { SpaceGraphEvents } from '../types';
 import { clamp } from '../utils/math';
+import { createAnnouncer, type Announcer } from './announcer';
 
 export interface AccessibleItem {
     id: string;
@@ -51,6 +52,7 @@ export class AccessibilityLayer {
     readonly #container: HTMLElement;
     readonly #options: AccessibilityLayerOptions;
     readonly #list: HTMLUListElement;
+    readonly #announcer: Announcer;
     readonly #live: HTMLDivElement;
     #edgeList: HTMLUListElement | undefined;
     #items: AccessibleItem[] = [];
@@ -69,10 +71,12 @@ export class AccessibilityLayer {
         this.#list = document.createElement('ul');
         this.#list.style.listStyle = 'none';
         this.#list.style.margin = '0';
-        this.#live = document.createElement('div');
-        this.#live.setAttribute('aria-live', 'polite');
-        this.#live.setAttribute('aria-atomic', 'true');
-        container.append(this.#list, this.#live);
+        const live = document.createElement('div');
+        live.setAttribute('aria-live', 'polite');
+        live.setAttribute('aria-atomic', 'true');
+        this.#announcer = createAnnouncer(live);
+        this.#live = live;
+        container.append(this.#list, live);
         this.#list.addEventListener('keydown', this.#onKeyDown);
     }
 
@@ -154,7 +158,7 @@ export class AccessibilityLayer {
     }
 
     announce(message: string): void {
-        this.#live.textContent = message;
+        this.#announcer.announce(message);
     }
 
     dispose(): void {
@@ -164,7 +168,7 @@ export class AccessibilityLayer {
         this.#list.replaceChildren();
         this.#edgeList?.remove();
         this.#edgeList = undefined;
-        this.#live.textContent = '';
+        this.#announcer.destroy();
         this.#container.removeAttribute('role');
         this.#container.removeAttribute('aria-label');
     }

@@ -17,6 +17,7 @@ import {
     type RenderTheme,
 } from '@spacegraphjs/renderer';
 import { rankedSearch } from '@spacegraphjs/search';
+import { createAnnouncer } from 'spacegraphjs/a11y';
 import type { GraphViewData } from '@spacegraphjs/shared';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { ScopeSimulation, solveNodeAreaDensity, type ScopeSpec } from 'spacegraphjs/layout';
@@ -407,6 +408,7 @@ const dataText = (node: { readonly data?: Readonly<Record<string, unknown>> }): 
 export class DurableHost {
     readonly renderer = new SpaceGraphRenderer();
     readonly registry: TabRegistry;
+    readonly #announcer = createAnnouncer(el('announcer'));
     #groups: readonly DurableGroup[] = [];
     readonly #adapter = new DurableAdapter({
         cardRoles: ['run', 'message', 'user', 'assistant', 'action', 'conversation', 'task', 'boundary', 'pending', 'artifact', 'config', 'state'],
@@ -1266,7 +1268,7 @@ export class DurableHost {
     }
 
     announce(message: string): void {
-        el('announcer').textContent = message;
+        this.#announcer.announce(message);
     }
 
     setAsOf(seq?: number): void {
@@ -2106,6 +2108,7 @@ export class DurableHost {
             .map((edge) => ({ source: edge.source, target: edge.target }));
         this.#readerController = mountReading(reader, readingOrder(nodes, edges), {
             title: `Conversation ${this.registry.active()?.id ?? ''} — transcript`,
+            announce: (message) => this.announce(message),
             onReveal: (id) => {
                 this.setView('graph');
                 this.reveal(id);

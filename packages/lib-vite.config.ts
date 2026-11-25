@@ -19,7 +19,6 @@ export default defineConfig({
                 'three-mesh-bvh',
                 'chart.js',
                 'katex',
-                'marked',
                 'cytoscape',
                 '@monaco-editor/loader',
                 'spacegraphjs',

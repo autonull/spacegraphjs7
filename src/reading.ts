@@ -1,3 +1,4 @@
+import { createAnnouncer } from './a11y/announcer';
 import { safeDocumentHTML } from './documents';
 import { escapeHtml } from './markup';
 
@@ -100,6 +101,8 @@ export const readingHTML = (
 export type ReadingOptions = ReadingHTMLOptions & {
     /** Called when a section is activated by click, Enter or Space. */
     readonly onReveal?: (nodeID: string) => void;
+    /** Receives navigation announcements; defaults to a library-owned aria-live region. */
+    readonly announce?: (message: string) => void;
 };
 
 export type ReadingController = {
@@ -120,6 +123,20 @@ export const mountReading = (
     const items = (): readonly HTMLElement[] => [
         ...container.querySelectorAll<HTMLElement>('.reading-section'),
     ];
+    const announcer = options.announce ? undefined : createAnnouncer();
+    const sectionOf = (element: HTMLElement): ReadingSection | undefined =>
+        sections.find((section) => section.nodeID === element.dataset['nodeId']);
+    const say = (kind: 'focus' | 'reveal', section: ReadingSection): void => {
+        const position = `Passage ${sections.indexOf(section) + 1} of ${sections.length}`;
+        const message = kind === 'focus' ? `${position}: ${section.label}` : `Reading ${position}: ${section.label}`;
+        (options.announce ?? announcer?.announce)?.(message);
+    };
+    const focusSection = (element?: HTMLElement): void => {
+        element?.focus();
+        if (!element) return;
+        const section = sectionOf(element);
+        if (section) say('focus', section);
+    };
     const activate = (element: HTMLElement): void => {
         const nodeID = element.dataset['nodeId'];
         if (nodeID) onReveal?.(nodeID);
@@ -138,10 +155,10 @@ export const mountReading = (
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault();
             const next = event.key === 'ArrowDown' ? index + 1 : index - 1;
-            list[Math.min(list.length - 1, Math.max(0, next))]?.focus();
+            focusSection(list[Math.min(list.length - 1, Math.max(0, next))]);
         } else if (event.key === 'Home' || event.key === 'End') {
             event.preventDefault();
-            list[event.key === 'Home' ? 0 : list.length - 1]?.focus();
+            focusSection(list[event.key === 'Home' ? 0 : list.length - 1]);
         } else if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
             activate(section);
@@ -155,10 +172,13 @@ export const mountReading = (
             const target = items().find((item) => item.dataset['nodeId'] === nodeID);
             target?.focus();
             target?.scrollIntoView({ block: 'center' });
+            const section = sections.find((entry) => entry.nodeID === nodeID);
+            if (section) say('reveal', section);
         },
         destroy: (): void => {
             container.removeEventListener('click', onClick);
             container.removeEventListener('keydown', onKeyDown);
+            announcer?.destroy();
         },
     };
 };

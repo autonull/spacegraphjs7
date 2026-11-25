@@ -118,7 +118,7 @@ Design rules that keep the layers honest:
 
 ## 🚀 Getting Started
 
-Install with `pnpm add spacegraphjs three`. Three.js is a required peer. Optional peers activate specific nodes: `chart.js` for charts, `katex` for math, `marked` for Markdown.
+Install with `pnpm add spacegraphjs three`. Three.js is a required peer. Optional peers activate specific nodes: `chart.js` for charts and `katex` for math. Markdown renders through the built-in safe `spacegraphjs/documents` primitive.
 
 ### Your first graph
 

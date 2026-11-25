@@ -233,7 +233,6 @@
     "peerDependencies": {
         "chart.js": "^4.5.1",
         "katex": "^0.16.33",
-        "marked": "^17.0.3",
         "three": ">=0.150.0"
     },
     "peerDependenciesMeta": {
@@ -241,9 +240,6 @@
             "optional": true
         },
         "katex": {
-            "optional": true
-        },
-        "marked": {
             "optional": true
         }
     },
@@ -253,7 +249,6 @@
         "@testing-library/jest-dom": "7.0.1",
         "@types/jsdom": "^30.0.0",
         "@types/katex": "^0.16.8",
-        "@types/marked": "^6.0.0",
         "@types/node": "^26.4.1",
         "@types/three": "^0.185.4",
         "@typescript-eslint/eslint-plugin": "^8.69.0",
@@ -266,7 +261,6 @@
         "http-server": "^14.1.1",
         "jsdom": "^30.0.1",
         "katex": "^0.18.5",
-        "marked": "^18.0.11",
         "playwright": "^1.64.1",
         "prettier": "^3.9.6",
         "solid-js": "^1.9.0",

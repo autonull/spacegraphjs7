@@ -15,7 +15,6 @@ export const RUNTIME_DEPENDENCIES = [
     'three-mesh-bvh',
     'chart.js',
     'katex',
-    'marked',
     '@monaco-editor/loader',
     'jsdom',
 ] as const;

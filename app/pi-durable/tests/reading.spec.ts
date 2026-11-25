@@ -29,7 +29,9 @@ test('reader sections are keyboard navigable', async ({ page }) => {
     await sections.first().focus();
     await page.keyboard.press('ArrowDown');
     await expect(sections.nth(1)).toBeFocused();
+    await expect(page.locator('#announcer')).toContainText('Passage 2 of');
     await page.keyboard.press('Enter');
+    await expect(page.locator('#announcer')).toContainText('Revealed');
     await expect(page.locator('#reader')).toBeHidden();
     expect(await call<string>(page, 'viewName')).toBe('graph');
     expect(errors).toEqual([]);
