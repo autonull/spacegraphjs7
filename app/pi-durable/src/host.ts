@@ -653,14 +653,16 @@ export class DurableHost {
         if (this.#viewName === 'transcript' || this.#viewName === 'docs')
             this.#readerController?.reveal(id);
         else this.renderer.focus(id);
-        this.announce(`Revealed ${id}`);
+        const label = this.#presented.nodes.find((node) => node.id === id)?.label ?? id;
+        this.announce(`Revealed ${label}`);
     }
 
     readInTranscript(id?: string): void {
         const target = id ?? this.registry.active()?.view.focus;
         this.setView('transcript');
         if (target) this.#readerController?.reveal(target);
-        this.announce(target ? `Reading passage ${target}` : 'Select a committed entry to read it');
+        const label = this.#presented.nodes.find((node) => node.id === target)?.label ?? target;
+        this.announce(label ? `Reading passage ${label}` : 'Select a committed entry to read it');
     }
 
     focus(id: string): void {
@@ -2094,6 +2096,7 @@ export class DurableHost {
         this.#readerController?.destroy();
         this.#readerController = undefined;
         reader.hidden = !reading;
+        reader.setAttribute('aria-label', docs ? 'Documents' : 'Conversation transcript');
         el('canvas').hidden = reading;
         if (!reading) return;
         const nodes: readonly ReadingNode[] = docs

@@ -40,6 +40,7 @@ test('reader sections are keyboard navigable', async ({ page }) => {
 test('documents render as a readable document with graph backlinks', async ({ page }) => {
     const errors = await boot(page, '?shot=docs');
     await expect(page.locator('#reader')).toBeVisible();
+    await expect(page.locator('#reader')).toHaveAttribute('aria-label', 'Documents');
     await expect(page.locator('#reader')).toContainText('Host todos');
     const sections = page.locator('#reader .reading-section');
     expect(await sections.count()).toBeGreaterThan(0);

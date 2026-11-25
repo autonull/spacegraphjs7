@@ -1,9 +1,10 @@
 # TODO16 — Graph as a complete reading and authoring surface
 
-> **Status: phases R/L, D, A and C landed; document renderer, a11y bridge, `marked` peer removal, typed-edge paths and the reading/docs loop landed (2026-11-25).** Goal: make SpaceGraphJS, not just the Pi Durable demo,
-> able to replace a conventional text or web UI. Pi Durable is the reference client; every capability
-> lands as a library primitive first and is then adopted by the demo. No second model, hidden filter
-> or parallel renderer contract is allowed.
+> **Status: complete for all ungated work (2026-11-25).** Streams R/L, D, A and C, the document
+> renderer, a11y bridge, typed-edge paths, reading/docs loop and `marked` cleanup have landed. Goal:
+> make SpaceGraphJS, not just the Pi Durable demo, able to replace a conventional text or web UI.
+> Every capability lands as a library primitive first and is then adopted by the demo. No second
+> model, hidden filter or parallel renderer contract is allowed.
 
 ## 0. Thesis
 
@@ -50,13 +51,17 @@ fold, never a second store or a lossy export.
 4. ~~**C last.**~~ Landed: `spacegraphjs/composer` owns multiline editing, history recall and
    submit intent. Pi Durable keeps the commit path; drafts never become a second store.
 
-## 4. Open questions
+## 4. Decisions
 
-- Should the reader be a renderer mode, a DOM overlay, or a node template? The choice must avoid a
-  second camera, model or placement authority.
-- How should timestamps, roles and provenance appear in a linear document without overwhelming it?
-- What is the minimum safe markdown subset for committed text, and where does sanitisation live?
-- Which browser shortcuts must remain stable across graph, reader and composer?
+- **Reader shape:** a DOM overlay over the same container, not a renderer mode or node template. The
+  canvas hides while a text surface shows; ids, edges, order and placement authority stay shared.
+- **Metadata density:** role, status and timestamp sit in a small `<dl>` per section; prose stays
+  primary. Provenance remains reachable through the inspector and the backlink.
+- **Safe markdown:** `src/documents.ts` owns the escape-first subset and safe-URL checks. Raw HTML is
+  never trusted and `marked` is not a dependency.
+- **Shortcut stability:** global bindings live in one host table and skip text entry; the reader owns
+  arrows/Home/End/Enter/Space on focused sections. View and reveal changes announce through the
+  shared `spacegraphjs/a11y` channel; other bindings keep their labels in the help overlay.
 
 ## 5. Progress
 
@@ -71,44 +76,49 @@ fold, never a second store or a lossy export.
 | L — semantic edge paths | Landed | `src/navigation/edgePath.ts` is published through `spacegraphjs/navigation`. It walks recorded kinds breadth-first, directed or not, with stable steps and cycle suppression. Both private hosts adopted it: Pi Durable's `thread` and Pi's `traceOrder` now supply only vocabulary; their host-only walkers are gone. `test/navigation/edge-path.test.ts` covers direction, kind filtering and cycles. |
 | R/D — complete reading loop | Landed | `reveal` targets the reader while `transcript` or `docs` is visible, so Lens find no longer focuses a hidden canvas. The `docs` view now renders committed documents through `mountReading` with safe markdown and graph backlinks instead of cards. The inspector gains a "Read in transcript" action, closing the citation loop. E2E gates cover reveal routing, document rendering and the inspector backlink. |
 
-### Verification evidence for R/L (this change set)
+### Verification log
 
-- `pnpm run write:exports` and `pnpm run build:lib` — generated manifests and `dist/reading.*` in sync; `pnpm run check:generated` — passed.
-- `pnpm exec vitest run test/documents.test.ts test/reading.test.ts test/reading-view.test.ts test/composer.test.ts test/spacegraph.test.ts test/boundaries.test.ts` — 110 passed; none of the new modules depends on the renderer contract.
-- `pnpm -r --if-present typecheck`, `pnpm --filter pi-durable test` (94), `pnpm --filter pi-durable verify` — clean.
-- `SG_DURABLE_PORT=5442 PI_DURABLE_SERVER_PORT=8926 pnpm --filter pi-durable test:e2e` — 68 passed, including both reader gates, the composer gate and the updated transcript/composite gates. `boot` and story frames now accept either canvas or reader as the visible surface. `pnpm --filter pi-durable build` — clean.
-- Eleven tracked PNGs were recaptured by the E2E run; turn-flow frame 4 now shows the readable transcript. `.prev` pairs and the contact sheet are retained; no verdict was written.
+| Change set | Fast gates | Browser gate |
+| ---------- | ---------- | ------------ |
+| R/L | library vitest 110; `pi-durable test` 94 | E2E 68 |
+| A/cleanup | library vitest 125; `pi-durable test` 94 | E2E 68 |
+| Typed paths / reading loop | library vitest 45; `pi check:fast` 181; `pi-durable test` 94 | E2E 71 |
 
-### Verification evidence for A extension and cleanup (this change set)
-
-- `pnpm run write:exports`, `pnpm run build:lib`, `pnpm run check:generated` and `pnpm run check` — passed.
-- `pnpm -r --if-present typecheck` — passed.
-- `pnpm exec vitest run test/reading-view.test.ts test/a11y.test.ts test/documents.test.ts test/reading.test.ts test/composer.test.ts test/spacegraph.test.ts test/boundaries.test.ts` — 125 passed across 7 files.
-- `pnpm --filter pi-durable test` (94), `pnpm --filter pi-durable verify` and `pnpm --filter pi-durable build` — clean.
-- `SG_DURABLE_PORT=5442 PI_DURABLE_SERVER_PORT=8926 pnpm --filter pi-durable test:e2e` — 68 passed; the reader keyboard gate now checks the announcement. Nine tracked PNGs were recaptured; no verdict was written.
-
-### Verification evidence for semantic paths and the reading loop (this change set)
-
-- `pnpm run build:lib` and `pnpm run check` — passed.
-- Focused library vitest (7 files, including `test/navigation/edge-path.test.ts`) — 45 passed.
-- `pnpm --filter pi check:fast` — 181 passed across 32 files, including `tests/trace.test.ts`.
-- `pnpm --filter pi-durable test` — 94 passed.
-- `SG_DURABLE_PORT=5442 PI_DURABLE_SERVER_PORT=8926 pnpm exec playwright test --config playwright.config.ts --workers=1` from `app/pi-durable` — 71 passed. One worker avoids host memory pressure; the first 8-worker attempt crashed browsers before any assertion. Nine tracked PNGs recaptured; no verdict was written.
+`write:exports`, `build:lib` and `check:generated` resynced the two library change sets;
+`pnpm run check`, `pi-durable verify` and `pi-durable build` passed in each. Tracked PNGs were
+recaptured only where a view changed shape; `.prev` pairs and the contact sheet are retained and no
+human verdict was written.
 
 ## 6. Verification ladder
 
+Run one tier per change; do not repeat a lower tier after a higher one passes.
+
 ```bash
+# Tier 1 — every change, no browser (~20 s)
+pnpm run check
+pnpm exec vitest run test/navigation/edge-path.test.ts test/reading.test.ts \
+  test/reading-view.test.ts test/a11y.test.ts test/documents.test.ts \
+  test/composer.test.ts test/boundaries.test.ts
+pnpm --filter pi check:fast
+pnpm --filter pi-durable test
+
+# Tier 2 — only when the library surface changes
 pnpm run write:exports
 pnpm run build:lib
-pnpm -r --if-present typecheck
-pnpm exec vitest run test/reading.test.ts test/boundaries.test.ts
-pnpm --filter pi-durable test
+pnpm run check:generated
+
+# Tier 3 — only when a view, route or announcement changes
 pnpm --filter pi-durable verify
-pnpm --filter pi-durable test:e2e
+cd app/pi-durable
+SG_DURABLE_PORT=5442 PI_DURABLE_SERVER_PORT=8926 \
+  pnpm exec playwright test --config playwright.config.ts --workers=1
 pnpm --filter pi-durable build
 ```
 
-No test is retried to green without a cause fix. Human screenshot verdicts stay external.
+`pnpm run check` already typechecks every workspace, so a separate `pnpm -r --if-present typecheck`
+is redundant. Use one browser worker on this host: eight workers exhaust memory and crash Chromium
+before assertions run. Never retry to green without a cause fix. Human screenshot verdicts stay
+external.
 
 ## 7. Remaining work
 
@@ -118,4 +128,8 @@ No test is retried to green without a cause fix. Human screenshot verdicts stay 
 4. ~~**Remove the unused `marked` peer.**~~ Landed: no source or published consumer imports it; peer metadata, dev dependencies, bundler externals, README claim and the stale test were removed, and the lockfile regenerated.
 5. **Library adoption — partly landed.** ~~Announcer and semantic edge paths~~ are library-owned and adopted by both Pi hosts; the second-host trigger is satisfied. Pi Durable still owns its permalink codec, trail and card templates. Promote those only when a second host actually needs them, to avoid speculative abstraction.
 
-**Entry criteria:** item 3 starts only with the written draft contract; the remaining part of item 5 starts only with a second host needing permalinks, trail or card templates. Neither has a trigger today, so neither is in flight.
+**Plan status:** complete for all ungated work. Streams R/L/D/A/C, their extensions, the shared
+announcer, typed-edge paths and the reading/docs loop are landed and adopted by Pi Durable. Only two
+gated items remain: item 3 starts with a written draft contract (kernel op, byte storage, reload
+reconciliation); the rest of item 5 starts with a second host needing permalinks, trail or card
+templates. Neither has a trigger today, so neither is in flight.
