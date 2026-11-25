@@ -174,6 +174,7 @@ import {
 import { SHORTCUT_HELP } from './help';
 import { ChromeController, installPulldowns } from './chrome';
 import { downloadBlob } from '../../pi-kit/src/download';
+import { clampZoom } from '../../pi-kit/src/viewport';
 import { button, el, ensureChild, pruneChildren } from './dom';
 import { FocusLens } from './focus-lens';
 import {
@@ -1696,7 +1697,7 @@ export class PiHost {
 
     zoomBy(factor: number): number {
         const viewport = this.renderer.getViewport();
-        const zoom = Math.max(0.1, Math.min(6, viewport.zoom * factor));
+        const zoom = clampZoom(viewport.zoom, factor, { min: 0.1, max: 6 });
         this.renderer.setViewport({ ...viewport, zoom });
         this.renderMinimap();
         const direction = Math.sign(factor - 1);

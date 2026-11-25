@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { dataText, el, escapeHTML } from '../src/dom';
 import { dispatchKeys, plainKey, renderShortcuts, shiftedKey, type KeyBinding } from '../src/keyboard';
+import { clampZoom } from '../src/viewport';
 const event = (key: string, extra: Partial<KeyboardEvent> = {}): KeyboardEvent => {
     const target = document.createElement('body');
     return {
@@ -46,6 +47,14 @@ describe('host keyboard bindings', () => {
         ]);
         expect(container.querySelector('kbd')?.textContent).toBe('g');
         expect(container.querySelector('span')?.textContent).toBe('Graph');
+    });
+});
+describe('zoom clamping', () => {
+    it('keeps zoom inside the host range', () => {
+        const range = { min: 0.25, max: 4 };
+        expect(clampZoom(1, 16, range)).toBe(4);
+        expect(clampZoom(1, 0.01, range)).toBe(0.25);
+        expect(clampZoom(1, 1.2, range)).toBeCloseTo(1.2);
     });
 });
 describe('host DOM helpers', () => {

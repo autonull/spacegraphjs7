@@ -46,7 +46,9 @@ import { bandForOctave, octaveFor, octaveSizeFor, sizeForOctave, type OctaveBand
 import { provenanceFor } from './provenance';
 import {
     buildScopes,
+    clampZoom,
     dataText,
+    DEFAULT_FIT_OPTIONS,
     downloadBlob,
     el,
     escapeHTML,
@@ -69,9 +71,6 @@ import { storyByID, type Story } from './stories';
 import { threadFrom, type ThreadStep } from './thread';
 import { asOfFeed, snapshotsOf } from './time-travel';
 
-/** A fit never shrinks a world unit below this many CSS pixels; unreadable content is panned instead. */
-const FIT_MIN_SCALE = 0.5;
-const FIT_OPTIONS = { minScale: FIT_MIN_SCALE, padding: 48 } as const;
 /** Core layout hint: how much of the surface the node boxes should cover. */
 const NODES_AREA_DENSITY = 0.6;
 const MAX_NODE_SIZE = 1024;
@@ -562,7 +561,7 @@ export class DurableHost {
         this.#ready = true;
         this.refresh();
         this.#recordHistory();
-        this.renderer.fit(undefined, FIT_OPTIONS);
+        this.renderer.fit(undefined, DEFAULT_FIT_OPTIONS);
     }
 
     ready(): boolean {
@@ -792,7 +791,7 @@ export class DurableHost {
         this.#edgeLabels = model.edges.flatMap((edge) => (edge.label ? [edge.label] : []));
         if (!this.#fitted && presented.nodes.length) {
             this.#fitted = true;
-            requestAnimationFrame(() => this.renderer.fit(undefined, FIT_OPTIONS));
+            requestAnimationFrame(() => this.renderer.fit(undefined, DEFAULT_FIT_OPTIONS));
         }
         this.renderTabs();
         this.renderStatus();
@@ -814,7 +813,7 @@ export class DurableHost {
         if (name === this.#viewName) return;
         this.#viewName = name;
         this.refresh();
-        requestAnimationFrame(() => this.renderer.fit(undefined, FIT_OPTIONS));
+        requestAnimationFrame(() => this.renderer.fit(undefined, DEFAULT_FIT_OPTIONS));
         this.renderView();
         this.announce(`${name} view`);
         this.#recordHistory();
@@ -851,7 +850,7 @@ export class DurableHost {
     zoomBy(factor: number): void {
         const viewport = this.renderer.getViewport?.();
         if (!viewport) return;
-        const zoom = viewport.zoom * factor;
+        const zoom = clampZoom(viewport.zoom, factor, ZOOM_RANGE);
         this.#rungPinned = false;
         this.#bands.feed(zoom, ZOOM_RANGE);
         this.#sample = this.#scale.feed(zoom);
@@ -862,7 +861,7 @@ export class DurableHost {
     resetView(): void {
         this.setRung('fact');
         this.#rungPinned = false;
-        this.renderer.fit(undefined, FIT_OPTIONS);
+        this.renderer.fit(undefined, DEFAULT_FIT_OPTIONS);
         this.announce('View reset');
     }
 
