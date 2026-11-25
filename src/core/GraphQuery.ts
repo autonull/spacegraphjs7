@@ -35,7 +35,9 @@ export class GraphQuery {
     }
 
     query(predicate: (node: Node) => boolean): Node[] {
-        return [...this.nodes.values()].filter(predicate);
+        const result: Node[] = [];
+        for (const node of this.nodes.values()) if (predicate(node)) result.push(node);
+        return result;
     }
 
     // Query nodes by type (constructor name)
@@ -48,11 +50,13 @@ export class GraphQuery {
     }
 
     findNode(predicate: (node: Node) => boolean): Node | undefined {
-        return [...this.nodes.values()].find(predicate);
+        for (const node of this.nodes.values()) if (predicate(node)) return node;
+        return undefined;
     }
 
     findEdge(predicate: (edge: Edge) => boolean): Edge | undefined {
-        return [...this.edges.values()].find(predicate);
+        for (const edge of this.edges.values()) if (predicate(edge)) return edge;
+        return undefined;
     }
 
     getNeighbors(nodeId: string, direction: EdgeDirection = 'both'): Node[] {
@@ -86,13 +90,17 @@ export class GraphQuery {
         position: { x: number; y: number; z: number; distanceTo: (p: any) => number },
         radius: number,
     ): Node[] {
-        return [...this.nodes.values()].filter(
-            (node) => node.position.distanceTo(position) <= radius,
-        );
+        const result: Node[] = [];
+        for (const node of this.nodes.values()) {
+            if (node.position.distanceTo(position) <= radius) result.push(node);
+        }
+        return result;
     }
 
     mapNodes<T>(predicate: (node: Node) => T): T[] {
-        return [...this.nodes.values()].map(predicate);
+        const result: T[] = [];
+        for (const node of this.nodes.values()) result.push(predicate(node));
+        return result;
     }
 
     forEachNode(callback: (node: Node) => void): void {

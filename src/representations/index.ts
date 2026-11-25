@@ -138,7 +138,7 @@ function matrixLayout<Node extends RepresentationNode>(
     rows.forEach((nodes, row) => {
         for (const node of nodes) {
             const key = `${row}:${config.columnKeyFn(node)}`;
-            cells.set(key, [...(cells.get(key) ?? []), node]);
+            appendTo(cells, key, node);
         }
     });
 

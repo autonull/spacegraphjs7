@@ -36,13 +36,16 @@ export const readingOrder = (
     edges: readonly ReadingEdge[],
 ): readonly ReadingSection[] => {
     const byID = new Map(nodes.map((node) => [node.id, node] as const));
-    const next = new Map<string, string[]>();
+    const next = new Map<string, Set<string>>();
     const incoming = new Set<string>();
     for (const edge of edges) {
         if (!byID.has(edge.source) || !byID.has(edge.target)) continue;
-        const targets = next.get(edge.source) ?? [];
-        if (!targets.includes(edge.target)) targets.push(edge.target);
-        next.set(edge.source, targets);
+        let targets = next.get(edge.source);
+        if (!targets) {
+            targets = new Set();
+            next.set(edge.source, targets);
+        }
+        targets.add(edge.target);
         incoming.add(edge.target);
     }
     const sections: ReadingSection[] = [];

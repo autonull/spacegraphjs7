@@ -41,29 +41,19 @@ export class StaticMethods {
                 'WebGL is not supported by your browser or hardware. Some features may not work as expected.',
             );
         }
-
-        try {
-            const sg = new SpaceGraph(element, options);
-            await sg.init();
-
-            if (!spec || (!spec.nodes && !spec.edges)) {
-                logger.warn('[SpaceGraph] Loading an empty graph specification.');
-            }
-
-            sg.loadSpec(spec).render();
-            return sg;
-        } catch (err) {
-            const wrapped = wrapError(
-                err,
-                {
-                    namespace: 'SpaceGraph',
-                    operation: 'Initialization',
-                    reason: 'Initialization failed during SpaceGraph.create()',
-                },
-                logger,
-            );
-            throw wrapped;
+        if (!spec || (!spec.nodes && !spec.edges)) {
+            logger.warn('[SpaceGraph] Loading an empty graph specification.');
         }
+
+        return StaticMethods.initialize(
+            element,
+            options,
+            'Initialization',
+            'Initialization failed during SpaceGraph.create()',
+            (sg) => {
+                sg.loadSpec(spec).render();
+            },
+        );
     }
 
     static async load(
@@ -71,22 +61,16 @@ export class StaticMethods {
         data: GraphImportData,
         options: SpaceGraphOptions = {},
     ): Promise<SpaceGraph> {
-        const element = StaticMethods.getContainerElement(container);
-        if (!element) throw new Error(`[SpaceGraph] Container not found: "${container}"`);
-
-        const sg = new SpaceGraph(element, options);
-        try {
-            await sg.init();
-            sg.import(data);
-            sg.render();
-        } catch (err) {
-            throw wrapError(
-                err,
-                { namespace: 'SpaceGraph', operation: 'Import', reason: 'Failed to import data' },
-                logger,
-            );
-        }
-        return sg;
+        return StaticMethods.initialize(
+            StaticMethods.requireContainer(container),
+            options,
+            'Import',
+            'Failed to import data',
+            (sg) => {
+                sg.import(data);
+                sg.render();
+            },
+        );
     }
 
     static async fromURL(
@@ -97,27 +81,40 @@ export class StaticMethods {
         if (!url || typeof url !== 'string') throw new Error(`[SpaceGraph] Invalid URL: "${url}"`);
         if (!container) throw new Error('[SpaceGraph] Container is required');
 
+        return StaticMethods.initialize(
+            StaticMethods.requireContainer(container),
+            options,
+            'fromURL',
+            `Failed to load from ${url}`,
+            async (sg) => {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+                sg.loadSpec((await response.json()) as GraphSpec).render();
+            },
+        );
+    }
+
+    private static requireContainer(container: string | HTMLElement): HTMLElement {
         const element = StaticMethods.getContainerElement(container);
         if (!element) throw new Error(`[SpaceGraph] Container not found: "${container}"`);
+        return element;
+    }
 
+    private static async initialize(
+        element: HTMLElement,
+        options: SpaceGraphOptions,
+        operation: string,
+        reason: string,
+        populate: (sg: SpaceGraph) => void | Promise<void>,
+    ): Promise<SpaceGraph> {
         const sg = new SpaceGraph(element, options);
         try {
             await sg.init();
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-            sg.loadSpec((await response.json()) as GraphSpec).render();
+            await populate(sg);
+            return sg;
         } catch (err) {
-            throw wrapError(
-                err,
-                {
-                    namespace: 'SpaceGraph',
-                    operation: 'fromURL',
-                    reason: `Failed to load from ${url}`,
-                },
-                logger,
-            );
+            throw wrapError(err, { namespace: 'SpaceGraph', operation, reason }, logger);
         }
-        return sg;
     }
 
     static async quickGraph(

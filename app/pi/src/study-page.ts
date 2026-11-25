@@ -13,6 +13,7 @@ import {
     type StudyDepth,
     type StudySurface,
 } from './study';
+import { requireElement } from 'spacegraphjs/utils';
 import type { GraphLayoutMode } from './graph-layout';
 
 interface PiHooks {
@@ -32,7 +33,7 @@ interface Frame {
     readonly surface: StudySurface;
 }
 
-const element = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+const element = <T extends HTMLElement>(id: string): T => requireElement<T>(id, 'study');
 const frame = element<HTMLIFrameElement>('app');
 const status = element<HTMLDivElement>('status');
 const question = element<HTMLDivElement>('question');

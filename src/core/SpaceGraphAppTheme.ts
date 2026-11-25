@@ -1,4 +1,5 @@
 import type { SpaceGraphApp } from './SpaceGraphApp';
+import type { HudTheme } from './SpaceGraphAppHUD';
 import {
     renderButtons,
     renderTitleCard,
@@ -7,7 +8,7 @@ import {
     setupSearchHUD,
 } from './SpaceGraphAppHUD';
 
-export function setupDefaultHUD(app: SpaceGraphApp, theme: any) {
+export function setupDefaultHUD(app: SpaceGraphApp, theme: HudTheme) {
     if (typeof document === 'undefined') return;
 
     app.hud.removeElement('app-title-card');

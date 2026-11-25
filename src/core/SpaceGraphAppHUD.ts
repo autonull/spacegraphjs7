@@ -3,7 +3,9 @@ import { searchBy } from '../navigation/search';
 import { focusNodeCamera } from '../utils/CameraUtils';
 import { DOMUtils } from '../utils/DOMUtils';
 import { selectionChanged } from './Selection';
-import type { AppButtonConfig, SpaceGraphApp } from './SpaceGraphApp';
+import type { AppButtonConfig, SpaceGraphApp, SpaceGraphAppOptions } from './SpaceGraphApp';
+
+export type HudTheme = NonNullable<SpaceGraphAppOptions['theme']>;
 
 const SECONDARY_TEXT_COLOR = '#94a3b8';
 const BORDER_GLASS = '1px solid rgba(255,255,255,0.1)';
@@ -18,7 +20,7 @@ const BUTTON_BASE = {
 } as const;
 
 /** The glass a host's chrome sits on: the theme's surface, blurred, with a hairline edge. */
-function glassPanel(theme: any): Partial<CSSStyleDeclaration> {
+function glassPanel(theme: HudTheme = {}): Partial<CSSStyleDeclaration> {
     return {
         background: theme.backgroundColor,
         backdropFilter: 'blur(8px)',
@@ -32,7 +34,7 @@ const ZOOM_SLIDER_MAX = 5000;
 /** The slider runs backwards, so its value is the span the camera radius is measured against. */
 const ZOOM_SLIDER_SPAN = ZOOM_SLIDER_MAX + ZOOM_SLIDER_MIN;
 
-export function renderTitleCard(app: SpaceGraphApp, theme: any) {
+export function renderTitleCard(app: SpaceGraphApp, theme: HudTheme = {}) {
     app.hud.removeElement('app-title-card');
     if (!app.options.title) return;
 
@@ -55,7 +57,7 @@ export function renderTitleCard(app: SpaceGraphApp, theme: any) {
     app.hud.addElement({ id: 'app-title-card', position: 'top-left', element: titleCard });
 }
 
-export function renderToolbar(app: SpaceGraphApp, theme: any) {
+export function renderToolbar(app: SpaceGraphApp, theme: HudTheme = {}) {
     app.hud.removeElement('app-toolbar');
 
     const container = DOMUtils.createElement('div', {
@@ -125,7 +127,7 @@ function createDivider(): HTMLElement {
     });
 }
 
-function createModeToggle(app: SpaceGraphApp, theme: any): HTMLElement {
+function createModeToggle(app: SpaceGraphApp, theme: HudTheme = {}): HTMLElement {
     const container = DOMUtils.createElement('div', {
         style: {
             display: 'flex',
@@ -178,7 +180,7 @@ function createModeToggle(app: SpaceGraphApp, theme: any): HTMLElement {
     return container;
 }
 
-function createZoomControls(app: SpaceGraphApp, theme: any): HTMLElement {
+function createZoomControls(app: SpaceGraphApp, theme: HudTheme = {}): HTMLElement {
     const container = DOMUtils.createElement('div', {
         style: {
             display: 'flex',
@@ -254,7 +256,7 @@ function createZoomControls(app: SpaceGraphApp, theme: any): HTMLElement {
     return container;
 }
 
-export function renderButtons(app: SpaceGraphApp, theme: any) {
+export function renderButtons(app: SpaceGraphApp, theme: HudTheme = {}) {
     if (typeof document === 'undefined') return;
 
     app.hud.removeElement('app-actions');
@@ -295,8 +297,8 @@ export function renderToolbarActions(app: SpaceGraphApp) {
     }
 }
 
-function createStyledButton(btn: AppButtonConfig, isToolbar: boolean, theme: any): HTMLElement {
-    const bgNormal = isToolbar ? 'transparent' : theme.backgroundColor;
+function createStyledButton(btn: AppButtonConfig, isToolbar: boolean, theme: HudTheme = {}): HTMLElement {
+    const bgNormal = isToolbar ? 'transparent' : (theme.backgroundColor ?? '');
     const bgHover = BG_HOVER;
 
     const btnEl = DOMUtils.createElement('button', {
@@ -330,7 +332,7 @@ function createStyledButton(btn: AppButtonConfig, isToolbar: boolean, theme: any
     return btnEl;
 }
 
-export function setupSearchHUD(app: SpaceGraphApp, theme: any) {
+export function setupSearchHUD(app: SpaceGraphApp, theme: HudTheme = {}) {
     if (typeof document === 'undefined') return;
 
     app.hud.removeElement('app-search');
