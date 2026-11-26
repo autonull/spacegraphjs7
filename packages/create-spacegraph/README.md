@@ -21,6 +21,8 @@ pnpm dlx create-spacegraph-domain my-domain workflow
 ```
 
 The domain generator reads `templates/` at runtime; both directories ship in the published tarball.
+The generated domain and host declare published ranges for framework packages; only the host's dependency
+on its own domain uses `workspace:*`, so `pnpm install` resolves the standalone workspace.
 
 Bins: `create-spacegraph` and `sg6` generate apps; `create-spacegraph-domain` generates domains.
 See `docs/QUICKSTART.md` for the app walkthrough and `docs/extension-recipe.md` for the domain recipe.

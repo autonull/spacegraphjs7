@@ -112,7 +112,7 @@ Design rules that keep the layers honest:
 | `@spacegraphjs/svg-renderer`                                                                  | Static SVG export and inline subgraphs; not interactive            |
 | `react-spacegraph`                                                                            | `GraphView` binding over the contract and controller               |
 | `solid-spacegraph`                                                                            | Solid binding over the same policy                                 |
-| `@spacegraphjs/cli`                                                                           | `sg fix`: apply vision-generated patches                           |
+| `@spacegraphjs/cli`                                                                           | `sg fix`: review vision-generated patches                          |
 | `create-spacegraph`                                                                           | Scaffolder, also exposed as `sg6`                                  |
 
 ---
@@ -134,7 +134,7 @@ Install with `pnpm add spacegraphjs three`. Three.js is a required peer. Optiona
 
 Run `pnpm run dev:demo` and open `/` for the complete demo: a capability gallery, 44 programmatic demos at `/showcase.html`, and every standalone feature page. `pnpm run dev` serves the engine demos. In the gallery, `/` focuses search, `↑`/`↓` and `Enter` navigate results, `F` fits the graph, and clicking the minimap navigates the canvas.
 
-The OpenCode host demo (`pnpm run graph:dev`, the real shell against a canonical fixture with no model provider) and the component-test harness are indexed next to it in `docs/spacegraph/demos.md` of the OpenCode fork.
+The provider-free Pi flagship runs with `PI_LOCAL_FEED=1 pnpm --filter pi dev`; its shell and study harness are documented in `app/pi/README.md`.
 
 ### Most-used calls
 
@@ -427,7 +427,7 @@ Model management uses `graph.vision.loadModels(paths)` and `graph.vision.modelsL
 - `spacegraphVision(spec, { minScore })` returns the same report plus `passed` and a letter `grade`; it does not throw.
 - `visionAssert(spec)` returns test assertions: `noOverlap()`, `noMissingLabels()`, `noInvalidEdges()`, `withinDomBudget()`, `accessible()` and `meetsFloor(minScore)`.
 - `correctQuality(spec, { maxEdits })` applies only measured, re-verified fixes; preferences are logged, never flipped.
-- `sg fix` consumes a `spacegraph-autofix-patch.json` when a host supplies one, with a `--dry-run` mode.
+- `sg fix` reviews a `spacegraph-autofix-patch.json` when a host supplies one; it lists proposed fixes and leaves the patch intact for manual application.
 - `VisionOverlayPlugin` surfaces scores and fixes inside a running app.
 
 Vision is a verification tool, not a guarantee. Use it alongside unit, interaction, and visual-regression tests.

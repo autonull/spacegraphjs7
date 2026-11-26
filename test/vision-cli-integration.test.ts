@@ -42,7 +42,9 @@ describe('Vision-CLI Integration', () => {
             expect(output).toContain('[OVERLAP]');
             expect(output).toContain('Overlap detected');
             expect(output).toContain('Location: test.html');
-            expect(output).toContain('Dry-run enabled');
+            expect(output).toContain('Dry-run: review only');
+            expect(output).toContain(`Patch preserved at ${patchPath}`);
+            expect(fs.existsSync(patchPath)).toBe(true);
         } finally {
             // Cleanup
             if (fs.existsSync(patchPath)) fs.unlinkSync(patchPath);

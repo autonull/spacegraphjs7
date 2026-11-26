@@ -34,34 +34,37 @@ const knownPackages = new Set(manifests.keys());
 const failures: string[] = [];
 const builtins = new Set(['install', 'add', 'exec', 'init', 'create', 'dlx', 'run']);
 
+const check = (command: string, doc: string, line: number): void => {
+    const args = command.split(/\s+/).slice(1);
+    if (/^\d/.test(args[0] ?? '')) return;
+    if (args[0] === '--filter') {
+        const pkg = manifests.get(args[1] ?? '');
+        const script = args[2] === 'run' ? args[3] : args[2];
+        if (!pkg) failures.push(`${doc}:${line}: unknown workspace package ${args[1]}`);
+        else if (!pkg.has(script ?? '')) failures.push(`${doc}:${line}: ${args[1]} has no ${script} script`);
+        return;
+    }
+    if (args[0] === 'dlx' || args[0] === 'create') {
+        const name = (args[1] ?? '').replace(/@[^/]+$/, '').replace(/-y$/, '');
+        const bin = args[0] === 'create' ? `create-${name}` : name;
+        if (!knownPackages.has(bin)) failures.push(`${doc}:${line}: ${bin} is not a workspace package`);
+        return;
+    }
+    if (builtins.has(args[0] ?? '')) {
+        if (args[0] === 'run' && !manifests.get('spacegraphjs')?.has(args[1] ?? '')) {
+            failures.push(`${doc}:${line}: root has no ${args[1]} script`);
+        }
+        return;
+    }
+    if (!manifests.get('spacegraphjs')?.has(args[0] ?? '')) {
+        failures.push(`${doc}:${line}: root has no ${args[0]} script`);
+    }
+};
+
 for (const doc of ['docs/QUICKSTART.md', 'README.md']) {
     const lines = readFileSync(resolve(root, doc), 'utf8').split('\n');
     lines.forEach((line, index) => {
-        const command = line.trim().split('#')[0].trim();
-        if (!command.startsWith('pnpm ')) return;
-        const args = command.split(/\s+/).slice(1);
-        if (args[0] === '--filter') {
-            const pkg = manifests.get(args[1]);
-            const script = args[2] === 'run' ? args[3] : args[2];
-            if (!pkg) failures.push(`${doc}:${index + 1}: unknown workspace package ${args[1]}`);
-            else if (!pkg.has(script)) failures.push(`${doc}:${index + 1}: ${args[1]} has no ${script} script`);
-            return;
-        }
-        if (args[0] === 'dlx' || args[0] === 'create') {
-            const name = args[1].replace(/@[^/]+$/, '').replace(/-y$/, '');
-            const bin = args[0] === 'create' ? `create-${name}` : name;
-            if (!knownPackages.has(bin)) failures.push(`${doc}:${index + 1}: ${bin} is not a workspace package`);
-            return;
-        }
-        if (builtins.has(args[0])) {
-            if (args[0] === 'run' && !manifests.get('spacegraphjs')?.has(args[1])) {
-                failures.push(`${doc}:${index + 1}: root has no ${args[1]} script`);
-            }
-            return;
-        }
-        if (!manifests.get('spacegraphjs')?.has(args[0])) {
-            failures.push(`${doc}:${index + 1}: root has no ${args[0]} script`);
-        }
+        for (const match of line.matchAll(/pnpm\s+[^\n`|]+/g)) check(match[0].trim(), doc, index + 1);
     });
 }
 

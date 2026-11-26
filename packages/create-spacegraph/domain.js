@@ -28,6 +28,18 @@ const write = (relative, content) => {
     fs.writeFileSync(file, content);
 };
 
+const spec = (pkg) => {
+    try {
+        const manifestPath =
+            pkg === 'spacegraphjs'
+                ? new URL('../../package.json', import.meta.url)
+                : new URL(`../${pkg.slice('@spacegraphjs/'.length)}/package.json`, import.meta.url);
+        return `^${JSON.parse(fs.readFileSync(manifestPath, 'utf8')).version}`;
+    } catch {
+        return '*';
+    }
+};
+
 const fill = (text) =>
     text
         .replaceAll('{{name}}', name)
@@ -80,14 +92,15 @@ library API to express host vocabulary.
     "build": "vite build"
   },
   "dependencies": {
-    "@spacegraphjs/adapter": "workspace:*",
-    "@spacegraphjs/kernel": "workspace:*",
-    "@spacegraphjs/renderer": "workspace:*",
-    "@spacegraphjs/search": "workspace:*",
-    "@spacegraphjs/shared": "workspace:*",
-    "@spacegraphjs/trace": "workspace:*"
+    "@spacegraphjs/adapter": "${spec('@spacegraphjs/adapter')}",
+    "@spacegraphjs/kernel": "${spec('@spacegraphjs/kernel')}",
+    "@spacegraphjs/renderer": "${spec('@spacegraphjs/renderer')}",
+    "@spacegraphjs/search": "${spec('@spacegraphjs/search')}",
+    "@spacegraphjs/shared": "${spec('@spacegraphjs/shared')}",
+    "@spacegraphjs/trace": "${spec('@spacegraphjs/trace')}"
   },
   "devDependencies": {
+    "typescript": "^5.9.2",
     "vitest": "^5.0.5"
   }
 }
@@ -368,15 +381,19 @@ files['host/package.json'] = `{
     "test": "vitest run"
   },
   "devDependencies": {
-    "vitest": "workspace:*"
+    "@playwright/test": "^1.64.1",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
   },
   "dependencies": {
     "@spacegraphjs/{{name}}": "workspace:*",
-    "@spacegraphjs/adapter": "workspace:*",
-    "@spacegraphjs/kernel": "workspace:*",
-    "@spacegraphjs/renderer": "workspace:*",
-    "@spacegraphjs/spacegraph-renderer": "workspace:*",
-    "spacegraphjs": "workspace:*"
+    "@spacegraphjs/adapter": "${spec('@spacegraphjs/adapter')}",
+    "@spacegraphjs/kernel": "${spec('@spacegraphjs/kernel')}",
+    "@spacegraphjs/renderer": "${spec('@spacegraphjs/renderer')}",
+    "@spacegraphjs/spacegraph-renderer": "${spec('@spacegraphjs/spacegraph-renderer')}",
+    "spacegraphjs": "${spec('spacegraphjs')}"
   }
 }
 `;
