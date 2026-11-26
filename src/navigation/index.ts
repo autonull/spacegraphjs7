@@ -13,6 +13,7 @@ export { Trail, type TrailListener, type TrailNode, type TrailOptions } from './
 
 export { edgePath, type EdgePathModel, type EdgePathOptions, type EdgePathStep } from './edgePath';
 
+export { project } from './minimap';
 export type {
     MinimapBounds,
     MinimapOptions,
@@ -22,6 +23,7 @@ export type {
     MinimapViewport,
 } from './minimap';
 
+export { search, searchBy } from './search';
 export type { SearchModel, SearchableNode, SearchScore } from './search';
 
 /**

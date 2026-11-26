@@ -44,3 +44,36 @@ describe('Navigation.search', () => {
         );
     });
 });
+
+describe('Navigation.searchBy', () => {
+    const ranks: Record<string, number> = { first: 0, second: 1, third: 2 };
+    const score = (node: { label: string }): number => ranks[node.label] ?? -1;
+
+    it('returns only the best hits, in rank order', () => {
+        const model = {
+            nodes: [
+                { id: 'third', label: 'third' },
+                { id: 'first', label: 'first' },
+                { id: 'second', label: 'second' },
+            ],
+        };
+        expect(Navigation.searchBy(model, 'query', score, 2).map((node) => node.id)).toEqual([
+            'first',
+            'second',
+        ]);
+    });
+
+    it('keeps model order for equal scores at the limit', () => {
+        const model = {
+            nodes: [
+                { id: 'a', label: 'first' },
+                { id: 'b', label: 'first' },
+                { id: 'c', label: 'second' },
+            ],
+        };
+        expect(Navigation.searchBy(model, 'query', score, 2).map((node) => node.id)).toEqual([
+            'a',
+            'b',
+        ]);
+    });
+});

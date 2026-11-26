@@ -35,7 +35,7 @@ export class AnimationController {
                 : Performance.DEFAULT_DELTA_TIME;
         this.#lastTimestamp = timestamp;
 
-        this.sg.pluginManager.updateAll(delta);
+        this.sg.pluginManager.preRender(delta);
         this.sg.cameraControls?.update();
         for (const node of this.sg.graph.nodes.values()) {
             if (node) node.onPreRender?.(delta);
@@ -46,6 +46,7 @@ export class AnimationController {
 
         this.sg.reportViewport();
         this.sg.renderer.render();
+        this.sg.pluginManager.postRender(delta);
     }
 
     requestFrame(): void {

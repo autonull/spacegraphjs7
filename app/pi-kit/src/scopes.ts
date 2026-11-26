@@ -26,12 +26,16 @@ export const buildScopes = (
     edges: readonly ScopeEdge[],
     spacing = 260,
 ): readonly Scope[] => {
+    const ids = new Set(nodes.map((node) => node.id));
     const parentOf = new Map<string, string>();
+    const childrenOf = new Map<string, string[]>();
     for (const edge of edges) {
         if (edge.kind !== 'contains') continue;
-        if (!nodes.some((node) => node.id === edge.source)) continue;
-        if (!nodes.some((node) => node.id === edge.target)) continue;
+        if (!ids.has(edge.source) || !ids.has(edge.target)) continue;
         if (!parentOf.has(edge.target)) parentOf.set(edge.target, edge.source);
+        const siblings = childrenOf.get(edge.source);
+        if (siblings) siblings.push(edge.target);
+        else childrenOf.set(edge.source, [edge.target]);
     }
     const roots = nodes.filter((node) => !parentOf.has(node.id)).map((node) => node.id);
     const scopes: Scope[] = [];
@@ -39,9 +43,7 @@ export const buildScopes = (
     const visit = (id: string, parent: string | undefined, depth: number, slot: number): void => {
         if (seen.has(id)) return;
         seen.add(id);
-        const children = edges
-            .filter((edge) => edge.kind === 'contains' && edge.source === id && !seen.has(edge.target))
-            .map((edge) => edge.target);
+        const children = (childrenOf.get(id) ?? []).filter((child) => !seen.has(child));
         scopes.push({
             id,
             parent,

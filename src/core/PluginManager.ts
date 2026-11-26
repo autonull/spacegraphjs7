@@ -126,7 +126,8 @@ export class PluginManager {
         }
     }
 
-    updateAll(delta: number): void {
+    /** Runs before the camera update and the draw. */
+    preRender(delta: number): void {
         for (const plugin of this.plugins.values()) {
             try {
                 plugin.onPreRender?.(delta);
@@ -134,6 +135,10 @@ export class PluginManager {
                 logger.error('Plugin onPreRender error:', err);
             }
         }
+    }
+
+    /** Runs after the frame is drawn, so hooks observe the frame they describe. */
+    postRender(delta: number): void {
         for (const plugin of this.plugins.values()) {
             try {
                 plugin.onPostRender?.(delta);
@@ -141,6 +146,11 @@ export class PluginManager {
                 logger.error('Plugin onPostRender error:', err);
             }
         }
+    }
+
+    /** @deprecated Use `preRender`; `postRender` now runs after the draw. */
+    updateAll(delta: number): void {
+        this.preRender(delta);
     }
 
     disposePlugins(): void {

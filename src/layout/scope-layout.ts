@@ -190,9 +190,10 @@ function solveScopes(state: ScopeLayoutState, entry: ScopeEntry): void {
 
     const links = new Map<string, string[]>();
     const addLink = (from: string, to: string): void => appendTo(links, from, to);
+    const childByID = new Map(entry.children.map((child) => [child.spec.id, child]));
     const portalNodeIds = new Map(
         entry.nodes
-            .filter((node) => node.scope && entry.children.some((child) => child.spec.id === node.scope))
+            .filter((node) => node.scope && childByID.has(node.scope))
             .map((node) => [node.scope!, node.id]),
     );
     const localId = (qualified: string): string | undefined => {
@@ -212,9 +213,7 @@ function solveScopes(state: ScopeLayoutState, entry: ScopeEntry): void {
 
     const items: SolverItem[] = [];
     for (const node of entry.nodes) {
-        const child = node.scope
-            ? entry.children.find((candidate) => candidate.spec.id === node.scope)
-            : undefined;
+        const child = node.scope ? childByID.get(node.scope) : undefined;
         const bounds = child ? state.boundsByPath.get(child.path)! : undefined;
         const [declaredWidth, declaredHeight] = node.size ?? [DEFAULT_WIDTH, DEFAULT_HEIGHT];
         const [width, height] = bounds ? portalSize(bounds, state.padding) : [declaredWidth, declaredHeight];

@@ -44,12 +44,25 @@ export function searchBy<Node extends SearchableNode>(
 
     if (!needle) return [];
 
-    return model.nodes
-        .flatMap((node) => {
-            const score = scoreFn(node, needle);
-            return score < 0 ? [] : [{ node, score }];
-        })
-        .sort((a, b) => a.score - b.score)
-        .slice(0, limit ?? Infinity)
-        .map((entry) => entry.node);
+    const unbounded = limit === undefined || !Number.isFinite(limit);
+    const max = unbounded ? Infinity : Math.max(0, limit!);
+    const ranked: Array<{ node: Node; score: SearchScore }> = [];
+    for (const node of model.nodes) {
+        const score = scoreFn(node, needle);
+        if (score < 0) continue;
+        const entry = { node, score };
+        if (unbounded) {
+            ranked.push(entry);
+            continue;
+        }
+        // Keep only `limit` hits: one insertion into a short ranked list per match instead of
+        // sorting every match on each keystroke.
+        let index = ranked.findIndex((kept) => kept.score > score);
+        if (index === -1) index = ranked.length;
+        if (index === ranked.length && ranked.length >= max) continue;
+        ranked.splice(index, 0, entry);
+        if (ranked.length > max) ranked.pop();
+    }
+    if (unbounded) ranked.sort((a, b) => a.score - b.score);
+    return ranked.map((entry) => entry.node);
 }

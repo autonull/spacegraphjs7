@@ -92,6 +92,8 @@ export {
 export { ribbonWidth, RIBBON_WIDTH_DEFAULTS, type RibbonCurve } from './ribbon';
 // Performance utilities
 export { batch, measure } from './performance';
+// Record utilities
+export { hasMethod, lookup } from './record';
 // Projection helpers
 export { clientToNdc, projectToNdc, worldToClient, worldToScreen } from './projection';
 // Vector helpers

@@ -91,3 +91,25 @@ describe('PluginManager.use', () => {
         expect(second.calls).toBe(1);
     });
 });
+
+describe('PluginManager render hooks', () => {
+    test('pre and post hooks fire independently, and updateAll stays pre-only', () => {
+        const plugins = manager();
+        const calls: string[] = [];
+        const plugin: Plugin = {
+            id: 'hooks',
+            name: 'hooks',
+            version: '1',
+            onPreRender: () => calls.push('pre'),
+            onPostRender: () => calls.push('post'),
+        };
+        plugins.register(plugin.id, plugin);
+
+        plugins.preRender(1);
+        expect(calls).toEqual(['pre']);
+        plugins.postRender(1);
+        expect(calls).toEqual(['pre', 'post']);
+        plugins.updateAll(1);
+        expect(calls).toEqual(['pre', 'post', 'pre']);
+    });
+});

@@ -36,7 +36,7 @@ export { forwardGraphEvents } from './forwardEvents';
 export { Graph, type EdgeDirection } from './Graph';
 export { Selection } from './Selection';
 export { ObjectPoolManager } from './ObjectPoolManager';
-export type { Plugin } from './PluginManager';
+export type { Plugin, PluginKey } from './PluginManager';
 export { PluginManager } from './PluginManager';
 export { MathPool, ObjectPool } from './pooling/ObjectPool';
 export {

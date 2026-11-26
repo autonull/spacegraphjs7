@@ -141,10 +141,15 @@ export function checkQuality(model: QualityModel, options: QualityOptions = {}):
         issue('preference', [], `${preference} is a preference; log a human decision under ADR 0008`);
 
     if (options.dom) {
-        const mirror = [...options.dom.querySelectorAll('[data-id]')];
-        if (mirror.length === 0) issue('a11y-mirror', [], 'no hidden DOM mirror items were supplied');
+        const mirror = new Map(
+            [...options.dom.querySelectorAll('[data-id]')].map((element) => [
+                element.getAttribute('data-id'),
+                element,
+            ]),
+        );
+        if (mirror.size === 0) issue('a11y-mirror', [], 'no hidden DOM mirror items were supplied');
         for (const node of nodes) {
-            const item = mirror.find((element) => element.getAttribute('data-id') === node.id);
+            const item = mirror.get(node.id);
             if (!item) {
                 issue('a11y-missing-item', [node.id], `${node.id} is absent from the DOM mirror`);
                 continue;
