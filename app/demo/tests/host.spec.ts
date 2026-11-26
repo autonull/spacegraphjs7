@@ -137,6 +137,17 @@ test.describe('the demo host (T6.12)', () => {
         noErrors(errors);
     });
 
+    test('navigates the canvas from the focused minimap', async ({ page }) => {
+        const errors = await boot(page, '/', { viewport: false });
+        const before = await page.evaluate(() => (window as any).__demo.viewport());
+        await page.locator('#minimap').focus();
+        await page.keyboard.press('ArrowRight');
+        const after = await page.evaluate(() => (window as any).__demo.viewport());
+
+        expect(after.center).not.toEqual(before.center);
+        noErrors(errors);
+    });
+
     test('navigates search results with the keyboard', async ({ page }) => {
         const errors = await boot(page, '/', { viewport: false });
         await page.locator('#search').fill('vitest');

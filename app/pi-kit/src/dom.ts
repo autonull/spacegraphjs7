@@ -67,18 +67,16 @@ export function pruneChildren<T extends Element>(
         registry.delete(id);
     }
 }
+const HTML_ESCAPES: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+};
+
 export const escapeHTML = (value: string): string =>
-    value.replace(/[&<>"']/g, (char) =>
-        char === '&'
-            ? '&amp;'
-            : char === '<'
-              ? '&lt;'
-              : char === '>'
-                ? '&gt;'
-                : char === '"'
-                  ? '&quot;'
-                  : '&#39;',
-    );
+    value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]!);
 export const dataText = (node: {
     readonly data?: Readonly<Record<string, unknown>>;
 }): string => {

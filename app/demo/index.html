@@ -217,6 +217,10 @@
                 border-radius: 8px;
                 cursor: crosshair;
             }
+            #minimap:focus-visible {
+                outline: 2px solid var(--sh-focus);
+                outline-offset: 2px;
+            }
             .dot {
                 fill: var(--sh-text-muted);
             }
@@ -574,9 +578,11 @@
                 <svg
                     id="minimap"
                     viewBox="0 0 220 140"
-                    role="img"
-                    aria-label="Overview of the pipeline; click to navigate"
-                    title="Click the overview to navigate"
+                    role="group"
+                    tabindex="0"
+                    aria-label="Overview of the pipeline; click or use arrow keys to navigate"
+                    aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
+                    title="Click the overview, or focus it and use arrow keys, to navigate"
                 ></svg>
                 <div id="a11y"></div>
             </div>

@@ -537,6 +537,31 @@ async function main(): Promise<void> {
             center: [point.x, point.y, viewport.center[2] ?? 0],
         });
     });
+    el('minimap').addEventListener('keydown', (event) => {
+        if (!minimapProjection || !renderer) return;
+        const dx = event.key === 'ArrowRight' ? 20 : event.key === 'ArrowLeft' ? -20 : 0;
+        const dy = event.key === 'ArrowDown' ? 20 : event.key === 'ArrowUp' ? -20 : 0;
+        if (!dx && !dy) return;
+        const viewport = renderer.getViewport?.();
+        if (!viewport) return;
+        event.preventDefault();
+        const center = minimapProjection.unproject({
+            x: MINIMAP.width / 2,
+            y: MINIMAP.height / 2,
+        });
+        const next = minimapProjection.unproject({
+            x: MINIMAP.width / 2 + dx,
+            y: MINIMAP.height / 2 + dy,
+        });
+        renderer.setViewport({
+            ...viewport,
+            center: [
+                viewport.center[0] + next.x - center.x,
+                viewport.center[1] + next.y - center.y,
+                viewport.center[2] ?? 0,
+            ],
+        });
+    });
     bindPicker(
         'renderer',
         ['spacegraph', 'cytoscape', 'svg'] as const,
