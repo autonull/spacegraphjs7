@@ -75,6 +75,55 @@ export const failureDetails = (
 export const failures = (view: AgentView): readonly string[] =>
     failureDetails(view).map((failure) => failure.id);
 
+export type FailureAttentionTone = 'none' | 'warning' | 'danger';
+
+export type FailureAttention = {
+    readonly tone: FailureAttentionTone;
+    /** All findings, errors and retries alike. */
+    readonly count: number;
+    readonly failures: number;
+    readonly retries: number;
+    /** The furthest failure in turn order, with its context. */
+    readonly latest: AgentFailure | undefined;
+    /** Stable ids so a watcher never reports the same failure twice. */
+    readonly ids: readonly string[];
+};
+
+/**
+ * One failure digest derived from the view, so the map, log and status bar report the same numbers.
+ * Hosts choose which roles count as a failure and as a retry; a failed status is an extra signal.
+ */
+export const failureAttention = (
+    view: AgentView,
+    options: {
+        readonly failureRoles?: readonly string[];
+        readonly retryRoles?: readonly string[];
+        readonly includeFailedStatus?: boolean;
+    } = {},
+): FailureAttention => {
+    const retryRoles = options.retryRoles ?? ['retry'];
+    const found = failureDetails(view, {
+        roles: [...(options.failureRoles ?? ['failure']), ...retryRoles],
+        includeFailedStatus: options.includeFailedStatus,
+    });
+    const roles = new Map(view.nodes.map((node) => [node.id, roleOf(node)]));
+    let failureCount = 0;
+    let retryCount = 0;
+    for (const item of found) {
+        if (retryRoles.includes(roles.get(item.id) ?? '')) retryCount++;
+        else failureCount++;
+    }
+    const latest = [...found].sort((a, b) => a.turnNumber - b.turnNumber).at(-1);
+    return {
+        tone: failureCount > 0 ? 'danger' : retryCount > 0 ? 'warning' : 'none',
+        count: found.length,
+        failures: failureCount,
+        retries: retryCount,
+        latest,
+        ids: found.map((item) => item.id),
+    };
+};
+
 export type AgentChangedFile = {
     readonly id: string;
     readonly path: string;

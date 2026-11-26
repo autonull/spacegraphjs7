@@ -3,7 +3,14 @@ import { Kernel } from '@spacegraphjs/kernel';
 import type { KernelOp } from '@spacegraphjs/kernel';
 import { AgentEventMapper } from './mapping';
 import { AGENT_KINDS, AGENT_RELATIONS, AGENT_ROLES, agentDomain, buildAgentView, labelFor, relationOf, roleOf } from './vocabulary';
-import { changedArtifacts, changedFiles, failureDetails, failures, why } from './selectors';
+import {
+    changedArtifacts,
+    changedFiles,
+    failureAttention,
+    failureDetails,
+    failures,
+    why,
+} from './selectors';
 import { agentFacetAccessors, agentTraceVocabulary } from './facets';
 
 const fold = (ops: readonly KernelOp[]): Kernel =>
@@ -220,5 +227,21 @@ describe('rich agent selectors', () => {
             { id: 'f', path: 'src/a.ts', writers: ['tool'], readers: ['reader'] },
         ]);
         expect(changedArtifacts(view, 'tool')).toEqual(['f']);
+    });
+
+    test('failure attention reports one danger digest with stable ids', () => {
+        const digest = failureAttention(view);
+        expect(digest.tone).toBe('danger');
+        expect(digest.failures).toBe(2);
+        expect(digest.retries).toBe(0);
+        expect(digest.count).toBe(digest.ids.length);
+        expect(digest.latest?.id).toBe('err');
+        expect(digest.latest?.turnLabel).toBe('Turn one');
+
+        expect(failureAttention(view, { includeFailedStatus: false })).toMatchObject({
+            tone: 'danger',
+            failures: 1,
+            count: 1,
+        });
     });
 });

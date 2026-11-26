@@ -23,6 +23,8 @@ export {
     type OutlineTurn,
 } from './search';
 
+export { compileNLQ, formatNLQResult, parseNLQ, type NLQOptions, type NLQDictionaries } from './nlq';
+
 export {
     applyFacets,
     keepOnly,
