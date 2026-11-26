@@ -18,6 +18,24 @@ const BUTTON_BASE = {
     cursor: 'pointer',
 } as const;
 
+const HUD_STYLE_ID = 'sg-app-hud-style';
+const HUD_CONTROL_CLASS = 'sg-hud-control';
+
+function installFocusStyles(): void {
+    if (document.getElementById(HUD_STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = HUD_STYLE_ID;
+    style.textContent = `.${HUD_CONTROL_CLASS}:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }`;
+    document.head.appendChild(style);
+}
+
+function hudControl<T extends HTMLElement>(element: T): T {
+    installFocusStyles();
+    element.classList.add(HUD_CONTROL_CLASS);
+    if (element instanceof HTMLButtonElement) element.type = 'button';
+    return element;
+}
+
 /** The glass a host's chrome sits on: the theme's surface, blurred, with a hairline edge. */
 function glassPanel(theme: HudTheme = {}): Partial<CSSStyleDeclaration> {
     return {
@@ -40,7 +58,7 @@ export function renderTitleCard(app: SpaceGraphApp, theme: HudTheme = {}) {
             ...glassPanel(theme),
             padding: '16px',
             borderRadius: '12px',
-            width: '300px',
+            width: 'min(300px, calc(100vw - 32px))',
             color: 'white',
             fontFamily: 'sans-serif',
             transition: 'all 0.3s ease',
@@ -88,7 +106,7 @@ export function renderToolbar(app: SpaceGraphApp, theme: HudTheme = {}) {
     const fitBtn = DOMUtils.createElement('button', {
         textContent: 'Fit View',
         ariaLabel: 'Fit all nodes in view',
-        title: 'Fit all nodes in view',
+        title: 'Fit all nodes in view (F)',
         style: {
             ...BUTTON_BASE,
             background: BG_GLASS,
@@ -97,6 +115,8 @@ export function renderToolbar(app: SpaceGraphApp, theme: HudTheme = {}) {
             fontWeight: '600',
         },
     });
+    fitBtn.setAttribute('aria-keyshortcuts', 'F');
+    hudControl(fitBtn);
     fitBtn.onmouseenter = () => (fitBtn.style.background = BG_HOVER);
     fitBtn.onmouseleave = () => (fitBtn.style.background = BG_GLASS);
     fitBtn.onclick = () => app.sg.fitView(200);
@@ -160,6 +180,7 @@ function createModeToggle(app: SpaceGraphApp, theme: HudTheme = {}): HTMLElement
                 transition: 'all 0.2s ease',
             },
         });
+        hudControl(btn);
         btn.dataset['mode'] = mode;
         btn.onclick = () => app.setMode(mode);
         container.appendChild(btn);
@@ -205,7 +226,7 @@ export function createZoomControls(app: SpaceGraphApp, theme: HudTheme = {}): HT
         const btn = DOMUtils.createElement('button', {
             textContent: label,
             ariaLabel: isZoomIn ? 'Zoom in' : 'Zoom out',
-            title: isZoomIn ? 'Zoom in' : 'Zoom out',
+            title: isZoomIn ? 'Zoom in (+)' : 'Zoom out (−)',
             style: {
                 ...BUTTON_BASE,
                 background: 'transparent',
@@ -214,6 +235,8 @@ export function createZoomControls(app: SpaceGraphApp, theme: HudTheme = {}): HT
                 fontSize: '16px',
             },
         });
+        hudControl(btn);
+        btn.setAttribute('aria-keyshortcuts', isZoomIn ? '+' : '-');
         btn.onmouseenter = () => (btn.style.background = BG_HOVER);
         btn.onmouseleave = () => (btn.style.background = 'transparent');
         btn.onclick = () => {
@@ -227,6 +250,7 @@ export function createZoomControls(app: SpaceGraphApp, theme: HudTheme = {}): HT
         type: 'range',
         id: 'sg-app-zoom-slider',
         ariaLabel: 'Zoom level',
+        title: 'Zoom level (+ / −)',
         min: '0',
         max: '1',
         step: '0.01',
@@ -238,16 +262,33 @@ export function createZoomControls(app: SpaceGraphApp, theme: HudTheme = {}): HT
         },
     });
 
+    hudControl(zoomSlider);
     zoomSlider.oninput = () => app.sg.setZoom(Number.parseFloat(zoomSlider.value));
 
+    const zoomValue = DOMUtils.createElement('span', {
+        id: 'sg-app-zoom-value',
+        title: 'Current zoom',
+        textContent: `${Math.round(app.sg.zoom * 100)}%`,
+        style: {
+            minWidth: '34px',
+            textAlign: 'center',
+            fontSize: '11px',
+            color: SECONDARY_TEXT_COLOR,
+            fontVariantNumeric: 'tabular-nums',
+        },
+    });
+
     const sliderHandler = () => {
+        const percent = Math.round(app.sg.zoom * 100);
         zoomSlider.value = app.sg.zoom.toFixed(2);
+        zoomSlider.setAttribute('aria-valuetext', `${percent} percent`);
+        zoomValue.textContent = `${percent}%`;
     };
     sliderHandler();
     app.sg.events.on('zoom:change', sliderHandler);
     app._zoomSliderHandler = sliderHandler;
 
-    container.append(createBtn('-', false), zoomSlider, createBtn('+', true));
+    container.append(createBtn('-', false), zoomSlider, zoomValue, createBtn('+', true));
     return container;
 }
 
@@ -318,6 +359,7 @@ function createStyledButton(
         },
     });
 
+    hudControl(btnEl);
     if (btn.icon) {
         btnEl.appendChild(DOMUtils.createElement('span', { innerHTML: btn.icon }));
     }
@@ -356,42 +398,72 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: HudTheme = {}) {
     container.appendChild(icon);
 
     const input = DOMUtils.createElement('input', {
-        type: 'text',
+        type: 'search',
+        id: 'sg-app-search-input',
         ariaLabel: 'Search nodes',
+        title: 'Search nodes ( / )',
         placeholder: 'Search nodes...',
         style: {
             background: 'transparent',
             border: 'none',
             color: 'white',
             outline: 'none',
-            width: '100%',
+            flex: '1',
+            minWidth: '0',
             fontFamily: 'sans-serif',
             fontSize: '14px',
         },
     });
+    input.setAttribute('aria-keyshortcuts', '/');
+    hudControl(input);
+
+    const status = DOMUtils.createElement('span', {
+        id: 'sg-app-search-status',
+        role: 'status',
+        style: {
+            flex: '0 0 auto',
+            marginInlineStart: '8px',
+            fontSize: '11px',
+            color: SECONDARY_TEXT_COLOR,
+            fontVariantNumeric: 'tabular-nums',
+        },
+    });
+    status.setAttribute('aria-live', 'polite');
 
     input.addEventListener('input', (e) => {
-        const query = (e.target as HTMLInputElement).value.toLowerCase();
+        const query = (e.target as HTMLInputElement).value.toLowerCase().trim();
         if (!query) {
             app.sg.clearSelection();
+            status.textContent = '';
             return;
         }
         const matches = searchBy(
             { nodes: [...app.sg.graph.nodes.values()] },
             query,
             (node, needle) => {
-                const label = String(node.data?.label || node.data?.title || node.id || '');
-                return label.toLowerCase().includes(needle) ? 0 : -1;
+                const text = [node.label, node.data?.label, node.data?.title, node.id]
+                    .filter(Boolean)
+                    .join(' ');
+                return text.toLowerCase().includes(needle) ? 0 : -1;
             },
         );
 
         app.sg.select(matches.map((match) => match.id));
+        status.textContent = `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}`;
         if (matches.length === 1 && app.sg.cameraControls) {
             focusNodeCamera(app.sg, matches[0]);
         }
     });
 
-    container.appendChild(input);
+    input.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        event.stopPropagation();
+        input.value = '';
+        app.sg.clearSelection();
+        status.textContent = '';
+    });
+
+    container.append(input, status);
 
     app.hud.addElement({
         id: 'app-search',

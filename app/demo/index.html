@@ -209,6 +209,7 @@
                 background: color-mix(in srgb, var(--sh-surface) 88%, transparent);
                 border: 1px solid var(--sh-border);
                 border-radius: 8px;
+                cursor: crosshair;
             }
             .dot {
                 fill: var(--sh-text-muted);
@@ -294,9 +295,20 @@
                 gap: 4px;
                 margin-top: 6px;
             }
+            #search-status {
+                min-height: 16px;
+                margin-top: 4px;
+                color: var(--sh-text-muted);
+                font-size: 11px;
+            }
             .result {
                 text-align: start;
                 font-size: 12px;
+            }
+            .result.is-active {
+                border-color: var(--sh-accent);
+                background: var(--sh-accent);
+                color: #fff;
             }
             .panel-title {
                 font-size: 12px;
@@ -421,6 +433,66 @@
             #canvas .node-content {
                 height: 100%;
             }
+            @media (max-width: 1000px) {
+                body {
+                    overflow: auto;
+                }
+                header {
+                    position: sticky;
+                    inset-block-start: 0;
+                    z-index: 2;
+                }
+                header .sub:nth-of-type(2) {
+                    display: none;
+                }
+                main {
+                    flex-direction: column;
+                    overflow: visible;
+                }
+                #gallery-panel {
+                    width: 100%;
+                    flex: none;
+                    max-height: 190px;
+                    border-inline-end: 0;
+                    border-block-end: 1px solid var(--sh-border);
+                }
+                #gallery {
+                    flex-direction: row;
+                    flex-wrap: wrap;
+                    align-content: start;
+                }
+                .capability {
+                    width: auto;
+                }
+                #stage {
+                    flex: none;
+                    height: 58vh;
+                    min-height: 360px;
+                }
+                #minimap {
+                    display: none;
+                }
+                aside {
+                    width: 100%;
+                    flex: none;
+                    border-inline-start: 0;
+                    border-block-start: 1px solid var(--sh-border);
+                }
+                #inspector {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                    gap: 16px;
+                }
+                footer {
+                    position: sticky;
+                    inset-block-end: 0;
+                    z-index: 2;
+                    flex-wrap: wrap;
+                }
+                footer span:nth-child(2) {
+                    display: none;
+                }
+            }
         </style>
     </head>
     <body>
@@ -428,7 +500,10 @@
             <div>
                 <h1>SpaceGraphJS Demo</h1>
                 <div class="sub">One model · three renderers · every library capability</div>
-                <div class="sub">Drag to pan · Wheel to zoom · Right-drag to pan · Middle-click a node to frame · Shift-drag to select</div>
+                <div class="sub">
+                    Drag to pan · Wheel to zoom · Right-drag to pan · Middle-click a node to frame ·
+                    Shift-drag to select
+                </div>
             </div>
             <div class="controls">
                 <div class="group" role="group" aria-label="Layout">
@@ -494,7 +569,8 @@
                     id="minimap"
                     viewBox="0 0 220 140"
                     role="img"
-                    aria-label="Overview of the pipeline"
+                    aria-label="Overview of the pipeline; click to navigate"
+                    title="Click the overview to navigate"
                 ></svg>
                 <div id="a11y"></div>
             </div>
@@ -516,8 +592,19 @@
                     </section>
                     <section>
                         <div class="panel-title">Search</div>
-                        <input id="search" type="search" placeholder="vitest, publish, plan…" />
-                        <div id="results"></div>
+                        <input
+                            id="search"
+                            type="search"
+                            aria-label="Search pipeline nodes"
+                            title="Search pipeline nodes ( / )"
+                            placeholder="vitest, publish, plan…"
+                            role="combobox"
+                            aria-expanded="false"
+                            aria-controls="results"
+                            autocomplete="off"
+                        />
+                        <div id="search-status" role="status" aria-live="polite"></div>
+                        <div id="results" role="listbox" aria-label="Search results"></div>
                     </section>
                     <section>
                         <div class="panel-title">Trail</div>
@@ -533,6 +620,7 @@
                 >Every capability runs a library module against the demo's model and reports what it
                 produced.</span
             >
+            <span>Keys: <kbd>F</kbd> fit · <kbd>/</kbd> search · <kbd>Esc</kbd> close</span>
         </footer>
 
         <div

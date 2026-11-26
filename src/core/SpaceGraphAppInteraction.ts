@@ -137,6 +137,23 @@ function showTooltip(
     app.hud.showTooltip(app.sg.renderer.renderer.domElement, content, event);
 }
 
+const zoomBy = (app: SpaceGraphApp, delta: number) =>
+    app.sg.setZoom(Math.max(0, Math.min(1, app.sg.zoom + delta)));
+
+const BUILTIN_HOTKEYS: Record<string, (app: SpaceGraphApp) => void> = {
+    f: (app) => app.sg.fitView(200),
+    '/': () => {
+        const input = document.getElementById('sg-app-search-input');
+        if (input instanceof HTMLInputElement) {
+            input.focus();
+            input.select();
+        }
+    },
+    '+': (app) => zoomBy(app, 0.1),
+    '=': (app) => zoomBy(app, 0.1),
+    '-': (app) => zoomBy(app, -0.1),
+};
+
 export function setupHotkeys(app: SpaceGraphApp): () => void {
     if (typeof document === 'undefined') return () => undefined;
 
@@ -148,25 +165,20 @@ export function setupHotkeys(app: SpaceGraphApp): () => void {
             app.hud.hideContextMenu();
             app.clearSelection();
             app.setMode('default');
+            return;
         }
 
-        if (
-            (e.key === 'Delete' || e.key === 'Backspace') &&
-            (app.currentSelected.size > 0 || app.currentSelectedEdges.size > 0)
-        ) {
-            if (!(app.options.hotkeys && app.options.hotkeys[e.key])) {
-                for (const edge of [...app.currentSelectedEdges]) {
-                    app.removeEdge(edge.id);
-                }
-                for (const node of [...app.currentSelected]) {
-                    app.removeNode(node.id);
-                }
-            }
+        const hostHotkey = app.options.hotkeys?.[e.key];
+        if (hostHotkey) {
+            hostHotkey();
+            return;
         }
 
-        if (app.options.hotkeys && app.options.hotkeys[e.key]) {
-            app.options.hotkeys[e.key]();
-        }
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        const builtin = BUILTIN_HOTKEYS[e.key];
+        if (!builtin) return;
+        e.preventDefault();
+        builtin(app);
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);

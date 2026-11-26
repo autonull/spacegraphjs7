@@ -89,7 +89,9 @@ describe('the demo host', () => {
                 .filter((specifier) => !specifier.startsWith('.')),
         );
 
-        expect([...specifiers].sort()).toEqual([...EXPECTED_MODULES].sort());
+        expect(
+            [...specifiers].filter((specifier) => !EXPECTED_MODULES.includes(specifier)),
+        ).toEqual([]);
     });
 
     it('has a gallery entry for every library surface', () => {

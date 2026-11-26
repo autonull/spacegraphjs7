@@ -36,6 +36,8 @@ describe('HUD zoom controls', () => {
             '0.50',
         ]);
         expect(slider.getAttribute('aria-label')).toBe('Zoom level');
+        const readout = controls.querySelector<HTMLElement>('#sg-app-zoom-value')!;
+        expect(readout.textContent).toBe('50%');
         const buttons = controls.querySelectorAll('button');
         expect(buttons[0]!.getAttribute('aria-label')).toBe('Zoom out');
         expect(buttons[1]!.getAttribute('aria-label')).toBe('Zoom in');
@@ -51,6 +53,8 @@ describe('HUD zoom controls', () => {
 
         app.sg.setZoom(0.8);
         expect(slider.value).toBe('0.80');
+        expect(slider.getAttribute('aria-valuetext')).toBe('80 percent');
+        expect(readout.textContent).toBe('80%');
     });
 
     it('clamps zoom at both ends', () => {

@@ -1,4 +1,3 @@
-import { HUDDOMFactory } from './HUDDOMFactory';
 import { HUDElement, type HUDElementSpec } from './HUDElement';
 import { HUD_STYLES, HUD_ZINDEX } from './HUDStyles';
 
@@ -30,8 +29,12 @@ export class HUDStatusBar extends HUDElement {
         };
     }
 
+    private field(id: string): HTMLElement | null {
+        return this.element?.querySelector<HTMLElement>(`#${id}`) ?? null;
+    }
+
     updateSelection(nodeCount: number, _edgeCount: number): void {
-        const el = HUDDOMFactory.getElementById('sg-status-selection');
+        const el = this.field('sg-status-selection');
         if (el) {
             el.textContent = `Selection: ${nodeCount} node${nodeCount !== 1 ? 's' : ''}`;
             el.style.display = nodeCount > 0 ? 'inline' : 'none';
@@ -39,8 +42,8 @@ export class HUDStatusBar extends HUDElement {
     }
 
     updateNodeCount(nodes: number, edges: number): void {
-        const nodesEl = HUDDOMFactory.getElementById('sg-status-nodes');
-        const edgesEl = HUDDOMFactory.getElementById('sg-status-edges');
+        const nodesEl = this.field('sg-status-nodes');
+        const edgesEl = this.field('sg-status-edges');
 
         if (nodesEl) {
             nodesEl.textContent = `Nodes: ${nodes}`;
@@ -55,7 +58,7 @@ export class HUDStatusBar extends HUDElement {
     }
 
     updateCamera(is3D: boolean): void {
-        const el = HUDDOMFactory.getElementById('sg-status-camera');
+        const el = this.field('sg-status-camera');
         if (el) el.textContent = `Camera: ${is3D ? '3D' : '2D'}`;
     }
 }

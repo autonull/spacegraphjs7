@@ -34,6 +34,21 @@ test.describe('the demo host (T6.12)', () => {
         noErrors(errors);
     });
 
+    test('keeps the gallery, canvas and inspector usable on a narrow viewport', async ({
+        page,
+    }) => {
+        await page.setViewportSize({ width: 900, height: 700 });
+        const errors = await boot(page, '/', { viewport: false });
+
+        await expect(page.locator('#gallery')).toBeVisible();
+        await expect(page.locator('#minimap')).toBeHidden();
+        await expect(page.locator('#evidence')).toBeVisible();
+        const stage = (await page.locator('#stage').boundingBox())!;
+        expect(stage.width).toBeGreaterThan(800);
+
+        noErrors(errors);
+    });
+
     test('runs every capability and reports what it produced', async ({ page }) => {
         const errors = await boot(page, '/', { viewport: false });
 
@@ -111,6 +126,37 @@ test.describe('the demo host (T6.12)', () => {
         noErrors(errors);
     });
 
+    test('navigates the canvas from the minimap', async ({ page }) => {
+        const errors = await boot(page, '/', { viewport: false });
+        const before = await page.evaluate(() => (window as any).__demo.viewport());
+        const box = (await page.locator('#minimap').boundingBox())!;
+        await page.mouse.click(box.x + box.width * 0.25, box.y + box.height * 0.3);
+        const after = await page.evaluate(() => (window as any).__demo.viewport());
+
+        expect(after.center).not.toEqual(before.center);
+        noErrors(errors);
+    });
+
+    test('navigates search results with the keyboard', async ({ page }) => {
+        const errors = await boot(page, '/', { viewport: false });
+        await page.locator('#search').fill('vitest');
+        await expect(page.locator('#search-status')).toContainText('2 matches');
+
+        await page.locator('#search').press('ArrowDown');
+        await expect(page.locator('#results .result').first()).toHaveAttribute(
+            'aria-selected',
+            'true',
+        );
+        await page.locator('#search').press('Enter');
+        expect(await page.evaluate(() => (window as any).__demo.selection())).toEqual([
+            'test:unit',
+        ]);
+
+        await page.locator('#search').press('Escape');
+        await expect(page.locator('#results .result')).toHaveCount(0);
+        noErrors(errors);
+    });
+
     test('draws the overview of the pipeline in the minimap', async ({ page }) => {
         const errors = await boot(page, '/', { viewport: false });
         const dots = page.locator('#minimap .dot');
@@ -154,19 +200,20 @@ test.describe('the demo host (T6.12)', () => {
         // T6.10: the minimap is chrome over the canvas, so the fit keeps the content out of its way.
         // Poll the settled frame instead of sleeping: camera and layout timing vary by host.
         await page.locator('[data-view="force"]').click();
-        const overlap = () => page.evaluate(() => {
-            const minimap = document.querySelector<SVGSVGElement>('#minimap');
-            if (!minimap) return -1;
-            const map = minimap.getBoundingClientRect();
-            let total = 0;
-            for (const card of document.querySelectorAll<HTMLElement>('.html-node-container')) {
-                const rect = card.getBoundingClientRect();
-                const width = Math.min(rect.right, map.right) - Math.max(rect.left, map.left);
-                const height = Math.min(rect.bottom, map.bottom) - Math.max(rect.top, map.top);
-                if (width > 0 && height > 0) total += width * height;
-            }
-            return total;
-        });
+        const overlap = () =>
+            page.evaluate(() => {
+                const minimap = document.querySelector<SVGSVGElement>('#minimap');
+                if (!minimap) return -1;
+                const map = minimap.getBoundingClientRect();
+                let total = 0;
+                for (const card of document.querySelectorAll<HTMLElement>('.html-node-container')) {
+                    const rect = card.getBoundingClientRect();
+                    const width = Math.min(rect.right, map.right) - Math.max(rect.left, map.left);
+                    const height = Math.min(rect.bottom, map.bottom) - Math.max(rect.top, map.top);
+                    if (width > 0 && height > 0) total += width * height;
+                }
+                return total;
+            });
 
         await expect
             .poll(overlap, { timeout: 5_000, intervals: [100, 250, 500] })
@@ -176,7 +223,10 @@ test.describe('the demo host (T6.12)', () => {
     });
 
     test('captures the gallery for the review packet', async ({ page }) => {
-        test.skip(!process.env.DEMO_SHOTS, 'capture-only: set DEMO_SHOTS to regenerate the review packet');
+        test.skip(
+            !process.env.DEMO_SHOTS,
+            'capture-only: set DEMO_SHOTS to regenerate the review packet',
+        );
 
         const errors = await boot(page, '/', { viewport: false });
 

@@ -69,6 +69,8 @@ export class AccessibilityLayer {
         container.setAttribute('role', 'group');
         container.setAttribute('aria-label', options.label ?? 'Graph contents');
         this.#list = document.createElement('ul');
+        this.#list.setAttribute('role', 'listbox');
+        this.#list.setAttribute('aria-multiselectable', 'true');
         this.#list.style.listStyle = 'none';
         this.#list.style.margin = '0';
         const live = document.createElement('div');
@@ -230,6 +232,8 @@ export class AccessibilityLayer {
     }
 
     #render(): void {
+        const hierarchical = this.#items.some((item) => item.children?.length);
+        this.#list.setAttribute('role', hierarchical ? 'tree' : 'listbox');
         const focusedInteractive = this.#items[this.#focusIndex]?.interactive !== false;
         const children = Array.from(this.#list.children) as HTMLLIElement[];
         const unchanged =
@@ -250,7 +254,9 @@ export class AccessibilityLayer {
         this.#list.replaceChildren(
             ...this.#items.map((item, index) => {
                 const li = document.createElement('li');
-                li.addEventListener('click', () => this.#options.onSelect?.(item.id));
+                li.addEventListener('click', () => {
+                    if (item.interactive !== false) this.#options.onSelect?.(item.id);
+                });
                 this.#paint(li, item, index, focusedInteractive);
                 return li;
             }),
@@ -272,13 +278,11 @@ export class AccessibilityLayer {
 
         li.dataset.id = item.id;
         li.textContent = [item.label, item.kind, item.status].filter(Boolean).join(' — ');
+        li.setAttribute('role', hasChildren ? 'treeitem' : 'option');
         li.setAttribute('aria-selected', String(this.#selected.has(item.id)));
         if (interactive) li.removeAttribute('aria-disabled');
         else li.setAttribute('aria-disabled', 'true');
-        if (hasChildren) {
-            li.setAttribute('aria-expanded', String(item.expanded));
-            li.setAttribute('role', 'treeitem');
-        }
+        if (hasChildren) li.setAttribute('aria-expanded', String(item.expanded));
         li.tabIndex = focused ? 0 : -1;
     }
 }

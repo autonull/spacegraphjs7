@@ -46,6 +46,44 @@ describe('AccessibilityLayer', () => {
         layer.dispose();
     });
 
+    it('exposes option semantics and ignores clicks on disabled items', () => {
+        const onSelect = vi.fn();
+        const layer = new AccessibilityLayer(container, { onSelect });
+        layer.setItems([
+            { id: 'a', label: 'A' },
+            { id: 'b', label: 'B', interactive: false },
+        ]);
+        const list = container.querySelector('ul')!;
+        expect(list.getAttribute('role')).toBe('listbox');
+        expect(list.getAttribute('aria-multiselectable')).toBe('true');
+        const items = list.querySelectorAll('li');
+        expect(items[0].getAttribute('role')).toBe('option');
+        expect(items[1].getAttribute('aria-disabled')).toBe('true');
+
+        items[0].click();
+        items[1].click();
+        expect(onSelect).toHaveBeenCalledTimes(1);
+        expect(onSelect).toHaveBeenCalledWith('a');
+        layer.dispose();
+    });
+
+    it('uses tree semantics for expandable groups', () => {
+        const layer = new AccessibilityLayer(container);
+        layer.setItems([
+            {
+                id: 'parent',
+                label: 'Parent',
+                expanded: true,
+                children: [{ id: 'child', label: 'Child' }],
+            },
+        ]);
+        expect(container.querySelector('ul')!.getAttribute('role')).toBe('tree');
+        const parent = container.querySelector('li[data-id="parent"]')!;
+        expect(parent.getAttribute('role')).toBe('treeitem');
+        expect(parent.getAttribute('aria-expanded')).toBe('true');
+        layer.dispose();
+    });
+
     it('skips non-interactive items during keyboard traversal', () => {
         const layer = new AccessibilityLayer(container);
         layer.setItems([
@@ -206,7 +244,6 @@ describe('AccessibilityLayer', () => {
         layer.dispose();
     });
 });
-
 
 describe('a11y focus bridge', () => {
     it('moves the mirror roving tabindex with the canvas focus', () => {

@@ -132,7 +132,7 @@ Install with `pnpm add spacegraphjs three`. Three.js is a required peer. Optiona
 
 ### See it run
 
-Run `pnpm run dev:demo` and open `/` for the complete demo: a capability gallery, 44 programmatic demos at `/showcase.html`, and every standalone feature page. `pnpm run dev` serves the engine demos.
+Run `pnpm run dev:demo` and open `/` for the complete demo: a capability gallery, 44 programmatic demos at `/showcase.html`, and every standalone feature page. `pnpm run dev` serves the engine demos. In the gallery, `/` focuses search, `↑`/`↓` and `Enter` navigate results, `F` fits the graph, and clicking the minimap navigates the canvas.
 
 The OpenCode host demo (`pnpm run graph:dev`, the real shell against a canonical fixture with no model provider) and the component-test harness are indexed next to it in `docs/spacegraph/demos.md` of the OpenCode fork.
 
@@ -470,6 +470,23 @@ The mouse map belongs to the library, so every host gets the same gestures. A ho
 A host that wants the left button to mean only "the nodes" turns the void's pan off with `input: { interaction: { enableBackgroundPan: false } }`.
 
 A control inside a card (`data-sg-interactive="true"`, or any form control) takes the mouse: the card does not move under it, and the card's own background still drags the card. A card draws its hover as an outline around itself, so hovering never moves the controls under the reader's finger.
+
+### The keyboard
+
+`SpaceGraphApp` shares these shortcuts across hosts; the interaction plugin adds graph commands on the same canvas.
+
+| Key                         | Does                                      |
+| --------------------------- | ----------------------------------------- |
+| `F`                         | Fit all nodes in view                     |
+| `/`                         | Focus the node search field               |
+| `+` / `−`                   | Zoom in / out                             |
+| `Esc`                       | Clear selection, exit mode, close dialogs |
+| `Ctrl/Cmd+A`                | Select all nodes                          |
+| `Ctrl/Cmd+Z` / `Ctrl/Cmd+Y` | Undo / redo                               |
+| `Delete` / `Backspace`      | Delete the selection after confirmation   |
+| `Tab` / `Shift+Tab`         | Traverse nodes                            |
+
+Search reports a live match count and clears on `Escape`. Dialogs take focus on open, close on `Escape`, and return focus to their opener.
 
 ---
 

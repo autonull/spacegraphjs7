@@ -20,7 +20,7 @@ import { computeFocusOverlay, getFocusOpacity, type FocusOverlay } from '@spaceg
 import { elementGetter, renderTrail as paintTrail, round } from './dom';
 import { CAPABILITIES, type Capability } from './gallery';
 import { DemoHost } from './host';
-import { HOST_VIEWS, searchableFields, type HostView } from './model';
+import { HOST_VIEWS, searchableFields, type BuildNode, type HostView } from './model';
 
 type RendererID = 'spacegraph' | 'cytoscape' | 'svg';
 type ThemeName = 'dark' | 'light';
@@ -85,6 +85,8 @@ function viewportOf() {
     return { center: [viewport.center[0], viewport.center[1]] as const, extent: viewport.extent };
 }
 
+let minimapProjection: ReturnType<typeof Navigation.project> | undefined;
+
 function renderMinimap() {
     const svg = svgEl('minimap');
     const layout = host.layout();
@@ -94,6 +96,7 @@ function renderMinimap() {
         padding: 8,
         viewport: viewportOf(),
     });
+    minimapProjection = projection;
 
     const dots = host.model.nodes.flatMap((node) => {
         const position = layout.positions.get(node.id);
@@ -124,26 +127,61 @@ function renderMinimap() {
     svg.replaceChildren(...(frame ? [frame] : []), ...dots);
 }
 
-function renderSearch(query: string) {
+let searchResults: readonly BuildNode[] = [];
+let searchIndex = -1;
+
+function paintSearchCursor(): void {
+    const input = el<HTMLInputElement>('search');
+    const buttons = [...el('results').querySelectorAll<HTMLButtonElement>('.result')];
+    buttons.forEach((button, index) => {
+        const active = index === searchIndex;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-selected', String(active));
+    });
+    input.setAttribute('aria-activedescendant', buttons[searchIndex]?.id ?? '');
+    buttons[searchIndex]?.scrollIntoView({ block: 'nearest' });
+}
+
+function renderSearch(query: string, reset = false): void {
     const results = el('results');
-    const hits = Navigation.search(host.model, query, searchableFields);
+    const input = el<HTMLInputElement>('search');
+    const status = el('search-status');
+    const activeId = reset ? undefined : searchResults[searchIndex]?.id;
 
     if (!query.trim()) {
+        searchResults = [];
+        searchIndex = -1;
         results.replaceChildren();
+        status.textContent = '';
+        input.setAttribute('aria-expanded', 'false');
+        input.removeAttribute('aria-activedescendant');
         return;
     }
 
+    searchResults = Navigation.search(host.model, query, searchableFields);
+    searchIndex = activeId ? searchResults.findIndex((hit) => hit.id === activeId) : -1;
     results.replaceChildren(
-        ...hits.map((hit) => {
+        ...searchResults.map((hit, index) => {
             const button = document.createElement('button');
             button.type = 'button';
+            button.id = `sg-search-result-${index}`;
             button.className = 'result';
+            button.setAttribute('role', 'option');
             button.dataset.id = hit.id;
             button.textContent = `${hit.label} · ${hit.summary ?? hit.outcome}`;
-            button.addEventListener('click', () => select([hit.id]));
+            button.addEventListener('click', () => {
+                searchIndex = index;
+                paintSearchCursor();
+                select([hit.id]);
+            });
             return button;
         }),
     );
+    status.textContent = searchResults.length
+        ? `${searchResults.length} ${searchResults.length === 1 ? 'match' : 'matches'} · ↑↓ Enter`
+        : 'No matches';
+    input.setAttribute('aria-expanded', 'true');
+    paintSearchCursor();
 }
 
 function renderEvidence(capability: Capability, evidence: readonly string[]) {
@@ -158,6 +196,41 @@ function renderEvidence(capability: Capability, evidence: readonly string[]) {
             return row;
         }),
     );
+}
+
+let dialogReturnFocus: HTMLElement | null = null;
+
+function openDialog(dialog: HTMLElement): void {
+    dialogReturnFocus =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    dialog.hidden = false;
+    dialog.querySelector<HTMLElement>('button')?.focus();
+}
+
+function closeDialog(dialog: HTMLElement): void {
+    dialog.hidden = true;
+    const returnTo = dialogReturnFocus;
+    dialogReturnFocus = null;
+    if (returnTo?.isConnected) returnTo.focus();
+}
+
+function trapDialogTab(event: KeyboardEvent, dialog: HTMLElement): void {
+    if (event.key !== 'Tab') return;
+    const focusable = [
+        ...dialog.querySelectorAll<HTMLElement>(
+            'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+    ].filter((element) => !element.hasAttribute('disabled'));
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (!first || !last) return event.preventDefault();
+    if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+    }
 }
 
 function openOverlay(nodeID: string) {
@@ -175,7 +248,7 @@ function openOverlay(nodeID: string) {
         }),
     );
 
-    dialog.hidden = false;
+    openDialog(dialog);
     scope?.dispose();
     scope = new ScopedOverlay({
         container: dialog,
@@ -186,11 +259,12 @@ function openOverlay(nodeID: string) {
 function closeOverlay() {
     scope?.dispose();
     scope = undefined;
-    el('overlay').hidden = true;
+    closeDialog(el('overlay'));
 }
 
 function openDiff() {
-    el<HTMLElement>('diff').hidden = false;
+    const dialog = el<HTMLElement>('diff');
+    openDialog(dialog);
     renderCodeDiff(el('diff-body'), host.diffs(), {
         toneClass: (tone) => `diff-line diff-line--${tone}`,
         fileClass: 'diff-file',
@@ -198,7 +272,7 @@ function openDiff() {
 }
 
 function closeDiff() {
-    el('diff').hidden = true;
+    closeDialog(el('diff'));
 }
 
 function applyFocusOverlay(model: RenderModel, overlay: FocusOverlay | undefined): RenderModel {
@@ -264,10 +338,15 @@ function paint() {
  * The floor keeps a card legible — half its natural size, which is what the lane views are read at.
  * The minimap is drawn over the canvas, so the frame keeps the content clear of it (T6.10).
  */
+let wasNarrow = window.innerWidth <= 1000;
+
 function fitCamera() {
+    const narrow = window.innerWidth <= 1000;
     renderer?.fit(undefined, {
-        minScale: 0.5,
-        insets: { right: MINIMAP.width + MINIMAP_GAP, bottom: MINIMAP.height + MINIMAP_GAP },
+        minScale: narrow ? 0.25 : 0.5,
+        insets: narrow
+            ? {}
+            : { right: MINIMAP.width + MINIMAP_GAP, bottom: MINIMAP.height + MINIMAP_GAP },
     });
 }
 
@@ -448,6 +527,21 @@ async function main(): Promise<void> {
 
     el('fit-all').addEventListener('click', () => fitCamera());
     el('fit-read').addEventListener('click', () => fitReadable());
+    el('minimap').addEventListener('click', (event) => {
+        if (!minimapProjection || !renderer) return;
+        const svg = svgEl('minimap');
+        const rect = svg.getBoundingClientRect();
+        const point = minimapProjection.unproject({
+            x: ((event.clientX - rect.left) / rect.width) * MINIMAP.width,
+            y: ((event.clientY - rect.top) / rect.height) * MINIMAP.height,
+        });
+        const viewport = renderer.getViewport?.();
+        if (!viewport) return;
+        renderer.setViewport({
+            ...viewport,
+            center: [point.x, point.y, viewport.center[2] ?? 0],
+        });
+    });
     bindPicker(
         'renderer',
         ['spacegraph', 'cytoscape', 'svg'] as const,
@@ -466,17 +560,65 @@ async function main(): Promise<void> {
         paint();
     });
 
-    el<HTMLInputElement>('search').addEventListener('input', (event) =>
-        renderSearch((event.target as HTMLInputElement).value),
+    const searchInput = el<HTMLInputElement>('search');
+    searchInput.addEventListener('input', (event) =>
+        renderSearch((event.target as HTMLInputElement).value, true),
     );
+    searchInput.addEventListener('keydown', (event) => {
+        if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && searchResults.length) {
+            event.preventDefault();
+            const step = event.key === 'ArrowDown' ? 1 : -1;
+            searchIndex = (searchIndex + step + searchResults.length) % searchResults.length;
+            paintSearchCursor();
+        } else if (event.key === 'Enter' && searchIndex >= 0) {
+            event.preventDefault();
+            select([searchResults[searchIndex]!.id]);
+        } else if (event.key === 'Escape') {
+            searchInput.value = '';
+            renderSearch('', true);
+        }
+    });
     el<HTMLInputElement>('gallery-filter').addEventListener('input', (event) =>
         renderGallery((event.target as HTMLInputElement).value),
     );
     el('overlay-close').addEventListener('click', () => closeOverlay());
     el('diff-close').addEventListener('click', () => closeDiff());
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            if (!el('overlay').hidden) closeOverlay();
+            else if (!el('diff').hidden) closeDiff();
+            return;
+        }
+        const openDialog = !el('overlay').hidden
+            ? el('overlay')
+            : !el('diff').hidden
+              ? el('diff')
+              : null;
+        if (openDialog) {
+            trapDialogTab(event, openDialog);
+            return;
+        }
+        const typing =
+            event.target instanceof HTMLElement &&
+            !!event.target.closest('input, textarea, select, [contenteditable="true"]');
+        if (event.ctrlKey || event.metaKey || event.altKey || typing) return;
+        if (event.key === 'f') {
+            event.preventDefault();
+            fitCamera();
+        }
+        if (event.key === '/') {
+            event.preventDefault();
+            el<HTMLInputElement>('search').focus();
+        }
+    });
     window.addEventListener('resize', () => {
         renderer?.resize();
         paint();
+        const narrow = window.innerWidth <= 1000;
+        if (narrow !== wasNarrow) {
+            wasNarrow = narrow;
+            fitCamera();
+        }
     });
 
     await mountRenderer('spacegraph');
@@ -502,6 +644,7 @@ async function main(): Promise<void> {
         diffOpen: () => !el('diff').hidden,
         search: (query: string) =>
             Navigation.search(host.model, query, searchableFields).map((hit) => hit.id),
+        viewport: () => renderer?.getViewport?.(),
     };
     (window as unknown as { __ready: boolean }).__ready = true;
 }

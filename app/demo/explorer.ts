@@ -812,6 +812,16 @@ element<HTMLInputElement>('axis-filter').addEventListener('input', (event) => {
 element('randomize').addEventListener('click', randomizeAll);
 element('reset').addEventListener('click', resetAll);
 element('compare').addEventListener('click', () => setCompare(!compare));
+element('copy-link').addEventListener('click', async () => {
+    const button = element<HTMLButtonElement>('copy-link');
+    try {
+        await navigator.clipboard.writeText(location.href);
+        button.textContent = 'Copied';
+    } catch {
+        button.textContent = 'Copy failed';
+    }
+    window.setTimeout(() => (button.textContent = 'Copy link'), 1500);
+});
 for (const format of ['svg', 'json', 'html'] as const) {
     element(`export-${format}`).addEventListener('click', () => {
         if (currentModel)

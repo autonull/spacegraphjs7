@@ -113,7 +113,7 @@ export class VisionOverlayPlugin extends DOMOverlayPlugin {
         </div>
         <div style="display: flex; justify-content: space-between;">
           <span style="color: rgba(255,255,255,0.8);">Text Legibility</span>
-          <span style="color: ${this.getScoreColor(this.lastReport.legibility.averageContrast)}; font-variant-numeric: tabular-nums;">${this.lastReport.legibility.wcagAA ? 'Pass' : 'Fail'}</span>
+          <span style="color: ${this.lastReport.legibility.wcagAA ? '#4ade80' : '#f87171'}; font-variant-numeric: tabular-nums;">${this.lastReport.legibility.wcagAA ? 'Pass' : 'Fail'}</span>
         </div>
         <div style="display: flex; justify-content: space-between;">
           <span style="color: rgba(255,255,255,0.8);">Node Overlaps</span>
@@ -122,7 +122,7 @@ export class VisionOverlayPlugin extends DOMOverlayPlugin {
           </span>
         </div>
       </div>
-      <button id="sg-vision-autofix" style="
+      <button id="sg-vision-autofix" type="button" title="Apply measured vision fixes" style="
         width: 100%;
         background: linear-gradient(135deg, #3b82f6, #8b5cf6);
         border: none;
@@ -137,13 +137,15 @@ export class VisionOverlayPlugin extends DOMOverlayPlugin {
       </button>
     `;
 
-        const btn = this.container.querySelector('#sg-vision-autofix');
+        const btn = this.container.querySelector<HTMLButtonElement>('#sg-vision-autofix');
         if (btn) {
             btn.addEventListener('click', async () => {
+                btn.disabled = true;
+                btn.setAttribute('aria-busy', 'true');
                 btn.innerHTML =
                     '<div class="sg-spinner" style="width: 14px; height: 14px; display: inline-block; margin-right: 6px;"></div> Fixing...';
                 await this.sg.vision.applyAutonomousFixes(this.lastReport!);
-                this.runAnalysis();
+                await this.runAnalysis();
             });
         }
     }
@@ -156,6 +158,7 @@ export class VisionOverlayPlugin extends DOMOverlayPlugin {
             style.innerHTML = `
         @keyframes sg-spin { 100% { transform: rotate(360deg); } }
         .sg-spinner { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: sg-spin 1s linear infinite; }
+        @media (prefers-reduced-motion: reduce) { .sg-spinner { animation: none; } }
       `;
             document.head.appendChild(style);
         }

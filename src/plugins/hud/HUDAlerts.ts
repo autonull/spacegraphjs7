@@ -55,6 +55,8 @@ export class HUDAlerts extends HUDElement {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
+                pointerEvents: 'auto',
+                userSelect: 'text',
                 ...HUD_ANIMATIONS.fadeIn,
             } as Partial<CSSStyleDeclaration>,
         });
@@ -62,11 +64,32 @@ export class HUDAlerts extends HUDElement {
         const icon = HUDDOMFactory.createTextElement(variantStyle.icon);
         HUDDOMFactory.applyStyles(icon, { fontSize: '18px' });
         const text = HUDDOMFactory.createTextElement(message);
-        HUDDOMFactory.applyStyles(text, { flex: '1' });
-        alert.append(icon, text);
+        HUDDOMFactory.applyStyles(text, { flex: '1', overflowWrap: 'anywhere' });
+        const dismiss = DOMUtils.createElement('button', {
+            textContent: '×',
+            ariaLabel: 'Dismiss notification',
+            title: 'Dismiss notification',
+            style: {
+                background: 'transparent',
+                border: 'none',
+                color: HUD_COLORS.textMuted,
+                cursor: 'pointer',
+                fontSize: '16px',
+                lineHeight: '1',
+                padding: '0 2px',
+            },
+        });
+        dismiss.type = 'button';
+        alert.append(icon, text, dismiss);
 
         this.element.appendChild(alert);
         HUDDOMFactory.fadeIn(alert);
-        setTimeout(() => HUDDOMFactory.fadeOutAndRemove(alert), duration);
+        const timer = window.setTimeout(() => HUDDOMFactory.fadeOutAndRemove(alert), duration);
+        dismiss.onclick = () => {
+            window.clearTimeout(timer);
+            alert.remove();
+        };
+        dismiss.onfocus = () => (dismiss.style.outline = `2px solid ${HUD_COLORS.primary}`);
+        dismiss.onblur = () => (dismiss.style.outline = 'none');
     }
 }

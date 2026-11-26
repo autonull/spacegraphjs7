@@ -24,10 +24,13 @@ export class HUDPlugin extends BaseSystemPlugin {
     private alerts: HUDAlerts | null = null;
     private modal: HTMLElement | null = null;
     private modalClose: (() => void) | null = null;
+    private modalKeyHandler: ((event: KeyboardEvent) => void) | null = null;
+    private modalFocusReturn: HTMLElement | null = null;
     private loading: HTMLElement | null = null;
     private tooltip: HTMLElement | null = null;
     private contextMenu: HTMLElement | null = null;
     private dismissMenu: ((event: PointerEvent) => void) | null = null;
+    private contextMenuKeyHandler: ((event: KeyboardEvent) => void) | null = null;
     private elements: Map<string, { el: HTMLElement; options: HUDElementOptions }> = new Map();
 
     protected onInit(): void {
@@ -104,6 +107,8 @@ export class HUDPlugin extends BaseSystemPlugin {
 
     showModal(title: string, content: string, options: ModalOptions = {}): void {
         this.hideModal();
+        this.modalFocusReturn =
+            document.activeElement instanceof HTMLElement ? document.activeElement : null;
         const overlay = document.createElement('div');
         overlay.id = 'spacegraph-modal-overlay';
         Object.assign(overlay.style, {
@@ -115,6 +120,9 @@ export class HUDPlugin extends BaseSystemPlugin {
             zIndex: HUD_ZINDEX.MODAL,
         });
         const panel = document.createElement('div');
+        panel.setAttribute('role', 'dialog');
+        panel.setAttribute('aria-modal', 'true');
+        panel.tabIndex = -1;
         Object.assign(panel.style, {
             width: options.width ?? 'min(420px, calc(100% - 32px))',
             maxWidth: 'calc(100% - 32px)',
@@ -126,26 +134,62 @@ export class HUDPlugin extends BaseSystemPlugin {
             borderRadius: '8px',
         });
         const heading = document.createElement('h2');
+        heading.id = 'spacegraph-modal-title';
         heading.textContent = title;
+        panel.setAttribute('aria-labelledby', heading.id);
         const body = document.createElement('div');
         body.innerHTML = content;
         const close = document.createElement('button');
+        close.type = 'button';
         close.textContent = 'Close';
         close.onclick = () => this.hideModal();
         panel.append(heading, body, close);
         overlay.addEventListener('click', (event) => {
             if (event.target === overlay) this.hideModal();
         });
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                event.stopPropagation();
+                this.hideModal();
+                return;
+            }
+            if (event.key !== 'Tab') return;
+            const focusable = [
+                ...panel.querySelectorAll<HTMLElement>(
+                    'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+                ),
+            ].filter((element) => !element.hasAttribute('disabled'));
+            const first = focusable[0];
+            const last = focusable.at(-1);
+            if (!first || !last) return event.preventDefault();
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+        overlay.addEventListener('keydown', onKeyDown);
         overlay.append(panel);
         HUDDOMFactory.appendToRenderer(this.sg, overlay);
         this.modal = overlay;
+        this.modalKeyHandler = onKeyDown;
         this.modalClose = options.onClose ?? null;
+        close.focus();
     }
 
     hideModal(): void {
         if (!this.modal) return;
+        if (this.modalKeyHandler) {
+            this.modal.removeEventListener('keydown', this.modalKeyHandler);
+            this.modalKeyHandler = null;
+        }
         this.modal.remove();
         this.modal = null;
+        const returnTo = this.modalFocusReturn;
+        this.modalFocusReturn = null;
+        if (returnTo?.isConnected) returnTo.focus();
         const onClose = this.modalClose;
         this.modalClose = null;
         onClose?.();
@@ -217,6 +261,7 @@ export class HUDPlugin extends BaseSystemPlugin {
         this.hideContextMenu();
         const menu = document.createElement('div');
         menu.id = 'spacegraph-context-menu';
+        menu.setAttribute('role', 'menu');
         Object.assign(menu.style, {
             ...HUD_STYLES.base,
             background: HUD_COLORS.surface,
@@ -232,13 +277,30 @@ export class HUDPlugin extends BaseSystemPlugin {
                 this.hideContextMenu();
                 item.action();
             });
+            button.setAttribute('role', 'menuitem');
             button.style.display = 'block';
             button.style.width = '100%';
             menu.appendChild(button);
         }
+        const onKeyDown = (event: KeyboardEvent) => {
+            const buttons = [...menu.querySelectorAll<HTMLButtonElement>('button')];
+            const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
+            if (event.key === 'Escape') {
+                event.stopPropagation();
+                this.hideContextMenu();
+                return;
+            }
+            if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+            event.preventDefault();
+            const step = event.key === 'ArrowDown' ? 1 : -1;
+            buttons[(index + step + buttons.length) % buttons.length]?.focus();
+        };
+        menu.addEventListener('keydown', onKeyDown);
         HUDDOMFactory.appendToRenderer(this.sg, menu);
         this.place(menu, x, y, menu);
         this.contextMenu = menu;
+        this.contextMenuKeyHandler = onKeyDown;
+        menu.querySelector<HTMLButtonElement>('button')?.focus();
         this.dismissMenu = (event) => {
             if (!menu.contains(event.target as Node)) this.hideContextMenu();
         };
@@ -248,6 +310,9 @@ export class HUDPlugin extends BaseSystemPlugin {
     hideContextMenu(): void {
         if (this.dismissMenu) document.removeEventListener('pointerdown', this.dismissMenu, true);
         this.dismissMenu = null;
+        if (this.contextMenuKeyHandler)
+            this.contextMenu?.removeEventListener('keydown', this.contextMenuKeyHandler);
+        this.contextMenuKeyHandler = null;
         this.contextMenu?.remove();
         this.contextMenu = null;
     }
