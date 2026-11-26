@@ -2,7 +2,7 @@
 // and restores the focus to whatever opened it. The core owns the behaviour; the host owns the
 // markup and the copy.
 
-const FOCUSABLE = 'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])';
+import { focusableElements, trapTabKey } from '../utils/DOMUtils';
 
 export interface ScopedOverlayOptions {
     /** The dialog element that holds the focus. */
@@ -49,9 +49,7 @@ export class ScopedOverlay {
 
     /** The focusable elements inside the overlay, in document order. */
     focusable(): HTMLElement[] {
-        return [...this.#options.container.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
-            (element) => !element.hasAttribute('disabled'),
-        );
+        return focusableElements(this.#options.container);
     }
 
     #onKeyDown = (event: KeyboardEvent): void => {
@@ -60,20 +58,6 @@ export class ScopedOverlay {
             this.#options.onClose?.();
             return;
         }
-        if (event.key !== 'Tab') return;
-
-        const elements = this.focusable();
-        if (elements.length === 0) return;
-
-        const first = elements[0]!;
-        const last = elements[elements.length - 1]!;
-
-        if (event.shiftKey && document.activeElement === first) {
-            event.preventDefault();
-            last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-            event.preventDefault();
-            first.focus();
-        }
+        trapTabKey(this.#options.container, event);
     };
 }

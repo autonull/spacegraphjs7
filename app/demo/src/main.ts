@@ -65,6 +65,7 @@ let renderer: GraphRenderer | undefined;
 let painter: ReturnType<typeof createPatchPainter> | undefined;
 let mirror: AccessibilityLayer | undefined;
 let scope: ScopedOverlay | undefined;
+let diffScope: ScopedOverlay | undefined;
 let currentFocusOverlay: FocusOverlay | undefined;
 
 function readTheme(): RenderTheme {
@@ -198,41 +199,6 @@ function renderEvidence(capability: Capability, evidence: readonly string[]) {
     );
 }
 
-let dialogReturnFocus: HTMLElement | null = null;
-
-function openDialog(dialog: HTMLElement): void {
-    dialogReturnFocus =
-        document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    dialog.hidden = false;
-    dialog.querySelector<HTMLElement>('button')?.focus();
-}
-
-function closeDialog(dialog: HTMLElement): void {
-    dialog.hidden = true;
-    const returnTo = dialogReturnFocus;
-    dialogReturnFocus = null;
-    if (returnTo?.isConnected) returnTo.focus();
-}
-
-function trapDialogTab(event: KeyboardEvent, dialog: HTMLElement): void {
-    if (event.key !== 'Tab') return;
-    const focusable = [
-        ...dialog.querySelectorAll<HTMLElement>(
-            'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        ),
-    ].filter((element) => !element.hasAttribute('disabled'));
-    const first = focusable[0];
-    const last = focusable.at(-1);
-    if (!first || !last) return event.preventDefault();
-    if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-    }
-}
-
 function openOverlay(nodeID: string) {
     const dialog = el<HTMLElement>('overlay');
     const scoped = extractSubgraph(host.model, nodeID, { childEdgeKind: 'part-of' });
@@ -248,31 +214,36 @@ function openOverlay(nodeID: string) {
         }),
     );
 
-    openDialog(dialog);
+    dialog.hidden = false;
     scope?.dispose();
-    scope = new ScopedOverlay({
-        container: dialog,
-        onClose: () => closeOverlay(),
-    });
+    scope = new ScopedOverlay({ container: dialog, onClose: () => closeOverlay() });
 }
 
 function closeOverlay() {
     scope?.dispose();
     scope = undefined;
-    closeDialog(el('overlay'));
+    el('overlay').hidden = true;
 }
 
 function openDiff() {
     const dialog = el<HTMLElement>('diff');
-    openDialog(dialog);
+    dialog.hidden = false;
     renderCodeDiff(el('diff-body'), host.diffs(), {
         toneClass: (tone) => `diff-line diff-line--${tone}`,
         fileClass: 'diff-file',
     });
+    diffScope?.dispose();
+    diffScope = new ScopedOverlay({
+        container: dialog,
+        initialFocus: dialog.querySelector<HTMLElement>('button') ?? undefined,
+        onClose: () => closeDiff(),
+    });
 }
 
 function closeDiff() {
-    closeDialog(el('diff'));
+    diffScope?.dispose();
+    diffScope = undefined;
+    el('diff').hidden = true;
 }
 
 function applyFocusOverlay(model: RenderModel, overlay: FocusOverlay | undefined): RenderModel {
@@ -584,18 +555,9 @@ async function main(): Promise<void> {
     el('overlay-close').addEventListener('click', () => closeOverlay());
     el('diff-close').addEventListener('click', () => closeDiff());
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            if (!el('overlay').hidden) closeOverlay();
-            else if (!el('diff').hidden) closeDiff();
-            return;
-        }
-        const openDialog = !el('overlay').hidden
-            ? el('overlay')
-            : !el('diff').hidden
-              ? el('diff')
-              : null;
-        if (openDialog) {
-            trapDialogTab(event, openDialog);
+        if (event.key === 'Escape' && (scope || diffScope)) {
+            if (scope) closeOverlay();
+            else closeDiff();
             return;
         }
         const typing =

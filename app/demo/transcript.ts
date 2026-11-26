@@ -1,12 +1,15 @@
 // A host that reads like a console and navigates like a graph. Transcript rows and graph cards are
 // two projections of one local fixture; selecting either side drives the other. No provider, no
 // network: the prompt loop appends deterministic local events.
+import { escapeHtml } from '@spacegraphjs/renderer';
 import { SpaceGraph, type EdgeSpec, type GraphSpec, type NodeSpec } from 'spacegraphjs';
 import { transcriptLane } from 'spacegraphjs/layout';
+import { isEditableTarget, requireElement } from 'spacegraphjs/utils';
 export type EventKind = 'user' | 'assistant' | 'file' | 'tool' | 'approval' | 'error' | 'artifact';
 export type EventStatus = 'complete' | 'pending' | 'failed';
 export type Filter = 'all' | 'error' | 'approval';
-export type View = 'graph' | 'hybrid' | 'transcript';
+const VIEWS = ['graph', 'hybrid', 'transcript'] as const;
+export type View = (typeof VIEWS)[number];
 export interface TranscriptEvent {
     readonly id: string;
     readonly kind: EventKind;
@@ -119,11 +122,6 @@ const FIXTURE = layoutEvents([
     event('d2', 'file', 'round.test.ts', 'source · 9 lines', 'complete', 3, 't1'),
     event('a2', 'assistant', 'assistant', 'Fix proposed — awaiting approval', 'complete', 3),
 ]);
-const escapeHtml = (value: string): string =>
-    value.replace(
-        /[&<>"']/g,
-        (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!,
-    );
 export function matchesFilter(item: TranscriptEvent, filter: Filter): boolean {
     return filter === 'all' || item.kind === filter;
 }
@@ -212,11 +210,6 @@ export function buildSpec(items: readonly TranscriptEvent[] = FIXTURE): GraphSpe
                 ),
         ],
     };
-}
-function requireElement<T extends HTMLElement>(id: string): T {
-    const found = document.getElementById(id);
-    if (!found) throw new Error(`transcript demo: missing #${id}`);
-    return found as T;
 }
 export async function boot(): Promise<void> {
     const root = document.documentElement;
@@ -372,8 +365,8 @@ export async function boot(): Promise<void> {
                 break;
             case 'next':
             case 'parent': {
-                const target =
-                    name === 'parent' ? item.parent : visibleIds()[visibleIds().indexOf(id) + 1];
+                const visible = visibleIds();
+                const target = name === 'parent' ? item.parent : visible[visible.indexOf(id) + 1];
                 if (target) {
                     expanded.add(target);
                     reveal(target, true);
@@ -521,16 +514,14 @@ export async function boot(): Promise<void> {
     });
     document.addEventListener('keydown', (key) => {
         const target = key.target as HTMLElement;
-        const typing =
-            target.tagName === 'INPUT' ||
-            target.tagName === 'SELECT' ||
-            target.tagName === 'TEXTAREA' ||
-            target.isContentEditable;
-        if (key.key === '/' && !typing) {
+        const editable = isEditableTarget(target);
+        const view = ['1', '2', '3'].indexOf(key.key);
+        if (view >= 0 && !editable) setView(VIEWS[view]!);
+        if (key.key === '/' && !editable) {
             key.preventDefault();
             requireElement<HTMLInputElement>('prompt-input').focus();
         }
-        if (key.key === 'Escape' && typing) target.blur();
+        if (key.key === 'Escape' && editable) target.blur();
     });
     setTheme(params.get('theme') ?? 'dark');
     renderRows();

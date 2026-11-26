@@ -613,13 +613,28 @@
                 </div>
                 <div class="spacer"></div>
                 <div class="group" role="group" aria-label="Surface">
-                    <button type="button" data-view-value="graph" aria-pressed="false">
+                    <button
+                        type="button"
+                        data-view-value="graph"
+                        aria-pressed="false"
+                        aria-keyshortcuts="1"
+                    >
                         Graph
                     </button>
-                    <button type="button" data-view-value="hybrid" aria-pressed="true">
+                    <button
+                        type="button"
+                        data-view-value="hybrid"
+                        aria-pressed="true"
+                        aria-keyshortcuts="2"
+                    >
                         Hybrid
                     </button>
-                    <button type="button" data-view-value="transcript" aria-pressed="false">
+                    <button
+                        type="button"
+                        data-view-value="transcript"
+                        aria-pressed="false"
+                        aria-keyshortcuts="3"
+                    >
                         Transcript
                     </button>
                 </div>
@@ -641,7 +656,8 @@
                         <button type="button" id="reset">Reset</button>
                     </div>
                     <div class="stage-hint">
-                        Drag void to pan · wheel to zoom · click a row to expand its details
+                        Drag void to pan · wheel to zoom · click a row to expand · ↑/↓ move ·
+                        Home/End jump
                     </div>
                 </div>
                 <aside aria-label="Transcript">
@@ -680,7 +696,7 @@
                 <span id="announcer" role="status" aria-live="polite">Ready</span>
                 <div class="spacer"></div>
                 <span class="attention" id="attention"></span>
-                <span>/ focus prompt · Esc blur</span>
+                <span>1/2/3 view · ↑/↓ rows · / prompt · Esc blur</span>
             </div>
         </div>
         <script type="module" src="../../transcript.ts"></script>

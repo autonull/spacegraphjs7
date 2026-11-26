@@ -30,7 +30,15 @@ export {
 } from './color';
 export type { DOMElementOptions } from './DOMUtils';
 // DOM utilities
-export { createElement, createElementNS, DOMUtils, isEditableTarget, requireElement } from './DOMUtils';
+export {
+    createElement,
+    createElementNS,
+    DOMUtils,
+    focusableElements,
+    isEditableTarget,
+    requireElement,
+    trapTabKey,
+} from './DOMUtils';
 export type { SpaceGraphErrorOptions } from './error';
 // Frame-rate measurement
 export { FpsMeter, type FpsSample } from './FpsMeter';

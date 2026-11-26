@@ -1,3 +1,29 @@
+const FOCUSABLE_SELECTOR =
+    'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+/** Lists the enabled focusable descendants of a container in document order. */
+export function focusableElements(container: ParentNode): HTMLElement[] {
+    return [...container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)].filter(
+        (element) => !element.hasAttribute('disabled'),
+    );
+}
+
+/** Wraps Tab focus between the first and last focusable descendants of a dialog. */
+export function trapTabKey(container: ParentNode, event: KeyboardEvent): void {
+    if (event.key !== 'Tab') return;
+    const focusable = focusableElements(container);
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (!first || !last) return event.preventDefault();
+    if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+    }
+}
+
 /** Looks up a required element by id, throwing with the given label when absent. */
 export function requireElement<T extends HTMLElement = HTMLElement>(id: string, label = 'app'): T {
     const found = document.getElementById(id);

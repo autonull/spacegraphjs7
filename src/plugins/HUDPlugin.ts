@@ -1,4 +1,5 @@
 import type { SelectionChangedPayload } from '../types';
+import { trapTabKey } from '../utils/DOMUtils';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 import { type AlertOptions, HUDAlerts } from './hud/HUDAlerts';
 import { HUDDOMFactory } from './hud/HUDDOMFactory';
@@ -153,22 +154,7 @@ export class HUDPlugin extends BaseSystemPlugin {
                 this.hideModal();
                 return;
             }
-            if (event.key !== 'Tab') return;
-            const focusable = [
-                ...panel.querySelectorAll<HTMLElement>(
-                    'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-                ),
-            ].filter((element) => !element.hasAttribute('disabled'));
-            const first = focusable[0];
-            const last = focusable.at(-1);
-            if (!first || !last) return event.preventDefault();
-            if (event.shiftKey && document.activeElement === first) {
-                event.preventDefault();
-                last.focus();
-            } else if (!event.shiftKey && document.activeElement === last) {
-                event.preventDefault();
-                first.focus();
-            }
+            trapTabKey(panel, event);
         };
         overlay.addEventListener('keydown', onKeyDown);
         overlay.append(panel);

@@ -66,8 +66,3 @@ export const Inspector = (props: InspectorProps) => {
     );
 };
 
-export type { InspectorProps } from './types';
-export { ProvenanceDisplay } from './ProvenanceDisplay';
-export { OutputDisplay } from './OutputDisplay';
-export { sourceLabel, formatAge, defaultFormatProvenance } from './ProvenanceDisplay';
-export { defaultFormatOutput } from './OutputDisplay';

@@ -39,3 +39,23 @@ test('arrow keys and Home/End move through transcript rows', async ({ page }) =>
     await page.keyboard.press('Home');
     await expect(page.locator('.row').first()).toBeFocused();
 });
+
+test('number keys switch surfaces without stealing the prompt', async ({ page }) => {
+    await page.goto('/html/interaction/transcript.html');
+    await page.waitForFunction(() => Boolean((window as { __transcript?: unknown }).__transcript));
+
+    await page.keyboard.press('3');
+    await expect(page.locator('[data-view-value="transcript"]')).toHaveAttribute(
+        'aria-pressed',
+        'true',
+    );
+    await page.keyboard.press('1');
+    await expect(page.locator('[data-view-value="graph"]')).toHaveAttribute('aria-pressed', 'true');
+
+    await page.locator('#prompt-input').fill('2');
+    await expect(page.locator('[data-view-value="hybrid"]')).toHaveAttribute(
+        'aria-pressed',
+        'false',
+    );
+    await expect(page.locator('#prompt-input')).toHaveValue('2');
+});

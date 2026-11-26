@@ -1,33 +1,10 @@
-import type {
-    RenderTheme,
-    EqualizerRuleSet,
-    Layout,
-    GraphSnapshotMeta,
-    I18n,
-    IconComponent,
-} from '@spacegraphjs/shared';
+import type { I18n } from '@spacegraphjs/shared';
 import { createIconRenderer, passthroughI18n, useKeyboardShortcuts } from '@spacegraphjs/shared';
 import { onMount } from 'solid-js';
-import { GraphLegendBody } from './GraphLegendBody';
+import { GraphLegendBody, type GraphLegendBodyProps } from './GraphLegendBody';
 import { GraphIconButton } from './GraphIconButton';
 
-export type GraphLegendProps = {
-    theme: RenderTheme;
-    /** The layout on screen; the legend says what that layout encodes. */
-    layout?: Layout;
-    /** The equalizer's rules, so the legend reads the same accents the cards do. */
-    rules?: EqualizerRuleSet;
-    /** Snapshot metadata for provenance and missing sources. */
-    snapshot?: GraphSnapshotMeta;
-    /** Edge kinds present in the map, with counts and visibility. */
-    edgeKinds?: readonly { kind: string; count: number; hidden: boolean }[];
-    onToggleEdgeKind?: (kind: string) => void;
-    onClose: () => void;
-    /** i18n functions for localized strings. */
-    i18n?: I18n;
-    /** Custom icon renderer. */
-    Icon?: IconComponent;
-};
+export type GraphLegendProps = GraphLegendBodyProps & { onClose: () => void };
 
 /**
  * The legend overlay. It names every encoding the canvas draws: the lanes, the card colours, the
@@ -88,4 +65,3 @@ export const GraphLegend = (props: GraphLegendProps) => {
     );
 };
 
-export type { GraphLegendBodyProps } from './GraphLegendBody';
