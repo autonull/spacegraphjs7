@@ -52,7 +52,8 @@ describe('applyUIPreset', () => {
         const { log, target } = calls();
         const applied = applyUIPreset('compact', target);
         expect(applied?.chrome).toBe('compact');
-        expect(log).toEqual(['layer:experiment:navigation.minimap,navigation.trail,navigation.breadcrumbs']);
+        expect(log[0]).toBe('layer:experiment:navigation.minimap,navigation.trail,navigation.breadcrumbs');
+        expect(log).toContain('transcript:false');
     });
 
     it('declares readable chrome without a renderer knob', () => {
@@ -66,7 +67,17 @@ describe('applyUIPreset', () => {
     it('applies graph flags through existing view setters', () => {
         const { log, target } = calls();
         applyUIPreset('morph', target);
-        expect(log).toEqual(['layer:experiment:', 'morph:true']);
+        expect(log).toContain('morph:false');
+        expect(log.at(-1)).toBe('morph:true');
+    });
+
+    it('clears earlier view flags when a later preset omits them', () => {
+        const { log, target } = calls();
+        applyUIPreset('morph', target);
+        const next = log.length;
+        applyUIPreset('full', target);
+        expect(log.slice(next)).toContain('morph:false');
+        expect(log.slice(next)).not.toContain('morph:true');
     });
 
     it('applies the continuity grammar flag without a new knob', () => {

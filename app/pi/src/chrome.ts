@@ -90,7 +90,10 @@ export class ChromeController {
         this.openNavigate();
         const target = el(id);
         target.scrollIntoView({ block: 'nearest' });
-        target.querySelector<HTMLElement>('button, [tabindex]')?.focus();
+        const focusable = target.matches('button, [tabindex="0"]')
+            ? target
+            : target.querySelector<HTMLElement>('button, [tabindex="0"]');
+        focusable?.focus();
         this.host.record('navigate:open', { index: id });
         return true;
     }

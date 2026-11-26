@@ -41,5 +41,6 @@ test('both question entry points open the canonical list and a question runs its
 
     await page.locator('#catalog [data-question="question-3"]').click();
     await expect.poll(() => page.locator('#evidence').textContent()).toContain('delegations:');
+    await expect(page.locator('#evidence li').first()).toHaveAttribute('title', /delegations:/);
     expect(await page.evaluate(() => window.location.hash)).toBe('#question-question-3');
 });

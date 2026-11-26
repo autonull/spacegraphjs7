@@ -184,7 +184,7 @@ import {
     renderTurnMap,
     renderEvidence,
 } from './index-views';
-import { drawMinimap } from './minimap';
+import { drawMinimap, installMinimapKeys } from './minimap';
 import { configureVision, VisionController } from './vision-controller';
 import { TranscriptView } from './transcript';
 
@@ -505,10 +505,8 @@ export class PiHost {
         const applied = applyUIPreset(id, this);
         if (!applied) return undefined;
         this.#uiPresetID = applied.id;
-        this.setContinuity(Boolean(applied.flags?.continuity));
-        this.setFieldTargets(Boolean(applied.flags?.fieldTargets));
-        if (applied?.chrome === 'readable') this.toggleRail(false);
-        if (applied?.chrome !== 'menus') {
+        this.toggleRail(applied.chrome !== 'readable');
+        if (applied.chrome !== 'menus') {
             document.body.dataset.menusOpen = 'false';
             el('menus-toggle').setAttribute('aria-expanded', 'false');
         }
@@ -1810,10 +1808,10 @@ export class PiHost {
         this.setLevelMode(state.level as LevelMode);
         this.setLaneScope(state.filter);
         if (isGraphLayoutMode(state.graphLayout)) this.setGraphLayout(state.graphLayout);
+        this.applyUIPreset(state.ui ?? 'full');
         this.setGraphLayoutAligned(state.graphLayoutAligned === true);
         if (state.ribbonCorridor !== undefined) this.setRibbonCorridor(state.ribbonCorridor);
         if (state.graphMorph !== undefined) this.setGraphMorph(state.graphMorph);
-        this.applyUIPreset(state.ui ?? 'full');
         if (state.focus) this.reveal(state.focus);
         this.renderer.setViewport({
             zoom: state.viewport.zoom,
@@ -2780,12 +2778,7 @@ export class PiHost {
         el('guided-replay').addEventListener('click', () => this.openQuestions());
         el('trail-back').addEventListener('click', () => this.trailBack());
         el('trail-forward').addEventListener('click', () => this.trailForward());
-        el('minimap').addEventListener('click', (event) => {
-            const id = (event.target as Element | null)
-                ?.closest('[data-minimap-node]')
-                ?.getAttribute('data-minimap-node');
-            if (id) this.reveal(id);
-        });
+        installMinimapKeys((id) => this.reveal(id));
         el('permalink-copy').addEventListener('click', () => this.shareView());
         const canvas = el('canvas');
         canvas.tabIndex = 0;
@@ -3225,13 +3218,14 @@ export class PiHost {
         const portalByScope = new Map(
             [...this.#portalByNode].map(([node, scope]) => [scope, node]),
         );
+        const ruler = el('portal-crumb');
         if (!chain.length) {
             const hint = document.createElement('span');
             hint.textContent = 'reveal a portal node to see its scope path';
-            el('portal-crumb').replaceChildren(hint);
+            delete ruler.dataset.ruler;
+            ruler.replaceChildren(hint);
             return;
         }
-        const ruler = el('portal-crumb');
         ruler.dataset.ruler = 'true';
         ruler.replaceChildren(
             ...chain.map((scope, index) =>

@@ -48,6 +48,7 @@ for (const [query, mode] of [
 test('the untimed practice gates trial timing and stays out of trial metrics', async ({ page }) => {
     await bootStudy(page);
     await expect(page.locator('#start')).toBeDisabled();
+    await expect(page.locator('#submit')).toBeDisabled();
     await expect(page.locator('#control-card li')).toHaveCount(5);
     await expect(page.locator('#control-card')).toContainText('Pan');
     await expect(page.locator('#control-card')).toContainText('Trace');
@@ -62,11 +63,13 @@ test('the untimed practice gates trial timing and stays out of trial metrics', a
     await page.locator('#start').click();
     await expect(page.locator('#question')).toContainText('1/5');
     await expect(page.locator('#progress')).toHaveText('Trial 1 of 5');
+    await expect(page.locator('#submit')).toBeEnabled();
     for (let trial = 0; trial < 5; trial += 1) await page.locator('#submit').click();
     const study = await page.evaluate(() => (window as any).__study);
     expect(study.trials).toHaveLength(5);
     expect(study.practiceCompleted).toBe(true);
     await expect(page.locator('#progress')).toHaveText('Complete · 5 of 5');
+    await expect(page.locator('#submit')).toBeDisabled();
     await expect(page.locator('#copy-report')).toBeEnabled();
     expect(await page.locator('#report').textContent()).toBe(study.report);
 });

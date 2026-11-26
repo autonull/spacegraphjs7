@@ -39,6 +39,7 @@ const status = element<HTMLDivElement>('status');
 const question = element<HTMLDivElement>('question');
 const reportElement = element<HTMLPreElement>('report');
 const progress = element<HTMLDivElement>('progress');
+const submitButton = element<HTMLButtonElement>('submit');
 const copyReport = element<HTMLButtonElement>('copy-report');
 
 let assignments: readonly { taskID: string; surface: StudySurface }[] = [];
@@ -79,6 +80,7 @@ const current = (): Frame | undefined => {
 
 const show = (): void => {
     const next = current();
+    submitButton.disabled = !next;
     if (!next) {
         progress.textContent = `Complete · ${assignments.length} of ${assignments.length}`;
         question.textContent = 'Run complete. Report below; copy it into the study record.';
@@ -160,7 +162,7 @@ element<HTMLButtonElement>('practice-done').addEventListener('click', () => {
 element<HTMLButtonElement>('start').addEventListener('click', () => {
     if (practiceDone) void begin();
 });
-element<HTMLButtonElement>('submit').addEventListener('click', submit);
+submitButton.addEventListener('click', submit);
 copyReport.addEventListener('click', () => {
     void navigator.clipboard
         .writeText(reportElement.textContent ?? '')

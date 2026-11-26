@@ -10,6 +10,10 @@
                 padding: 0;
                 box-sizing: border-box;
             }
+            :focus-visible {
+                outline: 2px solid #60a5fa;
+                outline-offset: 2px;
+            }
             body {
                 background: #0d0d0d;
                 color: #eee;
@@ -84,10 +88,11 @@
     </head>
     <body>
         <div id="menu">
-            <select id="demo-select"></select>
+            <select id="demo-select" aria-label="Select demo"></select>
             <input
                 type="text"
                 id="demo-search"
+                aria-label="Search demos"
                 placeholder="Search demos..."
                 style="
                     background: #1a1a1a;

@@ -9,6 +9,7 @@ export function renderEvidence(lines: readonly string[]): void {
         ...lines.map((line) => {
             const item = document.createElement('li');
             item.textContent = line;
+            item.title = line;
             return item;
         }),
     );

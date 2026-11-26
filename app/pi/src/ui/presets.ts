@@ -201,6 +201,12 @@ export function applyUIPreset(
         return undefined;
     }
     target.setPolicyLayer('experiment', found.knobs);
+    target.setGraphLayoutAligned(false);
+    target.setRibbonCorridor(false);
+    target.setGraphMorph(false);
+    target.setContinuity(false);
+    target.setFieldTargets(false);
+    target.setTranscriptCollapsed(false);
     if (found.flags) {
         const flags = found.flags;
         if (flags.graphLayout) target.setGraphLayout(flags.graphLayout);

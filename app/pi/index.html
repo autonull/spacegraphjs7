@@ -306,6 +306,11 @@
                 overflow: hidden;
                 white-space: nowrap;
             }
+            #status-strip #evidence li {
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
             #gallery,
             #catalog,
             #overview,
@@ -584,6 +589,10 @@
             }
             #minimap circle {
                 cursor: pointer;
+            }
+            #minimap circle[data-active='true'] {
+                stroke: var(--sg-colors-ring);
+                stroke-width: 2;
             }
             [data-portal][data-descending='true'] {
                 opacity: 0.15;
@@ -2218,14 +2227,14 @@
                     id="proof-line"
                     class="proof-line"
                     aria-haspopup="true"
-                    title="Open the catalogue of presets, experiments and recorded comparisons"
+                    title="Open the catalogue of presets, view experiments and study questions"
                 >
-                    proof
+                    <span class="jargon-label">proof</span><span class="plain-label">Evidence</span>
                 </summary>
                 <div>
                     <button type="button" data-proof-group="presets">presets</button>
                     <button type="button" data-proof-group="experiments">experiments</button>
-                    <button type="button" data-proof-group="questions">comparisons</button>
+                    <button type="button" data-proof-group="questions">questions</button>
                 </div>
             </details>
             <details id="settings-menu">
@@ -2370,7 +2379,12 @@
                     <strong>Portal path</strong>
                     <div id="portal-crumb"></div>
                     <strong>Minimap</strong>
-                    <div id="minimap"></div>
+                    <div
+                        id="minimap"
+                        tabindex="0"
+                        role="listbox"
+                        aria-label="Graph overview"
+                    ></div>
                 </div>
             </details>
             <details id="rail-inspect" class="rail-group" open>
