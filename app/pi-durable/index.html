@@ -217,6 +217,12 @@
             .durable-card .card-summary { font-size: clamp(11px, min(6cqw, 12cqh), 20px); line-height: 1.2; opacity: .84; overflow-wrap: anywhere; }
             .durable-card .card-detail { font-size: clamp(10px, min(5cqw, 10cqh), 16px); line-height: 1.2; font-family: ui-monospace, monospace;
                 opacity: .72; letter-spacing: .02em; }
+            .durable-card .card-label,
+            .durable-card .card-summary,
+            .durable-card .card-detail { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+            .durable-card .card-label,
+            .durable-card .card-summary { -webkit-line-clamp: 2; }
+            .durable-card .card-detail { -webkit-line-clamp: 1; }
             .durable-card .card-status { margin-left: 6px; padding: 0 .4em; font-size: clamp(8px, 6cqw, 20px);
                 opacity: .9; font-weight: 400; border: 1px solid var(--line); border-radius: 999px;
                 background: color-mix(in srgb, var(--panel) 40%, transparent); }

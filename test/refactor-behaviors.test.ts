@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ErgonomicsAPI } from '../src/core/Ergonomics';
 import { ShapeNode } from '../src/nodes/ShapeNode';
 import { SelectionManager } from '../src/plugins/interaction/SelectionManager';
-import { isEditableTarget } from '../src/utils/DOMUtils';
+import { DOMUtils, isEditableTarget } from '../src/utils/DOMUtils';
 
 const shapeNode = (id: string) =>
     new ShapeNode(undefined, { id, type: 'ShapeNode', data: {} } as never);
@@ -58,5 +58,22 @@ describe('isEditableTarget', () => {
         expect(isEditableTarget(editable)).toBe(true);
         expect(isEditableTarget(document.createElement('div'))).toBe(false);
         expect(isEditableTarget(null)).toBe(false);
+    });
+});
+
+describe('DOMUtils accessibility options', () => {
+    it('applies labels, pressed state and tooltips at creation', () => {
+        const button = DOMUtils.createElement('button', {
+            textContent: 'View',
+            ariaLabel: 'View mode',
+            ariaPressed: false,
+            role: 'group',
+            title: 'View mode',
+        });
+
+        expect(button.getAttribute('aria-label')).toBe('View mode');
+        expect(button.getAttribute('aria-pressed')).toBe('false');
+        expect(button.getAttribute('role')).toBe('group');
+        expect(button.title).toBe('View mode');
     });
 });

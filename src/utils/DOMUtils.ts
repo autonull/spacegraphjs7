@@ -24,6 +24,10 @@ export interface DOMElementOptions {
     min?: string;
     max?: string;
     step?: string;
+    ariaLabel?: string;
+    ariaPressed?: boolean;
+    role?: string;
+    title?: string;
 }
 
 function applyElementOptions(el: Element, options: DOMElementOptions): void {
@@ -31,6 +35,11 @@ function applyElementOptions(el: Element, options: DOMElementOptions): void {
     if (options.className) el.setAttribute('class', options.className);
     if (options.innerHTML !== undefined) el.innerHTML = options.innerHTML;
     if (options.textContent !== undefined) el.textContent = options.textContent;
+    if (options.ariaLabel) el.setAttribute('aria-label', options.ariaLabel);
+    if (options.role) el.setAttribute('role', options.role);
+    if (options.ariaPressed !== undefined)
+        el.setAttribute('aria-pressed', String(options.ariaPressed));
+    if (options.title) el.setAttribute('title', options.title);
 
     if (options.style) {
         Object.assign((el as HTMLElement).style, options.style);

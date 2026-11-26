@@ -59,6 +59,32 @@ describe('renderToSVG', () => {
         expect(svg).toContain('width="800" height="400"');
     });
 
+    test('frames node footprints, not only their centres', () => {
+        const svg = renderToSVG(model);
+        expect(svg).toContain('viewBox="0 0 396 112"');
+        const sized = renderToSVG({
+            nodes: [
+                {
+                    id: 'wide',
+                    kind: 'card',
+                    label: 'wide',
+                    shape: 'card',
+                    size: [600, 300],
+                    position: [0, 0, 0],
+                },
+            ],
+            edges: [],
+        });
+        expect(sized).toContain('viewBox="0 0 648 348"');
+    });
+
+    test('fits a responsive svg to its container', () => {
+        const svg = renderToSVG(model, { responsive: true });
+        expect(svg).toContain('style="width:100%;height:auto;display:block;');
+        expect(svg).not.toContain('height="auto"');
+        expect(svg).toContain('viewBox="0 0 396 112"');
+    });
+
     test('is deterministic across runs', () => {
         expect(renderToSVG(model)).toBe(renderToSVG(model));
     });

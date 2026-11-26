@@ -24,6 +24,8 @@ export type SvgOptions = {
     width?: number;
     height?: number;
     padding?: number;
+    /** Fill the host container with a viewBox-fitted graph instead of a fixed pixel canvas. */
+    responsive?: boolean;
 };
 
 export const DEFAULT_SVG_THEME: RenderTheme = {
@@ -99,6 +101,9 @@ export function renderToSVG(model: RenderModel, options: SvgOptions = {}): strin
     const bounds = fitBounds(visible, padding);
     const width = options.width ?? Math.ceil(bounds.width);
     const height = options.height ?? Math.ceil(bounds.height);
+    const size = options.responsive ? '' : `width="${width}" height="${height}" `;
+    const boxWidth = options.responsive ? bounds.width : width;
+    const boxHeight = options.responsive ? bounds.height : height;
     const index = new Map(model.nodes.map((node) => [node.id, node]));
 
     const edges = model.edges
@@ -110,9 +115,9 @@ export function renderToSVG(model: RenderModel, options: SvgOptions = {}): strin
     const nodes = visible.map((node) => nodeSVG(node, theme, bounds)).join('');
 
     return [
-        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"`,
+        `<svg xmlns="http://www.w3.org/2000/svg" ${size} viewBox="0 0 ${boxWidth} ${boxHeight}"`,
         ` role="img" aria-label="Activity graph"${theme.direction === 'rtl' ? ' direction="rtl"' : ''}`,
-        ` style="font-family:${escapeXml(theme.fontFamily)}">`,
+        ` style="${options.responsive ? 'width:100%;height:auto;' : ''}display:block;font-family:${escapeXml(theme.fontFamily)}">`,
         `<defs><marker id="sgs-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">`,
         `<path d="M 0 0 L 10 5 L 0 10 z" fill="${escapeXml(theme.edge)}"/></marker></defs>`,
         `<rect width="${width}" height="${height}" fill="${escapeXml(theme.background)}"/>`,
@@ -222,7 +227,8 @@ export class SvgRenderer extends ModelRenderer implements GraphRenderer {
     }
 
     protected applyModel(model: RenderModel, theme: RenderTheme): void {
-        if (this.#container) this.#container.innerHTML = renderToSVG(model, { theme });
+        if (this.#container)
+            this.#container.innerHTML = renderToSVG(model, { theme, responsive: true });
     }
 
     protected cleanup(): void {
@@ -233,12 +239,28 @@ export class SvgRenderer extends ModelRenderer implements GraphRenderer {
 
 type Bounds = { width: number; height: number; offsetX: number; offsetY: number };
 
+/** One size authority for drawing and framing, so no card is clipped by its own bounds. */
+export function nodeExtent(node: RenderNode): readonly [number, number] {
+    if (node.size) return [node.size[0], node.size[1]];
+    if (node.data?.visualShape) return [200, 64];
+    if (node.shape === 'group') return [320, 220];
+    if (node.shape === 'dot') return [16, 16];
+    const card = isCardShape(node.shape);
+    const badge = node.shape === 'badge';
+    return [card ? 200 : badge ? 96 : 120, card ? 64 : badge ? 24 : 32];
+}
+
 function fitBounds(nodes: readonly RenderNode[], padding: number): Bounds {
     if (nodes.length === 0) {
         return { width: padding * 2, height: padding * 2, offsetX: padding, offsetY: padding };
     }
-    const xs = nodes.map((node) => node.position[0]);
-    const ys = nodes.map((node) => node.position[1]);
+    const xs: number[] = [];
+    const ys: number[] = [];
+    for (const node of nodes) {
+        const [width, height] = nodeExtent(node);
+        xs.push(node.position[0] - width / 2, node.position[0] + width / 2);
+        ys.push(node.position[1] - height / 2, node.position[1] + height / 2);
+    }
     const minX = Math.min(...xs);
     const maxX = Math.max(...xs);
     const minY = Math.min(...ys);
@@ -260,8 +282,7 @@ function nodeSVG(node: RenderNode, theme: RenderTheme, bounds: Bounds): string {
     const visual = visualShapeOf(node);
 
     if (visual) {
-        const width = node.size?.[0] ?? 200;
-        const height = node.size?.[1] ?? 64;
+        const [width, height] = nodeExtent(node);
         const fill = escapeXml(isCardShape(node.shape) ? theme.surface : color);
         const stroke = escapeXml(theme.border);
         const geometry =
@@ -277,8 +298,7 @@ function nodeSVG(node: RenderNode, theme: RenderTheme, bounds: Bounds): string {
     }
 
     if (node.shape === 'group') {
-        const width = node.size?.[0] ?? 320;
-        const height = node.size?.[1] ?? 220;
+        const [width, height] = nodeExtent(node);
         const left = x - width / 2;
         const top = y - height / 2;
         return [
@@ -291,14 +311,12 @@ function nodeSVG(node: RenderNode, theme: RenderTheme, bounds: Bounds): string {
     }
 
     if (node.shape === 'dot') {
-        const radius = (node.size?.[0] ?? 16) / 2;
+        const radius = nodeExtent(node)[0] / 2;
         return `<g data-node-id="${escapeXml(node.id)}"><circle cx="${x}" cy="${y}" r="${radius}" fill="${escapeXml(color)}" stroke="${escapeXml(theme.border)}"/>${title}</g>`;
     }
 
     const card = isCardShape(node.shape);
-    const badge = node.shape === 'badge';
-    const width = node.size?.[0] ?? (card ? 200 : badge ? 96 : 120);
-    const height = node.size?.[1] ?? (card ? 64 : badge ? 24 : 32);
+    const [width, height] = nodeExtent(node);
     return [
         `<g data-node-id="${escapeXml(node.id)}">${title}`,
         `<rect x="${x - width / 2}" y="${y - height / 2}" width="${width}" height="${height}" rx="${card ? 8 : 4}"`,

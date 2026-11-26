@@ -157,9 +157,12 @@ renderer.setTheme(theme);
 
 - Persistence is entirely yours. Persist selection, level, projection, and renderer per session in your
   own view state; the library keeps none.
-- Export with `renderToSVG(model, options)` (pure, runs in Node) or `InlineGraph(container)` for an
-  embedded static preview. Serialize with `serializeRenderModel(model)` and restore with
-  `parseRenderModel(json)` (returns `undefined` on malformed input).
+- Export with `renderToSVG(model, options)` (pure, runs in Node) or `InlineGraph(container, options)` for an
+  embedded static preview. `responsive: true` makes the SVG fill its container with an aspect-preserving
+  viewBox instead of a fixed pixel canvas. The viewBox frames complete node footprints, so a wide card is
+  never clipped at the export edge; `nodeExtent(node)` exposes the same size authority for host overlays.
+  Serialize with `serializeRenderModel(model)` and restore with `parseRenderModel(json)` (returns
+  `undefined` on malformed input).
 
 ## 8. Hermes-style checklist
 

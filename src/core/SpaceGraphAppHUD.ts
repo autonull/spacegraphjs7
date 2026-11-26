@@ -87,13 +87,18 @@ export function renderToolbar(app: SpaceGraphApp, theme: HudTheme = {}) {
 
     const fitBtn = DOMUtils.createElement('button', {
         textContent: 'Fit View',
+        ariaLabel: 'Fit all nodes in view',
+        title: 'Fit all nodes in view',
         style: {
             ...BUTTON_BASE,
-            background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
+            background: BG_GLASS,
+            border: BORDER_GLASS,
             padding: '8px 16px',
             fontWeight: '600',
         },
     });
+    fitBtn.onmouseenter = () => (fitBtn.style.background = BG_HOVER);
+    fitBtn.onmouseleave = () => (fitBtn.style.background = BG_GLASS);
     fitBtn.onclick = () => app.sg.fitView(200);
     container.appendChild(fitBtn);
 
@@ -124,6 +129,9 @@ function createDivider(): HTMLElement {
 
 function createModeToggle(app: SpaceGraphApp, theme: HudTheme = {}): HTMLElement {
     const container = DOMUtils.createElement('div', {
+        id: 'sg-app-mode-toggle',
+        role: 'group',
+        ariaLabel: 'Interaction mode',
         style: {
             display: 'flex',
             gap: '4px',
@@ -134,23 +142,14 @@ function createModeToggle(app: SpaceGraphApp, theme: HudTheme = {}): HTMLElement
         },
     });
 
-    const modeButtons: Record<string, HTMLButtonElement> = {};
-    const updateModeStyles = (activeMode: string) => {
-        for (const [mode, btn] of Object.entries(modeButtons)) {
-            btn.style.background =
-                mode === activeMode
-                    ? `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`
-                    : 'transparent';
-            btn.style.color = mode === activeMode ? 'white' : SECONDARY_TEXT_COLOR;
-        }
-    };
-
     const modes = ['default', 'select', 'connect'] as const;
     const labels = ['View', 'Select', 'Connect'];
 
     modes.forEach((mode, i) => {
         const btn = DOMUtils.createElement('button', {
             textContent: labels[i],
+            ariaLabel: `${labels[i]} mode`,
+            title: `${labels[i]} mode`,
             style: {
                 ...BUTTON_BASE,
                 background: 'transparent',
@@ -161,22 +160,36 @@ function createModeToggle(app: SpaceGraphApp, theme: HudTheme = {}): HTMLElement
                 transition: 'all 0.2s ease',
             },
         });
-        btn.onclick = () => {
-            app.setMode(mode);
-            updateModeStyles(mode);
-        };
-        modeButtons[mode] = btn;
+        btn.dataset['mode'] = mode;
+        btn.onclick = () => app.setMode(mode);
         container.appendChild(btn);
     });
 
-    const interaction = app.sg.pluginManager.get('interaction');
-    updateModeStyles(interaction ? (interaction as any).mode : 'default');
-
+    syncModeToggle(app, theme);
     return container;
+}
+
+/** One authority for mode visuals: call after any `setMode`, including host toolbar actions. */
+export function syncModeToggle(app: SpaceGraphApp, theme: HudTheme = {}): void {
+    if (typeof document === 'undefined') return;
+    const container = document.getElementById('sg-app-mode-toggle');
+    if (!container) return;
+    const interaction = app.sg.pluginManager.get('interaction') as { mode?: string } | undefined;
+    const active = interaction?.mode ?? 'default';
+    container.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach((button) => {
+        const on = button.dataset['mode'] === active;
+        button.style.background = on
+            ? `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`
+            : 'transparent';
+        button.style.color = on ? 'white' : SECONDARY_TEXT_COLOR;
+        button.setAttribute('aria-pressed', String(on));
+    });
 }
 
 export function createZoomControls(app: SpaceGraphApp, theme: HudTheme = {}): HTMLElement {
     const container = DOMUtils.createElement('div', {
+        role: 'group',
+        ariaLabel: 'Zoom',
         style: {
             display: 'flex',
             alignItems: 'center',
@@ -191,6 +204,8 @@ export function createZoomControls(app: SpaceGraphApp, theme: HudTheme = {}): HT
     const createBtn = (label: string, isZoomIn: boolean) => {
         const btn = DOMUtils.createElement('button', {
             textContent: label,
+            ariaLabel: isZoomIn ? 'Zoom in' : 'Zoom out',
+            title: isZoomIn ? 'Zoom in' : 'Zoom out',
             style: {
                 ...BUTTON_BASE,
                 background: 'transparent',
@@ -211,6 +226,7 @@ export function createZoomControls(app: SpaceGraphApp, theme: HudTheme = {}): HT
     const zoomSlider = DOMUtils.createElement('input', {
         type: 'range',
         id: 'sg-app-zoom-slider',
+        ariaLabel: 'Zoom level',
         min: '0',
         max: '1',
         step: '0.01',
@@ -341,6 +357,7 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: HudTheme = {}) {
 
     const input = DOMUtils.createElement('input', {
         type: 'text',
+        ariaLabel: 'Search nodes',
         placeholder: 'Search nodes...',
         style: {
             background: 'transparent',

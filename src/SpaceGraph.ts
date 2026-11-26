@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-declaration-merging -- delegates are installed on the prototype and typed by the merged interface. */
 import { CameraControls, ObjectPoolManager, PluginManager, VisionManager } from './core';
 import { listLayouts } from './core/layout-registry';
 import { InputManager } from './input';
@@ -512,6 +513,7 @@ const ERGONOMIC_DELEGATES = [
     'suspend',
 ] as const satisfies readonly (keyof ErgonomicsAPI)[];
 export type ErgonomicDelegate = (typeof ERGONOMIC_DELEGATES)[number];
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- the merge supplies the delegate members
 export interface SpaceGraph extends Pick<ErgonomicsAPI, ErgonomicDelegate> {}
 for (const name of ERGONOMIC_DELEGATES) {
     Object.defineProperty(SpaceGraph.prototype, name, {

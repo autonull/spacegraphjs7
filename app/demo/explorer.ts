@@ -324,8 +324,8 @@ const DEMO_SIGNALS: Readonly<Record<string, SalienceSignal>> = {
 };
 
 const host = new DemoHost();
-const leftGraph = new InlineGraph(element('left-graph'));
-const rightGraph = new InlineGraph(element('right-graph'));
+const leftGraph = new InlineGraph(element('left-graph'), { responsive: true });
+const rightGraph = new InlineGraph(element('right-graph'), { responsive: true });
 
 let left = ConfigState.fromSearch(space, location.hash);
 const right = randomize(space, seededRandom(41));

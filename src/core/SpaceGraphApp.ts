@@ -9,6 +9,7 @@ import {
     renderToolbar,
     renderToolbarActions,
     setupSearchHUD,
+    syncModeToggle,
     updateStatsHUD,
 } from './SpaceGraphAppHUD';
 import { setupHotkeys, setupInteractionHandlers } from './SpaceGraphAppInteraction';
@@ -128,6 +129,7 @@ export class SpaceGraphApp {
     public setMode(mode: 'default' | 'select' | 'connect') {
         const interaction = this.sg.pluginManager.get<InteractionPlugin>('interaction');
         if (interaction) interaction.mode = mode;
+        syncModeToggle(this, this.options.theme);
     }
 
     public clearSelectionStyles() {

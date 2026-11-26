@@ -35,12 +35,15 @@ describe('HUD zoom controls', () => {
             '0.01',
             '0.50',
         ]);
+        expect(slider.getAttribute('aria-label')).toBe('Zoom level');
+        const buttons = controls.querySelectorAll('button');
+        expect(buttons[0]!.getAttribute('aria-label')).toBe('Zoom out');
+        expect(buttons[1]!.getAttribute('aria-label')).toBe('Zoom in');
 
         slider.value = '0.2';
         slider.oninput?.(new Event('input'));
         expect(app.sg.zoom).toBeCloseTo(0.2);
 
-        const buttons = controls.querySelectorAll('button');
         buttons[1]!.click();
         expect(app.sg.zoom).toBeCloseTo(0.3);
         buttons[0]!.click();

@@ -214,14 +214,14 @@
                 id: 'tool-pointer',
                 label: 'Pointer',
                 icon: '👆',
-                onClick: () => app.showAlert('Pointer tool selected', 'info'),
+                onClick: () => app.setMode('default'),
             });
 
             app.addToolbarAction({
                 id: 'tool-box-select',
                 label: 'Select Mode',
                 icon: '🔲',
-                onClick: () => app.showAlert('Hold Shift and Drag to box select', 'info'),
+                onClick: () => app.setMode('select'),
             });
 
             app.sg.render();

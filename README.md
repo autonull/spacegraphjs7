@@ -481,6 +481,7 @@ A control inside a card (`data-sg-interactive="true"`, or any form control) take
 - Enter or Space activates an item; Escape is host-defined.
 - `aria-live` announces selection changes.
 - Non-interactive items are listed but skipped by traversal.
+- `SpaceGraphApp` HUD controls expose accessible names, tooltips and `aria-pressed` mode state; the zoom slider is labelled.
 - The contract theme carries `direction: 'rtl'`; adapters honor it for SVG and DOM cards without mirroring graph coordinates.
 
 Pass it the same minimal node list the renderer uses: `id`, `label`, `kind`, `status`, `interactive`.
