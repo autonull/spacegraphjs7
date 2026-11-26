@@ -7,6 +7,7 @@
 
 import {
     GraphController,
+    type ControlFitOptions,
     type ControlModel,
     type ControlProjection,
     type ControlRenderer,
@@ -143,6 +144,7 @@ export class GraphBinding<TTheme = unknown> {
         try {
             await renderer.mount(container, { theme: this.#theme, projection: this.#projection });
         } catch (error) {
+            renderer.dispose();
             if (current === this.#generation && !this.#disposed) this.#onError?.(error);
             return;
         }
@@ -180,8 +182,8 @@ export class GraphBinding<TTheme = unknown> {
         this.controller.select(ids, false);
     }
 
-    fit(ids?: readonly string[]): void {
-        this.controller.fit(ids);
+    fit(ids?: readonly string[], options?: ControlFitOptions): void {
+        this.controller.fit(ids, options);
     }
 
     focus(id?: string): void {

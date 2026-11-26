@@ -44,6 +44,16 @@ describe('PluginManager lookup', () => {
         expect(plugins.require(CounterPlugin)).toBe(counter);
     });
 
+    test('resolves a string id when the registration key differs', () => {
+        const plugins = manager();
+        const counter = new CounterPlugin('counter');
+        plugins.register('CounterPlugin', counter);
+
+        expect(plugins.get('counter')).toBe(counter);
+        expect(plugins.has('counter')).toBe(true);
+        expect(plugins.require('counter')).toBe(counter);
+    });
+
     test('require reports the available ids instead of failing silently', () => {
         const plugins = manager();
         plugins.register('counter', new CounterPlugin());

@@ -28,12 +28,6 @@ function glassPanel(theme: HudTheme = {}): Partial<CSSStyleDeclaration> {
     };
 }
 
-/** The camera distances the zoom slider spans. */
-const ZOOM_SLIDER_MIN = 10;
-const ZOOM_SLIDER_MAX = 5000;
-/** The slider runs backwards, so its value is the span the camera radius is measured against. */
-const ZOOM_SLIDER_SPAN = ZOOM_SLIDER_MAX + ZOOM_SLIDER_MIN;
-
 export function renderTitleCard(app: SpaceGraphApp, theme: HudTheme = {}) {
     app.hud.removeElement('app-title-card');
     if (!app.options.title) return;
@@ -182,7 +176,7 @@ function createModeToggle(app: SpaceGraphApp, theme: HudTheme = {}): HTMLElement
     return container;
 }
 
-function createZoomControls(app: SpaceGraphApp, theme: HudTheme = {}): HTMLElement {
+export function createZoomControls(app: SpaceGraphApp, theme: HudTheme = {}): HTMLElement {
     const container = DOMUtils.createElement('div', {
         style: {
             display: 'flex',
@@ -209,16 +203,8 @@ function createZoomControls(app: SpaceGraphApp, theme: HudTheme = {}): HTMLEleme
         btn.onmouseenter = () => (btn.style.background = BG_HOVER);
         btn.onmouseleave = () => (btn.style.background = 'transparent');
         btn.onclick = () => {
-            if (!app.sg.cameraControls) return;
-            const currentRadius = app.sg.cameraControls.spherical.radius;
-            const targetRadius = Math.max(
-                ZOOM_SLIDER_MIN,
-                Math.min(
-                    ZOOM_SLIDER_MAX,
-                    currentRadius + (isZoomIn ? -currentRadius * 0.5 : currentRadius * 0.5),
-                ),
-            );
-            app.sg.cameraControls.flyTo(app.sg.cameraControls.target, targetRadius, 0.5);
+            const next = app.sg.zoom + (isZoomIn ? 0.1 : -0.1);
+            app.sg.setZoom(Math.max(0, Math.min(1, next)));
         };
         return btn;
     };
@@ -226,9 +212,9 @@ function createZoomControls(app: SpaceGraphApp, theme: HudTheme = {}): HTMLEleme
     const zoomSlider = DOMUtils.createElement('input', {
         type: 'range',
         id: 'sg-app-zoom-slider',
-        min: String(ZOOM_SLIDER_MIN),
-        max: String(ZOOM_SLIDER_MAX),
-        step: '1',
+        min: '0',
+        max: '1',
+        step: '0.01',
         style: {
             width: '80px',
             margin: '0 8px',
@@ -237,21 +223,13 @@ function createZoomControls(app: SpaceGraphApp, theme: HudTheme = {}): HTMLEleme
         },
     });
 
-    zoomSlider.oninput = () => {
-        if (!app.sg.cameraControls) return;
-        const invertedRadius = ZOOM_SLIDER_SPAN - Number.parseFloat(zoomSlider.value);
-        app.sg.cameraControls.spherical.radius = invertedRadius;
-        app.sg.cameraControls.flyTo(app.sg.cameraControls.target, invertedRadius, 0);
-    };
+    zoomSlider.oninput = () => app.sg.setZoom(Number.parseFloat(zoomSlider.value));
 
     const sliderHandler = () => {
-        if (app.sg.cameraControls)
-            zoomSlider.value = (
-                ZOOM_SLIDER_SPAN - app.sg.cameraControls.spherical.radius
-            ).toString();
+        zoomSlider.value = app.sg.zoom.toFixed(2);
     };
     sliderHandler();
-    app.sg.events.on('camera:move', sliderHandler);
+    app.sg.events.on('zoom:change', sliderHandler);
     app._zoomSliderHandler = sliderHandler;
 
     container.append(createBtn('-', false), zoomSlider, createBtn('+', true));
@@ -299,7 +277,11 @@ export function renderToolbarActions(app: SpaceGraphApp) {
     }
 }
 
-function createStyledButton(btn: AppButtonConfig, isToolbar: boolean, theme: HudTheme = {}): HTMLElement {
+function createStyledButton(
+    btn: AppButtonConfig,
+    isToolbar: boolean,
+    theme: HudTheme = {},
+): HTMLElement {
     const bgNormal = isToolbar ? 'transparent' : (theme.backgroundColor ?? '');
     const bgHover = BG_HOVER;
 
@@ -421,12 +403,11 @@ export function updateStatsHUD(app: SpaceGraphApp) {
     }
 }
 
-export function addGrid(app: SpaceGraphApp) {
-    if (app.options.enableGrid === false) return;
-    const size = 10000;
-    const divisions = 100;
-    const gridHelper = new GridHelper(size, divisions, 0x475569, 0x1e293b);
+export function addGrid(app: SpaceGraphApp): () => void {
+    if (app.options.enableGrid === false) return () => undefined;
+    const gridHelper = new GridHelper(10000, 100, 0x475569, 0x1e293b);
     gridHelper.material.opacity = 0.5;
     gridHelper.material.transparent = true;
     app.sg.renderer.scene.add(gridHelper);
+    return () => app.sg.renderer.scene.remove(gridHelper);
 }

@@ -43,6 +43,14 @@ export class ErgonomicsAPI {
         return this.require(id);
     }
 
+    at(id: string): Node | undefined {
+        return this.$(id);
+    }
+
+    must(id: string): Node {
+        return this.require(id);
+    }
+
     $optional(id: string): Node | null {
         return this.sg.graph.queryEngine.getNode(id) ?? null;
     }
@@ -66,6 +74,10 @@ export class ErgonomicsAPI {
         return this.sg.graph.getEdgesForNode(nodeId);
     }
 
+    connections(nodeId: string): Edge[] {
+        return this.getEdgesForNode(nodeId);
+    }
+
     where(key: string, value: unknown): Node[] {
         return this.sg.graph.query((n: Node) => (n.data as Record<string, unknown>)[key] === value);
     }
@@ -78,6 +90,10 @@ export class ErgonomicsAPI {
 
     neighbors(nodeId: string): Node[] {
         return this.sg.graph.getNeighbors(nodeId);
+    }
+
+    adjacent(nodeId: string): Node[] {
+        return this.neighbors(nodeId);
     }
 
     inEdges(nodeId: string): Edge[] {
@@ -94,6 +110,15 @@ export class ErgonomicsAPI {
     forEdges(callback: (edge: Edge) => void): void {
         this.sg.graph.forEachEdge(callback);
     }
+
+    forEach(callback: (node: Node) => void): void {
+        this.forNodes(callback);
+    }
+
+    each(callback: (node: Node) => void): void {
+        this.forNodes(callback);
+    }
+
     map<T>(callback: (node: Node) => T): T[] {
         return this.sg.graph.mapNodes(callback);
     }
@@ -281,12 +306,20 @@ export class ErgonomicsAPI {
         );
     }
 
+    shift(id: string, dx: number, dy: number, dz = 0): Node | null {
+        return this.translate(id, dx, dy, dz);
+    }
+
     rotate(id: string, x: number, y: number, z: number): Node | null {
         return this.withNode(id, (node) => node.updateSpec({ rotation: [x, y, z] }));
     }
 
     scale(id: string, x: number, y?: number, z?: number): Node | null {
         return this.withNode(id, (node) => node.updateSpec({ scale: [x, y ?? x, z ?? x] }));
+    }
+
+    setSize(id: string, width: number, height: number): Node | null {
+        return this.withNode(id, (node) => node.setSize(width, height));
     }
 
     label(id: string, text: string): Node | null {
@@ -296,8 +329,17 @@ export class ErgonomicsAPI {
     color(id: string, color: string | number): Node | null {
         return this.withNode(id, (node) => node.updateSpec({ data: { color } }));
     }
+
+    fill(id: string, color: string | number): Node | null {
+        return this.color(id, color);
+    }
+
     show(id: string, visible = true): Node | null {
         return this.withNode(id, (node) => node.setVisible(visible));
+    }
+
+    visible(id: string, value = true): Node | null {
+        return this.show(id, value);
     }
 
     hide(id: string): Node | null {

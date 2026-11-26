@@ -38,7 +38,7 @@ function fakeRenderer() {
     const calls = {
         selection: [] as (readonly string[])[],
         focused: [] as string[],
-        fits: 0,
+        fits: [] as { ids?: readonly string[]; options?: { minScale?: number } }[],
         disposed: 0,
     };
 
@@ -49,8 +49,8 @@ function fakeRenderer() {
         setSelection(ids) {
             calls.selection.push(ids);
         },
-        fit() {
-            calls.fits += 1;
+        fit(ids, options) {
+            calls.fits.push({ ids, options });
         },
         focus(id) {
             calls.focused.push(id);
@@ -189,6 +189,25 @@ describe('GraphController', () => {
         expect(renderer.calls.selection).toEqual([[]]); // a programmatic clear does reach the renderer
     });
 
+    it('tracks the edge clicked in the renderer and clears it with the selection', () => {
+        const controller = new GraphController();
+        controller.setModel(model());
+        const changed: string[] = [];
+        controller.onChange((snapshot) => changed.push(snapshot.edge ?? 'none'));
+        const renderer = fakeRenderer();
+        controller.bind(renderer);
+
+        renderer.emit('edgeClick', { id: 'e2' });
+        expect(controller.selectedEdge?.id).toBe('e2');
+        expect(controller.snapshot().edge).toBe('e2');
+        expect(changed.at(-1)).toBe('e2');
+        renderer.emit('edgeClick', { id: 'missing' });
+        expect(controller.selectedEdge).toBeUndefined();
+        renderer.emit('nodeClick', { id: 'read' });
+        renderer.emit('backgroundClick', undefined);
+        expect(controller.selectedEdge).toBeUndefined();
+    });
+
     it('drives an explicit selection through to the renderer', () => {
         const controller = new GraphController();
         controller.setModel(model());
@@ -197,8 +216,10 @@ describe('GraphController', () => {
         renderer.calls.selection.length = 0;
         controller.select('edit');
         expect(renderer.calls.selection).toEqual([['edit']]);
-        controller.fit(['edit', 'verify']);
-        expect(renderer.calls.fits).toBe(1);
+        controller.fit(['edit', 'verify'], { minScale: 0.5 });
+        expect(renderer.calls.fits).toEqual([
+            { ids: ['edit', 'verify'], options: { minScale: 0.5 } },
+        ]);
     });
 
     it('notifies listeners on selection, trail, and band changes and stops after dispose', () => {

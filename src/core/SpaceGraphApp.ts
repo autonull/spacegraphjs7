@@ -1,4 +1,4 @@
-import { InteractionPlugin, MinimapPlugin } from '../plugins';
+import { MinimapPlugin, type InteractionPlugin } from '../plugins';
 import { HUDPlugin } from '../plugins/HUDPlugin';
 import { SpaceGraph } from '../SpaceGraph';
 import type { Edge, GraphSpec, Node } from '../types';
@@ -63,6 +63,7 @@ export class SpaceGraphApp {
     public buttons: AppButtonConfig[] = [];
     public toolbarActions: AppButtonConfig[] = [];
     public _zoomSliderHandler?: () => void;
+    readonly #disposers: (() => void)[] = [];
     private originalColors = new Map<Node | Edge, number>();
 
     private constructor(sg: SpaceGraph, options: SpaceGraphAppOptions) {
@@ -101,23 +102,21 @@ export class SpaceGraphApp {
         if (resolvedOptions.toolbarActions)
             app.toolbarActions.push(...resolvedOptions.toolbarActions);
 
-        setupHotkeys(app);
+        app.#disposers.push(setupHotkeys(app));
 
         app.hud = new HUDPlugin();
         app.sg.pluginManager.register('HUDPlugin', app.hud);
-
-        if (resolvedOptions.enableInteraction) {
-            const interaction = new InteractionPlugin();
-            app.sg.pluginManager.register('InteractionPlugin', interaction);
-            setTimeout(() => setupInteractionHandlers(app), 0);
-        }
 
         if (resolvedOptions.enableMinimap) {
             app.sg.pluginManager.register('MinimapPlugin', new MinimapPlugin());
         }
 
         await app.sg.pluginManager.initAll();
-        addGrid(app);
+
+        if (resolvedOptions.enableInteraction) {
+            app.#disposers.push(setupInteractionHandlers(app));
+        }
+        app.#disposers.push(addGrid(app));
         refreshChrome(app, theme);
 
         return app;
@@ -128,7 +127,7 @@ export class SpaceGraphApp {
     }
 
     public setMode(mode: 'default' | 'select' | 'connect') {
-        const interaction = this.sg.pluginManager.get('interaction') as InteractionPlugin;
+        const interaction = this.sg.pluginManager.get<InteractionPlugin>('interaction');
         if (interaction) interaction.mode = mode;
     }
 
@@ -169,7 +168,10 @@ export class SpaceGraphApp {
         width?: string;
         onClose?: () => void;
     }) {
-        this.hud.showModal(options.title, options.html);
+        this.hud.showModal(options.title, options.html, {
+            width: options.width,
+            onClose: options.onClose,
+        });
     }
 
     public hideModal() {
@@ -250,10 +252,13 @@ export class SpaceGraphApp {
 
     public dispose() {
         if (this._zoomSliderHandler) {
-            this.sg.events.off('camera:move', this._zoomSliderHandler);
+            this.sg.events.off('zoom:change', this._zoomSliderHandler);
             this._zoomSliderHandler = undefined;
         }
+        for (const dispose of this.#disposers.reverse()) dispose();
+        this.#disposers.length = 0;
         this.hud.dispose();
+        this.sg.dispose();
     }
 
     emitSelectionChanged(): void {

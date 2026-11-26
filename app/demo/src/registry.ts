@@ -42,6 +42,7 @@ const pages: readonly Omit<DemoEntry, 'kind'>[] = [
     { id: 'interaction', category: 'interaction', path: 'html/interaction/interaction.html' },
     { id: 'minimap', category: 'interaction', path: 'html/interaction/minimap.html' },
     { id: 'scopes', category: 'interaction', path: 'html/interaction/scopes.html' },
+    { id: 'transcript', category: 'interaction', path: 'html/interaction/transcript.html' },
     {
         id: 'viewport-serialization',
         category: 'interaction',

@@ -53,10 +53,16 @@ export interface ControlEventMap {
     backgroundClick: void;
 }
 
+/** Screen-space constraints for a fit. Mirrors the contract's `FitOptions` without importing it. */
+export interface ControlFitOptions {
+    minScale?: number;
+    insets?: { top?: number; right?: number; bottom?: number; left?: number };
+}
+
 /** The renderer surface the controller needs; the host keeps ownership of the model and the camera. */
 export interface ControlRenderer {
     setSelection(ids: readonly string[]): void;
-    fit(ids?: readonly string[]): void;
+    fit(ids?: readonly string[], options?: ControlFitOptions): void;
     focus(id: string): void;
     on<K extends keyof ControlEventMap>(
         event: K,
@@ -72,6 +78,7 @@ export interface Connection {
 
 export interface ControlSnapshot {
     selection: readonly string[];
+    edge?: string;
     trail: readonly TrailNode[];
     band: string;
     zoom: number;
@@ -95,8 +102,10 @@ export class GraphController {
     readonly #listeners = new Set<ControlListener>();
     #model: ControlModel = { nodes: [], edges: [] };
     #nodesById = new Map<string, ControlNode>();
+    #edgesById = new Map<string, ControlEdge>();
     #connectionsById = new Map<string, Connection[]>();
     #selection: readonly string[] = [];
+    #edgeSelection: string | undefined;
     #renderer: ControlRenderer | undefined;
     #unsubscribers: (() => void)[] = [];
     #disposed = false;
@@ -120,6 +129,10 @@ export class GraphController {
 
     get selectedNode(): ControlNode | undefined {
         return this.#selection[0] ? this.#nodesById.get(this.#selection[0]) : undefined;
+    }
+
+    get selectedEdge(): ControlEdge | undefined {
+        return this.#edgeSelection ? this.#edgesById.get(this.#edgeSelection) : undefined;
     }
 
     get trail(): Trail {
@@ -146,6 +159,7 @@ export class GraphController {
         this.#unsubscribers = [
             renderer.on('selectionChange', ({ ids }) => this.#apply(ids, false, true)),
             renderer.on('nodeClick', ({ id }) => this.select(id)),
+            renderer.on('edgeClick', ({ id }) => this.selectEdge(id)),
             renderer.on('nodeDoubleClick', ({ id }) => this.focus(id)),
             renderer.on('backgroundClick', () => this.clear()),
             renderer.on('viewportChange', (viewport) =>
@@ -168,6 +182,7 @@ export class GraphController {
     setModel(model: ControlModel): void {
         this.#model = model;
         this.#nodesById = new Map(model.nodes.map((node) => [node.id, node]));
+        this.#edgesById = new Map(model.edges.map((edge) => [edge.id, edge]));
         this.#connectionsById = new Map();
         for (const edge of model.edges) {
             const source = this.#nodesById.get(edge.source);
@@ -178,6 +193,9 @@ export class GraphController {
             }
         }
         this.#selection = this.#selection.filter((id) => this.#nodesById.has(id));
+        if (this.#edgeSelection && !this.#edgesById.has(this.#edgeSelection)) {
+            this.#edgeSelection = undefined;
+        }
         this.#renderer?.setSelection(this.#selection);
         this.#trail.reconcile(this.#nodesById);
         this.#emit();
@@ -197,6 +215,14 @@ export class GraphController {
 
     clear(): void {
         this.select(null, false);
+        this.selectEdge(null);
+    }
+
+    selectEdge(id: string | null): void {
+        const next = id && this.#edgesById.has(id) ? id : undefined;
+        if (next === this.#edgeSelection) return;
+        this.#edgeSelection = next;
+        this.#emit();
     }
 
     focus(id?: string): void {
@@ -204,8 +230,8 @@ export class GraphController {
         if (target) this.#renderer?.focus(target);
     }
 
-    fit(ids?: readonly string[]): void {
-        this.#renderer?.fit(ids);
+    fit(ids?: readonly string[], options?: ControlFitOptions): void {
+        this.#renderer?.fit(ids, options);
     }
 
     back(): void {
@@ -234,6 +260,7 @@ export class GraphController {
     snapshot(): ControlSnapshot {
         return {
             selection: this.#selection,
+            edge: this.#edgeSelection,
             trail: this.#trail.entries,
             band: this.#bands.band,
             zoom: this.#bands.snapshot().zoom,

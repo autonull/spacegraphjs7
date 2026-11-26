@@ -16,6 +16,11 @@ const TIMEOUT = 600_000;
 const showcaseDemos = DEMOS.filter((entry) => entry.kind === 'module');
 
 const selected = (id: string) => id.toLowerCase().includes(FILTER.toLowerCase());
+// A targeted capture legitimately produces zero entries in the other two surfaces. Full runs still
+// assert coverage; filtered iterations stay fast instead of failing on an empty subset.
+const expectCoverage = (entries: readonly unknown[]) => {
+    if (!FILTER) expect(entries.length).toBeGreaterThan(0);
+};
 const categoryOf = (id: string) => CATEGORIES[demoEntry(id)?.category ?? 'core'];
 
 type DemoApi = {
@@ -130,7 +135,7 @@ test.describe('full-scope demo atlas', () => {
             entries,
         };
         writeFileSync(resolve(OUT, 'html.json'), JSON.stringify(group, null, 2));
-        expect(entries.length).toBeGreaterThan(0);
+        expectCoverage(entries);
     });
 
     test('captures every showcase demo', async ({ page }) => {
@@ -176,7 +181,7 @@ test.describe('full-scope demo atlas', () => {
             entries,
         };
         writeFileSync(resolve(OUT, 'showcase.json'), JSON.stringify(group, null, 2));
-        expect(entries.length).toBeGreaterThan(0);
+        expectCoverage(entries);
     });
 
     test('captures every main-app capability', async ({ page }) => {
@@ -233,7 +238,7 @@ test.describe('full-scope demo atlas', () => {
             entries,
         };
         writeFileSync(resolve(OUT, 'capabilities.json'), JSON.stringify(group, null, 2));
-        expect(entries.length).toBeGreaterThan(0);
+        expectCoverage(entries);
     });
 
     test('writes a browsable report from all three surfaces', async () => {

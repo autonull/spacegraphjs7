@@ -196,8 +196,8 @@ describe('GraphBinding', () => {
         expect(binding.ready).toBe(false);
     });
 
-    it('reports a mount failure through onError and stays unready', async () => {
-        const { renderer } = fakeRenderer({ fail: true });
+    it('reports a mount failure through onError, disposes the renderer, and stays unready', async () => {
+        const { renderer, calls } = fakeRenderer({ fail: true });
         const onError = vi.fn();
         const binding = new GraphBinding<Theme>({
             createRenderer: () => renderer,
@@ -208,6 +208,7 @@ describe('GraphBinding', () => {
         await binding.mount(document.createElement('div'));
 
         expect(onError).toHaveBeenCalledOnce();
+        expect(calls.disposed).toBe(1);
         expect(binding.ready).toBe(false);
     });
 

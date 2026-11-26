@@ -195,6 +195,15 @@ release-pipeline model; `/showcase.html` switches 44 programmatic demos without 
 capability to the live gallery. The other pages cover scopes, the runtime explorer, the renderer
 contract and the standalone features.
 
+`/html/interaction/transcript.html` is the console/ZUI blend: a transcript rail and HTML-node graph
+share one local event fixture. Selecting a row frames its card, selecting a card reveals its row,
+and the errors/approvals filter, graph/transcript/hybrid surfaces and four palettes show the same
+state through text and spatial views. Transcript cards own a tight, left-aligned terminal spine:
+large monospace lines set their own width while every left edge stays fixed, and attached context
+sits to the right as tiny satellites through `octaveLayout`; the spine-chain edges are nearly
+invisible because position already reads as sequence. Zoom promotes detail without enlarging the
+spine. The prompt loop is local — no provider and no network.
+
 ```
 pnpm --filter demo dev   # then open http://localhost:5173
 ```
@@ -253,21 +262,21 @@ The semantic-wrapper recipe that produced the flagship is documented in
 [`docs/semantic-wrappers.md`](docs/semantic-wrappers.md); the five-task study protocol and harness are
 in [`docs/pi-study.md`](docs/pi-study.md). A second domain (`@spacegraphjs/workflow`) proves the recipe.
 
-| Capability               | Library surface                                                                                       |
-| ------------------------ | ----------------------------------------------------------------------------------------------------- |
-| The renderer contract    | `@spacegraphjs/renderer`                                                                              |
-| Theme and contrast       | `@spacegraphjs/renderer`                                                                              |
-| The three renderers      | `@spacegraphjs/spacegraph-renderer`, `@spacegraphjs/cytoscape-renderer`, `@spacegraphjs/svg-renderer` |
-| The model adapter        | `@spacegraphjs/adapter`                                                                               |
-| Semantic levels          | `spacegraphjs/levels`                                                                                 |
-| Layout strategies        | `spacegraphjs/layout`                                                                                 |
-| Summary representations  | `spacegraphjs/representations`                                                                        |
-| Search, minimap, trail, typed-edge paths | `spacegraphjs/navigation`                                                                  |
-| Zoom bands, controller   | `spacegraphjs/control`, `spacegraphjs/zoom`                                                           |
-| The accessibility mirror | `spacegraphjs/a11y`                                                                                   |
-| The depth spectrum       | `spacegraphjs/depth`                                                                                  |
-| The scoped overlay       | `spacegraphjs/overlays`                                                                               |
-| The code diff            | `spacegraphjs/overlays`                                                                               |
+| Capability                               | Library surface                                                                                       |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| The renderer contract                    | `@spacegraphjs/renderer`                                                                              |
+| Theme and contrast                       | `@spacegraphjs/renderer`                                                                              |
+| The three renderers                      | `@spacegraphjs/spacegraph-renderer`, `@spacegraphjs/cytoscape-renderer`, `@spacegraphjs/svg-renderer` |
+| The model adapter                        | `@spacegraphjs/adapter`                                                                               |
+| Semantic levels                          | `spacegraphjs/levels`                                                                                 |
+| Layout strategies                        | `spacegraphjs/layout`                                                                                 |
+| Summary representations                  | `spacegraphjs/representations`                                                                        |
+| Search, minimap, trail, typed-edge paths | `spacegraphjs/navigation`                                                                             |
+| Zoom bands, controller                   | `spacegraphjs/control`, `spacegraphjs/zoom`                                                           |
+| The accessibility mirror                 | `spacegraphjs/a11y`                                                                                   |
+| The depth spectrum                       | `spacegraphjs/depth`                                                                                  |
+| The scoped overlay                       | `spacegraphjs/overlays`                                                                               |
+| The code diff                            | `spacegraphjs/overlays`                                                                               |
 
 Its checks live with the app: `app/demo/tests/host.test.ts` runs every capability against the real
 model, and `app/demo/tests/host.spec.ts` drives the page in a browser. `test/e2e/` covers the static

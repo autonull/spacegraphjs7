@@ -277,7 +277,7 @@ export class SpaceGraph {
                 registered.has(n),
             );
             throw new Error(
-                `[SpaceGraph] Unknown layout "${name}". Available layouts: ${available.join(', ')}. Use listLayouts() for full registry.`
+                `[SpaceGraph] Unknown layout "${name}". Available layouts: ${available.join(', ')}. Use listLayouts() for full registry.`,
             );
         }
         if ('applyLayout' in plugin)
@@ -413,6 +413,88 @@ export class SpaceGraph {
     }
 }
 
+/** Fluent names documented on `SpaceGraph`; their implementation lives in `ErgonomicsAPI`. */
+const ERGONOMIC_DELEGATES = [
+    '$',
+    '$$',
+    'at',
+    'must',
+    'findNodes',
+    'findNode',
+    'getNodesByType',
+    'findEdges',
+    'getEdgesForNode',
+    'where',
+    'has',
+    'neighbors',
+    'adjacent',
+    'connections',
+    'inEdges',
+    'outEdges',
+    'traverse',
+    'bfs',
+    'dfs',
+    'path',
+    'getSubgraph',
+    'selectAll',
+    'add',
+    'addNodes',
+    'addEdges',
+    'connect',
+    'connectTo',
+    'connectFrom',
+    'disconnect',
+    'removeWhere',
+    'updateWhere',
+    'forNodes',
+    'forEdges',
+    'forEach',
+    'each',
+    'map',
+    'filter',
+    'some',
+    'every',
+    'reduce',
+    'move',
+    'translate',
+    'shift',
+    'label',
+    'text',
+    'color',
+    'fill',
+    'data',
+    'attr',
+    'rotate',
+    'scale',
+    'setSize',
+    'opacity',
+    'clone',
+    'require',
+    'pinned',
+    'unpin',
+    'draggable',
+    'selectable',
+    'visible',
+    'batch',
+    'transaction',
+    'freeze',
+    'suspend',
+] as const satisfies readonly (keyof ErgonomicsAPI)[];
+export type ErgonomicDelegate = (typeof ERGONOMIC_DELEGATES)[number];
+export interface SpaceGraph extends Pick<ErgonomicsAPI, ErgonomicDelegate> {}
+for (const name of ERGONOMIC_DELEGATES) {
+    Object.defineProperty(SpaceGraph.prototype, name, {
+        value: function (this: SpaceGraph, ...args: unknown[]) {
+            const ergo = this.ergo as unknown as
+                Record<string, (...args: unknown[]) => unknown> | undefined;
+            if (!ergo) throw new Error(`[SpaceGraph] ${name} requires init()`);
+            return ergo[name](...args);
+        },
+        configurable: true,
+        writable: true,
+    });
+}
+
 // Convenience factory functions
 export const createSpaceGraph = (container: HTMLElement, options?: SpaceGraphOptions) =>
     new SpaceGraph(container, options);
@@ -433,7 +515,7 @@ export interface SimpleGraphOptions extends Omit<SpaceGraphOptions, 'chrome' | '
  * @example
  * ```ts
  * const sg = await SimpleGraph.create('#container', { nodes, edges });
- * sg.on('node:click', ({ node }) => console.log(node.id));
+ * sg.watch('node:click', (payload) => console.log('id' in payload ? payload.id : payload.node.id));
  * ```
  */
 export const SimpleGraph = {

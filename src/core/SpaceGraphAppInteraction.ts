@@ -2,6 +2,7 @@ import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
 import { focusNodeCamera } from '../utils/CameraUtils';
 import { isEditableTarget } from '../utils/DOMUtils';
+import type { SpaceGraphEvents } from '../types';
 import type { SpaceGraphApp } from './SpaceGraphApp';
 
 /**
@@ -21,14 +22,19 @@ function setSelection(app: SpaceGraphApp, nodes: Node[], edges: Edge[]): void {
     if (app.options.onEdgeSelect) app.options.onEdgeSelect([...selectedEdges]);
 }
 
-export function setupInteractionHandlers(app: SpaceGraphApp) {
-    app.sg.events.on('interaction:selection', ({ nodes, edges }) => {
+export function setupInteractionHandlers(app: SpaceGraphApp): () => void {
+    const subscriptions: { dispose(): void }[] = [];
+    const on = <K extends keyof SpaceGraphEvents>(
+        event: K,
+        handler: (data: SpaceGraphEvents[K]) => void,
+    ) => subscriptions.push(app.sg.events.on(event, handler));
+    on('interaction:selection', ({ nodes, edges }) => {
         const nodeObjs = (nodes || []).map((id) => app.sg.getNode(id)).filter(Boolean) as Node[];
         const edgeObjs = (edges || []).map((id) => app.sg.getEdge(id)).filter(Boolean) as Edge[];
         setSelection(app, nodeObjs, edgeObjs);
     });
 
-    app.sg.events.on('interaction:edgecreate', ({ source, target }) => {
+    on('interaction:edgecreate', ({ source, target }) => {
         if (app.options.onEdgeCreate) {
             const sourceNode = app.sg.getNode(source);
             const targetNode = app.sg.getNode(target);
@@ -46,22 +52,22 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
         }
     });
 
-    app.sg.events.on('graph:click', () => {
+    on('graph:click', () => {
         setSelection(app, [], []);
     });
 
-    app.sg.events.on('node:click', (data) => {
+    on('node:click', (data) => {
         const targetNode =
             'node' in data ? data.node : data.id ? app.sg.getNode(data.id) : undefined;
         if (targetNode) setSelection(app, [targetNode], []);
     });
 
-    app.sg.events.on('edge:click', (data) => {
+    on('edge:click', (data) => {
         const targetEdge = 'id' in data && data.id ? app.sg.getEdge(data.id) : undefined;
         if (targetEdge) setSelection(app, [], [targetEdge]);
     });
 
-    app.sg.events.on('node:dblclick', ({ node }) => {
+    on('node:dblclick', ({ node }) => {
         if (app.options.onNodeDblClick) {
             app.options.onNodeDblClick(node);
         } else if (app.sg.cameraControls) {
@@ -69,51 +75,54 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
         }
     });
 
-    app.sg.events.on('edge:dblclick', (data: any) => {
+    on('edge:dblclick', (data: any) => {
         const { edge } = data;
         if (app.options.onEdgeDblClick) {
             app.options.onEdgeDblClick(edge);
         }
     });
 
-    app.sg.events.on('node:contextmenu', ({ node, event }) => {
+    on('node:contextmenu', ({ node, event }) => {
         if (app.options.nodeContextMenu) {
             showContextMenu(app, event, app.options.nodeContextMenu(node));
         }
     });
 
-    app.sg.events.on('edge:contextmenu', (data: any) => {
+    on('edge:contextmenu', (data: any) => {
         const { edge, event } = data;
         if (app.options.edgeContextMenu) {
             showContextMenu(app, event, app.options.edgeContextMenu(edge));
         }
     });
 
-    app.sg.events.on('graph:contextmenu', ({ event }) => {
+    on('graph:contextmenu', ({ event }) => {
         if (app.options.graphContextMenu) {
             showContextMenu(app, event, app.options.graphContextMenu());
         }
     });
 
-    app.sg.events.on('node:pointerenter', ({ node, event }) => {
+    on('node:pointerenter', ({ node, event }) => {
         if (app.options.nodeTooltip) {
             showTooltip(app, app.options.nodeTooltip(node), event);
         }
     });
 
-    app.sg.events.on('node:pointerleave', () => {
+    on('node:pointerleave', () => {
         app.hud.hideTooltip();
     });
 
-    app.sg.events.on('edge:pointerenter', ({ edge, event }) => {
+    on('edge:pointerenter', ({ edge, event }) => {
         if (app.options.edgeTooltip) {
             showTooltip(app, app.options.edgeTooltip(edge), event);
         }
     });
 
-    app.sg.events.on('edge:pointerleave', () => {
+    on('edge:pointerleave', () => {
         app.hud.hideTooltip();
     });
+    return () => {
+        for (const subscription of subscriptions) subscription.dispose();
+    };
 }
 
 /** Show the host's context menu at the pointer, when the host offered one. */
@@ -136,10 +145,10 @@ function showTooltip(
     app.hud.showTooltip(app.sg.renderer.renderer.domElement, content, event);
 }
 
-export function setupHotkeys(app: SpaceGraphApp) {
-    if (typeof document === 'undefined') return;
+export function setupHotkeys(app: SpaceGraphApp): () => void {
+    if (typeof document === 'undefined') return () => undefined;
 
-    document.addEventListener('keydown', (e) => {
+    const onKeyDown = (e: KeyboardEvent) => {
         if (isEditableTarget(e.target)) return;
 
         if (e.key === 'Escape') {
@@ -166,5 +175,7 @@ export function setupHotkeys(app: SpaceGraphApp) {
         if (app.options.hotkeys && app.options.hotkeys[e.key]) {
             app.options.hotkeys[e.key]();
         }
-    });
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
 }

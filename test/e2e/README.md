@@ -17,7 +17,7 @@ This directory contains automated tests for all demos to ensure system integrity
 - Takes screenshot of each demo
 - Verifies page loaded correctly
 - Checks for console errors
-- Stores screenshots in `screenshots/`
+- Stores screenshots in `docs/screenshots/verified/`
 - Visual regression testing ready
 
 ## Interaction atlas (`interaction-atlas.spec.ts`)
@@ -103,7 +103,7 @@ pnpm run test:all-demos
 
 ## Output
 
-- **Screenshots**: `screenshots/verified-{name}.png` (generated, gitignored — not committed)
+- **Screenshots**: `docs/screenshots/verified/verified-{name}.png` (generated, gitignored — not committed)
 - **Curated gallery**: `docs/screenshots/` (tracked; includes the Pi flagship captures)
 - **Error Reports**: Console output with detailed error messages
 - **CI/CD**: Tests run automatically on PR checks

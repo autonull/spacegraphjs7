@@ -18,9 +18,14 @@ export class PluginManager {
     constructor(readonly sg: SpaceGraph) {}
 
     #idOf(key: PluginKey): string | undefined {
-        if (typeof key === 'string') return key;
+        if (typeof key === 'string') {
+            if (this.plugins.has(key)) return key;
+            const byID = [...this.plugins].find(([, plugin]) => plugin.id === key);
+            return byID ? byID[0] : key;
+        }
         for (const [name, plugin] of this.plugins) {
-            if (typeof key === 'function' ? plugin.constructor === key : plugin === key) return name;
+            if (typeof key === 'function' ? plugin.constructor === key : plugin === key)
+                return name;
         }
         return typeof key === 'function' ? undefined : key.id;
     }

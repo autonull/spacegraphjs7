@@ -53,7 +53,7 @@ export { SpatialIndex } from './spatial/SpatialIndex';
 export type { EdgeConstructor, NodeConstructor } from './TypeRegistry';
 export { TypeRegistry } from './TypeRegistry';
 export { VisionManager } from './VisionManager';
-export { SpaceGraphApp } from './SpaceGraphApp';
+export { SpaceGraphApp, type AppButtonConfig, type SpaceGraphAppOptions } from './SpaceGraphApp';
 export { GraphQuery } from './GraphQuery';
 export { GraphAlgorithms } from './GraphAlgorithms';
 export { GraphSerialization } from './GraphSerialization';

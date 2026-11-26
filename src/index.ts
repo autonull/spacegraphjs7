@@ -2,10 +2,25 @@
 // Main entry point with unified exports and convenient shortcuts
 
 // Core class - primary entry point
-export { SpaceGraph, VERSION, SimpleGraph, type SimpleGraphOptions } from './SpaceGraph';
+export {
+    SpaceGraph,
+    VERSION,
+    SimpleGraph,
+    type ErgonomicDelegate,
+    type SimpleGraphOptions,
+} from './SpaceGraph';
 
 // Essential core classes (maintained for backward compatibility)
-export { Graph, PluginManager, EventEmitter, Selection, TypeRegistry, SpaceGraphApp } from './core';
+export {
+    Graph,
+    PluginManager,
+    EventEmitter,
+    Selection,
+    TypeRegistry,
+    SpaceGraphApp,
+    type AppButtonConfig,
+    type SpaceGraphAppOptions,
+} from './core';
 export { CameraControls } from './core/CameraControls';
 export { WebGLRenderer } from './core/WebGLRenderer';
 export { ErgonomicsAPI } from './core/Ergonomics';

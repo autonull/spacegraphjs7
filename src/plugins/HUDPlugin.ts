@@ -9,6 +9,11 @@ import type { HUDElementOptions } from './hud/types';
 
 export type { AlertOptions, HUDElementOptions };
 
+export interface ModalOptions {
+    width?: string;
+    onClose?: () => void;
+}
+
 export class HUDPlugin extends BaseSystemPlugin {
     readonly id = 'hud';
     readonly name = 'Heads Up Display';
@@ -18,6 +23,7 @@ export class HUDPlugin extends BaseSystemPlugin {
     private performanceMetrics: HUDPerformanceMetrics | null = null;
     private alerts: HUDAlerts | null = null;
     private modal: HTMLElement | null = null;
+    private modalClose: (() => void) | null = null;
     private loading: HTMLElement | null = null;
     private tooltip: HTMLElement | null = null;
     private contextMenu: HTMLElement | null = null;
@@ -96,7 +102,7 @@ export class HUDPlugin extends BaseSystemPlugin {
         this.alerts?.show(options);
     }
 
-    showModal(title: string, content: string): void {
+    showModal(title: string, content: string, options: ModalOptions = {}): void {
         this.hideModal();
         const overlay = document.createElement('div');
         overlay.id = 'spacegraph-modal-overlay';
@@ -110,7 +116,8 @@ export class HUDPlugin extends BaseSystemPlugin {
         });
         const panel = document.createElement('div');
         Object.assign(panel.style, {
-            maxWidth: 'min(420px, calc(100% - 32px))',
+            width: options.width ?? 'min(420px, calc(100% - 32px))',
+            maxWidth: 'calc(100% - 32px)',
             maxHeight: 'calc(100% - 32px)',
             overflow: 'auto',
             padding: '20px',
@@ -132,11 +139,16 @@ export class HUDPlugin extends BaseSystemPlugin {
         overlay.append(panel);
         HUDDOMFactory.appendToRenderer(this.sg, overlay);
         this.modal = overlay;
+        this.modalClose = options.onClose ?? null;
     }
 
     hideModal(): void {
-        this.modal?.remove();
+        if (!this.modal) return;
+        this.modal.remove();
         this.modal = null;
+        const onClose = this.modalClose;
+        this.modalClose = null;
+        onClose?.();
     }
 
     showLoading(message: string): void {

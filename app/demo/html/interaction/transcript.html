@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-view="hybrid">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Transcript workspace — SpaceGraphJS</title>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            :root {
+                --bg: #0d1117;
+                --surface: #151b24;
+                --surface-2: #1b2330;
+                --surface-3: #222d3c;
+                --text: #e7edf5;
+                --muted: #94a3b8;
+                --border: #2a3646;
+                --accent: #60a5fa;
+                --accent-contrast: #071426;
+                --success: #34d399;
+                --warning: #fbbf24;
+                --error: #f87171;
+                --shadow: 0 8px 28px rgb(0 0 0 / 35%);
+                --dots: rgb(255 255 255 / 4%);
+                --radius: 10px;
+            }
+            :root[data-theme='light'] {
+                --bg: #f6f8fb;
+                --surface: #ffffff;
+                --surface-2: #eef2f7;
+                --surface-3: #e2e8f0;
+                --text: #142033;
+                --muted: #5f6f84;
+                --border: #d1dae6;
+                --accent: #2563eb;
+                --accent-contrast: #ffffff;
+                --success: #059669;
+                --warning: #b45309;
+                --error: #dc2626;
+                --shadow: 0 8px 28px rgb(15 23 42 / 10%);
+                --dots: rgb(15 23 42 / 4%);
+            }
+            :root[data-theme='pastel'] {
+                --bg: #f4f1fb;
+                --surface: #ffffff;
+                --surface-2: #f0ecfa;
+                --surface-3: #e6e0f5;
+                --text: #2c2340;
+                --muted: #6f6489;
+                --border: #ded5ef;
+                --accent: #7c5ce0;
+                --accent-contrast: #ffffff;
+                --success: #0f9b8e;
+                --warning: #c2770c;
+                --error: #d94f70;
+                --shadow: 0 8px 28px rgb(63 40 110 / 12%);
+                --dots: rgb(63 40 110 / 5%);
+            }
+            :root[data-theme='retro'] {
+                --bg: #07141a;
+                --surface: #0c2028;
+                --surface-2: #0e2a33;
+                --surface-3: #123742;
+                --text: #d6fbf5;
+                --muted: #6da8a3;
+                --border: #1b4a52;
+                --accent: #2dd4bf;
+                --accent-contrast: #04201c;
+                --success: #34d399;
+                --warning: #fbbf24;
+                --error: #fb7185;
+                --shadow: 0 0 0 1px rgb(45 212 191 / 12%), 0 8px 28px rgb(0 0 0 / 40%);
+                --dots: rgb(45 212 191 / 7%);
+                --radius: 2px;
+            }
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+            }
+            body {
+                background: var(--bg);
+                color: var(--text);
+                font:
+                    13px/1.5 ui-sans-serif,
+                    system-ui,
+                    -apple-system,
+                    'Segoe UI',
+                    sans-serif;
+                overflow: hidden;
+            }
+            button,
+            input,
+            select {
+                font: inherit;
+                color: inherit;
+            }
+            button {
+                cursor: pointer;
+            }
+            button:focus-visible,
+            input:focus-visible,
+            select:focus-visible {
+                outline: 2px solid var(--accent);
+                outline-offset: 2px;
+            }
+            .app {
+                display: grid;
+                grid-template-rows: auto minmax(0, 1fr) auto auto;
+                height: 100%;
+            }
+            header {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 10px 18px;
+                padding: 10px 16px;
+                background: var(--surface);
+                border-bottom: 1px solid var(--border);
+            }
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                font-weight: 650;
+                letter-spacing: -0.01em;
+            }
+            .brand-mark {
+                display: grid;
+                place-items: center;
+                width: 24px;
+                height: 24px;
+                border-radius: 7px;
+                background: var(--accent);
+                color: var(--accent-contrast);
+                font-size: 13px;
+            }
+            .stats {
+                display: flex;
+                gap: 14px;
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .stats b {
+                color: var(--text);
+                font-weight: 600;
+            }
+            .spacer {
+                flex: 1;
+            }
+            .group {
+                display: inline-flex;
+                align-items: center;
+                gap: 2px;
+                padding: 2px;
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+            }
+            .group button {
+                padding: 4px 10px;
+                border: 0;
+                border-radius: 6px;
+                background: transparent;
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .group button[aria-pressed='true'] {
+                background: var(--surface-3);
+                color: var(--text);
+                box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+            }
+            .group label {
+                padding: 0 8px;
+                color: var(--muted);
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+            }
+            .group select {
+                margin-right: 4px;
+                padding: 3px 6px;
+                background: var(--surface-3);
+                border: 0;
+                border-radius: 5px;
+            }
+            main {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+                min-height: 0;
+            }
+            .stage {
+                position: relative;
+                min-width: 0;
+                background:
+                    radial-gradient(circle at 1px 1px, var(--dots) 1px, transparent 0) 0 0 / 22px
+                        22px,
+                    var(--bg);
+            }
+            /* SpaceGraph sets `position: relative` on its container; give it an explicit size. */
+            #canvas {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+            }
+            .stage-hint {
+                position: absolute;
+                left: 14px;
+                bottom: 12px;
+                padding: 5px 9px;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                color: var(--muted);
+                font-size: 11px;
+                pointer-events: none;
+            }
+            .stage-tools {
+                position: absolute;
+                top: 12px;
+                left: 12px;
+                display: flex;
+                gap: 6px;
+            }
+            .stage-tools button {
+                padding: 5px 10px;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                color: var(--muted);
+                font-size: 11px;
+            }
+            .stage-tools button:hover {
+                color: var(--text);
+                border-color: var(--accent);
+            }
+            aside {
+                display: grid;
+                grid-template-rows: auto auto minmax(0, 1fr) auto;
+                min-height: 0;
+                background: var(--surface);
+                border-left: 1px solid var(--border);
+            }
+            .pane-title {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 12px 14px 8px;
+                font-size: 15px;
+                font-weight: 650;
+            }
+            .pane-title .count {
+                padding: 1px 7px;
+                border-radius: 20px;
+                background: var(--surface-3);
+                color: var(--muted);
+                font-size: 11px;
+                font-weight: 500;
+            }
+            .filters {
+                display: flex;
+                gap: 4px;
+                padding: 0 14px 10px;
+                border-bottom: 1px solid var(--border);
+            }
+            .filters button {
+                padding: 4px 10px;
+                border: 1px solid transparent;
+                border-radius: 20px;
+                background: transparent;
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .filters button[aria-pressed='true'] {
+                border-color: var(--border);
+                background: var(--surface-3);
+                color: var(--text);
+            }
+            .rows {
+                overflow-y: auto;
+                padding: 10px 12px 16px 14px;
+                scrollbar-color: var(--border) transparent;
+            }
+            .row {
+                position: relative;
+                display: grid;
+                grid-template-columns: 20px minmax(0, 1fr);
+                gap: 8px;
+                width: 100%;
+                margin: 0 0 6px;
+                padding: 8px;
+                text-align: left;
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+            }
+            .row:hover {
+                border-color: var(--accent);
+            }
+            .row[aria-current='true'] {
+                border-color: var(--accent);
+                box-shadow: inset 3px 0 0 var(--accent);
+                background: var(--surface-3);
+            }
+            .row::before {
+                content: '';
+                position: absolute;
+                left: 17px;
+                top: 30px;
+                bottom: -12px;
+                width: 1px;
+                background: var(--border);
+            }
+            .row-wrap {
+                margin-bottom: 6px;
+            }
+            .row-wrap .row {
+                margin-bottom: 0;
+            }
+            .row-wrap:last-child .row::before {
+                display: none;
+            }
+            .row-detail {
+                margin: 4px 0 0 20px;
+                padding: 8px;
+                background: var(--surface-3);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+            }
+            .row-detail p {
+                margin: 0 0 6px;
+                color: var(--muted);
+                font-size: 11px;
+                line-height: 1.4;
+            }
+            .row-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .row-actions button {
+                padding: 4px 8px;
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                border-radius: 5px;
+                color: var(--text);
+                font-size: 11px;
+            }
+            .row-actions button:hover {
+                color: var(--accent);
+                border-color: var(--accent);
+            }
+            .dot {
+                display: grid;
+                place-items: center;
+                width: 20px;
+                height: 20px;
+                margin-top: 1px;
+                border-radius: 50%;
+                background: var(--surface-3);
+                color: var(--muted);
+                font-size: 11px;
+                z-index: 1;
+            }
+            .row[data-kind='error'] .dot {
+                background: color-mix(in srgb, var(--error) 20%, var(--surface));
+                color: var(--error);
+            }
+            .row[data-kind='approval'] .dot {
+                background: color-mix(in srgb, var(--warning) 20%, var(--surface));
+                color: var(--warning);
+            }
+            .row[data-kind='assistant'] .dot,
+            .row[data-kind='artifact'] .dot {
+                background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+                color: var(--accent);
+            }
+            .row[data-status='complete'] .dot {
+                color: var(--success);
+            }
+            .row-head {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 8px;
+                min-width: 0;
+            }
+            .row-title {
+                display: -webkit-box;
+                overflow: hidden;
+                -webkit-box-orient: vertical;
+                -webkit-line-clamp: 2;
+                font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                font-size: 12px;
+                font-weight: 550;
+            }
+            .row-kind {
+                flex: none;
+                color: var(--muted);
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+            .row-text {
+                margin-top: 2px;
+                color: var(--muted);
+                font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                font-size: 11px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .summary {
+                padding: 10px 14px;
+                border-top: 1px solid var(--border);
+                background: var(--surface-2);
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .summary b {
+                color: var(--text);
+            }
+            .prompt {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 16px;
+                background: var(--surface);
+                border-top: 1px solid var(--border);
+            }
+            .prompt input {
+                flex: 1;
+                min-width: 0;
+                padding: 9px 12px;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+            }
+            .prompt button {
+                padding: 9px 16px;
+                background: var(--accent);
+                color: var(--accent-contrast);
+                border: 0;
+                border-radius: 8px;
+                font-weight: 600;
+            }
+            .chips {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                padding: 0 16px 10px;
+                background: var(--surface);
+            }
+            .chips button {
+                padding: 4px 9px;
+                background: transparent;
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                color: var(--muted);
+                font-size: 11px;
+            }
+            .chips button:hover {
+                color: var(--text);
+                border-color: var(--accent);
+            }
+            .status {
+                display: flex;
+                gap: 14px;
+                padding: 6px 16px;
+                background: var(--surface);
+                border-top: 1px solid var(--border);
+                color: var(--muted);
+                font-size: 11px;
+            }
+            .status .attention {
+                color: var(--error);
+            }
+            .zcard {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                width: 100%;
+                height: 100%;
+                padding: 0 7px;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-left: 3px solid var(--accent);
+                border-radius: 3px;
+                box-shadow: var(--shadow);
+                color: var(--text);
+                font:
+                    13px/1 ui-monospace,
+                    SFMono-Regular,
+                    Menlo,
+                    Consolas,
+                    monospace;
+                white-space: nowrap;
+            }
+            .zcard-prompt {
+                flex: none;
+                color: var(--accent);
+                font-weight: 700;
+            }
+            .zcard-line {
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .zcard-meta {
+                flex: none;
+                margin-left: auto;
+                color: var(--muted);
+                font:
+                    8px/1 ui-sans-serif,
+                    system-ui,
+                    sans-serif;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+            .zcard[data-kind='error'] {
+                border-left-color: var(--error);
+                background: color-mix(in srgb, var(--error) 8%, var(--surface));
+            }
+            .zcard[data-kind='approval'] {
+                border-left-color: var(--warning);
+            }
+            .zcard[data-kind='artifact'] {
+                border-left-color: var(--success);
+            }
+            .zcard[data-selected='true'] {
+                outline: 2px solid var(--accent);
+                outline-offset: 2px;
+            }
+            .zcard[data-octave='-1'] {
+                gap: 4px;
+                padding: 0 5px;
+                border-left-width: 1px;
+                font-size: 10px;
+            }
+            .zcard[data-octave='-2'] {
+                gap: 3px;
+                padding: 0 4px;
+                border-left-width: 1px;
+                font-size: 8px;
+            }
+            .row[data-octave='-1'],
+            .row[data-octave='-2'] {
+                width: calc(100% - 12px);
+                margin-left: 12px;
+            }
+            .row[data-octave='-2'] {
+                width: calc(100% - 24px);
+                margin-left: 24px;
+            }
+            .row[data-octave='-1'] .row-title,
+            .row[data-octave='-2'] .row-title {
+                color: var(--muted);
+                font-size: 11px;
+            }
+            :root[data-view='graph'] aside {
+                display: none;
+            }
+            :root[data-view='graph'] main {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            :root[data-view='transcript'] .stage {
+                display: none;
+            }
+            :root[data-view='transcript'] main {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            :root[data-view='transcript'] aside {
+                border-left: 0;
+            }
+            :root[data-view='transcript'] .row {
+                max-width: 720px;
+                margin-inline: auto;
+            }
+            @media (max-width: 760px) {
+                main {
+                    grid-template-columns: minmax(0, 1fr);
+                    grid-template-rows: minmax(220px, 45%) minmax(0, 1fr);
+                }
+                aside {
+                    border-left: 0;
+                    border-top: 1px solid var(--border);
+                }
+                .stats {
+                    display: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="app">
+            <header>
+                <div class="brand"><span class="brand-mark">SG</span> Transcript workspace</div>
+                <div class="stats">
+                    <span><b id="stat-nodes">0</b> nodes</span>
+                    <span><b id="stat-edges">0</b> edges</span>
+                    <span><b id="stat-band">detail</b> band</span>
+                </div>
+                <div class="spacer"></div>
+                <div class="group" role="group" aria-label="Surface">
+                    <button type="button" data-view-value="graph" aria-pressed="false">
+                        Graph
+                    </button>
+                    <button type="button" data-view-value="hybrid" aria-pressed="true">
+                        Hybrid
+                    </button>
+                    <button type="button" data-view-value="transcript" aria-pressed="false">
+                        Transcript
+                    </button>
+                </div>
+                <div class="group">
+                    <label for="theme">Palette</label>
+                    <select id="theme">
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                        <option value="pastel">Pastel</option>
+                        <option value="retro">Retro</option>
+                    </select>
+                </div>
+            </header>
+            <main>
+                <div class="stage">
+                    <div id="canvas"></div>
+                    <div class="stage-tools">
+                        <button type="button" id="fit">Fit</button>
+                        <button type="button" id="reset">Reset</button>
+                    </div>
+                    <div class="stage-hint">
+                        Drag void to pan · wheel to zoom · click a row to expand its details
+                    </div>
+                </div>
+                <aside aria-label="Transcript">
+                    <div class="pane-title">
+                        Transcript <span class="count" id="row-count">0</span>
+                    </div>
+                    <div class="filters" role="group" aria-label="Filter transcript">
+                        <button type="button" data-filter="all" aria-pressed="true">All</button>
+                        <button type="button" data-filter="error" aria-pressed="false">
+                            Errors
+                        </button>
+                        <button type="button" data-filter="approval" aria-pressed="false">
+                            Approvals
+                        </button>
+                    </div>
+                    <div class="rows" id="rows"></div>
+                    <div class="summary" id="summary"></div>
+                </aside>
+            </main>
+            <form class="prompt" id="prompt-form">
+                <input
+                    id="prompt-input"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="Ask something — local demo, no provider"
+                    aria-label="Prompt"
+                />
+                <button type="submit" id="send">Send</button>
+            </form>
+            <div class="chips" id="chips">
+                <button type="button" data-prompt="Summarise the repo">Summarise repo</button>
+                <button type="button" data-prompt="Fix failing test">Fix failing test</button>
+                <button type="button" data-prompt="Approve patch">Approve patch</button>
+            </div>
+            <div class="status">
+                <span id="announcer" role="status" aria-live="polite">Ready</span>
+                <div class="spacer"></div>
+                <span class="attention" id="attention"></span>
+                <span>/ focus prompt · Esc blur</span>
+            </div>
+        </div>
+        <script type="module" src="../../transcript.ts"></script>
+    </body>
+</html>
