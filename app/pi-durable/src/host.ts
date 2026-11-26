@@ -1198,9 +1198,11 @@ export class DurableHost {
         const token = ++this.#motionToken;
         this.#model = model;
         const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        const previousByID = new Map(previous?.nodes.map((node) => [node.id, node]) ?? []);
+        const modelByID = new Map(model.nodes.map((node) => [node.id, node]));
         const moves = previous && morph && !reduced && !this.#offline
             ? model.nodes.flatMap((node) => {
-                  const before = previous.nodes.find((candidate) => candidate.id === node.id);
+                  const before = previousByID.get(node.id);
                   if (!before || before.position.every((value, index) => value === node.position[index])) return [];
                   return [{ id: node.id, from: before.position, to: node.position }];
               })
@@ -1214,13 +1216,12 @@ export class DurableHost {
             new Map(model.nodes.map((node) => [node.id, String(node.emphasis ?? 0)])),
             this.#sample,
         );
-        const delays = new Map(moves.map((move) => {
-            const node = model.nodes.find((candidate) => candidate.id === move.id);
-            return [move.id, BAND_DELAY[String(node?.data?.['band'] ?? 'card')] ?? 0] as const;
-        }));
+        const delays = new Map(moves.map((move) =>
+            [move.id, BAND_DELAY[String(modelByID.get(move.id)?.data?.['band'] ?? 'card')] ?? 0] as const));
         const maxDelay = Math.max(0, ...delays.values());
         const duration = Math.max(0.12, ...changes.map((change) => change.duration)) * (1 + maxDelay);
         const clocks = new Map(moves.map((move) => [move.id, createRenderClock(model, [move])] as const));
+        const indexByID = new Map(model.nodes.map((node, index) => [node.id, index] as const));
         const start = performance.now();
         const step = (now: number): void => {
             if (token !== this.#motionToken) return;
@@ -1230,7 +1231,7 @@ export class DurableHost {
                 if (!clock) return node;
                 const delay = delays.get(node.id) ?? 0;
                 const local = Math.max(0, Math.min(1, (progress - delay) / (1 - delay)));
-                return clock.advance(local).nodes.find((candidate) => candidate.id === node.id)!;
+                return clock.advance(local).nodes[indexByID.get(node.id) ?? -1] ?? node;
             });
             this.renderer.setModel({ ...model, nodes: staggered });
             if (progress < 1) requestAnimationFrame(step);

@@ -128,7 +128,7 @@ export const GraphFind = (props: GraphFindProps) => {
             false,
         );
         searchResultTemplate = template(
-            '<div class="flex-1 overflow-y-auto"><ul id="graph-find-search-results" role="listbox" aria-label=""><li><button type="button" data-index="" data-node-id="" data-active="false" role="option" aria-selected="false" class="flex w-full flex-col gap-0.5 px-3 py-1.5 text-left hover:bg-surface-base-hover"><span class="truncate text-12-regular text-text-strong"></span><span class="truncate text-12-regular text-text-weak"></span></button></li></ul></div>',
+            '<div class="flex-1 overflow-y-auto"><ul id="graph-find-search-results" role="listbox" aria-label=""></ul></div>',
             false,
         );
         filterSectionTemplate = template(

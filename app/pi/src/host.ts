@@ -893,16 +893,23 @@ export class PiHost {
         this.renderTurnMap();
         this.syncClock();
         if (!this.#initialFitDone && this.#kernel.nodes.length > 0) {
-            if (this.#initialFitTimer) clearTimeout(this.#initialFitTimer);
-            this.#initialFitTimer = setTimeout(() => {
+            this.#initialFitTimer = this.debounceFit(this.#initialFitTimer, () => {
                 if (this.#initialFitDone) return;
                 this.#initialFitDone = true;
                 this.simulation.settle();
                 this.renderPositions();
                 this.fitView();
                 requestAnimationFrame(() => this.paint());
-            }, 120);
+            });
         }
+    }
+
+    private debounceFit(
+        current: ReturnType<typeof setTimeout> | undefined,
+        fit: () => void,
+    ): ReturnType<typeof setTimeout> {
+        if (current) clearTimeout(current);
+        return setTimeout(fit, 120);
     }
 
     paint(): void {
@@ -2859,13 +2866,12 @@ export class PiHost {
         this.renderFocusLens();
         const fit = this.#fit;
         if (!this.#initialFitDone || !fit) return;
-        if (this.#fitTimer) clearTimeout(this.#fitTimer);
-        this.#fitTimer = setTimeout(() => {
+        this.#fitTimer = this.debounceFit(this.#fitTimer, () => {
             const { width, height } = this.canvasSize();
             if (!aspectChanged(fit.aspect, width / Math.max(height, 1))) return;
             this.fitView();
             this.paint();
-        }, 120);
+        });
     }
 
     private canvasSize(): { width: number; height: number } {
