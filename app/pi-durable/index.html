@@ -145,7 +145,7 @@
             #view-switch { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
             #view-switch button { min-height: 40px; padding: 0 4px; font-size: 12px;
                 border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); color: var(--muted); }
-            #view-switch button[aria-selected="true"] { color: var(--text); border-color: var(--accent); }
+            #view-switch button[aria-pressed="true"] { color: var(--text); border-color: var(--accent); }
             #view-switch button .icon { width: 14px; height: 14px; margin-right: 3px; vertical-align: middle; }
             #view-badge, #rung-badge { display: inline-block; padding: 2px 8px; margin-bottom: 6px;
                 border: 1px solid var(--line); border-radius: 999px; font: 11px ui-monospace, monospace; color: var(--accent); }
@@ -397,13 +397,13 @@
                         <h2>Views</h2>
                         <span id="view-badge">graph</span>
                         <div id="view-switch">
-                            <button type="button" data-view="graph" aria-selected="true"><svg class="icon" aria-hidden="true"><use href="#i-views"/></svg>Graph</button>
-                            <button type="button" data-view="tasks" aria-selected="false"><svg class="icon" aria-hidden="true"><use href="#i-tasks"/></svg>Tasks</button>
-                            <button type="button" data-view="timeline" aria-selected="false"><svg class="icon" aria-hidden="true"><use href="#i-rung"/></svg>Time</button>
-                            <button type="button" data-view="diff" aria-selected="false"><svg class="icon" aria-hidden="true"><use href="#i-signal"/></svg>Diff</button>
-                            <button type="button" data-view="trace" aria-selected="false"><svg class="icon" aria-hidden="true"><use href="#i-signal"/></svg>Trace</button>
-                            <button type="button" data-view="docs" aria-selected="false"><svg class="icon" aria-hidden="true"><use href="#i-docs"/></svg>Docs</button>
-                            <button type="button" data-view="transcript" aria-selected="false"><svg class="icon" aria-hidden="true"><use href="#i-docs"/></svg>Text</button>
+                            <button type="button" data-view="graph" aria-pressed="true"><svg class="icon" aria-hidden="true"><use href="#i-views"/></svg>Graph</button>
+                            <button type="button" data-view="tasks" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-tasks"/></svg>Tasks</button>
+                            <button type="button" data-view="timeline" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-rung"/></svg>Time</button>
+                            <button type="button" data-view="diff" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-signal"/></svg>Diff</button>
+                            <button type="button" data-view="trace" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-signal"/></svg>Trace</button>
+                            <button type="button" data-view="docs" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-docs"/></svg>Docs</button>
+                            <button type="button" data-view="transcript" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-docs"/></svg>Text</button>
                         </div>
                         <div id="tasks"></div>
                         <div id="timeline"></div>
@@ -505,9 +505,9 @@
         </div>
         <button id="present-exit" type="button" class="action" aria-label="Exit presentation mode" title="Exit presentation mode (Shift+F)">Exit presentation</button>
         <div id="announcer" role="status" aria-live="polite"></div>
-        <div id="help" hidden>
+        <div id="help" hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
             <div>
-                <h2>Keyboard</h2>
+                <h2 id="help-title">Keyboard</h2>
                 <div id="help-shortcuts"></div>
                 <p>Every node records a committed Durable fact. Edges are only drawn where Durable recorded a link.</p>
                 <button type="button" class="action" id="help-close">Close</button>

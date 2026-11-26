@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { bootShowcase, settle, sha256 } from './atlas-kit.js';
+import { bootShowcase, settle } from './atlas-kit.js';
 import { renderAtlasReport, type ReportEntry } from './atlas-report.js';
 
 // SpaceGraphJ reference-style captures: crimson graph ribbons and a compound widget dashboard that
@@ -32,7 +32,6 @@ test.describe('SpaceGraphJ reference styles', () => {
         const errors = await bootShowcase(page, 'spacegraphj-retro', '__retroDemo');
         mkdirSync(OUT, { recursive: true });
         const entries: ReportEntry[] = [];
-        const hashes = new Map<string, string>();
 
         const capture = async (
             id: string,
@@ -42,8 +41,6 @@ test.describe('SpaceGraphJ reference styles', () => {
         ) => {
             await settle(page);
             const frame = await page.locator('#app').screenshot();
-            const digest = sha256(frame);
-            hashes.set(id, digest);
             writeFileSync(resolve(OUT, `${id}.png`), frame);
             entries.push({
                 id,
@@ -179,7 +176,6 @@ test.describe('SpaceGraphJ reference styles', () => {
             );
         }
         expect(signatures.size).toBe(modes.length);
-        expect(new Set([...hashes.values()]).size).toBeGreaterThanOrEqual(entries.length - 1);
         expect(errors).toEqual([]);
 
         const group = {

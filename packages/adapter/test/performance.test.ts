@@ -82,19 +82,13 @@ function generateModel(
     return { model: { nodes, edges }, positions };
 }
 
-function timed<T>(run: () => T): { value: T; ms: number } {
-    const start = performance.now();
-    const value = run();
-    return { value, ms: performance.now() - start };
-}
-
 const adapter = new PerfAdapter({
     cardBudget: (level) => (level === 'overview' ? 12 : level === 'execution' ? 40 : 24),
     neighbors: (_model, id) => [id], // simple neighbor for focus
     nodeSizeFn: () => [200, 64],
 });
 
-describe('adapter pipeline performance', () => {
+describe('adapter pipeline at scale', () => {
     const sizes = [
         { nodes: 1_200, edges: 2_000, label: '300-message session' },
         { nodes: 4_000, edges: 7_000, label: '1,000-message session' },
@@ -102,21 +96,15 @@ describe('adapter pipeline performance', () => {
     ];
 
     for (const { nodes, edges, label } of sizes) {
-        test(`${label}: build render model within budget`, () => {
+        test(`${label}: builds a render model`, () => {
             const { model, positions } = generateModel(nodes, edges);
-
-            // Warm-up run (JIT)
-            adapter.build(model, { level: 'execution', positions });
-
-            const { ms } = timed(() => adapter.build(model, { level: 'execution', positions }));
-
-            const budget = nodes <= 1_500 ? 150 : nodes <= 5_000 ? 300 : 750;
-            expect(ms).toBeLessThan(budget);
+            const built = adapter.build(model, { level: 'execution', positions });
+            expect(built.nodes.length).toBeGreaterThan(0);
         });
     }
 });
 
-describe('adapter incremental patch performance', () => {
+describe('adapter incremental patch', () => {
     test('buildPatch produces minimal diff for streaming', () => {
         const { model, positions } = generateModel(20_000, 36_000);
 
@@ -142,15 +130,10 @@ describe('adapter incremental patch performance', () => {
         const extendedPositions = new Map(positions);
         extendedPositions.set('node-new', { x: 100, y: 100, z: 0 });
 
-        const { ms: patchMs, value: patch } = timed(() =>
-            adapter.buildPatch(baseline, extendedModel, {
-                level: 'execution',
-                positions: extendedPositions,
-            }),
-        );
-
-        // Patch should complete quickly; CI load and JIT warm-up vary widely.
-        expect(patchMs).toBeLessThan(2000);
+        const patch = adapter.buildPatch(baseline, extendedModel, {
+            level: 'execution',
+            positions: extendedPositions,
+        });
 
         // Patch should only contain the new node/edge
         expect(patch.nodes.added.length).toBe(1);

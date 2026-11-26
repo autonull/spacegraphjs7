@@ -3,13 +3,16 @@ import { existsSync, rmSync } from 'node:fs';
 import { exportURL } from '../src/api';
 import { startLlamaServer, startServer } from './server-process';
 
-const MODEL_PATH = process.env.PI_DURABLE_TEST_GGUF ?? '/home/me/gguf/Qwen_Qwen3.5-0.8B-Q4_K_M.gguf';
+const MODEL_PATH = process.env.PI_DURABLE_TEST_GGUF;
 const LLAMA_PORT = 9932;
 const SERVER_PORT = 8801;
 
 test('a local llama.cpp model commits a real offline answer', async () => {
     test.setTimeout(240_000);
-    if (!existsSync(MODEL_PATH)) test.skip(true, `GGUF fixture missing: ${MODEL_PATH}`);
+    if (!MODEL_PATH || !existsSync(MODEL_PATH)) {
+        test.skip(true, 'set PI_DURABLE_TEST_GGUF to a GGUF fixture to run this test');
+        return;
+    }
 
     const llama = await startLlamaServer(LLAMA_PORT, MODEL_PATH);
     let server: Awaited<ReturnType<typeof startServer>> | undefined;

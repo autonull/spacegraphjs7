@@ -197,6 +197,7 @@ const LEVELS: readonly AgentLevel[] = ['overview', 'execution', 'detail'];
 const LEVEL_MODES: readonly LevelMode[] = ['auto', ...LEVELS];
 const ARRANGEMENTS: readonly Arrangement[] = ['stacked', 'side', 'floating'];
 const SURFACES: readonly Surface[] = ['log', 'map', 'hybrid'];
+const GLOBAL_GRAPH_KEYS = new Set(['f', 't', 's', 'u', 'n', '+', '=', '-']);
 const OCTAVE_PALETTE = ['#3b527f', '#3f6a86', '#4a7f78', '#7f6a4a'] as const;
 
 const STATUS_GLYPH: Readonly<Record<string, string>> = {
@@ -2706,6 +2707,7 @@ export class PiHost {
             this.renderHud();
         });
         document.addEventListener('keydown', (event) => {
+            if (event.ctrlKey || event.metaKey || event.altKey) return;
             const target = event.target as HTMLElement | null;
             const editing = target?.closest('input, textarea, select, [contenteditable="true"]');
             if (editing && editing.id !== 'command-input') return;
@@ -2730,9 +2732,12 @@ export class PiHost {
                 m: () => this.setGraphMorph(!this.#graphMorph),
             };
             const graphAction = graphKey[event.key];
-            if (!graphAction) return;
-            event.preventDefault();
-            graphAction();
+            if (graphAction) {
+                event.preventDefault();
+                graphAction();
+                return;
+            }
+            if (GLOBAL_GRAPH_KEYS.has(event.key) && target?.id !== 'canvas') this.onKey(event, true);
         });
         const follow = el<HTMLSelectElement>('follow-mode');
         follow.value = this.#followMode;
@@ -2797,7 +2802,7 @@ export class PiHost {
         }
     }
 
-    private onKey(event: KeyboardEvent): void {
+    private onKey(event: KeyboardEvent, global = false): void {
         const steps: Record<string, () => void> = {
             ArrowLeft: () => this.pan(80, 0),
             ArrowRight: () => this.pan(-80, 0),
@@ -2819,7 +2824,7 @@ export class PiHost {
             Escape: () => this.returnHome(),
         };
         const action = steps[event.key];
-        if (!action) return;
+        if (!action || (global && !GLOBAL_GRAPH_KEYS.has(event.key))) return;
         event.preventDefault();
         action();
     }
@@ -2846,7 +2851,10 @@ export class PiHost {
             `${this.#arrangement === 'stacked' ? this.#transcriptHeight : this.#transcriptWidth}px`,
         );
         for (const surface of SURFACES) {
-            el(`surface-${surface}`).setAttribute('data-active', String(surface === this.#surface));
+            const button = el(`surface-${surface}`);
+            const active = String(surface === this.#surface);
+            button.setAttribute('data-active', active);
+            button.setAttribute('aria-pressed', active);
         }
     }
 

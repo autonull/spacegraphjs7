@@ -22,6 +22,7 @@ import type { GraphViewData } from '@spacegraphjs/shared';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { ScopeSimulation, solveNodeAreaDensity, type ScopeSpec } from 'spacegraphjs/layout';
 import { Navigation, type MinimapProjection } from 'spacegraphjs/navigation';
+import { ScopedOverlay } from 'spacegraphjs/overlays';
 import { mountReading, readingOrder, type ReadingController, type ReadingNode } from 'spacegraphjs/reading';
 import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
@@ -501,6 +502,7 @@ export class DurableHost {
         scale: 1, measured: 0, target: NODES_AREA_DENSITY,
     };
     #readerController: ReadingController | undefined;
+    #helpScope: ScopedOverlay | undefined;
     #mutedEdges = 0;
     #activeGroups = new Set<string>();
     #scopeKey = '';
@@ -2033,7 +2035,7 @@ export class DurableHost {
         el('tasks').toggleAttribute('data-active', this.#viewName === 'tasks');
         el('timeline').toggleAttribute('data-active', this.#viewName === 'timeline');
         for (const element of document.querySelectorAll<HTMLButtonElement>('#view-switch button'))
-            element.setAttribute('aria-selected', String(element.dataset['view'] === this.#viewName));
+            element.setAttribute('aria-pressed', String(element.dataset['view'] === this.#viewName));
     }
 
     /** Transcript is a readable projection of the same fold, with a link back to every fact. */
@@ -2152,6 +2154,15 @@ export class DurableHost {
     toggleHelp(visible?: boolean): void {
         const help = el('help');
         const next = visible ?? help.hidden;
+        if (next === !help.hidden) return;
         help.hidden = !next;
+        this.#helpScope?.dispose();
+        this.#helpScope = next
+            ? new ScopedOverlay({
+                  container: help,
+                  initialFocus: el<HTMLButtonElement>('help-close'),
+                  onClose: () => this.toggleHelp(false),
+              })
+            : undefined;
     }
 }

@@ -168,13 +168,14 @@ export function setupHotkeys(app: SpaceGraphApp): () => void {
             return;
         }
 
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+
         const hostHotkey = app.options.hotkeys?.[e.key];
         if (hostHotkey) {
             hostHotkey();
             return;
         }
 
-        if (e.ctrlKey || e.metaKey || e.altKey) return;
         const builtin = BUILTIN_HOTKEYS[e.key];
         if (!builtin) return;
         e.preventDefault();

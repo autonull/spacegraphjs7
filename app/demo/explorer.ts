@@ -585,6 +585,11 @@ let axisQuery = '';
 
 function renderAxes(result: ReturnType<typeof negotiate>): void {
     const root = element('axes');
+    const active = document.activeElement;
+    const restore =
+        active instanceof HTMLElement && active.dataset['axis'] && active.dataset['value']
+            ? { axis: active.dataset['axis'], value: active.dataset['value'] }
+            : undefined;
     root.replaceChildren();
     const needle = axisQuery.trim().toLowerCase();
 
@@ -624,6 +629,15 @@ function renderAxes(result: ReturnType<typeof negotiate>): void {
                 : `${axis.source}${axis.reducedMotion ? ` · ${axis.reducedMotion}` : ''}`;
         field.append(meta);
         root.append(field);
+    }
+    if (restore) {
+        [...root.querySelectorAll<HTMLButtonElement>('button[data-axis]')]
+            .find(
+                (button) =>
+                    button.dataset['axis'] === restore.axis &&
+                    button.dataset['value'] === restore.value,
+            )
+            ?.focus();
     }
 }
 

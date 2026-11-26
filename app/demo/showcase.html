@@ -96,7 +96,6 @@
                     padding: 6px 12px;
                     border-radius: 4px;
                     font-size: 13px;
-                    outline: none;
                     margin-left: 10px;
                 "
             />
@@ -196,6 +195,12 @@
                     );
                     select.appendChild(optgroup);
                 }
+                if (!filtered.length) {
+                    const option = document.createElement('option');
+                    option.disabled = true;
+                    option.textContent = 'No demos match';
+                    select.append(option);
+                }
                 if (filtered.some((d) => d.name === previous)) select.value = previous;
                 return filtered;
             }
@@ -204,27 +209,38 @@
 
             async function loadDemo(name) {
                 const demo = demoList.find((d) => d.name === name);
-                if (!demo) return;
+                const app = document.getElementById('app');
+                if (!demo) {
+                    app.textContent = `Unknown demo: ${name}`;
+                    window.__DEMO_READY = true;
+                    return;
+                }
 
                 window.__DEMO_READY = false;
                 title.textContent = demo.name;
+                const loading = document.createElement('p');
+                loading.textContent = `Loading ${demo.name}…`;
+                app.replaceChildren(loading);
 
-                document.getElementById('app').innerHTML = '';
+                currentDemo?.stop?.();
+                currentDemo?.dispose?.();
+                currentDemo = undefined;
 
-                if (currentDemo?.stop) {
-                    currentDemo.stop();
-                }
-                if (currentDemo?.dispose) {
-                    currentDemo.dispose();
-                }
-
-                currentDemo = await demo.create();
-
-                // Allow a brief moment for the first frame to render
-                setTimeout(() => {
+                try {
+                    currentDemo = await demo.create();
+                    loading.remove();
+                    setTimeout(() => {
+                        window.__DEMO_READY = true;
+                        console.log(`Demo "${name}" is ready.`);
+                    }, 500);
+                } catch (error) {
+                    app.replaceChildren(
+                        Object.assign(document.createElement('p'), {
+                            textContent: `Could not load ${demo.name}: ${error instanceof Error ? error.message : String(error)}`,
+                        }),
+                    );
                     window.__DEMO_READY = true;
-                    console.log(`Demo "${name}" is ready.`);
-                }, 500);
+                }
             }
 
             select.addEventListener('change', (e) => {
@@ -241,7 +257,14 @@
             const params = new URLSearchParams(window.location.search);
             const initialDemo = params.get('demo') || 'system-architecture';
             select.value = initialDemo;
-            loadDemo(initialDemo);
+            void loadDemo(initialDemo);
+
+            window.addEventListener('popstate', () => {
+                const name =
+                    new URLSearchParams(window.location.search).get('demo') || 'system-architecture';
+                if (select.value !== name) select.value = name;
+                void loadDemo(name);
+            });
 
             window.SpaceGraph = SpaceGraph;
 

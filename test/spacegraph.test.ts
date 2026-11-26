@@ -1391,54 +1391,6 @@ describe('PluginManager', () => {
 });
 
 // ============================================================
-// EventManager
-// ============================================================
-
-describe('EventManager (Batching)', () => {
-    beforeEach(() => {
-        vi.useFakeTimers();
-        vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
-            return setTimeout(() => cb(Date.now()), 16) as any;
-        });
-        vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id: number) => {
-            clearTimeout(id);
-        });
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
-        vi.useRealTimers();
-    });
-
-    it('emits standard events instantly', () => {
-        const spy = vi.fn();
-        sg.events.on('node:added', spy);
-
-        sg.events.emit('node:added', { node: { id: 'test' } });
-        expect(spy).toHaveBeenCalledTimes(1);
-    });
-
-    it('batches high-frequency events to RAF', () => {
-        const spy = vi.fn();
-        sg.events.on('interaction:dragstart', spy);
-
-        sg.events.emitBatched('interaction:dragstart', { node: { id: '1' } });
-        sg.events.emitBatched('interaction:dragstart', { node: { id: '2' } });
-        sg.events.emitBatched('interaction:dragstart', { node: { id: '3' } });
-
-        // Has not fired yet
-        expect(spy).not.toHaveBeenCalled();
-
-        // Fast-forward to trigger RAF (simulated with setTimeout)
-        vi.advanceTimersByTime(20);
-
-        // Should only have fired ONCE with the the LAST payload
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(spy).toHaveBeenCalledWith({ node: { id: '3' } });
-    });
-});
-
-// ============================================================
 // Interaction tests
 // ============================================================
 

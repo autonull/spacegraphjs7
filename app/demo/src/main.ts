@@ -59,6 +59,12 @@ function svgEl(id: string): SVGSVGElement {
 
 const host = new DemoHost();
 
+const PICKERS = {
+    renderer: () => rendererID,
+    theme: () => themeName,
+    depth: () => host.depth,
+} as const;
+
 let rendererID: RendererID = 'spacegraph';
 let themeName: ThemeName = 'dark';
 let renderer: GraphRenderer | undefined;
@@ -139,7 +145,8 @@ function paintSearchCursor(): void {
         button.classList.toggle('is-active', active);
         button.setAttribute('aria-selected', String(active));
     });
-    input.setAttribute('aria-activedescendant', buttons[searchIndex]?.id ?? '');
+    if (buttons[searchIndex]) input.setAttribute('aria-activedescendant', buttons[searchIndex]!.id);
+    else input.removeAttribute('aria-activedescendant');
     buttons[searchIndex]?.scrollIntoView({ block: 'nearest' });
 }
 
@@ -304,6 +311,13 @@ function paint() {
     renderMinimap();
 }
 
+function syncPickers(): void {
+    for (const [prefix, current] of Object.entries(PICKERS)) {
+        for (const button of document.querySelectorAll<HTMLButtonElement>(`[id^="${prefix}-"]`))
+            button.setAttribute('aria-pressed', String(button.id === `${prefix}-${current()}`));
+    }
+}
+
 /**
  * The camera follows the content: a view change replaces the model, so the camera is framed again.
  * The floor keeps a card legible — half its natural size, which is what the lane views are read at.
@@ -368,17 +382,13 @@ function runCapability(capability: Capability) {
         renderer?.setDepth(capability.depth);
     }
 
-    // Apply selection from capability before running it
-    if (capability.select) {
-        host.select(capability.select);
-    }
+    if (capability.select) host.select(capability.select);
 
     const context = host.context(readTheme(), {
         rendererName: rendererName(),
         capabilities: renderer?.capabilities,
     });
 
-    // Compute focus overlay for the focus capability
     if (capability.id === 'focus') {
         currentFocusOverlay = computeFocusOverlay({
             model: context.model,
@@ -390,6 +400,7 @@ function runCapability(capability: Capability) {
     }
 
     syncViews();
+    syncPickers();
     paint();
     if (reframed) fitCamera();
 
@@ -409,6 +420,13 @@ function rendererName(): string {
     return 'SpaceGraph';
 }
 
+function emptyState(message: string): HTMLElement {
+    const row = document.createElement('p');
+    row.className = 'empty-state';
+    row.textContent = message;
+    return row;
+}
+
 function renderGallery(query = '') {
     const needle = query.trim().toLowerCase();
     const matches = needle
@@ -419,22 +437,24 @@ function renderGallery(query = '') {
           )
         : CAPABILITIES;
     el('gallery').replaceChildren(
-        ...matches.map((capability) => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'capability';
-            button.dataset.capability = capability.id;
-            button.setAttribute('aria-pressed', 'false');
-            button.title = `${capability.title} — ${capability.summary}\n${capability.modules.join(' · ')}`;
+        ...(matches.length
+            ? matches.map((capability) => {
+                  const button = document.createElement('button');
+                  button.type = 'button';
+                  button.className = 'capability';
+                  button.dataset.capability = capability.id;
+                  button.setAttribute('aria-pressed', 'false');
+                  button.title = `${capability.title} — ${capability.summary}\n${capability.modules.join(' · ')}`;
 
-            const title = document.createElement('span');
-            title.className = 'capability-title';
-            title.textContent = capability.title;
+                  const title = document.createElement('span');
+                  title.className = 'capability-title';
+                  title.textContent = capability.title;
 
-            button.append(title);
-            button.addEventListener('click', () => runCapability(capability));
-            return button;
-        }),
+                  button.append(title);
+                  button.addEventListener('click', () => runCapability(capability));
+                  return button;
+              })
+            : [emptyState('No capabilities match — clear the filter.')]),
     );
 }
 
@@ -493,7 +513,11 @@ async function main(): Promise<void> {
         ids: readonly T[],
         apply: (id: T) => void,
     ) => {
-        for (const id of ids) el(`${prefix}-${id}`).addEventListener('click', () => apply(id));
+        for (const id of ids)
+            el(`${prefix}-${id}`).addEventListener('click', () => {
+                apply(id);
+                syncPickers();
+            });
     };
 
     el('fit-all').addEventListener('click', () => fitCamera());

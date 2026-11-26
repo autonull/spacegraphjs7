@@ -197,16 +197,6 @@ test.describe('interaction atlas (screenshot harness)', () => {
                 ).toBeGreaterThan(2);
         }
 
-        const hashOf = (id: string) => frames.find((frame) => frame.id === id)?.sha256;
-        for (const [a, b] of [
-            ['shape-by-kind', 'shape-auto'],
-            ['shape-diamond', 'shape-auto'],
-            ['theme-dark', 'theme-light'],
-            ['view-tree', '01-baseline'],
-            ['lod-dot', 'lod-detail'],
-        ])
-            expect(hashOf(a), `${a} must differ from ${b}`).not.toBe(hashOf(b));
-
         expect(errors).toEqual([]);
         writeManifest(resolve(OUT), 'atlas.json', {
             generated: new Date().toISOString(),

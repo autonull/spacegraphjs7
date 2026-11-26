@@ -185,6 +185,8 @@ export class HUDPlugin extends BaseSystemPlugin {
         this.hideLoading();
         const notice = document.createElement('div');
         notice.id = 'spacegraph-loading';
+        notice.setAttribute('role', 'status');
+        notice.setAttribute('aria-live', 'polite');
         notice.textContent = message;
         Object.assign(notice.style, {
             position: 'absolute',

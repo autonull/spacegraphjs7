@@ -407,7 +407,6 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: HudTheme = {}) {
             background: 'transparent',
             border: 'none',
             color: 'white',
-            outline: 'none',
             flex: '1',
             minWidth: '0',
             fontFamily: 'sans-serif',

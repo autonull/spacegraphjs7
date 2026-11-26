@@ -66,6 +66,14 @@ if (asOf !== undefined) host.setAsOf(asOf);
 
 let localOrdinal = 0;
 let pendingRequestID: string | undefined;
+let promptInFlight = false;
+
+const setPromptBusy = (busy: boolean): void => {
+    const button = el<HTMLButtonElement>('prompt-submit');
+    button.dataset['busy'] = String(busy);
+    button.disabled = busy;
+    button.setAttribute('aria-busy', String(busy));
+};
 
 const localPrompt = (id: string, text: string): void => {
     const ordinal = ++localOrdinal;
@@ -90,12 +98,13 @@ const localPrompt = (id: string, text: string): void => {
 const cancelPrompt = async (): Promise<boolean> => {
     if (readOnly('cancel')) return false;
     const requestID = pendingRequestID;
+    setPromptBusy(false);
     if (!requestID) {
         host.announce(offline ? 'Local answers are immediate — nothing to cancel' : 'No prompt to cancel');
         return false;
     }
     pendingRequestID = undefined;
-    el<HTMLButtonElement>('prompt-submit').dataset['busy'] = 'false';
+    promptInFlight = false;
     try {
         if (!offline) await postJSON(`/api/conversations/${registry.activeID()}/abort`);
         host.announce(`Cancelled ${requestID}`);
@@ -120,19 +129,20 @@ const bindPrompt = (): void => {
 };
 
 const submitPrompt = async (text: string): Promise<void> => {
-    if (!text) return;
-    if (readOnly('commit')) return;
+    if (!text || promptInFlight || readOnly('commit')) return;
     composer?.clear();
     const mode = el<HTMLSelectElement>('prompt-mode').value as 'steer' | 'followUp';
-    const button = el<HTMLButtonElement>('prompt-submit');
-    button.dataset['busy'] = 'true';
+    const requestID = offline ? undefined : `ui-${crypto.randomUUID()}`;
+    if (requestID) {
+        pendingRequestID = requestID;
+        promptInFlight = true;
+        setPromptBusy(true);
+    }
     try {
         if (offline) {
             localPrompt(registry.activeID(), text);
             host.announce(`Local answer accepted ui-local-${localOrdinal}`);
         } else {
-            const requestID = `ui-${crypto.randomUUID()}`;
-            pendingRequestID = requestID;
             const result = await postJSON<{ status: string; requestId: string }>(
                 `/api/conversations/${registry.activeID()}/prompt`,
                 { text, mode, requestId: requestID },
@@ -142,7 +152,10 @@ const submitPrompt = async (text: string): Promise<void> => {
     } catch (error) {
         announceError(error);
     } finally {
-        button.dataset['busy'] = 'false';
+        if (requestID) {
+            promptInFlight = false;
+            setPromptBusy(false);
+        }
     }
 };
 

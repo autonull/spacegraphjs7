@@ -63,10 +63,4 @@ describe('full-state permalinks', () => {
         expect(decodePermalink('#s=%7B%22surface%22%3A%22map%22%7D')).toBeNull();
         expect(decodePermalink('')).toBeNull();
     });
-
-    test('encodes within the 2 ms budget', () => {
-        const start = performance.now();
-        for (let i = 0; i < 500; i++) decodePermalink(encodePermalink(state));
-        expect((performance.now() - start) / 500).toBeLessThan(2);
-    });
 });

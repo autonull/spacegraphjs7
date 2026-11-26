@@ -37,7 +37,7 @@ const cases = [
 for (const entry of cases) {
     test(`${entry.id} re-places the same kernel without inventing causes`, async ({ page }) => {
         const errors = await boot(page, `?shot=${entry.id}`);
-        await expect(page.locator(`#view-switch button[data-view="${entry.id}"]`)).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator(`#view-switch button[data-view="${entry.id}"]`)).toHaveAttribute('aria-pressed', 'true');
         const representation = await call<Representation>(page, 'representation');
         expect(representation.view).toBe(entry.id);
         expect(representation.nodes).toBeGreaterThan(0);
