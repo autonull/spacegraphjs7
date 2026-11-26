@@ -36,6 +36,7 @@ import { chapterCaptions, chapterFrames } from './chapters';
 import { digestKernels, type Digest } from './digest';
 import { focusLens } from './focus';
 import { filterCounts, matchesFilter, type MuteFilter } from './filters';
+import { HistoryTracker } from './history';
 import { instrumentsFor, type Instruments } from './instruments';
 import { LAYOUT_NAMES, lensCompletions, LENS_HELP, parseLens, type LayoutName } from './lens';
 import { bandForOctave, octaveFor, octaveSizeFor, sizeForOctave, type OctaveBand } from './octaves';
@@ -477,9 +478,7 @@ export class DurableHost {
     #shot: string | undefined;
     #story: Story | undefined;
     #feedID = '';
-    #history: readonly Address[] = [];
-    #historyCursor = -1;
-    #suppressHistory = false;
+    readonly #history = new HistoryTracker();
     #threadHead: string | undefined;
     #thread: readonly ThreadStep[] = [];
     #threadPrior: Address | undefined;
@@ -855,28 +854,22 @@ export class DurableHost {
     }
 
     #recordHistory(): void {
-        if (this.#suppressHistory) return;
-        const current = this.#history[this.#historyCursor];
-        const snapshot = this.#snapshot();
-        if (current && encodeAddress(current) === encodeAddress(snapshot)) return;
-        this.#history = [...this.#history.slice(0, this.#historyCursor + 1), snapshot];
-        this.#historyCursor = this.#history.length - 1;
+        this.#history.record(this.#snapshot());
     }
 
     history(): readonly Address[] {
-        return this.#history;
+        return this.#history.entries;
     }
 
     historyIndex(): number {
-        return this.#historyCursor;
+        return this.#history.index;
     }
 
     #stepHistory(delta: -1 | 1): boolean {
-        const cursor = this.#historyCursor + delta;
-        if (cursor < 0 || cursor >= this.#history.length) return false;
-        this.#historyCursor = cursor;
-        this.applyAddress(this.#history[cursor]!);
-        this.announce(`History ${cursor + 1} of ${this.#history.length}`);
+        const address = this.#history.step(delta);
+        if (!address) return false;
+        this.applyAddress(address);
+        this.announce(`History ${this.#history.index + 1} of ${this.#history.entries.length}`);
         return true;
     }
 
@@ -1427,7 +1420,7 @@ export class DurableHost {
     }
 
     applyAddress(address: Address): boolean {
-        this.#suppressHistory = true;
+        this.#history.suppress(true);
         if (address.shot) this.applyShot(address.shot);
         if (address.view) this.setView(address.view);
         if (address.rung) this.setRung(address.rung);
@@ -1444,7 +1437,7 @@ export class DurableHost {
             this.patchView({ focus: undefined, selection: undefined });
             this.renderer.setSelection([]);
         }
-        this.#suppressHistory = false;
+        this.#history.suppress(false);
         return tabApplied || Boolean(address.focus);
     }
 
@@ -1483,8 +1476,8 @@ export class DurableHost {
             lensHelp: () => LENS_HELP,
             lensCompletions: (prefix: string) => lensCompletions(prefix),
             lensHistory: () => this.lensHistorySource?.() ?? [],
-            history: () => this.#history,
-            historyIndex: () => this.#historyCursor,
+            history: () => this.#history.entries,
+            historyIndex: () => this.#history.index,
             historyBack: () => this.historyBack(),
             historyForward: () => this.historyForward(),
             setFeedID: (id: string) => this.setFeedID(id),

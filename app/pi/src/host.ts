@@ -37,7 +37,6 @@ import {
     representationRung,
     representationWeights,
 } from 'spacegraphjs/salience';
-import { lerp } from 'spacegraphjs/utils';
 import type { RenderNode } from '@spacegraphjs/renderer';
 import {
     createInstrumentKit,
@@ -144,6 +143,7 @@ import {
     scopeByNode,
     type GraphLayoutMode,
 } from './graph-layout';
+import { FrameClock } from './frame-clock';
 import { focusRoles, scaleForRole, type FocusScales } from './focus';
 import { paletteCausal, paletteScopeColors, paletteTheme, paletteVars, readTheme } from './theme';
 import { SHOTS, shotById, type Shot } from './shots';
@@ -287,10 +287,7 @@ export class PiHost {
     #global: boolean;
     #revealed = '';
     #pinnedReveal?: string;
-    #clock = false;
-    #ticks = 0;
-    #lastFrame = 0;
-    #fps = 0;
+    readonly #clock = new FrameClock();
     #diagnostics = new URLSearchParams(globalThis.location?.search ?? '').has('debug');
     #activity = new Map<string, number>();
     readonly vision: VisionController;
@@ -819,7 +816,7 @@ export class PiHost {
         this.syncClock();
 
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden) this.#clock = false;
+            if (document.hidden) this.#clock.stop();
             else this.syncClock();
         });
     }
@@ -1072,7 +1069,7 @@ export class PiHost {
                 const styled = applyNodeAttention(withWidgets, size, salience, attention, focusScale);
                 const style = { ...((styled.data?.style as Record<string, string> | undefined) ?? {}) };
                 const pulse = !this.#reducedMotion && activity > 0
-                    ? `${this.#ticks % 2 ? 'pi-pulse-a' : 'pi-pulse-b'} ${blendMs}ms ease-out 1`
+                    ? `${this.#clock.ticks % 2 ? 'pi-pulse-a' : 'pi-pulse-b'} ${blendMs}ms ease-out 1`
                     : 'none';
                 const background =
                     this.#octavePalette && this.#graphLayout === 'octaves'
@@ -1253,7 +1250,7 @@ export class PiHost {
 
     advance(seconds: number): void {
         if (document.hidden) return;
-        this.#ticks++;
+        this.#clock.tick();
         this.simulation.advance(seconds);
         this.#playback?.advance(seconds);
         if (this.#playback?.done) {
@@ -1268,7 +1265,7 @@ export class PiHost {
             this.renderMinimap();
         }
         this.renderPositions();
-        this.#fps = lerp(this.#fps, seconds > 0 ? 1 / seconds : 0, 0.15);
+        this.#clock.sample(seconds);
         this.renderHud();
         this.syncClock();
     }
@@ -2392,9 +2389,9 @@ export class PiHost {
                 this.#paused = value;
                 return this.#paused;
             },
-            clock: () => this.#clock,
-            ticks: () => this.#ticks,
-            fps: () => this.#fps,
+            clock: () => this.#clock.running,
+            ticks: () => this.#clock.ticks,
+            fps: () => this.#clock.fps,
             vision: () => this.vision.scores,
             visionStrategy: () => this.vision.strategy,
             setVisionLoop: (enabled: boolean) => this.setVisionLoop(enabled),
@@ -2647,20 +2644,17 @@ export class PiHost {
         const flying = Boolean(this.#playback && !this.#playback.done);
         const active = this.#activity.size > 0;
         const playing = this.playSession.active && !this.simulation.settled;
-        if (this.#clock && !moving && !flying && !active && !playing) this.#clock = false;
-        if (!this.#clock && (moving || flying || active || playing) && !document.hidden) {
-            this.#clock = true;
-            this.#lastFrame = performance.now();
+        if (this.#clock.running && !moving && !flying && !active && !playing) this.#clock.stop();
+        if (!this.#clock.running && (moving || flying || active || playing) && !document.hidden) {
+            this.#clock.start(performance.now());
             requestAnimationFrame(this.tick);
         }
     }
 
     private tick = (time: number): void => {
-        if (!this.#clock) return;
-        const seconds = Math.min(0.05, Math.max(0, (time - this.#lastFrame) / 1000));
-        this.#lastFrame = time;
-        this.advance(seconds);
-        if (this.#clock) requestAnimationFrame(this.tick);
+        if (!this.#clock.running) return;
+        this.advance(this.#clock.frame(time));
+        if (this.#clock.running) requestAnimationFrame(this.tick);
     };
 
     private bindControls(): void {
@@ -3169,7 +3163,7 @@ export class PiHost {
             `${this.simulation.settled ? 'settled' : 'moving'} · ${view}`;
         const detail =
             `energy ${this.simulation.energy.toFixed(3)} · overlap ${this.vision.scores.overlap.toFixed(2)} · ` +
-            `${Math.round(this.#fps)} fps`;
+            `${Math.round(this.#clock.fps)} fps`;
         const hud = el('hud');
         hud.textContent = this.#diagnostics ? `${context} · ${detail}` : context;
         hud.title = detail;
