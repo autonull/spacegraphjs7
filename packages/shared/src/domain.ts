@@ -222,16 +222,18 @@ export const buildRunView = (
     const activeRun = [...nodes]
         .reverse()
         .find((node) => roleOf(node) === 'run' && dataString(node, 'status') === 'active')?.id;
+    const stepByID = new Map<string, ViewNodeSource>();
+    for (const node of nodes) {
+        if (roleOf(node) !== 'step') continue;
+        const stepID = dataString(node, 'stepId');
+        if (stepID && !stepByID.has(stepID)) stepByID.set(stepID, node);
+    }
     const runByStepID = new Map<string, string>();
 
     for (const node of nodes) {
         const stepID = dataString(node, 'stepId');
         if (!stepID || roleOf(node) !== 'run') continue;
-        const stepNode = nodes.find(
-            (candidate) =>
-                roleOf(candidate) === 'step' && dataString(candidate, 'stepId') === stepID,
-        );
-        runByStepID.set(stepNode?.id ?? stepID, node.id);
+        runByStepID.set(stepByID.get(stepID)?.id ?? stepID, node.id);
     }
 
     return {

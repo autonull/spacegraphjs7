@@ -20,7 +20,7 @@ import {
     CONFIDENCE_STYLE,
 } from './legendUtils';
 
-const CONFIDENCE_STYLE_LOCAL = CONFIDENCE_STYLE;
+
 
 export type GraphLegendBodyProps = {
     theme: RenderTheme;
@@ -176,10 +176,10 @@ export const GraphLegendBody = (props: GraphLegendBodyProps) => {
             {section(
                 i18n.t('ui.sessionGraph.legend.lines'),
                 (
-                    Object.keys(CONFIDENCE_STYLE_LOCAL) as (keyof typeof CONFIDENCE_STYLE_LOCAL)[]
+                    Object.keys(CONFIDENCE_STYLE) as (keyof typeof CONFIDENCE_STYLE)[]
                 ).map((confidence) => (
                     <span class="flex min-w-0 items-center gap-2 text-12-regular text-text-base">
-                        {line(CONFIDENCE_STYLE_LOCAL[confidence])}
+                        {line(CONFIDENCE_STYLE[confidence])}
                         <span class="truncate">
                             {i18n.t(VOCABULARY_KEYS.confidence[confidence])}
                         </span>

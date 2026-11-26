@@ -1,6 +1,6 @@
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { GraphViewData, TurnStats } from '@spacegraphjs/shared/types';
-import { For, Show, type JSX } from 'solid-js';
+import { createMemo, For, Show, type JSX } from 'solid-js';
 
 export type GraphCompareChanges = {
     added: ReadonlySet<string>;
@@ -31,7 +31,8 @@ export const GraphCompare = (props: GraphCompareProps): JSX.Element => {
         { key: 'changed', label: i18n.t('ui.sessionGraph.compare.changed'), ids: changes.changed },
     ];
 
-    const label = (id: string) => model.nodes.find((node) => node.id === id)?.label ?? id;
+    const labels = createMemo(() => new Map(model.nodes.map((node) => [node.id, node.label])));
+    const label = (id: string) => labels().get(id) ?? id;
 
     const empty = () => changes.added.size + changes.removed.size + changes.changed.size === 0;
 

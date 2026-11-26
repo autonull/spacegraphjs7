@@ -21,14 +21,19 @@ export interface SavedQuerySerializeOptions {
 /** A bounded list keeps the facet menu scannable and the session store small. */
 export const MAX_SAVED_QUERIES = 20
 
+const known = (options: SavedQuerySerializeOptions) => [
+  options.knownKinds ?? [],
+  options.knownStatuses ?? [],
+  options.knownDomains ?? [],
+] as const
+
 export const savedQueryFacets = (
   query: SavedQuery,
   options: SavedQuerySerializeOptions = {},
-): GraphFacets =>
-  facetsFromQuery(query.query, options.knownKinds ?? [], options.knownStatuses ?? [], options.knownDomains ?? [])
+): GraphFacets => facetsFromQuery(query.query, ...known(options))
 
 export const defaultSavedQueryLabel = (facets: GraphFacets, options: SavedQuerySerializeOptions = {}): string =>
-  facetsToQuery(facets, options.knownKinds ?? [], options.knownStatuses ?? [], options.knownDomains ?? [])
+  facetsToQuery(facets, ...known(options))
 
 /**
  * Adds the current facets. The same question saved twice updates its label instead of duplicating
@@ -40,7 +45,7 @@ export function saveQuery(
   label?: string,
   options: SavedQuerySerializeOptions = {},
 ): SavedQuery[] {
-  const query = facetsToQuery(facets, options.knownKinds ?? [], options.knownStatuses ?? [], options.knownDomains ?? [])
+  const query = facetsToQuery(facets, ...known(options))
   const trimmed = label?.trim() ?? ''
   const next = [{ label: trimmed.length > 0 ? trimmed : query, query }]
   for (const entry of queries) if (entry.query !== query) next.push(entry)
@@ -52,7 +57,7 @@ export function removeQuery(queries: readonly SavedQuery[], query: string): Save
 }
 
 export function isSavedQuery(queries: readonly SavedQuery[], facets: GraphFacets, options: SavedQuerySerializeOptions = {}): boolean {
-  const query = facetsToQuery(facets, options.knownKinds ?? [], options.knownStatuses ?? [], options.knownDomains ?? [])
+  const query = facetsToQuery(facets, ...known(options))
   return queries.some((entry) => entry.query === query)
 }
 

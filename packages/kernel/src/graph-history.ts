@@ -71,14 +71,8 @@ export class GraphHistory {
      * This should be called after the session kernel has been modified.
      */
     capture(): GraphSnapshot {
-        const version = this.sessionKernel.version;
-        const kernel = this.sessionKernel.state();
-        const label = this.labeler ? this.labeler(version, kernel) : undefined;
-
-        const snapshot: GraphSnapshot = { version, kernel, label };
-        this.snapshots.push(snapshot);
+        const snapshot = this.pushSnapshot(this.sessionKernel.version, this.sessionKernel.state());
         this.prune();
-
         return snapshot;
     }
 
@@ -91,15 +85,17 @@ export class GraphHistory {
             throw new Error(`Version ${version} is outside 0..${this.sessionKernel.version}`);
         }
 
-        const checkedOut = this.sessionKernel.checkout(version);
-        const kernel = checkedOut.state();
-        const label = this.labeler ? this.labeler(version, kernel) : undefined;
-
-        const snapshot: GraphSnapshot = { version, kernel, label };
-        this.snapshots.push(snapshot);
+        const snapshot = this.pushSnapshot(version, this.sessionKernel.checkout(version).state());
         this.snapshots.sort((a, b) => a.version - b.version);
         this.prune();
 
+        return snapshot;
+    }
+
+    private pushSnapshot(version: number, kernel: Kernel): GraphSnapshot {
+        const label = this.labeler ? this.labeler(version, kernel) : undefined;
+        const snapshot: GraphSnapshot = { version, kernel, label };
+        this.snapshots.push(snapshot);
         return snapshot;
     }
 

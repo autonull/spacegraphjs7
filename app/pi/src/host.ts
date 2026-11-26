@@ -2923,20 +2923,35 @@ export class PiHost {
         this.lens.refreshInstruments(node);
     }
 
+    private captureDrag(
+        element: HTMLElement,
+        event: PointerEvent,
+        move: (next: PointerEvent) => void,
+        end: () => void,
+    ): void {
+        event.preventDefault();
+        element.setPointerCapture(event.pointerId);
+        const up = () => {
+            element.removeEventListener('pointermove', move);
+            element.removeEventListener('pointerup', up);
+            end();
+        };
+        element.addEventListener('pointermove', move);
+        element.addEventListener('pointerup', up);
+    }
+
     private bindTranscript(): void {
         const toggle = el<HTMLButtonElement>('transcript-toggle');
         const handle = el('transcript-resize');
         toggle.addEventListener('click', () => this.toggleTranscript());
         handle.addEventListener('pointerdown', (event) => {
-            event.preventDefault();
-            handle.setPointerCapture(event.pointerId);
             const transcript = el('transcript');
             const surface = el('surface');
             const startX = event.clientX;
             const startY = event.clientY;
             const startWidth = transcript.getBoundingClientRect().width;
             const startHeight = transcript.getBoundingClientRect().height;
-            const move = (next: PointerEvent) => {
+            this.captureDrag(handle, event, (next) => {
                 const stacked = this.#arrangement === 'stacked';
                 const size = stacked
                     ? Math.min(
@@ -2951,10 +2966,7 @@ export class PiHost {
                 else this.#transcriptWidth = size;
                 surface.style.setProperty('--transcript-size', `${size}px`);
                 if (this.#arrangement === 'floating') transcript.style.width = `${size}px`;
-            };
-            const up = () => {
-                handle.removeEventListener('pointermove', move);
-                handle.removeEventListener('pointerup', up);
+            }, () => {
                 this.recordEvent('transcript:resize', {
                     arrangement: this.#arrangement,
                     size:
@@ -2962,17 +2974,13 @@ export class PiHost {
                             ? this.#transcriptHeight
                             : this.#transcriptWidth,
                 });
-            };
-            handle.addEventListener('pointermove', move);
-            handle.addEventListener('pointerup', up);
+            });
         });
 
         const pane = el('transcript');
         const overview = el('transcript-overview');
         pane.addEventListener('scroll', () => this.updateTranscriptOverview());
         overview.addEventListener('pointerdown', (event) => {
-            event.preventDefault();
-            overview.setPointerCapture(event.pointerId);
             const box = overview.getBoundingClientRect();
             const apply = (clientY: number) => {
                 const ratio = Math.min(
@@ -2981,15 +2989,13 @@ export class PiHost {
                 );
                 pane.scrollTop = ratio * Math.max(pane.scrollHeight - pane.clientHeight, 0);
             };
-            const move = (next: PointerEvent) => apply(next.clientY);
-            const up = () => {
-                overview.removeEventListener('pointermove', move);
-                overview.removeEventListener('pointerup', up);
-                this.recordEvent('transcript:scroll', { ratio: pane.scrollTop });
-            };
+            this.captureDrag(
+                overview,
+                event,
+                (next) => apply(next.clientY),
+                () => this.recordEvent('transcript:scroll', { ratio: pane.scrollTop }),
+            );
             apply(event.clientY);
-            overview.addEventListener('pointermove', move);
-            overview.addEventListener('pointerup', up);
         });
     }
 
