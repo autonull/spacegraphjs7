@@ -1,5 +1,5 @@
 import { Box3, Camera, OrthographicCamera, PerspectiveCamera, Vector3 } from 'three';
-import { MathConst } from '../core/constants';
+import { MathConst, Zoom } from '../core/constants';
 import type { Point2D } from '../types';
 
 export type { Point2D };
@@ -23,9 +23,12 @@ export function visibleHeightAtDistance(fovDegrees: number, distance: number): n
  * The distance a camera needs to frame a node: wide enough to show the node's own width, and never
  * tighter than the floor that keeps a card readable.
  */
-export function focusRadiusOf(node: { data?: { width?: unknown } }, floor = 150): number {
+export function focusRadiusOf(
+    node: { data?: { width?: unknown } },
+    floor = Zoom.MIN_RADIUS,
+): number {
     const width = node.data?.width;
-    return typeof width === 'number' ? Math.max(width * 1.5, floor) : floor;
+    return typeof width === 'number' ? Math.max(width * Zoom.MULTIPLIER, floor) : floor;
 }
 
 /**

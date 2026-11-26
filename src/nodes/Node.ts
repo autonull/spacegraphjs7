@@ -9,6 +9,7 @@ import {
     createBounds3D,
     rectOf,
 } from '../core/Surface';
+import { Animation } from '../core/constants';
 import { resolveTheme, applyNodeTheme, type ResolvedTheme } from '../core/theme';
 import { projectToNdc } from '../utils/projection';
 import { safeClone } from '../utils/math';
@@ -565,7 +566,7 @@ export abstract class Node extends Surface {
         return this;
     }
 
-    fade(opacity: number, duration = 0.3): this {
+    fade(opacity: number, duration: number = Animation.Duration.FAST): this {
         gsap.to(this.object, {
             duration,
             onUpdate: () => {

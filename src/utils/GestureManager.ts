@@ -1,3 +1,4 @@
+import { Input, Zoom } from '../core/constants';
 import { clamp } from './math';
 
 export interface Point {
@@ -21,9 +22,9 @@ export function calculatePinchZoom(
     currentDistance: number,
     previousDistance: number,
     currentRadius: number,
-    zoomSpeedFactor = 0.005,
+    zoomSpeedFactor = Input.ZOOM_SPEED_FACTOR,
     minRadius = 10,
-    maxRadius = 5000,
+    maxRadius = Zoom.MAX_RADIUS,
 ): number {
     const zoomDelta = (currentDistance - previousDistance) * (currentRadius * zoomSpeedFactor);
     return clamp(currentRadius - zoomDelta, minRadius, maxRadius);
@@ -33,7 +34,7 @@ export function calculatePan(
     current: Point,
     previous: Point,
     currentRadius: number,
-    panSpeedFactor = 0.002,
+    panSpeedFactor = Input.PAN_SPEED_FACTOR,
 ): Point {
     const panSpeed = currentRadius * panSpeedFactor;
     return { x: -(current.x - previous.x) * panSpeed, y: (current.y - previous.y) * panSpeed };

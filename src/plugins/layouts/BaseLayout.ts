@@ -2,6 +2,7 @@
 // Abstract base class for layout plugins with common helpers
 
 import { Vector3 } from 'three';
+import { Animation } from '../../core/constants';
 import { BaseSystemPlugin } from '../BaseSystemPlugin';
 import type { Node } from '../../nodes/Node';
 import { childrenByID } from '../../utils/collection';
@@ -96,7 +97,7 @@ export abstract class BaseLayout<
         const nodes = this.ownedNodes(config);
         if (!nodes.length) return;
         this.place(nodes, config);
-        this.commit(config.duration ?? 1.0);
+        this.commit(config.duration ?? Animation.Duration.DEFAULT);
     }
 
     /** The plugin-facing name for the same thing. */
@@ -202,7 +203,7 @@ export abstract class BaseLayout<
     /**
      * Settle the edges after a layout and announce it.
      */
-    protected commit(duration = this.config.duration ?? 1.0): void {
+    protected commit(duration = this.config.duration ?? Animation.Duration.DEFAULT): void {
         for (const edge of this.graph.getEdges()) edge.update?.();
         this.requestFrame();
         this.events.emit('layout:applied', {

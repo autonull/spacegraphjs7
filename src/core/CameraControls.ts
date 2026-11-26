@@ -6,6 +6,7 @@ import { Camera, OrthographicCamera, PerspectiveCamera, Spherical, Vector3 } fro
 import type { SpaceGraph } from '../SpaceGraph';
 import type { KeyboardScope } from '../types';
 import { fitOrthoFrustum, visibleWorldExtent } from '../utils/CameraUtils';
+import { Animation, Input, Zoom } from './constants';
 import { isEditableTarget } from '../utils/DOMUtils';
 import { clamp, lerp } from '../utils/math';
 import type { Surface } from './Surface';
@@ -75,7 +76,7 @@ const KEY_CONFIG = {
         { key: 'z', factor: 0.9 },
         { key: 'x', factor: 1.1 },
     ] as const,
-    speed: { pan: 10.0, zoom: 0.1, rotate: 0.05 },
+    speed: { pan: 10.0, zoom: Zoom.SPEED, rotate: 0.05 },
 } as const;
 
 const MIN_ORTHO_ZOOM = 0.01;
@@ -169,8 +170,8 @@ export class CameraControls {
 
     rotate(dx: number, dy: number): void {
         if (!this.config.enableRotate || (this.isOrthographic && !this.orbitInOrthographic)) return;
-        this.sphericalDelta.theta -= dx * this.config.rotateSpeed * 0.005;
-        this.sphericalDelta.phi -= dy * this.config.rotateSpeed * 0.005;
+        this.sphericalDelta.theta -= dx * this.config.rotateSpeed * Input.ORBIT_SPEED_FACTOR;
+        this.sphericalDelta.phi -= dy * this.config.rotateSpeed * Input.ORBIT_SPEED_FACTOR;
         this.requestFrame();
     }
 
@@ -339,15 +340,20 @@ export class CameraControls {
         this.spherical.setFromVector3(_tempOffset);
     }
 
-    flyTo(target: Vector3, distance: number, duration = 1.5, zoom?: number): void {
+    flyTo(
+        target: Vector3,
+        distance: number,
+        duration: number = Animation.Duration.LAYOUT,
+        zoom?: number,
+    ): void {
         this.setTargetSmooth(target, distance, duration, zoom);
     }
 
-    zoomTo(target: Vector3, distance: number, duration = 1.5): void {
+    zoomTo(target: Vector3, distance: number, duration: number = Animation.Duration.LAYOUT): void {
         this.zoomToPoint(target, distance, duration);
     }
 
-    zoomToSurface3D(surface: Surface, duration = 1.5): void {
+    zoomToSurface3D(surface: Surface, duration: number = Animation.Duration.LAYOUT): void {
         if (!surface.bounds3D) return;
         const bounds = surface.bounds3D;
         const maxDim = Math.max(bounds.size.x, bounds.size.y, bounds.size.z);
@@ -413,7 +419,12 @@ export class CameraControls {
         return flight;
     }
 
-    setTargetSmooth(target: Vector3, radius: number, duration = 1.0, zoom?: number): void {
+    setTargetSmooth(
+        target: Vector3,
+        radius: number,
+        duration: number = Animation.Duration.DEFAULT,
+        zoom?: number,
+    ): void {
         const flight = this.beginFlight(duration);
         flight.fromTarget.copy(this.target);
         flight.fromRadius = this.spherical.radius;

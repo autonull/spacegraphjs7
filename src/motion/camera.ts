@@ -1,6 +1,8 @@
 // P4.2. Camera verbs are host-registered behaviors. The library sequences commands against a host
 // adapter built from CameraController / CameraControls; it never chooses a flight or a zoom level.
 
+import { Animation } from '../core/constants';
+
 export const CAMERA_VERBS = ['fit', 'focus', 'flyTo', 'orbit', 'zoom', 'reset'] as const;
 export type CameraVerb = (typeof CAMERA_VERBS)[number];
 
@@ -57,14 +59,22 @@ export function contentZoomBounds(fitZoom: number, policy: CameraPolicy = DEFAUL
 }
 
 const DEFAULTS: Record<CameraVerb, CameraHandler> = {
-    fit: (command, adapter) => adapter.fit(command.ids, command.duration ?? 1.5),
-    focus: (command, adapter) => adapter.focus(command.ids?.[0] ?? '', command.duration ?? 1),
+    fit: (command, adapter) =>
+        adapter.fit(command.ids, command.duration ?? Animation.Duration.LAYOUT),
+    focus: (command, adapter) =>
+        adapter.focus(command.ids?.[0] ?? '', command.duration ?? Animation.Duration.DEFAULT),
     flyTo: (command, adapter) => {
         if (!command.position || !command.target) return;
-        adapter.flyTo(command.position, command.target, command.duration ?? 1.5);
+        adapter.flyTo(
+            command.position,
+            command.target,
+            command.duration ?? Animation.Duration.LAYOUT,
+        );
     },
-    orbit: (command, adapter) => adapter.orbit(command.amount ?? 0, command.duration ?? 1.5),
-    zoom: (command, adapter) => adapter.zoom(command.amount ?? 1, command.duration ?? 1),
+    orbit: (command, adapter) =>
+        adapter.orbit(command.amount ?? 0, command.duration ?? Animation.Duration.LAYOUT),
+    zoom: (command, adapter) =>
+        adapter.zoom(command.amount ?? 1, command.duration ?? Animation.Duration.DEFAULT),
     reset: (_command, adapter) => adapter.reset(),
 };
 
