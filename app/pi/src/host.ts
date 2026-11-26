@@ -788,8 +788,7 @@ export class PiHost {
         });
 
         this.refresh();
-        this.simulation.settle();
-        this.renderPositions();
+        this.settlePositions();
         this.renderGallery();
         mountCatalog(el('catalog'), this.#catalog);
         this.renderProofLine();
@@ -896,8 +895,7 @@ export class PiHost {
             this.#initialFitTimer = this.debounceFit(this.#initialFitTimer, () => {
                 if (this.#initialFitDone) return;
                 this.#initialFitDone = true;
-                this.simulation.settle();
-                this.renderPositions();
+                this.settlePositions();
                 this.fitView();
                 requestAnimationFrame(() => this.paint());
             });
@@ -1222,6 +1220,11 @@ export class PiHost {
         if (!spec.parent) return spec.id;
         const parent = this.#specs.find((candidate) => candidate.id === spec.parent);
         return parent ? `${this.scopePath(parent)}/${spec.id}` : spec.id;
+    }
+
+    private settlePositions(): void {
+        this.simulation.settle();
+        this.renderPositions();
     }
 
     renderPositions(): void {
@@ -1607,8 +1610,7 @@ export class PiHost {
             this.renderPositions();
             this.syncClock();
         } else {
-            this.simulation.settle();
-            this.renderPositions();
+            this.settlePositions();
         }
         el('transcript-list').scrollTop = scroll;
         this.alignTranscript();
@@ -2303,8 +2305,7 @@ export class PiHost {
                 this.refresh();
                 this.renderTranscript();
                 this.renderTurnMap();
-                this.simulation.settle();
-                this.renderPositions();
+                this.settlePositions();
                 return this.#kernel.nodes.length;
             },
             follow: () => this.#followMode,

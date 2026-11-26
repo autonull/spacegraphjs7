@@ -46,6 +46,46 @@ function makeNodeWithSize(graph: Graph, id: string, width: number, height: numbe
     graph.addNode(node);
 }
 
+const FLAT_SIZES: readonly (readonly [string, number, number])[] = [
+    ['n1', 100, 60],
+    ['n2', 250, 120],
+    ['n3', 400, 200],
+    ['n4', 100, 60],
+    ['n5', 250, 120],
+];
+const TREE_SIZES: readonly (readonly [string, number, number])[] = [
+    ['root', 400, 200],
+    ['child1', 250, 120],
+    ['child2', 100, 60],
+    ['child3', 250, 120],
+    ['grandchild1', 100, 60],
+];
+const TREE_EDGES: readonly (readonly [string, string])[] = [
+    ['root', 'child1'],
+    ['root', 'child2'],
+    ['root', 'child3'],
+    ['child1', 'grandchild1'],
+];
+const addEdges = (graph: Graph, edges: readonly (readonly [string, string])[]): void =>
+    edges.forEach(([source, target], index) =>
+        graph.addEdge({ id: `e${index + 1}`, type: 'Edge', source, target }),
+    );
+const addUnsizedNode = (graph: Graph, id: string): void => {
+    graph.addNode(new ShapeNode(undefined, { id, type: 'ShapeNode', data: {} }));
+};
+
+function seedFlat(graph: Graph, edges = false): void {
+    FLAT_SIZES.forEach(([id, width, height]) => makeNodeWithSize(graph, id, width, height));
+    addUnsizedNode(graph, 'n6');
+    if (edges) addEdges(graph, [['n1', 'n2'], ['n2', 'n3'], ['n3', 'n4']]);
+}
+
+function seedTree(graph: Graph): void {
+    TREE_SIZES.forEach(([id, width, height]) => makeNodeWithSize(graph, id, width, height));
+    addUnsizedNode(graph, 'n6');
+    addEdges(graph, TREE_EDGES);
+}
+
 function getPositions(graph: Graph): Map<string, { x: number; y: number; z: number }> {
     const positions = new Map();
     for (const node of graph.getNodes()) {
@@ -107,64 +147,25 @@ const testCases: LayoutTestCase[] = [
     {
         name: 'ForceLayout',
         createLayout: (options) => new ForceLayout({ iterations: 200, nodePadding: 20, ...options }),
-        setupGraph: (graph) => {
-            makeNodeWithSize(graph, 'n1', 100, 60);
-            makeNodeWithSize(graph, 'n2', 250, 120);
-            makeNodeWithSize(graph, 'n3', 400, 200);
-            makeNodeWithSize(graph, 'n4', 100, 60);
-            makeNodeWithSize(graph, 'n5', 250, 120);
-            const n6 = new ShapeNode(undefined, { id: 'n6', type: 'ShapeNode', data: {} });
-            graph.addNode(n6);
-            graph.addEdge({ id: 'e1', type: 'Edge', source: 'n1', target: 'n2' });
-            graph.addEdge({ id: 'e2', type: 'Edge', source: 'n2', target: 'n3' });
-            graph.addEdge({ id: 'e3', type: 'Edge', source: 'n3', target: 'n4' });
-        },
+        setupGraph: (graph) => seedFlat(graph, true),
         strictNonOverlap: false,
     },
     {
         name: 'GridLayout',
         createLayout: (options) => new GridLayout({ columns: 3, nodePadding: 20, ...options }),
-        setupGraph: (graph) => {
-            makeNodeWithSize(graph, 'n1', 100, 60);
-            makeNodeWithSize(graph, 'n2', 250, 120);
-            makeNodeWithSize(graph, 'n3', 400, 200);
-            makeNodeWithSize(graph, 'n4', 100, 60);
-            makeNodeWithSize(graph, 'n5', 250, 120);
-            const n6 = new ShapeNode(undefined, { id: 'n6', type: 'ShapeNode', data: {} });
-            graph.addNode(n6);
-        },
+        setupGraph: seedFlat,
         strictNonOverlap: true,
     },
     {
         name: 'CircularLayout',
         createLayout: (options) => new CircularLayout({ nodePadding: 20, ...options }),
-        setupGraph: (graph) => {
-            makeNodeWithSize(graph, 'n1', 100, 60);
-            makeNodeWithSize(graph, 'n2', 250, 120);
-            makeNodeWithSize(graph, 'n3', 400, 200);
-            makeNodeWithSize(graph, 'n4', 100, 60);
-            makeNodeWithSize(graph, 'n5', 250, 120);
-            const n6 = new ShapeNode(undefined, { id: 'n6', type: 'ShapeNode', data: {} });
-            graph.addNode(n6);
-        },
+        setupGraph: seedFlat,
         strictNonOverlap: true,
     },
     {
         name: 'TreeLayout',
         createLayout: (options) => new TreeLayout({ nodePadding: 20, ...options }),
-        setupGraph: (graph) => {
-            makeNodeWithSize(graph, 'root', 400, 200);
-            makeNodeWithSize(graph, 'child1', 250, 120);
-            makeNodeWithSize(graph, 'child2', 100, 60);
-            makeNodeWithSize(graph, 'child3', 250, 120);
-            makeNodeWithSize(graph, 'grandchild1', 100, 60);
-            const n6 = new ShapeNode(undefined, { id: 'n6', type: 'ShapeNode', data: {} });
-            graph.addNode(n6);
-            graph.addEdge({ id: 'e1', type: 'Edge', source: 'root', target: 'child1' });
-            graph.addEdge({ id: 'e2', type: 'Edge', source: 'root', target: 'child2' });
-            graph.addEdge({ id: 'e3', type: 'Edge', source: 'root', target: 'child3' });
-            graph.addEdge({ id: 'e4', type: 'Edge', source: 'child1', target: 'grandchild1' });
-        },
+        setupGraph: seedTree,
         checkSizeAware: (graph) => {
             // Verify that sibling spacing adapts to node sizes
             const child1 = graph.queryEngine.getNode('child1')!;
@@ -178,19 +179,7 @@ const testCases: LayoutTestCase[] = [
     {
         name: 'HierarchicalLayout',
         createLayout: (options) => new HierarchicalLayout({ rootId: 'root', nodePadding: 20, ...options }),
-        setupGraph: (graph) => {
-            makeNodeWithSize(graph, 'root', 400, 200);
-            makeNodeWithSize(graph, 'child1', 250, 120);
-            makeNodeWithSize(graph, 'child2', 100, 60);
-            makeNodeWithSize(graph, 'child3', 250, 120);
-            makeNodeWithSize(graph, 'grandchild1', 100, 60);
-            const n6 = new ShapeNode(undefined, { id: 'n6', type: 'ShapeNode', data: {} });
-            graph.addNode(n6);
-            graph.addEdge({ id: 'e1', type: 'Edge', source: 'root', target: 'child1' });
-            graph.addEdge({ id: 'e2', type: 'Edge', source: 'root', target: 'child2' });
-            graph.addEdge({ id: 'e3', type: 'Edge', source: 'root', target: 'child3' });
-            graph.addEdge({ id: 'e4', type: 'Edge', source: 'child1', target: 'grandchild1' });
-        },
+        setupGraph: seedTree,
         checkSizeAware: (graph) => {
             // Verify that sibling spacing adapts to node sizes
             const child1 = graph.queryEngine.getNode('child1')!;
@@ -203,19 +192,7 @@ const testCases: LayoutTestCase[] = [
     {
         name: 'RadialLayout',
         createLayout: (options) => new RadialLayout({ rootId: 'root', nodePadding: 20, ...options }),
-        setupGraph: (graph) => {
-            makeNodeWithSize(graph, 'root', 400, 200);
-            makeNodeWithSize(graph, 'child1', 250, 120);
-            makeNodeWithSize(graph, 'child2', 100, 60);
-            makeNodeWithSize(graph, 'child3', 250, 120);
-            makeNodeWithSize(graph, 'grandchild1', 100, 60);
-            const n6 = new ShapeNode(undefined, { id: 'n6', type: 'ShapeNode', data: {} });
-            graph.addNode(n6);
-            graph.addEdge({ id: 'e1', type: 'Edge', source: 'root', target: 'child1' });
-            graph.addEdge({ id: 'e2', type: 'Edge', source: 'root', target: 'child2' });
-            graph.addEdge({ id: 'e3', type: 'Edge', source: 'root', target: 'child3' });
-            graph.addEdge({ id: 'e4', type: 'Edge', source: 'child1', target: 'grandchild1' });
-        },
+        setupGraph: seedTree,
         checkSizeAware: (graph) => {
             // Verify that radial spacing adapts to node sizes
             const child1 = graph.queryEngine.getNode('child1')!;
@@ -229,13 +206,7 @@ const testCases: LayoutTestCase[] = [
         name: 'ClusterLayout',
         createLayout: (options) => new ClusterLayout({ clusterBy: 'category', nodePadding: 20, ...options }),
         setupGraph: (graph) => {
-            makeNodeWithSize(graph, 'n1', 100, 60);
-            makeNodeWithSize(graph, 'n2', 250, 120);
-            makeNodeWithSize(graph, 'n3', 400, 200);
-            makeNodeWithSize(graph, 'n4', 100, 60);
-            makeNodeWithSize(graph, 'n5', 250, 120);
-            const n6 = new ShapeNode(undefined, { id: 'n6', type: 'ShapeNode', data: {} });
-            graph.addNode(n6);
+            seedFlat(graph);
             graph.queryEngine.getNode('n1')!.data.category = 'A';
             graph.queryEngine.getNode('n2')!.data.category = 'A';
             graph.queryEngine.getNode('n3')!.data.category = 'B';
@@ -258,13 +229,7 @@ const testCases: LayoutTestCase[] = [
         name: 'TimelineLayout',
         createLayout: (options) => new TimelineLayout({ timeField: 'timestamp', nodePadding: 20, staggerLayout: false, ...options }),
         setupGraph: (graph) => {
-            makeNodeWithSize(graph, 'n1', 100, 60);
-            makeNodeWithSize(graph, 'n2', 250, 120);
-            makeNodeWithSize(graph, 'n3', 400, 200);
-            makeNodeWithSize(graph, 'n4', 100, 60);
-            makeNodeWithSize(graph, 'n5', 250, 120);
-            const n6 = new ShapeNode(undefined, { id: 'n6', type: 'ShapeNode', data: {} });
-            graph.addNode(n6);
+            seedFlat(graph);
             graph.queryEngine.getNode('n1')!.data.timestamp = 1000;
             graph.queryEngine.getNode('n2')!.data.timestamp = 2000;
             graph.queryEngine.getNode('n3')!.data.timestamp = 3000;

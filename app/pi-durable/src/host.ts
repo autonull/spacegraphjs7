@@ -865,20 +865,21 @@ export class DurableHost {
         return this.#historyCursor;
     }
 
-    historyBack(): boolean {
-        if (this.#historyCursor <= 0) return false;
-        this.#historyCursor -= 1;
-        this.applyAddress(this.#history[this.#historyCursor]!);
-        this.announce(`History ${this.#historyCursor + 1} of ${this.#history.length}`);
+    #stepHistory(delta: -1 | 1): boolean {
+        const cursor = this.#historyCursor + delta;
+        if (cursor < 0 || cursor >= this.#history.length) return false;
+        this.#historyCursor = cursor;
+        this.applyAddress(this.#history[cursor]!);
+        this.announce(`History ${cursor + 1} of ${this.#history.length}`);
         return true;
     }
 
+    historyBack(): boolean {
+        return this.#stepHistory(-1);
+    }
+
     historyForward(): boolean {
-        if (this.#historyCursor >= this.#history.length - 1) return false;
-        this.#historyCursor += 1;
-        this.applyAddress(this.#history[this.#historyCursor]!);
-        this.announce(`History ${this.#historyCursor + 1} of ${this.#history.length}`);
-        return true;
+        return this.#stepHistory(1);
     }
 
     threadActive(): boolean {
@@ -1425,7 +1426,7 @@ export class DurableHost {
         if (address.view) this.setView(address.view);
         if (address.rung) this.setRung(address.rung);
         if (address.layout) this.setLayout(address.layout);
-        if (address.asOf !== undefined) this.setAsOf(address.asOf);
+        if (address.asOf !== this.#asOf) this.setAsOf(address.asOf);
         if (address.zoom !== undefined && address.zoom > 0) {
             const viewport = this.renderer.getViewport?.();
             if (viewport) this.renderer.setViewport({ zoom: address.zoom, center: viewport.center });

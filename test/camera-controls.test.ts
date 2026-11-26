@@ -1,17 +1,9 @@
 import * as THREE from 'three';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CameraControls } from '../src/core/CameraControls';
+import { makeCameraControls } from './fixtures/camera';
 
-const makeControls = () => {
-    const container = document.createElement('div');
-    Object.defineProperty(container, 'clientWidth', { value: 800 });
-    Object.defineProperty(container, 'clientHeight', { value: 600 });
-    const camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 10000);
-    camera.position.set(0, 0, 500);
-    const controls = new CameraControls(camera, container, { keyboard: false });
-    controls.update();
-    return { controls, camera };
-};
+const makeControls = () => makeCameraControls({ keyboard: false }, true);
 
 describe('U3.15 orbit gating and camera pose', () => {
     afterEach(() => vi.restoreAllMocks());

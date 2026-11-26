@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { boot } from './boot';
+import { boot, call } from './boot';
 
 test('asOf renders a historical view with a badge and no commit controls', async ({ page }) => {
     const errors = await boot(page, '?asOf=2');
@@ -11,4 +11,21 @@ test('asOf renders a historical view with a badge and no commit controls', async
 
     await page.goto('/?asOf=4');
     await expect(page.locator('#canvas')).toContainText('Second answer.');
+});
+
+test('history navigation restores the present after an as-of view', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    type StoredAsOf = { readonly asOf?: number };
+
+    await call(page, 'setAsOf', 2);
+    expect((await call<StoredAsOf>(page, 'address')).asOf).toBe(2);
+    await call(page, 'setAsOf');
+    expect((await call<StoredAsOf>(page, 'address')).asOf).toBeUndefined();
+
+    await call(page, 'historyBack');
+    expect((await call<StoredAsOf>(page, 'address')).asOf).toBe(2);
+    await call(page, 'historyForward');
+    expect((await call<StoredAsOf>(page, 'address')).asOf).toBeUndefined();
+    await expect(page.locator('#asof-badge')).toBeHidden();
+    expect(errors).toEqual([]);
 });

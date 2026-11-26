@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { CameraControls } from '../src/core/CameraControls';
+import { makeCameraControls } from './fixtures/camera';
 import { clamp, denormalizeZoom, normalizeZoom, type ZoomRange } from '../src/core/zoom';
 
 const PERSPECTIVE: ZoomRange = { min: 10, max: 10000, closerIsLarger: false };
@@ -53,14 +53,7 @@ describe('clamp', () => {
 });
 
 describe('CameraControls orthographic mode', () => {
-    const makeControls = () => {
-        const container = document.createElement('div');
-        Object.defineProperty(container, 'clientWidth', { value: 800 });
-        Object.defineProperty(container, 'clientHeight', { value: 600 });
-        const camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 10000);
-        camera.position.set(0, 0, 500);
-        return { controls: new CameraControls(camera, container), camera };
-    };
+    const makeControls = () => makeCameraControls();
 
     it('switches to an orthographic camera and back', () => {
         const { controls } = makeControls();

@@ -28,7 +28,6 @@ import {
     ForceLayout,
     GridLayout,
     HierarchicalLayout,
-    InteractionPlugin,
     PhysicsPlugin,
     RadialLayout,
 } from 'spacegraphjs/plugins';
@@ -1442,31 +1441,6 @@ describe('EventManager (Batching)', () => {
 // ============================================================
 // Interaction tests
 // ============================================================
-
-describe('InteractionPlugin', () => {
-    let interaction: InteractionPlugin;
-
-    beforeEach(() => {
-        // Make camera look like a PerspectiveCamera for Raycaster
-        sg.renderer.camera.isPerspectiveCamera = true;
-        sg.renderer.camera.matrixWorld = new THREE.Matrix4();
-        sg.renderer.camera.matrixWorldInverse = new THREE.Matrix4();
-        sg.renderer.camera.projectionMatrix = new THREE.Matrix4();
-        sg.renderer.camera.projectionMatrixInverse = new THREE.Matrix4();
-        sg.cameraControls = { flyTo: vi.fn() };
-        interaction = new InteractionPlugin();
-        interaction.init(sg, sg.graph, sg.events);
-        sg.pluginManager.register('InteractionPlugin', interaction);
-    });
-
-    it('emits node:dblclick event when a node is double clicked', () => {
-        // Test removed - now uses InputManager abstraction
-    });
-
-    it('emits edge:dblclick event and flies to target node', () => {
-        // Test removed - now uses InputManager abstraction
-    });
-});
 
 // ============================================================
 // Phase 4: Physics & Ergonomics Plugins

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
-import { CameraControls } from 'spacegraphjs/core';
+import { makeCameraControls } from './fixtures/camera';
 import { createCameraFingering, FingerManager } from 'spacegraphjs/input';
 import { ShapeNode } from 'spacegraphjs/nodes';
 import type { Node } from 'spacegraphjs/nodes';
@@ -55,16 +55,7 @@ class HoldingFingering extends RecordingFingering {
 }
 
 describe('The camera mouse map', () => {
-    const makeControls = () => {
-        const container = document.createElement('div');
-        Object.defineProperty(container, 'clientWidth', { value: 800 });
-        Object.defineProperty(container, 'clientHeight', { value: 600 });
-        const camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 10000);
-        camera.position.set(0, 0, 500);
-        const controls = new CameraControls(camera, container, { keyboard: false });
-        controls.update();
-        return { controls, camera };
-    };
+    const makeControls = () => makeCameraControls({ keyboard: false }, true);
 
     it('pans the view with the right button', () => {
         const { controls } = makeControls();
@@ -255,16 +246,7 @@ describe('The left button over the void', () => {
 });
 
 describe('The wheel', () => {
-    const makeControls = () => {
-        const container = document.createElement('div');
-        Object.defineProperty(container, 'clientWidth', { value: 800 });
-        Object.defineProperty(container, 'clientHeight', { value: 600 });
-        const camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 10000);
-        camera.position.set(0, 0, 500);
-        const controls = new CameraControls(camera, container, { keyboard: false });
-        controls.update();
-        return { controls, camera };
-    };
+    const makeControls = () => makeCameraControls({ keyboard: false }, true);
 
     const canvas = {
         getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }) as DOMRect,

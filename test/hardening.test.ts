@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { CameraControls } from '../src/core/CameraControls';
+import { makeCameraControls } from './fixtures/camera';
 import { Node, type VisibilityContext } from '../src/nodes/Node';
 import { HierarchicalLayout } from '../src/plugins/layouts/HierarchicalLayout';
 import type { NodeData, NodeSpec } from '../src/types';
@@ -93,15 +93,8 @@ describe('L1.14 per-node LOD', () => {
 });
 
 describe('L1.6 container-scoped keyboard', () => {
-    const makeControls = (keyboard: false | 'container' | 'window') => {
-        const container = document.createElement('div');
-        Object.defineProperty(container, 'clientWidth', { value: 800 });
-        Object.defineProperty(container, 'clientHeight', { value: 600 });
-        const camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 10000);
-        camera.position.set(0, 0, 500);
-        const controls = new CameraControls(camera, container, { keyboard });
-        return { controls, camera, container };
-    };
+    const makeControls = (keyboard: false | 'container' | 'window') =>
+        makeCameraControls({ keyboard });
 
     it('moves the camera for keys on the container when scoped to the container', () => {
         const { controls, camera, container } = makeControls('container');
