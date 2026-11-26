@@ -86,13 +86,15 @@ export class GraphQuery {
         return found;
     }
 
-    getNodesNear(
-        position: { x: number; y: number; z: number; distanceTo: (p: any) => number },
-        radius: number,
-    ): Node[] {
+    /** Nodes within `radius` of a plain world coordinate, using squared distance to avoid sqrt. */
+    getNodesNear(position: { x: number; y: number; z: number }, radius: number): Node[] {
         const result: Node[] = [];
+        const radiusSquared = radius * radius;
         for (const node of this.nodes.values()) {
-            if (node.position.distanceTo(position) <= radius) result.push(node);
+            const dx = node.position.x - position.x;
+            const dy = node.position.y - position.y;
+            const dz = node.position.z - position.z;
+            if (dx * dx + dy * dy + dz * dz <= radiusSquared) result.push(node);
         }
         return result;
     }
@@ -130,7 +132,11 @@ export class GraphQuery {
     }
 
     getNodeDegree(nodeId: string): number {
-        return this.getEdgesForNode(nodeId).length;
+        let degree = 0;
+        for (const edge of this.edges.values()) {
+            if (edge.source.id === nodeId || edge.target.id === nodeId) degree++;
+        }
+        return degree;
     }
 
     getHubs(minDegree: number): Node[] {

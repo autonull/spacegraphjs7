@@ -303,6 +303,9 @@ export type GraphRenderer = {
         options: { theme: RenderTheme; projection: Projection },
     ): Promise<void>;
     setModel(model: RenderModel): void;
+    /** The model the renderer currently holds. Optional: an adapter that does not keep a model
+     * leaves it out, and a host reads that as "no introspection", not as an empty graph. */
+    getModel?(): RenderModel | null;
     /** Apply an incremental patch to the current model. Optional: a renderer that does not support
      * incremental updates must no-op, never throw. */
     applyPatch?(patch: RenderModelPatch): void;

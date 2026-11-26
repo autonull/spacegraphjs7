@@ -30,6 +30,11 @@ export abstract class ModelRenderer extends BaseGraphRenderer {
         this.#theme = initialTheme;
     }
 
+    /** The model the renderer currently holds, for hosts that need to inspect it. */
+    getModel(): RenderModel | null {
+        return this.#model;
+    }
+
     protected get model(): RenderModel | null {
         return this.#model;
     }

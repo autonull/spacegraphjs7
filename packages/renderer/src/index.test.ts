@@ -81,7 +81,7 @@ describe('ModelRenderer.setPositions', () => {
         calls: string[] = [];
 
         get snapshot(): RenderModel | null {
-            return this.model;
+            return this.getModel();
         }
 
         protected getTheme(): RenderTheme {
@@ -115,5 +115,16 @@ describe('ModelRenderer.setPositions', () => {
         const renderer = new Probe();
         expect(() => renderer.setPositions({ a: [1, 2, 3] })).not.toThrow();
         expect(renderer.calls).toEqual([]);
+    });
+
+    test('exposes the current model to hosts', () => {
+        const renderer = new Probe();
+        expect(renderer.getModel()).toBeNull();
+        const model: RenderModel = {
+            nodes: [{ id: 'a', kind: 'card', label: 'A', position: [0, 0, 0] }],
+            edges: [],
+        };
+        renderer.setModel(model);
+        expect(renderer.getModel()).toBe(model);
     });
 });

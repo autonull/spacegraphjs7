@@ -10,8 +10,13 @@ interface NodeLike {
     object?: Object3D;
 }
 
+const UNIT = new Vector3(1, 1, 1);
+
 export class SpatialIndex {
     private cellSize: number;
+    private readonly scratchBox = new Box3();
+    private readonly radiusBox = new Box3();
+    private readonly querySet = new Set<NodeLike>();
     readonly cells = new Map<string, SpatialCell>();
     readonly nodeBounds = new Map<NodeLike, Box3>();
     readonly nodeCells = new Map<NodeLike, Set<string>>();
@@ -23,16 +28,12 @@ export class SpatialIndex {
 
     build(nodes: NodeLike[]): void {
         this.clear();
-        const box = new Box3();
-        for (const node of nodes) {
-            this.insertNode(node, box);
-        }
+        for (const node of nodes) this.insertNode(node, this.scratchBox);
     }
 
     updateNode(node: NodeLike): void {
         this.removeNode(node);
-        const box = new Box3();
-        this.insertNode(node, box);
+        this.insertNode(node, this.scratchBox);
     }
 
     removeNode(node: NodeLike): void {
@@ -47,19 +48,18 @@ export class SpatialIndex {
     }
 
     queryBox(box: Box3): NodeLike[] {
-        const result = new Set<NodeLike>();
+        const result = this.querySet;
+        result.clear();
         this.forEachCellInBox(box, (x, y, z) => {
             for (const n of this.cells.get(this.getCellKey(x, y, z))?.nodes ?? []) result.add(n);
         });
-        return Array.from(result);
+        return [...result];
     }
 
     queryRadius(position: Vector3, radius: number): NodeLike[] {
-        const box = new Box3(
-            position.clone().addScalar(-radius),
-            position.clone().addScalar(radius),
-        );
-        const candidates = this.queryBox(box);
+        this.radiusBox.min.set(position.x - radius, position.y - radius, position.z - radius);
+        this.radiusBox.max.set(position.x + radius, position.y + radius, position.z + radius);
+        const candidates = this.queryBox(this.radiusBox);
         const radiusSquared = radius * radius;
         return candidates.filter((n) => {
             const dx = n.position.x - position.x;
@@ -84,18 +84,20 @@ export class SpatialIndex {
 
     findAllOverlaps(): Array<[NodeLike, NodeLike]> {
         const overlaps: Array<[NodeLike, NodeLike]> = [];
-        const checked = new Set<string>();
+        const checked = new Map<NodeLike, Set<NodeLike>>();
 
         for (const cell of this.cells.values()) {
-            const nodes = Array.from(cell.nodes);
-            for (let i = 0; i < nodes.length; i++) {
-                for (let j = i + 1; j < nodes.length; j++) {
-                    const a = nodes[i],
-                        b = nodes[j];
-                    if (a.id === b.id) continue;
-                    const key = a.id < b.id ? `${a.id}-${b.id}` : `${b.id}-${a.id}`;
-                    if (checked.has(key)) continue;
-                    checked.add(key);
+            const nodes = cell.nodes;
+            for (const a of nodes) {
+                for (const b of nodes) {
+                    if (a === b || a.id === b.id) continue;
+                    let seen = checked.get(a);
+                    if (!seen) checked.set(a, (seen = new Set()));
+                    if (seen.has(b)) continue;
+                    seen.add(b);
+                    let reverse = checked.get(b);
+                    if (!reverse) checked.set(b, (reverse = new Set()));
+                    reverse.add(a);
                     const boundsA = this.nodeBounds.get(a);
                     const boundsB = this.nodeBounds.get(b);
                     if (boundsA && boundsB && boundsA.intersectsBox(boundsB)) {
@@ -195,9 +197,9 @@ export class SpatialIndex {
             const { x, y, z } = this.getGridCoords(node.position);
             const key = this.getCellKey(x, y, z);
 
-            // For nodes without objects, create a small representative box
-            const pointBox = new Box3().setFromCenterAndSize(node.position, new Vector3(1, 1, 1));
-            this.nodeBounds.set(node, pointBox);
+            // For nodes without objects, retain a small box around the point.
+            this.scratchBox.setFromCenterAndSize(node.position, UNIT);
+            this.nodeBounds.set(node, this.scratchBox.clone());
 
             this.nodeCells.set(node, new Set([key]));
             this.getOrCreateCell(x, y, z).nodes.add(node);

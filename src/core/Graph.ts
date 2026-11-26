@@ -229,7 +229,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
     hasNeighbor(nodeId: string, targetId: string, direction: EdgeDirection = 'both'): boolean {
         return this.queryEngine.hasNeighbor(nodeId, targetId, direction);
     }
-    getNodesNear(position: Vector3, radius: number): Node[] {
+    getNodesNear(position: { x: number; y: number; z: number }, radius: number): Node[] {
         return this.queryEngine.getNodesNear(position, radius);
     }
     mapNodes<T>(predicate: (node: Node) => T): T[] {
