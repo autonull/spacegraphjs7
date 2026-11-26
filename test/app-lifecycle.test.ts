@@ -24,9 +24,9 @@ describe('SpaceGraphApp setup cleanup', () => {
     it('removes every interaction subscription it installed', () => {
         const { app, events } = host();
         const names = [
-            'interaction:selection',
+            'selection:changed',
             'interaction:edgecreate',
-            'graph:click',
+            'background:click',
             'node:click',
             'edge:click',
             'node:dblclick',
@@ -46,6 +46,35 @@ describe('SpaceGraphApp setup cleanup', () => {
         for (const name of names) expect(events.listenerCount(name), name).toBe(0);
     });
 
+    it('mirrors the engine selection into the app without a second store', () => {
+        const { app, events } = host();
+        const node = { id: 'n1' };
+        const edge = { id: 'e1' };
+        Object.assign(app, {
+            sg: {
+                ...app.sg,
+                getNode: (id: string) => (id === 'n1' ? node : undefined),
+                getEdge: (id: string) => (id === 'e1' ? edge : undefined),
+                select: (ids: string[]) =>
+                    events.emit('selection:changed', {
+                        ids,
+                        nodes: new Set(ids.filter((id) => id === 'n1')),
+                        edges: new Set(ids.filter((id) => id === 'e1')),
+                        timestamp: 0,
+                    }),
+                selection: { has: (id: string) => false },
+                clearSelection: () => undefined,
+            },
+            clearSelectionStyles: () => undefined,
+            applySelectionStyles: () => undefined,
+            updateStatsHUD: () => undefined,
+        });
+        const dispose = setupInteractionHandlers(app);
+        app.sg.select(['n1', 'e1', 'missing']);
+        expect([...app.currentSelected]).toEqual([node]);
+        expect([...app.currentSelectedEdges]).toEqual([edge]);
+        dispose();
+    });
     it('stops dispatching hotkeys after disposal', () => {
         const { app } = host();
         let calls = 0;

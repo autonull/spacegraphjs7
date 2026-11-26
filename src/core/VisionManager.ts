@@ -57,37 +57,21 @@ export class VisionManager {
         if (this.isAnalyzing) {
             throw new Error('[VisionManager] Analysis already in progress.');
         }
-
         this.isAnalyzing = true;
-        logger.info('Starting vision analysis...');
-
-        const report = await this.visionSystem.analyze(this.sg.graph, this.sg.renderer.camera);
-
-        logger.info(
-            '[VisionManager] Analysis complete. Overall Score: %d, Overlaps: %d',
-            report.overall.score,
-            report.overlap.overlapCount,
-        );
-
-        if (report.overall.score < 90) {
-            logger.warn('Quality below threshold, triggering autonomous fix...');
-            const categories: VisionCategory[] = [
-                report.overlap.hasOverlaps && { type: 'overlap' },
-                report.legibility.failures.length > 0 && { type: 'legibility' },
-                report.hierarchy.score < 60 && { type: 'hierarchy' },
-                report.ergonomics.score < 60 && { type: 'ergonomics' },
-            ].filter(Boolean) as VisionCategory[];
-
-            for (const category of categories) {
-                await this.autoFix(category, report);
-            }
+        try {
+            logger.info('Starting vision analysis...');
+            const report = await this.visionSystem.analyze(this.sg.graph, this.sg.renderer.camera);
+            logger.info(
+                '[VisionManager] Analysis complete. Overall Score: %d, Overlaps: %d',
+                report.overall.score,
+                report.overlap.overlapCount,
+            );
+            this.sg.events.emit('vision:analysis-complete' as any, report);
+            return report;
+        } finally {
+            this.isAnalyzing = false;
         }
-
-        this.isAnalyzing = false;
-        this.sg.events.emit('vision:analysis-complete' as any, report);
-        return report;
     }
-
     public async autoFix(category: VisionCategory, report?: VisionReport): Promise<void> {
         await this.autoFixer.autoFix(category, report);
     }

@@ -3004,6 +3004,46 @@ export class PiHost {
             );
             apply(event.clientY);
         });
+        overview.addEventListener('keydown', (event) => {
+            const max = Math.max(pane.scrollHeight - pane.clientHeight, 0);
+            const step = pane.clientHeight * 0.8;
+            const target =
+                event.key === 'Home'
+                    ? 0
+                    : event.key === 'End'
+                      ? max
+                      : event.key === 'ArrowDown' || event.key === 'PageDown'
+                        ? pane.scrollTop + step
+                        : event.key === 'ArrowUp' || event.key === 'PageUp'
+                          ? pane.scrollTop - step
+                          : Number.NaN;
+            if (!Number.isFinite(target)) return;
+            event.preventDefault();
+            pane.scrollTop = Math.min(Math.max(target, 0), max);
+        });
+        handle.addEventListener('keydown', (event) => {
+            const delta =
+                event.key === 'ArrowRight' || event.key === 'ArrowDown'
+                    ? 16
+                    : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+                      ? -16
+                      : 0;
+            if (!delta) return;
+            event.preventDefault();
+            const stacked = this.#arrangement === 'stacked';
+            const surface = el('surface');
+            const current = stacked ? this.#transcriptHeight : this.#transcriptWidth;
+            const floor = stacked ? 120 : 200;
+            const limit = stacked
+                ? Math.max(surface.clientHeight - 120, 120)
+                : Math.max(surface.clientWidth - 240, 200);
+            const size = Math.min(Math.max(current + delta, floor), limit);
+            if (stacked) this.#transcriptHeight = size;
+            else this.#transcriptWidth = size;
+            surface.style.setProperty('--transcript-size', `${size}px`);
+            if (this.#arrangement === 'floating') el('transcript').style.width = `${size}px`;
+            this.recordEvent('transcript:resize', { arrangement: this.#arrangement, size });
+        });
     }
 
     toggleCatalog(open?: boolean): boolean {

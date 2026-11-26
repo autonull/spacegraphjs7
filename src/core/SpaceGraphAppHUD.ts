@@ -2,7 +2,6 @@ import { GridHelper } from 'three';
 import { searchBy } from '../navigation/search';
 import { focusNodeCamera } from '../utils/CameraUtils';
 import { DOMUtils } from '../utils/DOMUtils';
-import { selectionChanged } from './Selection';
 import type { AppButtonConfig, SpaceGraphApp, SpaceGraphAppOptions } from './SpaceGraphApp';
 
 export type HudTheme = NonNullable<SpaceGraphAppOptions['theme']>;
@@ -357,11 +356,9 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: HudTheme = {}) {
     input.addEventListener('input', (e) => {
         const query = (e.target as HTMLInputElement).value.toLowerCase();
         if (!query) {
-            app.clearSelectionStyles();
-            app.sg.events.emit('selection:changed', selectionChanged([]));
+            app.sg.clearSelection();
             return;
         }
-
         const matches = searchBy(
             { nodes: [...app.sg.graph.nodes.values()] },
             query,
@@ -371,10 +368,7 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: HudTheme = {}) {
             },
         );
 
-        app.clearSelectionStyles();
-        app.applySelectionStyles();
-        app.sg.events.emit('selection:changed', selectionChanged(matches.map((match) => match.id)));
-
+        app.sg.select(matches.map((match) => match.id));
         if (matches.length === 1 && app.sg.cameraControls) {
             focusNodeCamera(app.sg, matches[0]);
         }

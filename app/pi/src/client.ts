@@ -25,7 +25,7 @@ const boot = async (): Promise<void> => {
         host.setFrame('pending');
         const events = new EventSource(`/events?client=${clientID}`);
         events.onopen = () => host.setFrame(null);
-        events.onerror = () => host.setFrame('failed', 'The event stream stopped. Reload to reconnect.');
+        events.onerror = () => host.setFrame('failed', 'The event stream stopped — reconnecting.');
         events.onmessage = (event) => host.consume(decodeOp(event.data as string));
     }
 

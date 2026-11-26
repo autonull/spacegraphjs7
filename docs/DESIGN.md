@@ -517,57 +517,39 @@ interface ErgonomicsReport {
 
 ### 2.5 Vision Integration Points
 
-#### 2.5.1 Vite Plugin
+All gates are pure functions in `spacegraphjs/quality`. They take a `GraphSpec` or a `RenderModel`, so no renderer or browser is required.
+
+#### 2.5.1 Quality gates
 
 ```typescript
-// vite.config.ts
-import { defineConfig } from 'vite';
-import { spacegraphVision } from 'spacegraphjs/vision-plugin';
+import { checkQuality, spacegraphVision } from 'spacegraphjs/quality';
 
-export default defineConfig({
-    plugins: [
-        spacegraphVision({
-            enabled: true,
-            checks: ['layout', 'legibility', 'overlap', 'color', 'hierarchy', 'ergonomics'],
-            thresholds: {
-                layout: 80,
-                legibility: 85,
-                overlap: 0,
-                color: 70,
-                hierarchy: 75,
-                ergonomics: 75,
-            },
-            autoFix: {
-                enabled: true,
-                maxIterations: 3,
-            },
-        }),
-    ],
-});
+const report = checkQuality(model); // score, issues, DOM budgets
+const gate = spacegraphVision(model, { minScore: 80 }); // passed + grade
 ```
 
-#### 2.5.2 Vitest Assertions
+#### 2.5.2 Vitest assertions
 
 ```typescript
-import { visionAssert } from 'spacegraphjs/vision-test';
+import { visionAssert } from 'spacegraphjs/quality';
 
-await visionAssert.noOverlap(graph);
-await visionAssert.allTextLegible(graph);
-await visionAssert.wcagCompliance(graph, 'AA');
-await visionAssert.layoutQuality(graph, 80);
+const assertions = visionAssert(model, { dom: hiddenMirror });
+assertions.noOverlap();
+assertions.noMissingLabels();
+assertions.noInvalidEdges();
+assertions.withinDomBudget();
+assertions.accessible();
+assertions.meetsFloor(80);
 ```
 
-#### 2.5.3 Playwright E2E
+#### 2.5.3 Runtime and CI
 
 ```typescript
-import { SpaceGraphVision } from 'spacegraphjs/vision-e2e';
-
-const vision = new SpaceGraphVision(page);
-await vision.waitForRender();
-const report = await vision.runAllChecks();
-
-expect(report.layout.overall).toBeGreaterThan(80);
+const report = await graph.vision.analyzeVision();
+const corrected = graph.vision.autoFix('overlap', report);
 ```
+
+A host can serialise `correctQuality(model)` edits into `spacegraph-autofix-patch.json` and review them with `sg fix --dry-run`. There is no Vite plugin and no build-time ONNX hook; ONNX strategies stay experimental until the weights are final.
 
 ---
 

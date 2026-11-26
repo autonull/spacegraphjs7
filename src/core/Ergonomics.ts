@@ -153,6 +153,7 @@ export class ErgonomicsAPI {
     }
 
     remove(id: string): boolean {
+        if (!this.sg.graph.nodes.has(id)) return false;
         this.sg.graph.removeNode(id);
         return true;
     }
@@ -352,6 +353,9 @@ export class ErgonomicsAPI {
         const visible = !node.visible;
         node.setVisible(visible);
         return visible;
+    }
+    toggle(id: string): boolean {
+        return this.toggleVisibility(id);
     }
 
     opacity(id: string, opacity: number): Node | null {

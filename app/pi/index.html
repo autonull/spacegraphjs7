@@ -135,7 +135,7 @@
             }
             body[data-ui-chrome='readable'] #rail {
                 position: absolute;
-                inset-block: var(--sg-spacing-sm);
+                inset-block: var(--sg-spacing-sm) 76px;
                 inset-inline-end: var(--sg-spacing-sm);
                 z-index: 6;
                 display: none;
@@ -287,6 +287,9 @@
             body[data-ui-statusline='true'] #status-strip [data-role='status-view']::before {
                 color: var(--sg-colors-muted-foreground);
                 content: attr(data-role);
+                margin-inline-end: 6px;
+                padding-inline-end: 6px;
+                border-inline-end: 1px solid var(--sg-colors-border);
             }
             #status-strip #evidence {
                 display: flex;
@@ -2153,12 +2156,20 @@
                     display: none;
                 }
             }
+            @media (prefers-reduced-motion: reduce) {
+                *, *::before, *::after {
+                    animation-duration: 0.01ms !important;
+                    animation-iteration-count: 1 !important;
+                    transition-duration: 0.01ms !important;
+                    scroll-behavior: auto !important;
+                }
+            }
         </style>
     </head>
     <body>
         <header id="command-bar">
             <h1>pi · SpaceGraphJS</h1>
-            <span id="status">connecting…</span>
+            <span id="status" aria-live="polite">connecting…</span>
             <button
                 type="button"
                 id="command-open"
@@ -2304,12 +2315,16 @@
                         −
                     </button>
                 </div>
-                <div id="transcript-resize" role="separator" aria-label="Resize transcript"></div>
+                <div id="transcript-resize" role="separator" tabindex="0" aria-label="Resize transcript"></div>
                 <div
                     id="transcript-overview"
                     role="scrollbar"
+                    tabindex="0"
                     aria-label="Transcript overview"
                     aria-controls="transcript"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="0"
                 ></div>
                 <div id="transcript-list"></div>
             </section>

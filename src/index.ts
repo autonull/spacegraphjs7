@@ -6,6 +6,7 @@ export {
     SpaceGraph,
     VERSION,
     SimpleGraph,
+    type FrameOptions,
     type ErgonomicDelegate,
     type SimpleGraphOptions,
 } from './SpaceGraph';

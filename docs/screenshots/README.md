@@ -22,14 +22,14 @@ contact sheet are disposable. Pending visual work is indexed in `experiments.jso
 approval and error cards form the spine; file, artifact and tool cards attach as branches beside
 their parent. `transcript/` holds `hybrid-dark.png`, `expanded-row.png`, `zoom-detail.png`,
 `hybrid-light.png`, `errors-pastel.png`, `transcript-only.png` and `prompt-loop.png`. Rows toggle an
-expanded panel with Center, Next, Parent, Children and Collapse actions. Attached context uses
-`octaveLayout` at 1×, 1/2× and 1/4×, so zooming promotes a small detail card to a readable one.
-Spine cards are tightly stacked, left-aligned terminal lines: large monospace text sets each card's
-width, every left edge stays fixed, and status is a single glyph. Attached context stays spatial:
-tiny octave-sized satellites sit in an aligned gutter beside their parent line, with nested details
-one column further out; the spine-chain edges are nearly invisible because position carries the
-sequence. The prompt loop appends spine cards downward, so new work extends the transcript instead
-of reshuffling an existing grid.
+expanded panel with Center, Next, Parent, Children and Collapse actions; the full message text sits
+above the metadata. Attached context uses `transcriptLane` at 1×, 1/2× and 1/4×, so zooming promotes a small detail card to a readable one.
+Spine cards are tightly stacked, left-aligned terminal lines: monospace text sets each card's width
+and wraps before it clips, every left edge stays fixed, and status is a single glyph. Attached
+context stays spatial: octave-sized satellites sit in a clear gutter beside their parent line, with
+nested details one column further out; the spine-chain edges are nearly invisible because position
+carries the sequence. Arrow keys, Home and End move through the rail. The prompt loop appends spine
+cards downward, so new work extends the transcript instead of reshuffling an existing grid.
 
 ## Curated Pi shots
 

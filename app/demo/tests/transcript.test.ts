@@ -43,12 +43,33 @@ describe('transcript workspace', () => {
         const spineWidths = ['u1', 'a1', 'u2', 'ap1', 'u3', 'e1', 'a2'].map((id) => size(id)[0]);
         expect(new Set(spineWidths).size).toBeGreaterThan(3);
         expect(size('a1')[0]).toBeGreaterThan(size('u3')[0]);
-        expect(size('u1')[1]).toBe(22);
-        expect(size('f1')[1]).toBe(12);
-        expect(size('q1')[1]).toBe(9);
+        expect(size('u1')[1]).toBeGreaterThan(size('f1')[1]);
+        expect(size('f1')[1]).toBeGreaterThan(size('q1')[1]);
         const spineEdge = spec.edges?.find((edge) => edge.type === 'CurvedEdge');
         expect((spineEdge?.data as { opacity?: number }).opacity).toBeLessThan(0.2);
         expect(size('f1')[0]).toBeLessThan(size('u1')[0]);
+        const position = (id: string) => spec.nodes?.find((node) => node.id === id)?.position ?? [];
+        expect(position('f1')[0]! - size('f1')[0] / 2).toBeGreaterThan(
+            position('u1')[0]! + size('u1')[0] / 2,
+        );
+    });
+    it('wraps a long line into a taller card instead of clipping it', () => {
+        const short = cardSize({
+            ...item,
+            kind: 'user',
+            label: 'user message',
+            text: 'Hi',
+            octave: 0,
+        });
+        const long = cardSize({
+            ...item,
+            kind: 'user',
+            label: 'user message',
+            text: 'Investigate the failing suite and describe the root cause in detail',
+            octave: 0,
+        });
+        expect(long[1]).toBeGreaterThan(short[1]);
+        expect(long[0]).toBeLessThanOrEqual(520);
     });
 
     it('keeps the spine append-only and nests deeper detail under attached cards', () => {

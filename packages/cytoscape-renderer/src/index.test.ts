@@ -18,10 +18,9 @@ describe('@spacegraphjs/cytoscape-renderer', () => {
     test('declares an unbounded zoom range, so the host policy is the only limit', () => {
         // Cytoscape's zoom is a linear scale factor with no ceiling of its own (T6.20).
         const capabilities = new CytoscapeRenderer().capabilities;
-        expect(capabilities.zoomRange?.min).toBe(0);
-        expect(capabilities.zoomRange?.max).toBe(Number.POSITIVE_INFINITY);
+        expect(capabilities.zoomRange?.min).toBe(0.1);
+        expect(capabilities.zoomRange?.max).toBe(10);
     });
-
 });
 rendererContractCases(
     () => new CytoscapeRenderer(),

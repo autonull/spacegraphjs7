@@ -59,6 +59,22 @@ describe('SpaceGraph fluent delegates', () => {
         expect(sg.hasNode('c')).toBe(false);
     });
 
+    it('removes and toggles nodes through the documented names', () => {
+        const sg = host();
+        expect(sg.toggle('a')).toBe(false);
+        expect(sg.$('a')!.visible).toBe(false);
+        expect(sg.toggle('a')).toBe(true);
+        expect(sg.remove('a')).toBe(true);
+        expect(sg.remove('a')).toBe(false);
+        expect(sg.hasNode('a')).toBe(false);
+    });
+    it('exposes the camera and its position as documented', () => {
+        const sg = host();
+        const camera = { position: { x: 1, y: 2, z: 3 } };
+        Object.assign(sg.renderer, { camera });
+        expect(sg.camera).toBe(camera);
+        expect(sg.cameraPosition).toEqual([1, 2, 3]);
+    });
     it('runs a batch with the graph as its argument', () => {
         const sg = host();
         sg.batch((graph) => graph.addNodes([{ id: 'd', type: 'ShapeNode', label: 'Ship' }]));

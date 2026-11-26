@@ -582,11 +582,14 @@ export class DurableHost {
     setTab(id: string): boolean {
         if (!this.registry.setActive(id)) return false;
         const view = this.registry.active()?.view;
-        if (view?.camera)
+        if (view?.camera) {
             this.renderer.setViewport({
                 zoom: view.camera.zoom,
                 center: [...view.camera.center] as [number, number, number],
             });
+        } else {
+            requestAnimationFrame(() => this.viewOps.fit(undefined, DEFAULT_FIT_OPTIONS));
+        }
         if (view?.selection) this.renderer.setSelection([view.selection]);
         this.refresh();
         this.announce(`Switched to conversation ${id}`);
@@ -819,6 +822,7 @@ export class DurableHost {
     setLayout(name: LayoutName): void {
         this.#layoutName = name;
         this.refresh();
+        requestAnimationFrame(() => this.viewOps.fit(undefined, DEFAULT_FIT_OPTIONS));
         this.announce(`Layout ${name}`);
         this.#recordHistory();
     }
@@ -1877,7 +1881,9 @@ export class DurableHost {
                     className: 'tab',
                     dataset: { tab: tab.id },
                 });
+                element.id = `tab-${tab.id}`;
                 element.setAttribute('role', 'tab');
+                element.setAttribute('aria-controls', 'stage');
                 element.setAttribute('aria-selected', String(active));
                 element.tabIndex = active ? 0 : -1;
                 element.addEventListener('keydown', (event) => {
@@ -1894,6 +1900,8 @@ export class DurableHost {
                 return element;
             }),
         );
+        const active = this.registry.activeID();
+        if (active) el('stage').setAttribute('aria-labelledby', `tab-${active}`);
     }
 
     private renderStatus(): void {
@@ -2120,6 +2128,12 @@ export class DurableHost {
             const rect = projection.viewRect;
             const dx = event.key === 'ArrowRight' ? 8 : event.key === 'ArrowLeft' ? -8 : 0;
             const dy = event.key === 'ArrowDown' ? 8 : event.key === 'ArrowUp' ? -8 : 0;
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                const rect = projection.viewRect;
+                this.#panOverviewTo(projection.unproject({ x: rect?.x ?? 80, y: rect?.y ?? 50 }));
+                return;
+            }
             if (!dx && !dy) return;
             event.preventDefault();
             this.#panOverviewTo(projection.unproject({

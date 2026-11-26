@@ -33,7 +33,7 @@ function model(): ControlModel {
 
 type AnyHandler = (payload: never) => void;
 
-function fakeRenderer() {
+function fakeRenderer(capabilities?: ControlRenderer['capabilities']) {
     const listeners = new Map<string, Set<AnyHandler>>();
     const calls = {
         selection: [] as (readonly string[])[],
@@ -46,6 +46,7 @@ function fakeRenderer() {
         emit: <K extends keyof ControlEventMap>(event: K, payload: ControlEventMap[K]) => void;
         calls: typeof calls;
     } = {
+        capabilities,
         setSelection(ids) {
             calls.selection.push(ids);
         },
@@ -162,6 +163,22 @@ describe('GraphController', () => {
         expect(controller.band).toBe('detail');
     });
 
+    it('normalizes raw zoom through the renderer capability range', () => {
+        const controller = new GraphController({
+            bands: [
+                { id: 'overview', min: 0, max: 0.5 },
+                { id: 'detail', min: 0.5, max: 1 },
+            ],
+        });
+        const renderer = fakeRenderer({ zoomRange: { min: 1, max: 100 } });
+        controller.bind(renderer);
+        renderer.emit('viewportChange', { zoom: 100, center: [0, 0, 0] });
+        expect(controller.band).toBe('detail');
+        expect(controller.zoom).toBe(100);
+        expect(controller.normalizedZoom).toBe(1);
+        renderer.emit('viewportChange', { zoom: 1, center: [0, 0, 0] });
+        expect(controller.band).toBe('overview');
+    });
     it('forwards renderer events without echoing the selection back', () => {
         const controller = new GraphController({
             bands: [

@@ -88,6 +88,10 @@ export class TranscriptView {
         const max = Math.max(pane.scrollHeight - pane.clientHeight, 1);
         view.setAttribute('height', String(height));
         view.setAttribute('y', String((pane.scrollTop / max) * (200 - height)));
+        el('transcript-overview').setAttribute(
+            'aria-valuenow',
+            String(Math.round((pane.scrollTop / max) * 100)),
+        );
     }
 
     #renderOverview(ids: readonly string[]): void {

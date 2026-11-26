@@ -67,9 +67,9 @@ stays freeform. The transcript is always mounted; use the surface buttons and ar
 switch views, click a graph node to reveal its message, or follow `#graph:<nodeID>`.
 
 Mouse: right-drag pan, wheel zoom, middle-drag orbit, click select, node drag, shift-drag box-select.
-Keyboard mirrors: arrows pan, `+`/`-` zoom, `f` focus the revealed node, `Esc` clears selection,
-`g` cycles graph views, `a` toggles transcript alignment, `r` toggles the ribbon corridor and `m`
-toggles animated transitions (all global outside text inputs). `/` lists every graph-view command, including `Focus turn 1…N`, in the palette;
+Keyboard mirrors: `/`, `g`, `a`, `r` and `m` work globally outside text inputs. Canvas-focused
+keys are arrows to pan, `+`/`-` to zoom, `f` to centre the revealed node, `Enter`, `PgDn`/`PgUp`,
+`t`, `s`, `n` and `Esc` to clear selection; focus the canvas first. `/` lists every graph-view command, including `Focus turn 1…N`, in the palette;
 the HUD shows the active view and its flags.
 Export produces JSON, SVG or HTML; WebXR, sound and haptics stay report-only seams.
 

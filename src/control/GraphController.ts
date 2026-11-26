@@ -55,12 +55,15 @@ export interface ControlEventMap {
 
 /** Screen-space constraints for a fit. Mirrors the contract's `FitOptions` without importing it. */
 export interface ControlFitOptions {
+    padding?: number;
     minScale?: number;
     insets?: { top?: number; right?: number; bottom?: number; left?: number };
 }
 
 /** The renderer surface the controller needs; the host keeps ownership of the model and the camera. */
 export interface ControlRenderer {
+    /** Present when the renderer is a contract adapter; the range is in its own zoom scale. */
+    capabilities?: { readonly zoomRange?: { readonly min: number; readonly max: number } };
     setSelection(ids: readonly string[]): void;
     fit(ids?: readonly string[], options?: ControlFitOptions): void;
     focus(id: string): void;
@@ -150,6 +153,9 @@ export class GraphController {
     get zoom(): number {
         return this.#bands.snapshot().zoom;
     }
+    get normalizedZoom(): number {
+        return this.#bands.snapshot().normalized;
+    }
 
     // Adopt a renderer and forward its selection/viewport/focus events into controller state. Rebinding
     // disposes the previous subscriptions; the controller never owns the renderer's lifecycle.
@@ -162,14 +168,29 @@ export class GraphController {
             renderer.on('edgeClick', ({ id }) => this.selectEdge(id)),
             renderer.on('nodeDoubleClick', ({ id }) => this.focus(id)),
             renderer.on('backgroundClick', () => this.clear()),
-            renderer.on('viewportChange', (viewport) =>
-                this.feedNormalized(viewport.zoom, viewport.zoom),
-            ),
+            renderer.on('viewportChange', (viewport) => this.#feedViewport(renderer, viewport)),
         ];
         renderer.setSelection(this.#selection);
         return this;
     }
 
+    #feedViewport(renderer: ControlRenderer, viewport: ControlViewport): void {
+        const range = renderer.capabilities?.zoomRange;
+        if (
+            range &&
+            Number.isFinite(range.min) &&
+            Number.isFinite(range.max) &&
+            range.max > range.min
+        ) {
+            this.#bands.feed(viewport.zoom, {
+                min: range.min,
+                max: range.max,
+                closerIsLarger: true,
+            });
+            return;
+        }
+        this.feedNormalized(viewport.zoom, viewport.zoom);
+    }
     unbind(): this {
         for (const unsubscribe of this.#unsubscribers) unsubscribe();
         this.#unsubscribers = [];

@@ -12,7 +12,6 @@ import {
     updateStatsHUD,
 } from './SpaceGraphAppHUD';
 import { setupHotkeys, setupInteractionHandlers } from './SpaceGraphAppInteraction';
-import { selectionChanged } from './Selection';
 import { refreshChrome, setTheme } from './SpaceGraphAppTheme';
 
 export interface SpaceGraphAppOptions {
@@ -192,7 +191,7 @@ export class SpaceGraphApp {
 
     public importData(data: any) {
         this.sg.import(data);
-        this.emitSelectionChanged();
+        this.updateStatsHUD();
     }
 
     public focusOnNodes(nodeIds: string[], padding = 100, duration = 1.5) {
@@ -201,7 +200,7 @@ export class SpaceGraphApp {
 
     public addNode(nodeSpec: any) {
         this.sg.graph.addNode(nodeSpec);
-        this.emitSelectionChanged();
+        this.updateStatsHUD();
     }
 
     public updateNode(nodeId: string, nodeSpec: any) {
@@ -211,15 +210,15 @@ export class SpaceGraphApp {
     public removeNode(nodeId: string) {
         const node = this.sg.graph.queryEngine.getNode(nodeId);
         if (node) {
-            this.currentSelected.delete(node);
+            this.sg.selection.deselect(nodeId);
             this.sg.graph.removeNode(nodeId);
-            this.emitSelectionChanged();
+            this.updateStatsHUD();
         }
     }
 
     public addEdge(edgeSpec: any) {
         this.sg.graph.addEdge(edgeSpec);
-        this.emitSelectionChanged();
+        this.updateStatsHUD();
     }
 
     public updateEdge(edgeId: string, edgeSpec: any) {
@@ -229,17 +228,14 @@ export class SpaceGraphApp {
     public removeEdge(edgeId: string) {
         const edge = this.sg.graph.queryEngine.getEdge(edgeId);
         if (edge) {
-            this.currentSelectedEdges.delete(edge);
+            this.sg.selection.deselect(edgeId);
             this.sg.graph.removeEdge(edgeId);
-            this.emitSelectionChanged();
+            this.updateStatsHUD();
         }
     }
 
     public clearSelection() {
-        this.clearSelectionStyles();
-        this.currentSelected.clear();
-        this.currentSelectedEdges.clear();
-        this.emitSelectionChanged();
+        this.sg.clearSelection();
     }
 
     public getSelectedNodes(): Node[] {
@@ -259,16 +255,6 @@ export class SpaceGraphApp {
         this.#disposers.length = 0;
         this.hud.dispose();
         this.sg.dispose();
-    }
-
-    emitSelectionChanged(): void {
-        this.sg.events.emit(
-            'selection:changed',
-            selectionChanged(
-                [...this.currentSelected].map((node) => node.id),
-                [...this.currentSelectedEdges].map((edge) => edge.id),
-            ),
-        );
     }
 
     private _clearStyle(surface: Node | Edge): void {

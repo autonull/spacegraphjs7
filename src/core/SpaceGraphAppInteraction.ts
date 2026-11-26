@@ -5,34 +5,31 @@ import { isEditableTarget } from '../utils/DOMUtils';
 import type { SpaceGraphEvents } from '../types';
 import type { SpaceGraphApp } from './SpaceGraphApp';
 
-/**
- * The selection the app holds, the styles it draws with, and the news it breaks.
- */
-function setSelection(app: SpaceGraphApp, nodes: Node[], edges: Edge[]): void {
+/** The app mirrors the engine's one selection store; it never owns a second one. */
+function applySelection(
+    app: SpaceGraphApp,
+    nodes: Iterable<string>,
+    edges: Iterable<string>,
+): void {
     app.clearSelectionStyles();
-    app.currentSelected = new Set(nodes);
-    app.currentSelectedEdges = new Set(edges);
+    app.currentSelected = new Set(
+        [...nodes].map((id) => app.sg.getNode(id)).filter((node): node is Node => Boolean(node)),
+    );
+    app.currentSelectedEdges = new Set(
+        [...edges].map((id) => app.sg.getEdge(id)).filter((edge): edge is Edge => Boolean(edge)),
+    );
     app.applySelectionStyles();
-
-    const selectedNodes = [...app.currentSelected];
-    const selectedEdges = [...app.currentSelectedEdges];
-    app.emitSelectionChanged();
-
-    if (app.options.onNodeSelect) app.options.onNodeSelect([...selectedNodes]);
-    if (app.options.onEdgeSelect) app.options.onEdgeSelect([...selectedEdges]);
+    app.updateStatsHUD();
+    app.options.onNodeSelect?.([...app.currentSelected]);
+    app.options.onEdgeSelect?.([...app.currentSelectedEdges]);
 }
-
 export function setupInteractionHandlers(app: SpaceGraphApp): () => void {
     const subscriptions: { dispose(): void }[] = [];
     const on = <K extends keyof SpaceGraphEvents>(
         event: K,
         handler: (data: SpaceGraphEvents[K]) => void,
     ) => subscriptions.push(app.sg.events.on(event, handler));
-    on('interaction:selection', ({ nodes, edges }) => {
-        const nodeObjs = (nodes || []).map((id) => app.sg.getNode(id)).filter(Boolean) as Node[];
-        const edgeObjs = (edges || []).map((id) => app.sg.getEdge(id)).filter(Boolean) as Edge[];
-        setSelection(app, nodeObjs, edgeObjs);
-    });
+    on('selection:changed', ({ nodes, edges }) => applySelection(app, nodes, edges));
 
     on('interaction:edgecreate', ({ source, target }) => {
         if (app.options.onEdgeCreate) {
@@ -52,19 +49,14 @@ export function setupInteractionHandlers(app: SpaceGraphApp): () => void {
         }
     });
 
-    on('graph:click', () => {
-        setSelection(app, [], []);
-    });
-
+    on('background:click', () => app.sg.clearSelection());
     on('node:click', (data) => {
-        const targetNode =
-            'node' in data ? data.node : data.id ? app.sg.getNode(data.id) : undefined;
-        if (targetNode) setSelection(app, [targetNode], []);
+        const id = 'node' in data ? data.node.id : data.id;
+        if (id && !app.sg.selection.has(id)) app.sg.select(id);
     });
-
     on('edge:click', (data) => {
-        const targetEdge = 'id' in data && data.id ? app.sg.getEdge(data.id) : undefined;
-        if (targetEdge) setSelection(app, [], [targetEdge]);
+        const id = 'id' in data ? data.id : undefined;
+        if (id && !app.sg.selection.has(id)) app.sg.select(id);
     });
 
     on('node:dblclick', ({ node }) => {

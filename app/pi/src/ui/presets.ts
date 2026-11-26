@@ -139,12 +139,10 @@ export const UI_PRESETS: readonly UIPreset[] = [
         { 'theme.variant': 'light' },
         { gates: ['shell', 'vision', 'screenshots'] },
     ),
-    preset(
-        'mono',
-        'Mono chrome',
-        'Is semantic status color in the chrome signal or noise?',
-        { 'theme.glow': 0, 'theme.palette': 'mono' },
-    ),
+    preset('mono', 'Mono chrome', 'Is semantic status color in the chrome signal or noise?', {
+        'theme.glow': 0,
+        'theme.palette': 'mono',
+    }),
     preset(
         'morph',
         'Morph',
@@ -195,7 +193,13 @@ export function applyUIPreset(
     target: UIPresetTarget,
 ): UIPreset | undefined {
     const found = uiPresetById(id);
-    if (!found) return undefined;
+    if (!found) {
+        if (id === null && typeof document !== 'undefined') {
+            document.body.dataset.uiChrome = 'full';
+            document.body.dataset.uiStatusline = 'false';
+        }
+        return undefined;
+    }
     target.setPolicyLayer('experiment', found.knobs);
     if (found.flags) {
         const flags = found.flags;

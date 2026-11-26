@@ -22,7 +22,7 @@ type Backend = {
 
 const backends: readonly Backend[] = [
     { name: 'SpaceGraph', make: () => new SpaceGraphRenderer(), domNodes: true, perspective: true, maxZoom: 1 },
-    { name: 'Cytoscape', make: () => new CytoscapeRenderer(), domNodes: true, perspective: false, maxZoom: Infinity },
+    { name: 'Cytoscape', make: () => new CytoscapeRenderer(), domNodes: true, perspective: false, maxZoom: 10 },
     { name: 'SVG', make: () => new SvgRenderer(), domNodes: false, perspective: false, maxZoom: 1 },
 ];
 

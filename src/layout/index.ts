@@ -8,6 +8,12 @@ export {
 export { GridPlacement, type GridConfig, type GridMeta } from './grid';
 export { chapterPacking, type ChapterPackingOptions } from './chapters';
 export {
+    transcriptLane,
+    type TranscriptLaneLayout,
+    type TranscriptLaneOptions,
+    type TranscriptLine,
+} from './transcript';
+export {
     octaveLayout,
     type OctaveLayout,
     type OctaveLayoutOptions,

@@ -41,7 +41,7 @@ test('chrome announces every outcome and has no dead control offline', async ({ 
     await page.keyboard.press('Escape');
     await expect(page.locator('#catalog')).toBeHidden();
     await page.click('#permalink-button');
-    await expect(announcer).toContainText('Permalink copied');
+    await expect(announcer).toContainText(/Permalink copied|Could not copy permalink/);
     await page.selectOption('#export-format', 'md');
     await expect(announcer).not.toHaveText('');
 

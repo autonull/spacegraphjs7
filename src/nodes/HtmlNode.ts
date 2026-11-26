@@ -165,8 +165,11 @@ export class HtmlNode extends BaseContentNode {
         const oldSize = { ...this.size };
         const oldArea = oldSize.width * oldSize.height;
 
-        this.size.width = Math.max(HtmlNode.MIN_SIZE.width, width);
-        this.size.height = Math.max(HtmlNode.MIN_SIZE.height, height);
+        const data = (this.data ?? {}) as Record<string, unknown>;
+        const minWidth = (data.minWidth as number) ?? HtmlNode.MIN_SIZE.width;
+        const minHeight = (data.minHeight as number) ?? HtmlNode.MIN_SIZE.height;
+        this.size.width = Math.max(minWidth, width);
+        this.size.height = Math.max(minHeight, height);
 
         this.applySize(this.size.width, this.size.height);
 

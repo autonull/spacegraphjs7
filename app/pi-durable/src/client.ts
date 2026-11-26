@@ -464,8 +464,10 @@ const bindChrome = (): void => {
     el('permalink-button').addEventListener('click', () => {
         const link = new URL(host.permalink(), location.href).href;
         history.replaceState(null, '', link);
-        void navigator.clipboard?.writeText(link)?.catch(() => {});
-        host.announce('Permalink copied');
+        void navigator.clipboard
+            ?.writeText(link)
+            ?.then(() => host.announce('Permalink copied'))
+            ?.catch(() => host.announce('Could not copy permalink'));
     });
     el<HTMLInputElement>('time-scrub').addEventListener('change', (event) =>
         host.scrubTo(Number((event.target as HTMLInputElement).value)));

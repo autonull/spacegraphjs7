@@ -38,6 +38,13 @@ import { StaticMethods } from './spacegraph/StaticMethods';
 
 export const VERSION = '8.5.0';
 
+export interface FrameOptions {
+    readonly padding?: number;
+    readonly duration?: number;
+    readonly minScale?: number;
+    readonly insets?: FitInsets;
+}
+
 type GraphExportSpec = GraphSpec & { plugins?: Record<string, unknown> };
 
 export class SpaceGraph {
@@ -184,6 +191,21 @@ export class SpaceGraph {
     }
     focusNode(id: string, _padding = 100, duration = 1): SpaceGraph {
         return this.cameraController.focusNode(id, _padding, duration);
+    }
+    /** Frame one id, a set of ids, or the whole graph with named options. */
+    frame(
+        target: readonly string[] | string | null = null,
+        options: FrameOptions = {},
+    ): SpaceGraph {
+        const ids = target == null ? undefined : typeof target === 'string' ? [target] : target;
+        return this.fitView(options.padding ?? 100, options.duration ?? 0.6, ids, {
+            minScale: options.minScale,
+            insets: options.insets,
+        });
+    }
+    /** Bring one node under the camera without changing zoom. */
+    inspect(id: string, options: { duration?: number } = {}): SpaceGraph {
+        return this.focusNode(id, 0, options.duration ?? 0.35);
     }
     center(x: number, y: number, z = 0): SpaceGraph {
         return this.cameraController.center(x, y, z);
@@ -337,6 +359,13 @@ export class SpaceGraph {
     get viewport(): CameraViewport {
         return this.renderer.getViewport();
     }
+    get camera() {
+        return this.renderer.camera;
+    }
+    get cameraPosition(): [number, number, number] {
+        const position = this.renderer.camera.position;
+        return [position.x, position.y, position.z];
+    }
     registerFingerings(): void {
         this.input.registerFingering(
             createCameraFingering(this.cameraControls),
@@ -444,6 +473,7 @@ const ERGONOMIC_DELEGATES = [
     'connectTo',
     'connectFrom',
     'disconnect',
+    'remove',
     'removeWhere',
     'updateWhere',
     'forNodes',
@@ -475,6 +505,7 @@ const ERGONOMIC_DELEGATES = [
     'draggable',
     'selectable',
     'visible',
+    'toggle',
     'batch',
     'transaction',
     'freeze',

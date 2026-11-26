@@ -19,7 +19,7 @@ const CAPABILITIES: RendererCapabilities = rendererCapabilities({
     domNodes: true,
     maxDomNodes: 20,
     clusterNodes: true,
-    zoomRange: { min: 0, max: Number.POSITIVE_INFINITY },
+    zoomRange: { min: 0.1, max: 10 },
     fitInsets: true,
 });
 
@@ -64,6 +64,8 @@ export class CytoscapeRenderer extends ModelRenderer implements GraphRenderer {
                 style: cytoscapeStyle(this.getTheme()!),
                 layout: { name: 'preset', fit: false },
                 wheelSensitivity: 0.2,
+                minZoom: 0.1,
+                maxZoom: 10,
             });
             this.#cy = cy;
             this.#bind();

@@ -52,7 +52,7 @@
             .badge[data-tone="ok"] .icon { stroke: var(--ok); }
             .badge[data-tone="warn"] .icon { stroke: var(--warn); }
             .badge[data-tone="error"] .icon { stroke: var(--error); }
-            #tab-strip { display: flex; gap: 4px; margin-left: auto; role: tablist; }
+            #tab-strip { display: flex; gap: 4px; margin-left: auto; }
             .tab { min-height: 36px; padding: 0 10px; border: 1px solid transparent; border-radius: var(--radius);
                 background: transparent; color: var(--muted); font-size: 12px; }
             .tab[aria-selected="true"] { background: var(--panel-2); border-color: var(--line); color: var(--text); }
@@ -199,7 +199,7 @@
             .durable-card[data-status="deferred"] { border-style: dashed; }
             .durable-card[data-diff="added"] { border-color: var(--ok); }
             .durable-card[data-diff="removed"] { border-color: var(--error); border-style: dashed; opacity: .75; }
-            .durable-card .card-label { font-size: clamp(11px, 14cqw, 52px); font-weight: 600; line-height: 1.05;
+            .durable-card .card-label { font-size: clamp(11px, min(14cqw, 18cqh), 36px); font-weight: 600; line-height: 1.05;
                 overflow-wrap: break-word; text-wrap: pretty; }
             .durable-card .card-glyph { font-size: clamp(10px, 8cqw, 32px); line-height: 1; font-family: ui-monospace, monospace;
                 color: var(--accent); opacity: .85; margin-right: .35em; }
@@ -214,8 +214,8 @@
             .durable-card[data-kind="task"] .card-detail { display: block; }
             .durable-card.band-dot .card-short { display: block; }
             .durable-card.hero .card-label { font-weight: 700; }
-            .durable-card .card-summary { font-size: clamp(9px, 6cqw, 22px); line-height: 1.2; opacity: .84; overflow-wrap: anywhere; }
-            .durable-card .card-detail { font-size: clamp(8px, 5cqw, 18px); line-height: 1.2; font-family: ui-monospace, monospace;
+            .durable-card .card-summary { font-size: clamp(11px, min(6cqw, 12cqh), 20px); line-height: 1.2; opacity: .84; overflow-wrap: anywhere; }
+            .durable-card .card-detail { font-size: clamp(10px, min(5cqw, 10cqh), 16px); line-height: 1.2; font-family: ui-monospace, monospace;
                 opacity: .72; letter-spacing: .02em; }
             .durable-card .card-status { margin-left: 6px; padding: 0 .4em; font-size: clamp(8px, 6cqw, 20px);
                 opacity: .9; font-weight: 400; border: 1px solid var(--line); border-radius: 999px;
@@ -348,7 +348,7 @@
                 <button id="menu-button" type="button" aria-label="Open controls" title="Open controls" aria-expanded="false" aria-controls="rail"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
                 <div class="brand"><svg class="icon" aria-hidden="true"><use href="#i-survey"/></svg>spacegraph<span>/</span>durable</div>
                 <span id="asof-badge" class="badge" data-tone="warn" hidden></span>
-                <div id="status-strip" aria-live="polite"></div>
+                <div id="status-strip"></div>
                 <div id="lens-bar">
                     <form id="lens-form" role="search" aria-label="Lens command bar">
                         <input id="lens-input" autocomplete="off" spellcheck="false"
@@ -360,10 +360,10 @@
                 <div id="tab-strip" role="tablist" aria-label="Conversations"></div>
             </header>
             <main>
-                <section id="stage">
+                <section id="stage" role="tabpanel">
                     <div id="canvas" aria-label="Conversation graph"></div>
                     <div id="reader" role="region" aria-label="Conversation transcript" hidden></div>
-                    <div id="survey" role="button" tabindex="0" aria-label="Survey overview — click to pan">
+                    <div id="survey" role="button" tabindex="0" aria-label="Survey overview — click or press Enter to pan">
                         <svg id="survey-svg" viewBox="0 0 160 100"></svg>
                     </div>
                     <aside id="catalog" hidden aria-label="Scenario catalog">

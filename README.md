@@ -104,6 +104,7 @@ Design rules that keep the layers honest:
 | `spacegraphjs/zoom`, `/layout`, `/a11y`, `/navigation`, `/depth`, `/control`                  | Generic capabilities with minimal structural types                 |
 | `spacegraphjs/reading`, `/documents`, `/composer`                                             | Text projections, safe document rendering and the prompt editor    |
 | `spacegraphjs/vision`                                                                         | Vision analyzers, strategies, auto-fix, model loading              |
+| `spacegraphjs/quality`                                                                        | Pure quality gates and vision assertions for tests and CI          |
 | `@spacegraphjs/renderer`                                                                      | Dependency-free renderer contract                                  |
 | `@spacegraphjs/adapter`                                                                       | Host-agnostic model → `RenderModel` pipeline and conformance suite |
 | `@spacegraphjs/spacegraph-renderer`                                                           | SpaceGraph adapter: orthographic 2D and perspective 3D             |
@@ -143,7 +144,7 @@ The OpenCode host demo (`pnpm run graph:dev`, the real shell against a canonical
 | Render   | `graph.render()`                                                      |
 | Add      | `graph.addNode(...)`, `graph.addEdge(...)`                            |
 | Query    | `graph.$(id)`, `graph.findNodes(...)`, `graph.neighbors(id)`          |
-| Frame    | `graph.fitView()`, `graph.focusNode(id)`, `graph.center(x, y, z)`     |
+| Frame    | `graph.fitView()`, `graph.frame(ids?, options?)`, `graph.inspect(id)` |
 | Select   | `graph.select(ids)`, `graph.toggleSelection(id)`, `graph.selectAll()` |
 | Batch    | `graph.batch(fn)`, `graph.transaction(fn)`                            |
 | React    | `graph.watch(event, callback)`                                        |
@@ -199,10 +200,11 @@ contract and the standalone features.
 share one local event fixture. Selecting a row frames its card, selecting a card reveals its row,
 and the errors/approvals filter, graph/transcript/hybrid surfaces and four palettes show the same
 state through text and spatial views. Transcript cards own a tight, left-aligned terminal spine:
-large monospace lines set their own width while every left edge stays fixed, and attached context
-sits to the right as tiny satellites through `octaveLayout`; the spine-chain edges are nearly
-invisible because position already reads as sequence. Zoom promotes detail without enlarging the
-spine. The prompt loop is local — no provider and no network.
+monospace lines set their own width and wrap instead of clipping while every left edge stays fixed.
+Attached context sits in a clear gutter through the `transcriptLane` primitive, and the rail shows
+the full text of a selected row. Arrow keys, Home and End move through rows; `/` focuses the prompt.
+The spine-chain edges are nearly invisible because position already reads as sequence. Zoom promotes
+detail without enlarging the spine. The prompt loop is local — no provider and no network.
 
 ```
 pnpm --filter demo dev   # then open http://localhost:5173
@@ -286,15 +288,15 @@ pages.
 
 The contract is types plus tiny helpers, small enough to read in one sitting.
 
-| Contract piece         | Purpose                                                                                                                                |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `GraphRenderer`        | `mount`, `setModel`, `setTheme`, `setProjection`, `setDepth`, `setSelection`, `setViewport`, `fit`, `focus`, `resize`, `on`, `dispose` |
-| `RenderModel`          | `nodes`, `edges`, optional `extent`                                                                                                    |
-| `RenderNode`           | `id`, `kind`, `label`, `summary`, `html`, `position`, `size`, `status`, `visible`, `interactive`, `shape`, `data`                      |
-| `RenderEdge`           | `id`, `source`, `target`, `kind`, `label`, `confidence`, `visible`, `directed`, `style`                                                |
-| `RenderTheme`          | Colors, typography, and `direction`                                                                                                    |
-| `RendererCapabilities` | Projections, depths, DOM node support, edge labels, clusters, minimap, recommended limits                                              |
-| `RendererEventMap`     | `ready`, clicks, double-click, background, hover, selection, viewport, band, error                                                     |
+| Contract piece         | Purpose                                                                                                                                                                                                                       |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GraphRenderer`        | `mount`, `setModel`, `setTheme`, `setProjection`, `setDepth`, `setCardFacing`, `setSelection`, `setViewport`, `fit`, `focus`, `resize`, `applyPatch`, `getViewport`, `getNodeScreenPosition`, `projectWorld`, `on`, `dispose` |
+| `RenderModel`          | `nodes`, `edges`, optional `extent`                                                                                                                                                                                           |
+| `RenderNode`           | `id`, `kind`, `label`, `summary`, `html`, `position`, `size`, `status`, `visible`, `interactive`, `shape`, `data`                                                                                                             |
+| `RenderEdge`           | `id`, `source`, `target`, `kind`, `label`, `confidence`, `visible`, `directed`, `style`                                                                                                                                       |
+| `RenderTheme`          | Colors, typography, and `direction`                                                                                                                                                                                           |
+| `RendererCapabilities` | Projections, depths, DOM node support, edge labels, clusters, minimap, recommended limits                                                                                                                                     |
+| `RendererEventMap`     | `ready`, clicks, double-click, background, hover, selection, viewport, band, error                                                                                                                                            |
 
 Gate affordances with `supports(capabilities, ...)` and `supportsDepth(capabilities, ...)`. The additive capability surface is versioned by `LIBRARY_CONTRACT_VERSION`; negotiate capability, never renderer identity. Renderers must no-op on an unsupported depth mode, never throw. Absolute positions are authoritative; `data` is serializable; HTML is sanitized by the host; no library objects cross the boundary.
 
@@ -380,6 +382,8 @@ Two placement modes matter:
 
 `chapterPacking(ids, { card, gap?, columns?, viewport?, previous? })` is the small-grid sibling: it packs a handful of chapter cards, caps the column count to the viewport, and keeps cards already placed in `previous` in their cells so a streamed chapter does not reshuffle the view. The ids are plain strings — no domain vocabulary or renderer is involved. `app/pi` uses it for turn subgraphs; `app/demo/second-host.ts` uses the same helper with non-agent ids. That is the pattern for taking a flagship behavior into another domain: promote the placement rule into `spacegraphjs/layout`, keep the vocabulary in the host, and prove it with a second consumer.
 
+`transcriptLane(items, { spineStep?, contextStep?, gutter? })` is the console-shaped sibling: it keeps an append-only spine on a fixed left edge and opens a gutter plus one column per attachment depth, with each cluster centered on its parent. It returns positions and octave depths from plain ids and sizes; no renderer, labels or host vocabulary. `app/demo/html/interaction/transcript.html` uses it to share placement between its text rail and spatial cards.
+
 Hosts can always own placement directly with `setPositions(...)`, `pinAll(...)`, and `layoutOnce(...)`. Request a named layout explicitly when data arrives.
 
 ---
@@ -438,8 +442,9 @@ Vision is a verification tool, not a guarantee. Use it alongside unit, interacti
 | ----------------- | --------------------------------------------------------------------- |
 | **Selection**     | `select`, `toggle`, `clear`; `selection` and `selectedNode` getters   |
 | **Focus and fit** | `focus(id)`, `fit(ids, options)` — `minScale`, `padding`, `insets`    |
+| **Framing**       | `frame(ids?, options)`, `inspect(id, options)` on `SpaceGraph`        |
 | **Trail**         | `back()`, `forward()`, `trail`; reconciles by ID across model updates |
-| **Semantic zoom** | `bands`, `band`, `zoom`, `feedNormalized(zoom)`                       |
+| **Semantic zoom** | `bands`, `band`, `zoom` (raw), `normalizedZoom`, `feedNormalized()`   |
 | **Search**        | `search(query, limit)` ranked by label, summary, kind, then ID        |
 | **Queries**       | `connections(id)` for incident edges and neighboring nodes            |
 | **Reactivity**    | `onChange(snapshot)` emits on selection, trail, or band changes       |
@@ -556,7 +561,7 @@ The event system covers:
 - `export()` returns the spec plus camera and plugin state.
 - `import(data)` replaces the graph and restores the camera.
 - `loadSpec(spec)` and `update(spec)` add or patch in place.
-- The contract side adds `serializeRenderModel`, `parseRenderModel`, `renderToSVG` (pure, runs in Node), and `InlineGraph`.
+- `@spacegraphjs/svg-renderer` adds `serializeRenderModel`, `parseRenderModel`, `renderToSVG` (pure, runs in Node), and `InlineGraph`.
 - Persistence is yours: persist selection, band, projection, and renderer choice in your own view state.
 
 ---
@@ -654,7 +659,7 @@ When adding hot-path code, avoid per-frame allocation, prefer sets for membershi
 | Five-minute start                   | `docs/QUICKSTART.md`                              |
 | Host integration, contract-first    | `docs/host-integration.md`                        |
 | What the library does not do        | `docs/limitations.md`                             |
-| Vision plugin details               | `docs/vision-plugin.md`                           |
+| Quality gates and vision checks     | `docs/vision-plugin.md`                           |
 | Component naming and surface rules  | `AGENTS.md`                                       |
 | Recursive scopes and nested layouts | `docs/scopes.md`                                  |
 | Vocabulary (bands/rungs/scopes)     | `docs/glossary.md`                                |

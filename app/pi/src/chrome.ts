@@ -9,7 +9,6 @@ export function installPulldowns(): void {
         if (!(menu instanceof HTMLDetailsElement)) return [];
         const summary = menu.querySelector<HTMLElement>(':scope > summary');
         if (!summary) return [];
-        summary.setAttribute('aria-haspopup', 'true');
         summary.setAttribute('aria-expanded', String(menu.open));
         menu.addEventListener('toggle', () =>
             summary.setAttribute('aria-expanded', String(menu.open)),
@@ -66,7 +65,7 @@ export class ChromeController {
     }
 
     toggleRail(open?: boolean): boolean {
-        const next = open ?? document.body.dataset.rail !== 'closed';
+        const next = open ?? (document.body.dataset.rail ?? 'open') === 'closed';
         document.body.dataset.rail = next ? 'open' : 'closed';
         this.host.resize();
         this.host.record('rail:toggle', { open: next });

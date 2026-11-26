@@ -20,7 +20,7 @@ export function setupDefaultHUD(app: SpaceGraphApp, theme: HudTheme) {
 
     renderToolbar(app, theme);
 
-    app.emitSelectionChanged();
+    app.updateStatsHUD();
     renderToolbarActions(app);
 }
 
