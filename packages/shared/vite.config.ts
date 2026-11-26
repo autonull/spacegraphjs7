@@ -7,6 +7,7 @@ export default solidLibConfig(
         facets: 'src/facets.ts',
         icons: 'src/icons.tsx',
         popover: 'src/popover.tsx',
+        menu: 'src/menu.tsx',
         types: 'src/types.ts',
         domain: 'src/domain.ts',
         animations: 'src/animations.ts',

@@ -44,47 +44,30 @@ function createAction(event: InputEventType, prefix: 'camera' | 'interaction'): 
     };
 }
 
-function createActions(): InputAction[] {
-    return [
-        ...CAMERA_EVENTS.map((e) => createAction(e, 'camera')),
-        ...INTERACTION_EVENTS.map((e) => createAction(e, 'interaction')),
-        createAction('keydown', 'interaction'),
-        createAction('keyup', 'interaction'),
-    ];
-}
+const GROUPS = [
+    { prefix: 'camera', events: CAMERA_EVENTS, source: 'canvas', priority: 100 },
+    { prefix: 'interaction', events: INTERACTION_EVENTS, source: 'canvas', priority: 50 },
+    {
+        prefix: 'interaction',
+        events: ['keydown', 'keyup'] as const,
+        source: 'window',
+        priority: 10,
+    },
+] as const;
 
-function createBindings(): InputBinding[] {
-    return [
-        ...CAMERA_EVENTS.map((e) => ({
-            id: `camera-${e}`,
-            action: `camera.${e}`,
-            sources: ['canvas'],
-            eventType: e,
-            priority: 100,
+const createActions = (): InputAction[] =>
+    GROUPS.flatMap(({ prefix, events }) => events.map((event) => createAction(event, prefix)));
+
+const createBindings = (): InputBinding[] =>
+    GROUPS.flatMap(({ prefix, events, source, priority }) =>
+        events.map((event) => ({
+            id: `${prefix}-${event}`,
+            action: `${prefix}.${event}`,
+            sources: [source],
+            eventType: event,
+            priority,
         })),
-        ...INTERACTION_EVENTS.map((e) => ({
-            id: `interaction-${e}`,
-            action: `interaction.${e}`,
-            sources: ['canvas'],
-            eventType: e,
-            priority: 50,
-        })),
-        {
-            id: 'interaction-keydown',
-            action: 'interaction.keydown',
-            sources: ['window'],
-            eventType: 'keydown',
-            priority: 10,
-        },
-        {
-            id: 'interaction-keyup',
-            action: 'interaction.keyup',
-            sources: ['window'],
-            eventType: 'keyup',
-            priority: 10,
-        },
-    ];
-}
+    );
 
 export function applyDefaultInputConfig(inputManager: InputManager, sg: SpaceGraph): void {
     const canvas = sg.renderer.renderer.domElement;

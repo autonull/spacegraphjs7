@@ -1,7 +1,7 @@
 // One edge ladder: bundle → hair → arrow → labelled causal ribbon. The library selects a rung from
 // a ScaleDomain sample; the host owns the styles and may replace or reorder every rung.
 
-import { LadderBase, rungsFromStops } from '../core/ladder';
+import { LadderBase, rungsFromStops, type LadderEntry } from '../core/ladder';
 import type { EdgeData } from '../types/base-data';
 import type { ScaleSample } from '../zoom/ScaleDomain';
 
@@ -19,12 +19,8 @@ export const DEFAULT_EDGE_STYLES: Readonly<Record<(typeof EDGE_RUNG_IDS)[number]
     ribbon: { thickness: 4, arrowhead: 'target', labelLod: [{ distance: 0 }] },
 };
 
-export interface LadderEdge {
-    readonly id: string;
-    readonly kind: string;
-    /** Host salience value; overrides the interpolated importance of the scale. */
-    readonly importance?: number;
-}
+/** A host entry whose optional importance overrides the scale's interpolated value. */
+export type LadderEdge = LadderEntry;
 
 export interface EdgeRung {
     readonly id: string;

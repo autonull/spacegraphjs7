@@ -1,4 +1,5 @@
 import { Kernel } from './kernel';
+import { isRecord } from './record';
 import type { Edge, Hyperedge, Node } from './kernel';
 import { SessionKernel } from './session';
 import type { SessionEntry } from './session';
@@ -35,9 +36,6 @@ export type WorkspaceDocument = {
     };
     readonly clock: Readonly<Record<string, number>>;
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-    typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const parse = (json: string): unknown => {
     try {

@@ -2,15 +2,11 @@
 // ScaleDomain sample; the host supplies the order, the bands and the appearance of every rung.
 // Selection keeps node ids stable across swaps so selection and permalinks stay valid (P1.2/P1.3).
 
-import { LadderBase, rungsFromStops } from '../core/ladder';
+import { LadderBase, rungsFromStops, type LadderEntry } from '../core/ladder';
 import type { ScaleSample } from '../zoom/ScaleDomain';
 
-export interface LadderNode {
-    readonly id: string;
-    readonly kind: string;
-    /** Host salience value; overrides the interpolated importance of the scale sample. */
-    readonly importance?: number;
-}
+/** A host node whose optional importance overrides the scale sample's interpolated value. */
+export type LadderNode = LadderEntry;
 
 export interface LadderContext {
     /** The stable node id, unchanged when the representation changes. */

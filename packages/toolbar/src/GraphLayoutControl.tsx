@@ -4,6 +4,7 @@
 
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
+import { menuOption } from '@spacegraphjs/shared/menu';
 import type { IconComponent } from '@spacegraphjs/shared/icons';
 import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { I18n } from '@spacegraphjs/shared/i18n';
@@ -33,22 +34,15 @@ export function GraphLayoutControl(props: GraphLayoutControlProps): JSX.Element 
                 valueSlot="graph-layout-name"
                 Popover={PopoverComponent}
             >
-                {LAYOUTS.map((layout) => (
-                    <button
-                        type="button"
-                        data-slot="graph-layout-option"
-                        data-value={layout}
-                        class="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-12-regular text-text-base hover:bg-surface-base-hover"
-                        aria-pressed={props.layout === layout}
-                        onClick={(event) => {
-                            const menu = event.currentTarget.closest('details');
-                            if (menu) menu.open = false;
-                            onLayoutChange?.(layout);
-                        }}
-                    >
-                        {i18n.t(VOCABULARY_KEYS.layout[layout])}
-                    </button>
-                ))}
+                {LAYOUTS.map((layout) =>
+                    menuOption({
+                        label: i18n.t(VOCABULARY_KEYS.layout[layout]),
+                        slot: 'graph-layout-option',
+                        value: layout,
+                        pressed: props.layout === layout,
+                        onClick: () => onLayoutChange?.(layout),
+                    }),
+                )}
             </ToolbarMenu>
         </Show>
     );

@@ -3,6 +3,7 @@
  */
 
 import type { JSX } from 'solid-js';
+import { menuOption } from '@spacegraphjs/shared/menu';
 import type { IconComponent } from '@spacegraphjs/shared/icons';
 import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { I18n } from '@spacegraphjs/shared/i18n';
@@ -48,17 +49,14 @@ export function GraphQuestionsControl(props: GraphQuestionsControlProps): JSX.El
         window.dispatchEvent(new CustomEvent('graph:command', { detail: { name } }));
     };
 
-    const question = (name: QuestionName, label: string) => (
-        <button
-            type="button"
-            data-slot="graph-question-option"
-            data-value={name}
-            class="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-12-regular text-text-base hover:bg-surface-base-hover"
-            onClick={() => ask(name)}
-        >
-            {label}
-        </button>
-    );
+    const question = (name: QuestionName, label: string) =>
+        menuOption({
+            label,
+            slot: 'graph-question-option',
+            value: name,
+            keepOpen: true,
+            onClick: () => ask(name),
+        });
 
     return (
         <ToolbarMenu

@@ -120,10 +120,10 @@ export type { DesignTokens } from './tokens';
 export { defaultTokens, darkTokens, generateTokenCSS } from './tokens';
 
 // CSS utilities
-export { cx, cn, styleVar, generateId, fixedSize, absolutePosition } from './css';
+export { cx, styleVar, generateId, fixedSize, absolutePosition } from './css';
 
 // Hooks
 export { useToggle, useControlledValue, useDebounce, useLocalStorage } from './hooks';
 
 // Utils
-export { nodeByID, diffTone, type DiffTone } from './utils';
+export { nodeByID, diffTone, formatAge, type DiffTone } from './utils';

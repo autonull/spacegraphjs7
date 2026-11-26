@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { GraphFacets } from './types';
 import { facetCount, mergeFacets, toggleFacet } from './facets';
+import { formatAge } from './utils';
 import { noopI18n, passthroughI18n } from './i18n';
 import { createIconRenderer } from '@spacegraphjs/shared/icons';
 import { createPopoverRenderer } from '@spacegraphjs/shared/popover';
@@ -17,6 +18,18 @@ describe('i18n fallbacks', () => {
     it('interpolates placeholders but leaves keys intact', () => {
         expect(passthroughI18n.t('ui.label', { name: 'Ada' })).toBe('ui.label');
         expect(passthroughI18n.plural('{count} items', 3, { count: 3 })).toBe('3 items');
+    });
+});
+
+describe('formatAge', () => {
+    it('uses the largest whole unit below a day', () => {
+        expect(formatAge(0)).toBe('0s');
+        expect(formatAge(59_999)).toBe('59s');
+        expect(formatAge(60_000)).toBe('1m');
+        expect(formatAge(3 * 60_000)).toBe('3m');
+        expect(formatAge(3_600_000)).toBe('1h');
+        expect(formatAge(86_400_000)).toBe('1d');
+        expect(formatAge(172_800_000)).toBe('2d');
     });
 });
 

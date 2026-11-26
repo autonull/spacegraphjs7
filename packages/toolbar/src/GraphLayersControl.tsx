@@ -5,6 +5,7 @@
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
 import { facetCount, mergeFacets, toggleFacet, type FacetDisplayCounts } from '@spacegraphjs/shared';
+import { menuOption, type MenuOptionProps } from '@spacegraphjs/shared/menu';
 import type { IconComponent } from '@spacegraphjs/shared/icons';
 import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { I18n } from '@spacegraphjs/shared/i18n';
@@ -16,7 +17,6 @@ import type {
     ZoomLevel,
     DepthMode,
 } from '@spacegraphjs/shared/types';
-import { menuOption, type MenuOptionProps } from './MenuOption';
 import { ToolbarMenu } from './ToolbarMenu';
 import {
     DEPTH_MODES,

@@ -9,31 +9,12 @@ export const MathConst = Object.freeze({
     EPSILON: 1e-6,
 } as const);
 
-export const Animation = Object.freeze({
-    Duration: Object.freeze({
-        FAST: 0.3,
-        DEFAULT: 0.5,
-        SLOW: 1.0,
-        LAYOUT: 1.5,
-        SNAP: 0.15,
-        SPRING: 0.8,
-    }),
-    Easing: Object.freeze({
-        DEFAULT: 'quadOut',
-        SMOOTH: 'sineOut',
-        BOUNCE: 'bounceOut',
-        ELASTIC: 'elasticOut',
-        SNAP: 'backOut',
-    }),
-} as const);
-
-export const Zoom = Object.freeze({
-    MULTIPLIER: 1.5,
-    MIN_RADIUS: 150,
-    MAX_RADIUS: 5000,
-    DEFAULT_RADIUS: 800,
-    SPEED: 0.1,
-    SMOOTH: 0.08,
+export const Easing = Object.freeze({
+    DEFAULT: 'quadOut',
+    SMOOTH: 'sineOut',
+    BOUNCE: 'bounceOut',
+    ELASTIC: 'elasticOut',
+    SNAP: 'backOut',
 } as const);
 
 export const Interaction = Object.freeze({
@@ -126,13 +107,5 @@ export const LayoutDefaults = Object.freeze({
     MAX_SPEED: 50,
 } as const);
 
-export const Input = Object.freeze({
-    ZOOM_SPEED_FACTOR: 0.005,
-    PAN_SPEED_FACTOR: 0.002,
-    ORBIT_SPEED_FACTOR: 0.005,
-    WHEEL_MULTIPLIER: 1,
-} as const);
-
 export const { RAD2DEG, PI, TAU, EPSILON } = MathConst;
-export const { Easing } = Animation;
 export const { Priority: FingeringPriority, Thresholds: InteractionThresholds } = Interaction;

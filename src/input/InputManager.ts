@@ -304,13 +304,13 @@ export class InputManager {
 
     private fingerFrom(event: InputEvent, data: PointerEventData): Finger {
         const target = data.target;
-        const ndc =
+        const ndc = clientToNdc(
+            data.x,
+            data.y,
             target instanceof Element
-                ? clientToNdc(data.x, data.y, target.getBoundingClientRect())
-                : {
-                      x: (data.x / window.innerWidth) * 2 - 1,
-                      y: -(data.y / window.innerHeight) * 2 + 1,
-                  };
+                ? target.getBoundingClientRect()
+                : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight },
+        );
         return {
             pointerId: (event.originalEvent as PointerEvent)?.pointerId ?? 0,
             position: { x: data.x, y: data.y },

@@ -36,6 +36,11 @@
             "import": "./dist/popover.js",
             "default": "./dist/popover.js"
         },
+        "./menu": {
+            "types": "./dist/menu.d.ts",
+            "import": "./dist/menu.js",
+            "default": "./dist/menu.js"
+        },
         "./types": {
             "types": "./dist/types.d.ts",
             "import": "./dist/types.js",

@@ -190,10 +190,7 @@ export class PluginManager {
     }
 
     find(predicate: (plugin: Plugin) => boolean): Plugin | undefined {
-        for (const plugin of this.plugins.values()) {
-            if (predicate(plugin)) return plugin;
-        }
-        return undefined;
+        return this.filter(predicate)[0];
     }
 
     filter(predicate: (plugin: Plugin) => boolean): Plugin[] {

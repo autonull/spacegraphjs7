@@ -38,11 +38,6 @@ export function cx(
 }
 
 /**
- * Shorthand for cx - same functionality, shorter name.
- */
-export const cn = cx;
-
-/**
  * Creates a CSS variable reference with optional fallback.
  * @param name - Variable name (without -- prefix)
  * @param fallback - Optional fallback value

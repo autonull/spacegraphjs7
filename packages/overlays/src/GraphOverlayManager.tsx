@@ -203,27 +203,11 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
         }
     });
 
-    const createDivPlaceholder = () => document.createElement('div');
-
-    const createPeekAnchor = () => {
+    const createAnchor = (slot: string, className?: string, display?: string) => {
         const el = document.createElement('div');
-        el.setAttribute('data-slot', 'graph-peek-anchor');
-        el.className = 'absolute z-20 -translate-x-1/2';
-        return el;
-    };
-
-    const createEdgePeekAnchor = () => {
-        const el = document.createElement('div');
-        el.setAttribute('data-slot', 'graph-edge-peek-anchor');
-        el.className = 'absolute bottom-2 left-2 z-20';
-        return el;
-    };
-
-    const createPopoverAnchor = () => {
-        const el = document.createElement('div');
-        el.setAttribute('data-slot', 'graph-popover-anchor');
-        el.className = 'absolute z-20';
-        el.style.display = 'none';
+        el.setAttribute('data-slot', slot);
+        if (className) el.className = className;
+        if (display) el.style.display = display;
         return el;
     };
 
@@ -234,16 +218,14 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
         placeholderSlot: string,
     ) => {
         if (render) return render(hostProps);
-        const el = createDivPlaceholder();
-        el.setAttribute('data-slot', placeholderSlot);
-        return el;
+        return createAnchor(placeholderSlot);
     };
 
     // Peek node anchor
     const renderPeekNodeAnchor = () => {
         const frame = props.peekFrame;
         if (!frame) return null;
-        const el = createPeekAnchor();
+        const el = createAnchor('graph-peek-anchor', 'absolute z-20 -translate-x-1/2');
         el.style.left = `${peekLeft()}px`;
         el.style.top = `${peekTop()}px`;
         const peekComponent = createComponent(GraphPeek, {
@@ -259,7 +241,7 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
     const renderPeekEdgeAnchor = () => {
         const peekEdge = props.peekEdge;
         if (!peekEdge) return null;
-        const el = createEdgePeekAnchor();
+        const el = createAnchor('graph-edge-peek-anchor', 'absolute bottom-2 left-2 z-20');
         const peekComponent = createComponent(GraphPeek, {
             edge: peekEdge,
             i18n,
@@ -272,7 +254,7 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
     // Popover anchor
     const renderPopoverAnchor = () => {
         if (props.effectiveDetailMode !== 'popover') return null;
-        const el = createPopoverAnchor();
+        const el = createAnchor('graph-popover-anchor', 'absolute z-20', 'none');
         const placement = props.popoverPlacement;
         el.style.left = `${placement.left}px`;
         el.style.top = `${placement.top}px`;

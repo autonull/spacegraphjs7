@@ -27,14 +27,10 @@ export class StaticMethods {
         spec: GraphSpec,
         options: SpaceGraphOptions = {},
     ): Promise<SpaceGraph> {
-        const element = StaticMethods.getContainerElement(container);
-        if (!element) {
-            const error = new Error(
-                `[SpaceGraph] Container not found: "${container}". Please ensure the element exists in the DOM before calling SpaceGraph.create().`,
-            );
-            logger.error(error.message);
-            throw error;
-        }
+        const element = StaticMethods.requireContainer(
+            container,
+            'Please ensure the element exists in the DOM before calling SpaceGraph.create().',
+        );
 
         if (!StaticMethods.checkWebGL()) {
             logger.warn(
@@ -94,9 +90,15 @@ export class StaticMethods {
         );
     }
 
-    private static requireContainer(container: string | HTMLElement): HTMLElement {
+    private static requireContainer(container: string | HTMLElement, hint?: string): HTMLElement {
         const element = StaticMethods.getContainerElement(container);
-        if (!element) throw new Error(`[SpaceGraph] Container not found: "${container}"`);
+        if (!element) {
+            const error = new Error(
+                `[SpaceGraph] Container not found: "${container}"${hint ? `. ${hint}` : ''}`,
+            );
+            logger.error(error.message);
+            throw error;
+        }
         return element;
     }
 

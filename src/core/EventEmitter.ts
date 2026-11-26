@@ -14,7 +14,7 @@ export class EventEmitter<T extends Record<string, any> = any> {
 
     on<K extends keyof T>(event: K, handler: (event: T[K]) => void): Disposable {
         const set = this.handlers.get(event) ?? new Set();
-        if (!this.handlers.has(event)) this.handlers.set(event, set);
+        this.handlers.set(event, set);
         set.add(handler);
         return { dispose: () => set.delete(handler) };
     }
@@ -37,7 +37,7 @@ export class EventEmitter<T extends Record<string, any> = any> {
 
     emitBatched<K extends keyof T>(event: K, data: T[K]): void {
         const arr = this.batched.get(event) ?? [];
-        if (!this.batched.has(event)) this.batched.set(event, arr);
+        this.batched.set(event, arr);
         arr.push(data);
         if (!this.cancelBatch) {
             const flush = () => this.flushBatch();

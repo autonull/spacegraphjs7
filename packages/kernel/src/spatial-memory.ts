@@ -1,4 +1,4 @@
-// No external imports needed - uses only internal types
+import { isRecord } from './record';
 
 /** Spatial memory key parts. */
 export interface SpatialMemoryKey {
@@ -198,10 +198,6 @@ function readTriple(value: unknown): [number, number, number] | undefined {
     if (!value.every((coordinate) => typeof coordinate === 'number' && Number.isFinite(coordinate)))
         return undefined;
     return [value[0], value[1], value[2]];
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**

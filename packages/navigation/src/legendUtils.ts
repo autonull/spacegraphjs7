@@ -1,5 +1,7 @@
 import type { RenderTheme, EqualizerRuleSet } from '@spacegraphjs/shared';
 
+export { formatAge } from '@spacegraphjs/shared';
+
 /** How an edge of each confidence is drawn; the adapter decides the same. */
 export const CONFIDENCE_STYLE = {
     explicit: 'solid',
@@ -97,18 +99,6 @@ export function statusAccent(theme: RenderTheme, status: string): string {
     const themeKey = STATUS_COLORS[status] ?? 'textMuted';
     const value = theme[themeKey];
     return typeof value === 'string' ? value : theme.textMuted;
-}
-
-/** Formats a timestamp as a relative age string. */
-export function formatAge(ms: number): string {
-    const seconds = Math.floor(ms / 1000);
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h`;
-    const days = Math.floor(hours / 24);
-    return `${days}d`;
 }
 
 const SOURCE_LABELS: Record<string, string> = {

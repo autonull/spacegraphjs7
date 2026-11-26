@@ -4,11 +4,11 @@
 
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
+import { menuOption } from '@spacegraphjs/shared/menu';
 import type { IconComponent } from '@spacegraphjs/shared/icons';
 import type { PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { RendererCapabilities, GraphArrangement, GraphSide } from '@spacegraphjs/shared/types';
-import { menuOption } from './MenuOption';
 import { GRAPH_ARRANGEMENTS, VOCABULARY_KEYS } from '@spacegraphjs/shared/types';
 
 export interface GraphDrawControlProps {
