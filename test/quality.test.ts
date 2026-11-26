@@ -1,14 +1,9 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { checkQuality, correctQuality, type QualityModel } from '../src/quality';
+import { defectiveModel, heavyModel } from './fixtures/quality';
 
-const model: QualityModel = {
-    nodes: [
-        { id: 'a', position: [0, 0, 0] },
-        { id: 'b', position: [2, 0, 0] },
-    ],
-    edges: [{ id: 'e', source: 'a', target: 'missing' }],
-};
+const model = defectiveModel();
 
 describe('checkQuality', () => {
     it('reports measured defects without changing the model', () => {

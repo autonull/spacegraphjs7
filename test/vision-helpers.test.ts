@@ -1,31 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { spacegraphVision, visionAssert, type QualityModel } from '../src/quality';
+import { spacegraphVision, visionAssert } from '../src/quality';
+import { cleanModel, defectiveModel, heavyModel } from './fixtures/quality';
 
-const clean: QualityModel = {
-    nodes: [
-        { id: 'a', label: 'A', position: [0, 0, 0] },
-        { id: 'b', label: 'B', position: [400, 0, 0] },
-    ],
-    edges: [{ id: 'e', source: 'a', target: 'b' }],
-};
-
-const defective: QualityModel = {
-    nodes: [
-        { id: 'a', position: [0, 0, 0] },
-        { id: 'b', position: [2, 0, 0] },
-    ],
-    edges: [{ id: 'e', source: 'a', target: 'missing' }],
-};
-
-const heavy: QualityModel = {
-    nodes: ['a', 'b', 'c'].map((id, index) => ({
-        id,
-        label: id.toUpperCase(),
-        position: [index * 100, 0, 0] as const,
-        data: { html: '<b>x</b>' },
-    })),
-};
+const clean = cleanModel();
+const defective = defectiveModel();
+const heavy = heavyModel();
 
 describe('spacegraphVision', () => {
     it('returns a passing graded report for a clean model', () => {

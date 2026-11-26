@@ -17,9 +17,17 @@ const midY = (edge: FluxEdge): number => {
     return (positions.getY(12) + positions.getY(13)) / 2;
 };
 
+const makeEdge = (data: Record<string, unknown>): FluxEdge =>
+    new FluxEdge(
+        undefined,
+        { id: 'e', source: 'a', target: 'b', type: 'FluxEdge', data },
+        node(0, 0),
+        node(100, 0),
+    );
+
 describe('FluxEdge', () => {
     it('builds a curved tapered filament with endpoints inset', () => {
-        const edge = new FluxEdge(undefined, { id: 'e', source: 'a', target: 'b', type: 'FluxEdge', data: { weight: 0.8, minRadius: 4, maxRadius: 30, color: 0x00ffcc, inset: 0.12, halo: 0.6 } }, node(0, 0), node(100, 0));
+        const edge = makeEdge({ weight: 0.8, minRadius: 4, maxRadius: 30, color: 0x00ffcc, inset: 0.12, halo: 0.6 });
         edge.update();
         const positions = (edge.mesh.geometry.attributes.position as THREE.BufferAttribute).array;
         const colors = (edge.mesh.geometry.attributes.color as THREE.BufferAttribute).array;
@@ -33,14 +41,7 @@ describe('FluxEdge', () => {
     });
 
     it('routes a tapered ribbon through a declared corridor', () => {
-        const edge = new FluxEdge(
-            undefined,
-            {
-                id: 'e', source: 'a', target: 'b', type: 'FluxEdge',
-                data: { curve: 0, path: [[50, 200, 0]] },
-            },
-            node(0, 0), node(100, 0),
-        );
+        const edge = makeEdge({ curve: 0, path: [[50, 200, 0]] });
         edge.update();
         const positions = edge.mesh.geometry.attributes.position as THREE.BufferAttribute;
         const mid = 6;
@@ -51,25 +52,14 @@ describe('FluxEdge', () => {
     });
 
     it('falls back to the direct bow for an empty path', () => {
-        const edge = new FluxEdge(
-            undefined,
-            { id: 'e', source: 'a', target: 'b', type: 'FluxEdge', data: { curve: 0, path: [] } },
-            node(0, 0), node(100, 0),
-        );
+        const edge = makeEdge({ curve: 0, path: [] });
         edge.update();
         expect(midY(edge)).toBeCloseTo(0, 1);
         edge.dispose();
     });
 
     it('routes the object waypoints emitted by bundleCorridor with fixed topology and tint', () => {
-        const edge = new FluxEdge(
-            undefined,
-            {
-                id: 'e', source: 'a', target: 'b', type: 'FluxEdge',
-                data: { curve: 0, color: 0x8ff0d0, ribbon: { path: corridor(240) } },
-            },
-            node(0, 0), node(100, 0),
-        );
+        const edge = makeEdge({ curve: 0, color: 0x8ff0d0, ribbon: { path: corridor(240) } });
         edge.update();
         expect(midY(edge)).toBeGreaterThan(200);
         const positions = edge.mesh.geometry.attributes.position as THREE.BufferAttribute;
@@ -81,14 +71,7 @@ describe('FluxEdge', () => {
     });
 
     it('places the arrowhead along the corridor without a color attribute on the arrow', () => {
-        const edge = new FluxEdge(
-            undefined,
-            {
-                id: 'e', source: 'a', target: 'b', type: 'FluxEdge',
-                data: { curve: 0, ribbon: { path: corridor(240) }, arrowhead: 'target' },
-            },
-            node(0, 0), node(100, 0),
-        );
+        const edge = makeEdge({ curve: 0, ribbon: { path: corridor(240) }, arrowhead: 'target' });
         edge.update();
         expect(edge.arrow.visible).toBe(true);
         expect(edge.arrow.position.y).toBeGreaterThan(50);
@@ -99,14 +82,7 @@ describe('FluxEdge', () => {
     });
 
     it('reroutes when the declared corridor is replaced and ignores malformed waypoints', () => {
-        const edge = new FluxEdge(
-            undefined,
-            {
-                id: 'e', source: 'a', target: 'b', type: 'FluxEdge',
-                data: { curve: 0, ribbon: { path: corridor(240) } },
-            },
-            node(0, 0), node(100, 0),
-        );
+        const edge = makeEdge({ curve: 0, ribbon: { path: corridor(240) } });
         edge.update();
         const routed = midY(edge);
         edge.updateSpec({ data: { ribbon: { path: corridor(320) } } });

@@ -1,14 +1,9 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { checkQuality, correctQuality, visionAssert, type QualityModel } from '../src/quality';
+import { checkQuality, correctQuality, visionAssert } from '../src/quality';
+import { cleanModel } from './fixtures/quality';
 
-const model: QualityModel = {
-    nodes: [
-        { id: 'a', label: 'A', position: [0, 0, 0] },
-        { id: 'b', label: 'B', position: [400, 0, 0] },
-    ],
-    edges: [{ id: 'e', source: 'a', target: 'b' }],
-};
+const model = cleanModel();
 
 function mirror(ids: readonly string[], options: { direction?: string; reduced?: boolean } = {}) {
     const container = document.createElement('div');
