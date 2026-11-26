@@ -1,5 +1,7 @@
+import { createRoot } from 'solid-js';
 import { describe, it, expect } from 'vitest';
 import { createMockNode, createMockModel } from './test-fixtures';
+import { useSearch } from './hooks';
 import type { GraphViewData } from '@spacegraphjs/shared';
 import {
     search,
@@ -27,6 +29,22 @@ describe('search', () => {
         const results = search(model, 'Node 1', searchFn);
         expect(results).toHaveLength(1);
         expect(results[0].id).toBe('1');
+    });
+});
+
+describe('useSearch', () => {
+    it('honours a custom search text extractor', () => {
+        const model = createMockModel({
+            nodes: [createMockNode({ id: '1', label: 'Alpha', data: { code: 'needle' } })],
+        });
+        const state = createRoot(() =>
+            useSearch({
+                model,
+                initialQuery: 'needle',
+                searchTextFn: (node) => [String(node.data?.['code'] ?? '')],
+            }),
+        );
+        expect(state.results.map((node) => node.id)).toEqual(['1']);
     });
 });
 

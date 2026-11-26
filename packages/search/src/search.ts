@@ -1,19 +1,28 @@
 import type { GraphViewData, GraphNode, GraphFacets, FacetCounts } from '@spacegraphjs/shared';
 import { defaultFacetAccessors, facetCounts as facetCountsWithAccessors } from './facets';
-import { defaultSearchText } from './search-text';
+import { defaultSearchText, type SearchTextFn } from './search-text';
 
 export { defaultSearchText } from './search-text';
 export type { SearchTextFn } from './search-text';
 
 /** Search function signature for custom ranking. */
-export type SearchFn = (model: GraphViewData, query: string) => GraphNode[];
+export type SearchFn = (
+    model: GraphViewData,
+    query: string,
+    textFn?: SearchTextFn,
+) => GraphNode[];
 
 /**
  * Generic search that delegates to a search function.
  * The host provides the search function (e.g., rankedSearch) and search text extractor.
  */
-export function search(model: GraphViewData, query: string, searchFn: SearchFn): GraphNode[] {
-    return searchFn(model, query);
+export function search(
+    model: GraphViewData,
+    query: string,
+    searchFn: SearchFn,
+    textFn?: SearchTextFn,
+): GraphNode[] {
+    return searchFn(model, query, textFn);
 }
 
 /**
@@ -47,7 +56,11 @@ export function searchBy(
  * Default rank function for session-like graphs.
  * Priority: label prefix > label contains > name contains > path contains > body contains
  */
-export const defaultRank = (node: GraphNode, needle: string): number => {
+export const defaultRank = (
+    node: GraphNode,
+    needle: string,
+    textFn: SearchTextFn = defaultSearchText,
+): number => {
     const label = node.label.toLowerCase();
     if (label.startsWith(needle)) return 0;
     if (label.includes(needle)) return 1;
@@ -58,15 +71,19 @@ export const defaultRank = (node: GraphNode, needle: string): number => {
     const path = (node.data?.path as string | undefined)?.toLowerCase();
     if (path?.includes(needle)) return 3;
 
-    return defaultSearchText(node).join('\n').toLowerCase().includes(needle) ? 4 : -1;
+    return textFn(node).join('\n').toLowerCase().includes(needle) ? 4 : -1;
 };
 
 /**
  * Ranked search using the default rank function.
  * Convenience function that combines searchBy with defaultRank.
  */
-export function rankedSearch(model: GraphViewData, query: string): GraphNode[] {
-    return searchBy(model, query, defaultRank);
+export function rankedSearch(
+    model: GraphViewData,
+    query: string,
+    textFn: SearchTextFn = defaultSearchText,
+): GraphNode[] {
+    return searchBy(model, query, (node, needle) => defaultRank(node, needle, textFn));
 }
 
 /**

@@ -29,12 +29,11 @@ export function GraphTimeControl(props: GraphTimeControlProps): JSX.Element {
         rest.checkpoint < rest.turnCount - 1;
     const timeShown = () => timeOpen() ?? offLive();
 
-    let rootEl!: HTMLDivElement;
     onMount(() => {
         const handleCommand = (event: Event) => {
             const detail = (event as CustomEvent<{ name?: string }>).detail;
             if (detail?.name !== 'facets') return;
-            const menu = rootEl?.querySelector<HTMLDetailsElement>(
+            const menu = document.querySelector<HTMLDetailsElement>(
                 '[data-slot="graph-toolbar-facets"]',
             );
             if (menu) menu.open = true;

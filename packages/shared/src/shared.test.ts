@@ -32,6 +32,13 @@ describe('shared icons', () => {
         const icon = renderIcon({ name: 'unknown-icon', size: 'small' });
         expect(icon).toBeDefined();
     });
+
+    it('sizes fallback icons without changing stroke width', () => {
+        const icon = createIconRenderer()({ name: 'outline-eye', size: 'medium' }) as HTMLElement;
+        expect(icon.innerHTML).toContain('width="20"');
+        expect(icon.innerHTML).toContain('height="20"');
+        expect(icon.innerHTML).toContain('stroke-width="2"');
+    });
 });
 
 describe('shared popover', () => {

@@ -47,13 +47,11 @@ export function createManualPositionsManager(
     });
 
     const pushHistory = () => {
-        const snapshot = captureSnapshot();
         state = {
             ...state,
-            history: [...state.history, snapshot].slice(-maxHistory),
+            history: [...state.history, captureSnapshot()].slice(-maxHistory),
             future: [],
         };
-        notify();
     };
 
     const getState = () => state;
@@ -83,21 +81,26 @@ export function createManualPositionsManager(
 
     const moveNodes = (nodes: readonly { id: string; position: [number, number, number] }[]) => {
         const hasChanges = nodes.some((n) => !state.positions[n.id] || !positionsEqual(state.positions[n.id], n.position));
-        if (hasChanges) pushHistory();
-        const newPositions = { ...state.positions };
-        for (const node of nodes) newPositions[node.id] = node.position;
-        state = { ...state, positions: newPositions };
+        if (!hasChanges) return;
+        pushHistory();
+        state = {
+            ...state,
+            positions: { ...state.positions, ...Object.fromEntries(nodes.map((n) => [n.id, n.position])) },
+        };
+        notify();
     };
 
     const resizeNode = (resize: { id: string; size: [number, number]; position: [number, number, number] }) => {
         const posChanged = !state.positions[resize.id] || !positionsEqual(state.positions[resize.id], resize.position);
         const sizeChanged = !state.sizes[resize.id] || !sizesEqual(state.sizes[resize.id], resize.size);
-        if (posChanged || sizeChanged) pushHistory();
+        if (!posChanged && !sizeChanged) return;
+        pushHistory();
         state = {
             ...state,
             positions: { ...state.positions, [resize.id]: resize.position },
             sizes: { ...state.sizes, [resize.id]: resize.size },
         };
+        notify();
     };
 
     const undo = () => {

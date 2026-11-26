@@ -37,6 +37,7 @@ export const GraphSearch = (props: GraphSearchProps) => {
     let hintTemplate: ReturnType<typeof template> | null = null;
     let listTemplate: ReturnType<typeof template> | null = null;
     let resultTemplate: ReturnType<typeof template> | null = null;
+    let rowTemplate: ReturnType<typeof template> | null = null;
     let noResultsTemplate: ReturnType<typeof template> | null = null;
     let resultCountTemplate: ReturnType<typeof template> | null = null;
 
@@ -63,7 +64,11 @@ export const GraphSearch = (props: GraphSearchProps) => {
             false,
         );
         resultTemplate = template(
-            '<ul id="graph-search-results" role="listbox" aria-label=""><li><button type="button" data-index="" data-node-id="" data-active="false" role="option" aria-selected="false" class="flex w-full flex-col gap-0.5 px-3 py-1.5 text-left hover:bg-surface-base-hover"><span class="truncate text-12-regular text-text-strong"></span><span class="truncate text-12-regular text-text-weak"></span></button></li></ul>',
+            '<ul id="graph-search-results" role="listbox" aria-label=""></ul>',
+            false,
+        );
+        rowTemplate = template(
+            '<li><button type="button" data-index="" data-node-id="" data-active="false" role="option" aria-selected="false" class="flex w-full flex-col gap-0.5 px-3 py-1.5 text-left hover:bg-surface-base-hover"><span class="truncate text-12-regular text-text-strong"></span><span class="truncate text-12-regular text-text-weak"></span></button></li>',
             false,
         );
         noResultsTemplate = template(
@@ -161,8 +166,7 @@ export const GraphSearch = (props: GraphSearchProps) => {
 
         const ul = getNextElement(resultTemplate!) as HTMLElement;
         res.forEach((node, index) => {
-            const li = ul.querySelector(`[data-index="${index}"]`) as HTMLLIElement;
-            if (!li) return;
+            const li = getNextElement(rowTemplate!) as HTMLLIElement;
             const button = li.firstChild as HTMLButtonElement;
             const labelSpan = button.firstChild as HTMLElement;
             const summarySpan = labelSpan.nextSibling as HTMLElement;
@@ -185,6 +189,7 @@ export const GraphSearch = (props: GraphSearchProps) => {
             button.onclick = () => props.onSelect(node);
             ul.appendChild(li);
         });
+        container.appendChild(ul);
         return container;
     };
 

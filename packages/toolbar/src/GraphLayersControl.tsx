@@ -204,11 +204,10 @@ export function GraphLayersControl(props: GraphLayersControlProps): JSX.Element 
                             class="flex flex-col px-2 py-1 text-11-regular text-text-weaker"
                         >
                             {DOMAINS.map((domain) => {
-                                const count = facetCount(domain, counts().domains);
                                 return (
                                     <span data-domain={domain}>
                                         {i18n.t(VOCABULARY_KEYS.domain[domain])} ·{' '}
-                                        {count ? `${count.kept}/${count.total}` : '0/0'}
+                                        {countLabel(domain, counts().domains) ?? '0/0'}
                                     </span>
                                 );
                             })}

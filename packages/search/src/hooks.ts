@@ -32,7 +32,8 @@ export interface UseSearchReturn {
 export function useSearch({
     model,
     initialQuery = '',
-    searchFn = (m, q) => rankedSearch(m, q),
+    searchFn = rankedSearch,
+    searchTextFn,
 }: UseSearchOptions): UseSearchReturn {
     const [query, setQuery] = createSignal(initialQuery);
     const [activeIndex, setActiveIndex] = createSignal(0);
@@ -40,7 +41,7 @@ export function useSearch({
     const results = createMemo(() => {
         const q = query().trim();
         if (!q) return [];
-        return searchFn(model, q);
+        return searchFn(model, q, searchTextFn);
     });
 
     const navigationHint = createMemo(() =>

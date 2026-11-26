@@ -82,10 +82,7 @@ export function createIconRenderer(hostIcon?: IconComponent): IconComponent {
             );
         }
 
-        // Use innerHTML for the raw SVG string
-        const html = svgString
-            .replace(/width="\d+"/, `width="${dim}"`)
-            .replace(/height="\d+"/, `height="${dim}"`);
+        const html = svgString.replace(/<svg\b/, `<svg width="${dim}" height="${dim}"`);
         return <div class={className} style={style} innerHTML={html} />;
     };
 }

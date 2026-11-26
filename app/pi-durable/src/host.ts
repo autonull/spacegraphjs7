@@ -361,8 +361,8 @@ const cardTemplate = (node: DurableNode): string => {
         : '';
     const attention = typeof node.data?.['attention'] === 'number' ? node.data['attention'].toFixed(2) : '0.50';
     const workshop = typeof node.data?.['workshop'] === 'string' ? node.data['workshop'] : '';
-    const name = `${labelForNode(node)}${summary ? ` — ${summary}` : ''}`;
     const label = labelForNode(node);
+    const name = `${label}${summary ? ` — ${summary}` : ''}`;
     const shortLabel = label.split(/\s+/)[0] ?? label;
     const glyph = NODE_GLYPHS[node.kind] ?? '·';
     return `<div class="durable-card ${node.importance} band-${node.band}" tabindex="0" data-kind="${escapeHTML(node.kind)}" data-status="${escapeHTML(node.status)}" data-importance="${node.importance}" data-attention="${attention}" data-octave="${node.octave.toFixed(2)}" data-band="${node.band}"${node.data?.['muted'] ? ' data-muted="true"' : ''}${node.data?.['pulse'] ? ' data-pulse="true"' : ''} aria-label="${escapeHTML(name)}" title="${escapeHTML(name)}"${workshop ? ` data-workshop="${escapeHTML(workshop)}"` : ''}${diff ? ` data-diff="${diff}"` : ''}>${workshop ? `<span class="card-workshop">[${escapeHTML(workshop)}]</span>` : ''}<span class="card-short" aria-hidden="true">${escapeHTML(shortLabel)}</span><span class="card-label"><span class="card-glyph" aria-hidden="true">${glyph}</span>${escapeHTML(label)}${status}</span>${summary ? `<span class="card-summary">${escapeHTML(summary)}</span>` : ''}${detail ? `<span class="card-detail">${escapeHTML(detail)}</span>` : ''}${image}</div>`;
@@ -494,6 +494,7 @@ export class DurableHost {
     #presented: { readonly nodes: readonly ScopeNode[]; readonly edges: readonly ScopeEdge[] } = {
         nodes: [], edges: [],
     };
+    #positions: ReadonlyMap<string, { readonly x: number; readonly y: number; readonly z: number }> = new Map();
     #overviewProjection: MinimapProjection | undefined;
     #omitted = 0;
     #density: { readonly scale: number; readonly measured: number; readonly target: number } = {
@@ -621,7 +622,10 @@ export class DurableHost {
         const why = provenance
             ? `<br><br>why is this here?<br>commit ${provenance.sequence} · source ${escapeHTML(provenance.source)}${provenance.at ? ` · at ${new Date(provenance.at).toISOString().slice(0, 16)}Z` : ''}${provenance.predecessor ? `<br>after ${escapeHTML(provenance.predecessor)}` : ''}${provenance.successor ? `<br>before ${escapeHTML(provenance.successor)}` : ''}<br>facet ${escapeHTML(provenance.facets.join(', '))}<br>edges ${escapeHTML(provenance.edgeKinds.join(', '))}`
             : '';
-        el('inspector').innerHTML = `<strong>${escapeHTML(labelForNode(durable))}</strong><br>${escapeHTML(node.kind)} · ${escapeHTML(String(node.data?.['status'] ?? 'committed'))}${summaryForNode(durable) ? `<br>${escapeHTML(summaryForNode(durable))}` : ''}<br><code>${escapeHTML(node.id)}</code>${links.length ? `<br>links: ${escapeHTML([...new Set(links)].join(', '))}` : ''}${why}${provenance ? '<br><button type="button" class="action" id="fork-here" title="Fork at this committed entry (Shift+R)">Fork here</button>' : ''}${TRANSCRIPT_KINDS.has(node.kind) ? '<br><button type="button" class="action" id="read-in-transcript" title="Read this passage in the transcript">Read in transcript</button>' : ''}`;
+        const label = labelForNode(durable);
+        const summary = summaryForNode(durable);
+        const status = String(node.data?.['status'] ?? 'committed');
+        el('inspector').innerHTML = `<strong>${escapeHTML(label)}</strong><br>${escapeHTML(node.kind)} · ${escapeHTML(status)}${summary ? `<br>${escapeHTML(summary)}` : ''}<br><code>${escapeHTML(node.id)}</code>${links.length ? `<br>links: ${escapeHTML([...new Set(links)].join(', '))}` : ''}${why}${provenance ? '<br><button type="button" class="action" id="fork-here" title="Fork at this committed entry (Shift+R)">Fork here</button>' : ''}${TRANSCRIPT_KINDS.has(node.kind) ? '<br><button type="button" class="action" id="read-in-transcript" title="Read this passage in the transcript">Read in transcript</button>' : ''}`;
     }
 
     reveal(id: string): void {
@@ -702,17 +706,9 @@ export class DurableHost {
         this.#presented = presented;
         this.#laneNames = labels.laneLabels.map((lane) => lane.label);
         this.#axisNames = labels.axisLabels.map((axis) => axis.label);
-        const index = new SpatialIndex2D([...positions].map(([id, point]) => ({ id, x: point.x, y: point.y })));
-        const anchor = tab.view.focus ? positions.get(tab.view.focus) : undefined;
-        const nearby = anchor ? new Set(index.near(anchor.x, anchor.y, 600)) : new Set<string>();
-        const weights = new Map([...attentionWeights(presented.nodes, this.#sample, tab.view.focus)]
-            .map(([id, weight]) => [id, nearby.has(id) ? Math.min(1, weight + 0.08) : weight] as const));
-        const baseOctaves = new Map(presented.nodes.map((node) =>
-            [node.id, octaveFor(node, this.#sample, focus)] as const));
-        const lensed = this.#focusNeighbours
-            ? focusLens(baseOctaves, weights, this.#focusNeighbours)
-            : undefined;
-        this.#attention = lensed?.weights ?? weights;
+        this.#positions = positions;
+        const { weights, octaves, lensed } = this.#attentionFor(focus);
+        this.#attention = weights;
         this.#callouts = calloutsFor(presented.nodes.map((node) => ({
             kind: node.kind,
             status: String(node.data?.['status'] ?? ''),
@@ -743,7 +739,7 @@ export class DurableHost {
                             ),
                         },
                     };
-                    const octave = lensed?.octaves.get(node.id) ?? baseOctaves.get(node.id) ?? octaveFor(durable, this.#sample, tab.view.focus);
+                    const octave = lensed?.octaves.get(node.id) ?? octaves.get(node.id) ?? octaveFor(durable, this.#sample, tab.view.focus);
                     const status = String(node.data?.['status'] ?? '');
                     const muted = Boolean(lensed?.muted.has(node.id))
                         || rung.mutedNode(node.kind)
@@ -797,7 +793,6 @@ export class DurableHost {
         this.#viewName = name;
         this.refresh();
         requestAnimationFrame(() => this.viewOps.fit(undefined, DEFAULT_FIT_OPTIONS));
-        this.renderView();
         this.announce(`${name} view`);
         this.#recordHistory();
     }
@@ -992,8 +987,8 @@ export class DurableHost {
         if (!target) return false;
         this.#pinnedID = target;
         this.#comparePrior ??= this.#viewName;
-        this.setView('diff');
-        this.refresh();
+        if (this.#viewName === 'diff') this.refresh();
+        else this.setView('diff');
         this.announce(`Pinned ${target} for comparison`);
         return true;
     }
@@ -1003,8 +998,8 @@ export class DurableHost {
         this.#pinnedID = undefined;
         const prior = this.#comparePrior ?? 'graph';
         this.#comparePrior = undefined;
-        this.setView(prior);
-        this.refresh();
+        if (this.#viewName === prior) this.refresh();
+        else this.setView(prior);
         this.announce('Comparison cleared');
         return true;
     }
@@ -1158,15 +1153,32 @@ export class DurableHost {
 
     regrade(): void {
         if (!this.#baseModel) return;
-        const focus = this.registry.active()?.view.focus;
-        const base = attentionWeights(this.#presented.nodes, this.#sample, focus);
-        if (!this.#focusNeighbours) this.#attention = base;
-        else {
-            const octaves = new Map(this.#presented.nodes.map((node) =>
-                [node.id, octaveFor(node, this.#sample, focus)] as const));
-            this.#attention = focusLens(octaves, base, this.#focusNeighbours).weights;
-        }
+        this.#attention = this.#attentionFor(this.registry.active()?.view.focus).weights;
         this.#setModel(this.#emphasised(this.#baseModel), false);
+    }
+    /** One attention computation: focus, nearby boost and lens all use the same positions. */
+    #attentionFor(focus: string | undefined): {
+        weights: ReadonlyMap<string, number>;
+        octaves: ReadonlyMap<string, number>;
+        lensed: ReturnType<typeof focusLens> | undefined;
+    } {
+        const base = attentionWeights(this.#presented.nodes, this.#sample, focus);
+        const anchor = focus ? this.#positions.get(focus) : undefined;
+        const index = new SpatialIndex2D(
+            [...this.#positions].map(([id, point]) => ({ id, x: point.x, y: point.y })),
+        );
+        const nearby = anchor ? new Set(index.near(anchor.x, anchor.y, 600)) : new Set<string>();
+        const weights = new Map(
+            [...base].map(([id, weight]) =>
+                [id, nearby.has(id) ? Math.min(1, weight + 0.08) : weight] as const),
+        );
+        const octaves = new Map(
+            this.#presented.nodes.map((node) => [node.id, octaveFor(node, this.#sample, focus)] as const),
+        );
+        const lensed = this.#focusNeighbours
+            ? focusLens(octaves, weights, this.#focusNeighbours)
+            : undefined;
+        return { weights: lensed?.weights ?? weights, octaves, lensed };
     }
 
     /** Attention and rung muting share one model pass; neither removes a node or an edge. */
@@ -1579,31 +1591,26 @@ export class DurableHost {
     }
 
     async abort(): Promise<boolean> {
-        if (!this.#ready) return false;
-        if (!this.onAbort) {
-            this.announce('Nothing to cancel');
-            return false;
-        }
-        return this.onAbort();
+        return this.#callAction(this.onAbort, 'Nothing to cancel');
     }
 
     async forkAt(id?: string): Promise<boolean> {
         if (!this.#ready) return false;
         if (id) this.reveal(id);
-        if (!this.onFork) {
-            this.announce('Fork is unavailable');
-            return false;
-        }
-        return this.onFork();
+        return this.#callAction(this.onFork, 'Fork is unavailable');
     }
 
     async newConversation(): Promise<boolean> {
+        return this.#callAction(this.onNew, 'New conversation is unavailable');
+    }
+
+    async #callAction(handler: (() => Promise<boolean>) | undefined, unavailable: string): Promise<boolean> {
         if (!this.#ready) return false;
-        if (!this.onNew) {
-            this.announce('New conversation is unavailable');
+        if (!handler) {
+            this.announce(unavailable);
             return false;
         }
-        return this.onNew();
+        return handler();
     }
 
     export(format: string): void {
@@ -2098,30 +2105,32 @@ export class DurableHost {
         el('help-close').addEventListener('click', () => this.toggleHelp(false));
         el('survey').addEventListener('click', (event) => {
             const projection = this.#overviewProjection;
-            const viewport = this.renderer.getViewport?.();
-            if (!projection || !viewport) return;
+            if (!projection) return;
             const rect = el('survey').getBoundingClientRect();
-            const point = projection.unproject({
+            this.#panOverviewTo(projection.unproject({
                 x: ((event.clientX - rect.left) / rect.width) * 160,
                 y: ((event.clientY - rect.top) / rect.height) * 100,
-            });
-            this.renderer.setViewport({ zoom: viewport.zoom, center: [point.x, point.y, viewport.center[2]] });
+            }));
         });
         el('survey').addEventListener('keydown', (event) => {
             const projection = this.#overviewProjection;
-            const viewport = this.renderer.getViewport?.();
-            if (!projection || !viewport) return;
+            if (!projection) return;
             const rect = projection.viewRect;
             const dx = event.key === 'ArrowRight' ? 8 : event.key === 'ArrowLeft' ? -8 : 0;
             const dy = event.key === 'ArrowDown' ? 8 : event.key === 'ArrowUp' ? -8 : 0;
             if (!dx && !dy) return;
             event.preventDefault();
-            const point = projection.unproject({
+            this.#panOverviewTo(projection.unproject({
                 x: (rect?.x ?? 80) + (rect?.width ?? 0) / 2 + dx,
                 y: (rect?.y ?? 50) + (rect?.height ?? 0) / 2 + dy,
-            });
-            this.renderer.setViewport({ zoom: viewport.zoom, center: [point.x, point.y, viewport.center[2]] });
+            }));
         });
+    }
+
+    #panOverviewTo(point: { x: number; y: number }): void {
+        const viewport = this.renderer.getViewport?.();
+        if (!viewport) return;
+        this.renderer.setViewport({ zoom: viewport.zoom, center: [point.x, point.y, viewport.center[2]] });
     }
 
     toggleHelp(visible?: boolean): void {

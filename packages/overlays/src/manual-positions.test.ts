@@ -31,6 +31,17 @@ describe("createManualPositionsManager", () => {
         expect(state.sizes).toEqual({ n1: [100, 50] });
     });
 
+    it("notifies subscribers after the new state is written", () => {
+        const seen: unknown[] = [];
+        manager.subscribe(() => seen.push(manager.getState().positions));
+        manager.moveNodes([{ id: "n1", position: [10, 20, 30] }]);
+        manager.resizeNode({ id: "n2", size: [100, 50], position: [1, 2, 3] });
+        expect(seen).toEqual([
+            { n1: [10, 20, 30] },
+            { n1: [10, 20, 30], n2: [1, 2, 3] },
+        ]);
+    });
+
     it("moveNodes updates positions and captures history", () => {
         manager.moveNodes([{ id: "n1", position: [10, 20, 30] }]);
         expect(manager.getState().positions).toEqual({ n1: [10, 20, 30] });

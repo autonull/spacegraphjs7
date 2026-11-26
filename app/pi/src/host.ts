@@ -588,11 +588,11 @@ export class PiHost {
     private applyViewTheme(): void {
         if (typeof document === 'undefined') return;
         const values = this.#resolved.values;
-        for (const [name, value] of Object.entries(paletteVars(String(values['theme.palette']))))
+        const palette = String(values['theme.palette']);
+        for (const [name, value] of Object.entries(paletteVars(palette)))
             document.documentElement.style.setProperty(name, value);
         document.documentElement.style.setProperty('--view-glow', String(values['theme.glow']));
         document.documentElement.dataset.backdrop = String(values['theme.backdrop']);
-        const palette = String(values['theme.palette']);
         const base = readTheme();
         this.#theme = paletteTheme(base, palette);
         this.#causal = paletteCausal(base, palette);
@@ -855,9 +855,10 @@ export class PiHost {
             band: this.band(),
             focus: this.#qualifiedByNode.get(this.#controller.selection[0]),
         });
+        const failures = failureDetails(this.#view);
         this.#attention = {
-            failures: failureDetails(this.#view).length,
-            latest: failureDetails(this.#view).at(-1)?.label ?? '',
+            failures: failures.length,
+            latest: failures.at(-1)?.label ?? '',
             changed: changedFiles(this.#view).length,
         };
         this.paint();
@@ -934,6 +935,18 @@ export class PiHost {
             neighbor: Number(values['emphasis.neighborScale']),
             context: Number(values['emphasis.contextScale']),
         };
+        const visuals = new Map(
+            model.nodes.map((node) => [
+                node.id,
+                {
+                    role: roles.get(node.id) ?? 'none',
+                    salience: salienceScore(
+                        this.#activity.get(node.id) ?? 0,
+                        (node as { emphasis?: number }).emphasis,
+                    ),
+                },
+            ] as const),
+        );
         const scalingOn = scales.focus !== 1 || scales.neighbor !== 1 || scales.context !== 1;
         if (typeof document !== 'undefined') {
             document.documentElement.dataset.focusScale = String(scalingOn);
@@ -947,10 +960,12 @@ export class PiHost {
         };
         const cardBg = HUD_TOKENS[values['theme.variant'] === 'light' ? 'light' : 'dark']!.colors.card;
         const scaleOf = (node: { id: string; emphasis?: number }): number => {
-            const salience = salienceScore(this.#activity.get(node.id) ?? 0, node.emphasis);
+            const visual = visuals.get(node.id);
+            const salience =
+                visual?.salience ?? salienceScore(this.#activity.get(node.id) ?? 0, node.emphasis);
             return (
                 (1 + (attention.salienceSize - 1) * salience) *
-                scaleForRole(roles.get(node.id) ?? 'none', scales)
+                scaleForRole(visual?.role ?? roles.get(node.id) ?? 'none', scales)
             );
         };
         model.nodes = model.nodes.map((node) => {
@@ -963,7 +978,7 @@ export class PiHost {
                 ...(ports || preview
                     ? { data: { ...node.data, ...(preview ? { preview } : {}), ...(ports ? { ports } : {}) } }
                     : {}),
-                focusRole: roles.get(node.id) ?? 'none',
+                focusRole: visuals.get(node.id)?.role ?? 'none',
             };
         });
         const viewport = this.renderer.getViewport();
@@ -1042,9 +1057,9 @@ export class PiHost {
                 const baseSize = this.cardSize(node.kind, Boolean(node.html), dense);
                 const octaveScale = this.#octaveScales?.get(node.id)?.scale ?? 1;
                 const size = [baseSize[0] * octaveScale, baseSize[1] * octaveScale] as const;
-                const focusScale = scaleForRole(roles.get(node.id) ?? 'none', scales);
+                const focusScale = scaleForRole(visuals.get(node.id)?.role ?? 'none', scales);
                 const activity = this.#activity.get(node.id) ?? 0;
-                const salience = salienceScore(activity, node.emphasis);
+                const salience = visuals.get(node.id)?.salience ?? salienceScore(activity, node.emphasis);
                 const withWidgets = detailNodes.has(node.id)
                     ? { ...node, widgets: [...(node.widgets ?? []), ...INSTRUMENT_IDS] }
                     : node;
@@ -2833,9 +2848,7 @@ export class PiHost {
             this.#model?.nodes.filter((node) => node.visible !== false).map((node) => node.id) ??
             [];
         if (!ids.length) return;
-        const canvas = document.getElementById('canvas');
-        const width = canvas?.clientWidth || window.innerWidth || 1000;
-        const height = canvas?.clientHeight || window.innerHeight || 1000;
+        const { width, height } = this.canvasSize();
         this.#fit = fitMetrics(width, height, padding, this.#resolved.values);
         this.#refits++;
         this.viewOps.fit(ids, { padding, insets: adaptiveInsets(width, height, padding) });
@@ -2848,14 +2861,19 @@ export class PiHost {
         if (!this.#initialFitDone || !fit) return;
         if (this.#fitTimer) clearTimeout(this.#fitTimer);
         this.#fitTimer = setTimeout(() => {
-            const canvas = document.getElementById('canvas');
-            const aspect =
-                (canvas?.clientWidth || window.innerWidth || 1000) /
-                Math.max(canvas?.clientHeight || window.innerHeight || 1000, 1);
-            if (!aspectChanged(fit.aspect, aspect)) return;
+            const { width, height } = this.canvasSize();
+            if (!aspectChanged(fit.aspect, width / Math.max(height, 1))) return;
             this.fitView();
             this.paint();
         }, 120);
+    }
+
+    private canvasSize(): { width: number; height: number } {
+        const canvas = document.getElementById('canvas');
+        return {
+            width: canvas?.clientWidth || window.innerWidth || 1000,
+            height: canvas?.clientHeight || window.innerHeight || 1000,
+        };
     }
 
     /** Detail-card controls are host DOM; actions return through the same verbs as the HUD. */
