@@ -95,9 +95,9 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
         }
     });
 
-    app.sg.events.on('node:pointerenter', ({ node, event: _event }) => {
+    app.sg.events.on('node:pointerenter', ({ node, event }) => {
         if (app.options.nodeTooltip) {
-            showTooltip(app, app.options.nodeTooltip(node));
+            showTooltip(app, app.options.nodeTooltip(node), event);
         }
     });
 
@@ -105,9 +105,9 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
         app.hud.hideTooltip();
     });
 
-    app.sg.events.on('edge:pointerenter', ({ edge, event: _event }) => {
+    app.sg.events.on('edge:pointerenter', ({ edge, event }) => {
         if (app.options.edgeTooltip) {
-            showTooltip(app, app.options.edgeTooltip(edge));
+            showTooltip(app, app.options.edgeTooltip(edge), event);
         }
     });
 
@@ -127,9 +127,13 @@ function showContextMenu(
 }
 
 /** Show the host's tooltip over the canvas, when the host offered one. */
-function showTooltip(app: SpaceGraphApp, content: string | HTMLElement | undefined): void {
+function showTooltip(
+    app: SpaceGraphApp,
+    content: string | HTMLElement | undefined,
+    event?: { clientX: number; clientY: number },
+): void {
     if (!content) return;
-    app.hud.showTooltip(app.sg.renderer.renderer.domElement, content as string);
+    app.hud.showTooltip(app.sg.renderer.renderer.domElement, content, event);
 }
 
 export function setupHotkeys(app: SpaceGraphApp) {

@@ -4,7 +4,7 @@ import { type AlertOptions, HUDAlerts } from './hud/HUDAlerts';
 import { HUDDOMFactory } from './hud/HUDDOMFactory';
 import { HUDPerformanceMetrics } from './hud/HUDPerformanceMetrics';
 import { HUDStatusBar } from './hud/HUDStatusBar';
-import { HUD_COLORS, HUD_POSITIONS, HUD_ZINDEX } from './hud/HUDStyles';
+import { HUD_COLORS, HUD_POSITIONS, HUD_STYLES, HUD_ZINDEX } from './hud/HUDStyles';
 import type { HUDElementOptions } from './hud/types';
 
 export type { AlertOptions, HUDElementOptions };
@@ -19,6 +19,9 @@ export class HUDPlugin extends BaseSystemPlugin {
     private alerts: HUDAlerts | null = null;
     private modal: HTMLElement | null = null;
     private loading: HTMLElement | null = null;
+    private tooltip: HTMLElement | null = null;
+    private contextMenu: HTMLElement | null = null;
+    private dismissMenu: ((event: PointerEvent) => void) | null = null;
     private elements: Map<string, { el: HTMLElement; options: HUDElementOptions }> = new Map();
 
     protected onInit(): void {
@@ -162,24 +165,89 @@ export class HUDPlugin extends BaseSystemPlugin {
         this.loading = null;
     }
 
-    showTooltip(_element: HTMLElement, _content: string): void {
-        // Simplified tooltip
+    showTooltip(
+        element: HTMLElement,
+        content: string | HTMLElement,
+        at?: { clientX: number; clientY: number },
+    ): void {
+        this.hideTooltip();
+        const tooltip = document.createElement('div');
+        tooltip.id = 'spacegraph-tooltip';
+        Object.assign(tooltip.style, {
+            ...HUD_STYLES.base,
+            background: HUD_COLORS.surface,
+            border: `1px solid ${HUD_COLORS.border}`,
+            borderRadius: '6px',
+            padding: '6px 8px',
+            fontSize: '12px',
+            whiteSpace: 'pre-line',
+            maxWidth: '320px',
+            pointerEvents: 'none',
+            zIndex: HUD_ZINDEX.TOOLTIP,
+        });
+        if (typeof content === 'string') tooltip.textContent = content;
+        else tooltip.appendChild(content);
+        HUDDOMFactory.appendToRenderer(this.sg, tooltip);
+        this.place(tooltip, at?.clientX, at?.clientY, element);
+        this.tooltip = tooltip;
     }
 
     hideTooltip(): void {
-        // Simplified tooltip
+        this.tooltip?.remove();
+        this.tooltip = null;
     }
 
     showContextMenu(
-        _x: number,
-        _y: number,
-        _items: Array<{ label: string; action: () => void }>,
+        x: number,
+        y: number,
+        items: Array<{ label: string; action: () => void }>,
     ): void {
-        // Simplified context menu
+        this.hideContextMenu();
+        const menu = document.createElement('div');
+        menu.id = 'spacegraph-context-menu';
+        Object.assign(menu.style, {
+            ...HUD_STYLES.base,
+            background: HUD_COLORS.surface,
+            border: `1px solid ${HUD_COLORS.border}`,
+            borderRadius: '8px',
+            padding: '4px',
+            minWidth: '140px',
+            pointerEvents: 'auto',
+            zIndex: HUD_ZINDEX.CONTEXT_MENU,
+        });
+        for (const item of items) {
+            const button = HUDDOMFactory.createButton(item.label, () => {
+                this.hideContextMenu();
+                item.action();
+            });
+            button.style.display = 'block';
+            button.style.width = '100%';
+            menu.appendChild(button);
+        }
+        HUDDOMFactory.appendToRenderer(this.sg, menu);
+        this.place(menu, x, y, menu);
+        this.contextMenu = menu;
+        this.dismissMenu = (event) => {
+            if (!menu.contains(event.target as Node)) this.hideContextMenu();
+        };
+        document.addEventListener('pointerdown', this.dismissMenu, true);
     }
 
     hideContextMenu(): void {
-        // Simplified context menu
+        if (this.dismissMenu) document.removeEventListener('pointerdown', this.dismissMenu, true);
+        this.dismissMenu = null;
+        this.contextMenu?.remove();
+        this.contextMenu = null;
+    }
+
+    private place(element: HTMLElement, x?: number, y?: number, anchor?: HTMLElement): void {
+        const parent = anchor?.parentElement ?? element.parentElement;
+        if (!parent) return;
+        const rect = parent.getBoundingClientRect();
+        const left = x === undefined ? 12 : x - rect.left + 12;
+        const top = y === undefined ? 12 : y - rect.top + 12;
+        element.style.left = `${Math.max(8, Math.min(left, parent.clientWidth - element.offsetWidth - 8))}px`;
+        element.style.top = `${Math.max(8, Math.min(top, parent.clientHeight - element.offsetHeight - 8))}px`;
     }
 
     onPostRender(): void {
@@ -189,6 +257,8 @@ export class HUDPlugin extends BaseSystemPlugin {
     dispose(): void {
         this.hideModal();
         this.hideLoading();
+        this.hideTooltip();
+        this.hideContextMenu();
         this.statusBar?.dispose();
         this.performanceMetrics?.dispose();
         this.alerts?.dispose();

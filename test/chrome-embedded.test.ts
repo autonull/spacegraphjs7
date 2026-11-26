@@ -160,3 +160,41 @@ describe('HUD flight progress', () => {
         indicator.remove();
     });
 });
+
+describe('HUD tooltip and context menu', () => {
+    it('shows and hides host tooltips', () => {
+        const sg = fakeSg();
+        sg.renderer.container.appendChild(sg.renderer.renderer.domElement);
+        const plugin = new HUDPlugin();
+        plugin.init(sg as never, sg.graph as never, sg.events as never);
+        plugin.showTooltip(sg.renderer.renderer.domElement, 'node detail', {
+            clientX: 20,
+            clientY: 30,
+        });
+        const tooltip = sg.renderer.container.querySelector('#spacegraph-tooltip') as HTMLElement;
+        expect(tooltip.textContent).toBe('node detail');
+        expect(tooltip.style.pointerEvents).toBe('none');
+        plugin.hideTooltip();
+        expect(sg.renderer.container.querySelector('#spacegraph-tooltip')).toBeNull();
+        plugin.dispose();
+    });
+
+    it('runs a menu action and dismisses the menu', () => {
+        const sg = fakeSg();
+        sg.renderer.container.appendChild(sg.renderer.renderer.domElement);
+        const plugin = new HUDPlugin();
+        plugin.init(sg as never, sg.graph as never, sg.events as never);
+        let clicks = 0;
+        plugin.showContextMenu(10, 20, [{ label: 'Edit', action: () => (clicks += 1) }]);
+        const menu = sg.renderer.container.querySelector('#spacegraph-context-menu') as HTMLElement;
+        expect(menu.querySelectorAll('button')).toHaveLength(1);
+        menu.querySelector('button')!.click();
+        expect(clicks).toBe(1);
+        expect(sg.renderer.container.querySelector('#spacegraph-context-menu')).toBeNull();
+
+        plugin.showContextMenu(10, 20, [{ label: 'Edit', action: () => {} }]);
+        document.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+        expect(sg.renderer.container.querySelector('#spacegraph-context-menu')).toBeNull();
+        plugin.dispose();
+    });
+});
