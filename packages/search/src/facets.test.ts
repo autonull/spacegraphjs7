@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createMockNode, createMockModel } from './test-fixtures';
+import { createMockFacets, createMockModel, createMockNode } from './test-fixtures';
 import type { GraphViewData, GraphFacets } from '@spacegraphjs/shared';
 import {
     applyFacets,
@@ -41,7 +41,7 @@ describe('facets', () => {
             const node2 = createMockNode({ id: '2', label: 'Node 2', kind: 'tool' });
             const model = createMockModel({ nodes: [root, node1, node2] });
 
-            const facets: GraphFacets = { query: '', kinds: new Set(), statuses: new Set(), domains: new Set() };
+            const facets = createMockFacets();
             const result = applyFacets({ model, facets, accessors });
 
             expect(result.nodes).toHaveLength(3);
@@ -53,7 +53,7 @@ describe('facets', () => {
             const node2 = createMockNode({ id: '2', label: 'Tool', kind: 'tool' });
             const model = createMockModel({ nodes: [root, node1, node2] });
 
-            const facets: GraphFacets = { query: '', kinds: new Set(['tool']), statuses: new Set(), domains: new Set() };
+            const facets = createMockFacets({ kinds: new Set(['tool']) });
             const result = applyFacets({ model, facets, accessors });
 
             // Root is always kept + the matching node
@@ -67,7 +67,7 @@ describe('facets', () => {
             const node2 = createMockNode({ id: '2', label: 'Failed', status: 'failed' });
             const model = createMockModel({ nodes: [root, node1, node2] });
 
-            const facets: GraphFacets = { query: '', kinds: new Set(), statuses: new Set(['failed']), domains: new Set() };
+            const facets = createMockFacets({ statuses: new Set(['failed']) });
             const result = applyFacets({ model, facets, accessors });
 
             // Root is always kept + the matching node
@@ -80,7 +80,7 @@ describe('facets', () => {
             const node2 = createMockNode({ id: '2', label: 'Other', summary: '' });
             const model = createMockModel({ nodes: [node1, node2] });
 
-            const facets: GraphFacets = { query: 'auth', kinds: new Set(), statuses: new Set(), domains: new Set() };
+            const facets = createMockFacets({ query: 'auth' });
             const result = applyFacets({ model, facets, accessors });
 
             expect(result.nodes).toHaveLength(1);
@@ -92,7 +92,7 @@ describe('facets', () => {
             const node2 = createMockNode({ id: '2', label: 'Test', data: { domain: 'test' } });
             const model = createMockModel({ nodes: [node1, node2] });
 
-            const facets: GraphFacets = { query: '', kinds: new Set(), statuses: new Set(), domains: new Set(['code']) };
+            const facets = createMockFacets({ domains: new Set(['code']) });
             const result = applyFacets({ model, facets, accessors });
 
             expect(result.nodes).toHaveLength(1);
@@ -104,7 +104,7 @@ describe('facets', () => {
             const node1 = createMockNode({ id: '1', label: 'Tool', kind: 'tool' });
             const model = createMockModel({ nodes: [root, node1] });
 
-            const facets: GraphFacets = { query: '', kinds: new Set(['file']), statuses: new Set(), domains: new Set() };
+            const facets = createMockFacets({ kinds: new Set(['file']) });
             const result = applyFacets({ model, facets, accessors });
 
             expect(result.nodes).toHaveLength(1);
@@ -128,12 +128,7 @@ describe('facets', () => {
             });
             const model = createMockModel({ nodes: [node1, node2] });
 
-            const facets: GraphFacets = {
-                query: 'auth',
-                kinds: new Set(['tool']),
-                statuses: new Set(['completed']),
-                domains: new Set(['code']),
-            };
+            const facets = createMockFacets({ query: 'auth', kinds: new Set(['tool']), statuses: new Set(['completed']), domains: new Set(['code']) });
             const result = applyFacets({ model, facets, accessors });
 
             expect(result.nodes).toHaveLength(1);
@@ -173,7 +168,7 @@ describe('facets', () => {
             const node2 = createMockNode({ id: '2', label: 'File', kind: 'file', status: 'completed' });
             const model = createMockModel({ nodes: [root, node1, node2] });
 
-            const facets: GraphFacets = { query: '', kinds: new Set(['tool']), statuses: new Set(), domains: new Set() };
+            const facets = createMockFacets({ kinds: new Set(['tool']) });
             const keptIds = new Set(['1']);
             const collapsedGroups = new Set<string>();
 
@@ -221,12 +216,7 @@ describe('facets', () => {
                 },
             });
 
-            const facets: GraphFacets = {
-                query: '',
-                kinds: new Set(['message', 'tool']),
-                statuses: new Set(['completed', 'pending']),
-                domains: new Set(['code', 'test']),
-            };
+            const facets = createMockFacets({ kinds: new Set(['message', 'tool']), statuses: new Set(['completed', 'pending']), domains: new Set(['code', 'test']) });
 
             const counts = facetCounts(model, facets, accessors, knownKinds, knownStatuses, knownDomains);
 
@@ -243,31 +233,31 @@ describe('facets', () => {
 
     describe('facetsToQuery', () => {
         it('serializes empty facets to default domain', () => {
-            const facets: GraphFacets = { query: '', kinds: new Set(), statuses: new Set(), domains: new Set(['session']) };
+            const facets = createMockFacets({ domains: new Set(['session']) });
             const query = facetsToQuery(facets, knownKinds, knownStatuses, knownDomains);
             expect(query).toBe('domain:session');
         });
 
         it('serializes query text', () => {
-            const facets: GraphFacets = { query: 'auth token', kinds: new Set(), statuses: new Set(), domains: new Set(['session']) };
+            const facets = createMockFacets({ query: 'auth token', domains: new Set(['session']) });
             const query = facetsToQuery(facets, knownKinds, knownStatuses, knownDomains);
             expect(query).toBe('auth token domain:session');
         });
 
         it('serializes kinds in canonical order', () => {
-            const facets: GraphFacets = { query: '', kinds: new Set(['file', 'tool']), statuses: new Set(), domains: new Set(['session']) };
+            const facets = createMockFacets({ kinds: new Set(['file', 'tool']), domains: new Set(['session']) });
             const query = facetsToQuery(facets, knownKinds, knownStatuses, knownDomains);
             expect(query).toBe('kind:tool,file domain:session');
         });
 
         it('serializes statuses in canonical order', () => {
-            const facets: GraphFacets = { query: '', kinds: new Set(), statuses: new Set(['failed', 'pending']), domains: new Set(['session']) };
+            const facets = createMockFacets({ statuses: new Set(['failed', 'pending']), domains: new Set(['session']) });
             const query = facetsToQuery(facets, knownKinds, knownStatuses, knownDomains);
             expect(query).toBe('status:pending,failed domain:session');
         });
 
         it('serializes domains in canonical order', () => {
-            const facets: GraphFacets = { query: '', kinds: new Set(), statuses: new Set(), domains: new Set(['test', 'code']) };
+            const facets = createMockFacets({ domains: new Set(['test', 'code']) });
             const query = facetsToQuery(facets, knownKinds, knownStatuses, knownDomains);
             expect(query).toBe('domain:code,test');
         });
@@ -324,12 +314,7 @@ describe('facets', () => {
         });
 
         it('round-trips with facetsToQuery', () => {
-            const original: GraphFacets = {
-                query: 'auth',
-                kinds: new Set(['tool']),
-                statuses: new Set(['failed']),
-                domains: new Set(['session', 'code']), // Include default session domain
-            };
+            const original = createMockFacets({ query: 'auth', kinds: new Set(['tool']), statuses: new Set(['failed']), domains: new Set(['session', 'code']) });
             const query = facetsToQuery(original, knownKinds, knownStatuses, knownDomains);
             const parsed = facetsFromQuery(query, knownKinds, knownStatuses, knownDomains);
             expect(parsed.query).toBe(original.query);
@@ -341,27 +326,27 @@ describe('facets', () => {
 
     describe('hasFacets', () => {
         it('returns false for empty facets', () => {
-            const facets: GraphFacets = { query: '', kinds: new Set(), statuses: new Set(), domains: new Set(['session']) };
+            const facets = createMockFacets({ domains: new Set(['session']) });
             expect(hasFacets(facets)).toBe(false);
         });
 
         it('returns true for query text', () => {
-            const facets: GraphFacets = { query: 'auth', kinds: new Set(), statuses: new Set(), domains: new Set(['session']) };
+            const facets = createMockFacets({ query: 'auth', domains: new Set(['session']) });
             expect(hasFacets(facets)).toBe(true);
         });
 
         it('returns true for kinds', () => {
-            const facets: GraphFacets = { query: '', kinds: new Set(['tool']), statuses: new Set(), domains: new Set(['session']) };
+            const facets = createMockFacets({ kinds: new Set(['tool']), domains: new Set(['session']) });
             expect(hasFacets(facets)).toBe(true);
         });
 
         it('returns true for statuses', () => {
-            const facets: GraphFacets = { query: '', kinds: new Set(), statuses: new Set(['failed']), domains: new Set(['session']) };
+            const facets = createMockFacets({ statuses: new Set(['failed']), domains: new Set(['session']) });
             expect(hasFacets(facets)).toBe(true);
         });
 
         it('returns true for semantic quick filters', () => {
-            const facets: GraphFacets = { query: '', kinds: new Set(), statuses: new Set(), domains: new Set(['session']), errors: true };
+            const facets = createMockFacets({ domains: new Set(['session']), errors: true });
             expect(hasFacets(facets)).toBe(true);
         });
     });
@@ -378,32 +363,31 @@ describe('facets', () => {
         const error = createMockNode({ id: 'error', kind: 'error' });
         const subagent = createMockNode({ id: 'sub', kind: 'subagent' });
         const model = createMockModel({ nodes: [root, failedTool, error, subagent] });
-        const empty = { query: '', kinds: new Set<string>(), statuses: new Set<string>(), domains: new Set<string>() };
         const ids = (facets: GraphFacets) =>
             applyFacets({ model, facets, accessors: semanticAccessors }).nodes.map((n) => n.id).sort();
 
         it('keeps all nodes when no filter is active', () => {
-            expect(ids(empty)).toEqual(['error', 'root', 'sub', 'tool']);
+            expect(ids(createMockFacets())).toEqual(['error', 'root', 'sub', 'tool']);
         });
 
         it('narrows to a single active semantic filter', () => {
-            expect(ids({ ...empty, errors: true })).toEqual(['error', 'root']);
+            expect(ids({ ...createMockFacets(), errors: true })).toEqual(['error', 'root']);
         });
 
         it('OR mode keeps a node matching any active semantic filter', () => {
-            expect(ids({ ...empty, failedTools: true, errors: true, composeMode: 'or' })).toEqual(['error', 'root', 'tool']);
+            expect(ids({ ...createMockFacets(), failedTools: true, errors: true, composeMode: 'or' })).toEqual(['error', 'root', 'tool']);
         });
 
         it('AND mode keeps only nodes matching every active semantic filter', () => {
-            expect(ids({ ...empty, failedTools: true, errors: true, composeMode: 'and' })).toEqual(['root']);
+            expect(ids({ ...createMockFacets(), failedTools: true, errors: true, composeMode: 'and' })).toEqual(['root']);
         });
 
         it('composes standard and semantic filters with AND', () => {
-            expect(ids({ ...empty, kinds: new Set(['tool']), errors: true })).toEqual(['root']);
+            expect(ids({ ...createMockFacets(), kinds: new Set(['tool']), errors: true })).toEqual(['root']);
         });
 
         it('round-trips semantic flags and compose mode through the query grammar', () => {
-            const original: GraphFacets = { ...empty, errors: true, composeMode: 'and' };
+            const original = createMockFacets({ errors: true, composeMode: 'and' });
             const query = facetsToQuery(original, knownKinds, knownStatuses, knownDomains);
             const parsed = facetsFromQuery(query, knownKinds, knownStatuses, knownDomains);
             expect(parsed.errors).toBe(true);

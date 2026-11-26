@@ -1,15 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { diffKernels } from './diff';
 import { Kernel } from './kernel';
-import type { Edge, Node } from './kernel';
-
-const node = (id: string, label = id): Node => ({ id, kind: 'node', label });
-const edge = (id: string, source: string, target: string): Edge => ({
-    id,
-    kind: 'edge',
-    source,
-    target,
-});
+import { edge, node } from './test-helpers';
 
 describe('diffKernels', () => {
     test('is id-based and order-insensitive', () => {

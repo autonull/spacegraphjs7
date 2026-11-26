@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { Kernel } from './kernel';
-import type { Edge, Node } from './kernel';
+import type { Node } from './kernel';
+import { edge } from './test-helpers';
 import { deriveZoom } from './zoom';
 
 type Level = 'overview' | 'execution' | 'detail';
@@ -10,12 +11,6 @@ const node = (id: string, level: Level): Node => ({
     kind: 'node',
     label: id,
     data: { level },
-});
-const edge = (id: string, source: string, target: string): Edge => ({
-    id,
-    kind: 'edge',
-    source,
-    target,
 });
 
 const kernel = new Kernel({

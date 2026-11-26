@@ -1,19 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { Kernel } from './kernel';
-import type { Edge, Hyperedge, Node } from './kernel';
-
-const node = (id: string, label = id): Node => ({ id, kind: 'node', label });
-const edge = (id: string, source: string, target: string): Edge => ({
-    id,
-    kind: 'edge',
-    source,
-    target,
-});
-const hyperedge = (id: string, nodes: string[]): Hyperedge => ({
-    id,
-    kind: 'hyperedge',
-    nodes,
-});
+import { edge, hyperedge, node } from './test-helpers';
 
 describe('Kernel', () => {
     test('modify returns a new version and preserves insertion order', () => {

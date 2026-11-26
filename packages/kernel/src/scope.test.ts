@@ -1,18 +1,15 @@
 import { describe, expect, test } from 'vitest';
 import { Kernel } from './kernel';
 import { deriveScope } from './scope';
-import type { Edge, Node } from './kernel';
-
-const node = (id: string, kind = 'node'): Node => ({ id, kind, label: id });
-const edge = (id: string, source: string, target: string): Edge => ({
-    id,
-    kind: 'edge',
-    source,
-    target,
-});
+import { edge, node } from './test-helpers';
 
 const kernel = new Kernel({
-    nodes: [node('a', 'keep'), node('b', 'drop'), node('c', 'keep'), node('pinned', 'drop')],
+    nodes: [
+        node('a', 'a', 'keep'),
+        node('b', 'b', 'drop'),
+        node('c', 'c', 'keep'),
+        node('pinned', 'pinned', 'drop'),
+    ],
     edges: [edge('e1', 'a', 'b'), edge('e2', 'a', 'c'), edge('e3', 'b', 'pinned')],
     hyperedges: [],
 });

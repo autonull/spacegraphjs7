@@ -1,22 +1,14 @@
 import { describe, expect, test } from 'vitest';
 import { Kernel } from './kernel';
 import { query } from './query';
-import type { Edge, Node } from './kernel';
-
-const node = (id: string): Node => ({ id, kind: 'node', label: id });
-const edge = (id: string, kind: string, source: string, target: string): Edge => ({
-    id,
-    kind,
-    source,
-    target,
-});
+import { edge, node } from './test-helpers';
 
 const kernel = new Kernel({
     nodes: [node('a'), node('b'), node('c'), node('d')],
     edges: [
-        edge('e1', 'links', 'a', 'b'),
-        edge('e2', 'links', 'b', 'c'),
-        edge('e3', 'other', 'a', 'd'),
+        edge('e1', 'a', 'b', 'links'),
+        edge('e2', 'b', 'c', 'links'),
+        edge('e3', 'a', 'd', 'other'),
     ],
     hyperedges: [],
 });
