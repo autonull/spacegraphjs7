@@ -236,8 +236,6 @@ export class InteractionPlugin extends BaseSystemPlugin {
     private handlePointerUp(e: any): void {
         const wasBoxSelecting = this.selectionManager.isBoxSelectingActive();
         const wasConnecting = this.connectionHandler.isConnectingMode();
-        const moved = this.pointerDownPosition.distanceTo(this.#pointerPosition.set(e.x, e.y));
-
         if (this.backgroundPan) {
             this.backgroundPan = null;
             this.cursorManager.clear('pan');
@@ -280,7 +278,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
         this.cursorManager.clear('hover');
 
         const suppressed = wasBoxSelecting || wasConnecting;
-        if (!suppressed && moved <= (this.input.clickThreshold ?? CLICK_MOVE_THRESHOLD)) {
+        if (!suppressed && this.wasClick(e)) {
             // The middle button is the camera's: a click on a node frames it, a drag orbits.
             if (e.button === 1 && this.pointerDownNode)
                 this._handleMiddleClick(this.pointerDownNode, e);
@@ -416,9 +414,14 @@ export class InteractionPlugin extends BaseSystemPlugin {
         );
     }
 
+    private wasClick(e: { x: number; y: number }): boolean {
+        const moved = this.pointerDownPosition.distanceTo(this.#pointerPosition.set(e.x, e.y));
+        return moved <= (this.input.clickThreshold ?? CLICK_MOVE_THRESHOLD);
+    }
+
     private handleContextMenu(e: any): void {
         e.originalEvent?.preventDefault();
-        if (this.pointerDownPosition.distanceTo(this.#pointerPosition.set(e.x, e.y)) > 5) return;
+        if (!this.wasClick(e)) return;
 
         const payload = { event: e.originalEvent };
         this.emitTarget(

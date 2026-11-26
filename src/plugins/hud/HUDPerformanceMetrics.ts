@@ -29,7 +29,6 @@ export class HUDPerformanceMetrics extends HUDElement {
                 <div style="font-weight: bold; color: ${HUD_COLORS.primary}; margin-bottom: 4px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em;">Telemetry</div>
                 <div><span style="color: ${HUD_COLORS.textMuted}">FPS:</span> <span id="sg-fps">60</span></div>
                 <div><span style="color: ${HUD_COLORS.textMuted}">Frame:</span> <span id="sg-frame-time">16.7</span>ms</div>
-                <div><span style="color: ${HUD_COLORS.textMuted}">Draw:</span> <span id="sg-draw-calls">0</span></div>
                 <div id="sg-memory-container" style="display: none"><span style="color: ${HUD_COLORS.textMuted}">Mem:</span> <span id="sg-memory">0</span>MB</div>
             `,
         };

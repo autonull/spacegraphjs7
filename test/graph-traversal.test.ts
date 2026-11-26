@@ -93,4 +93,18 @@ describe('Graph traversal', () => {
         expect(graph.getRootNodes().map((node) => node.id)).toEqual(['a']);
         expect(graph.getLeafNodes().map((node) => node.id)).toEqual(['d']);
     });
+
+    it('counts components and reads a component directly', () => {
+        const graph = chainGraph();
+        const isolated = new TestNode({ id: 'isolated', type: 'TestNode' }) as Node;
+        graph.addNode(isolated);
+
+        expect(graph.getConnectedComponentCount()).toBe(2);
+        expect(graph.getConnectedComponent('a').map((node) => node.id)).toEqual([
+            'a',
+            'b',
+            'c',
+            'd',
+        ]);
+    });
 });

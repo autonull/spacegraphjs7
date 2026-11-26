@@ -1,6 +1,7 @@
 import { createAnnouncer } from './a11y/announcer';
 import { safeDocumentHTML } from './documents';
 import { escapeHtml } from './markup';
+import { clamp } from './utils/math';
 
 /** The host owns vocabulary; the library only needs stable ids and the committed text. */
 export type ReadingNode = {
@@ -80,7 +81,7 @@ export const readingHTML = (
     options: ReadingHTMLOptions = {},
 ): string => {
     const items = sections.map((section) => {
-        const level = Math.min(6, Math.max(2, section.depth + 2));
+        const level = clamp(section.depth + 2, 2, 6);
         const meta = Object.entries(section.meta)
             .map(([key, value]) => `<dt>${escapeHtml(key)}</dt><dd>${escapeHtml(value)}</dd>`)
             .join('');
@@ -158,7 +159,7 @@ export const mountReading = (
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault();
             const next = event.key === 'ArrowDown' ? index + 1 : index - 1;
-            focusSection(list[Math.min(list.length - 1, Math.max(0, next))]);
+            focusSection(list[clamp(next, 0, list.length - 1)]);
         } else if (event.key === 'Home' || event.key === 'End') {
             event.preventDefault();
             focusSection(list[event.key === 'Home' ? 0 : list.length - 1]);

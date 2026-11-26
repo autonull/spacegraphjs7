@@ -59,8 +59,7 @@ export class ErgonomicsAPI {
     }
 
     findEdges(predicate: (edge: Edge) => boolean): Edge[] {
-        const e = this.sg.graph.findEdge(predicate);
-        return e ? [e] : [];
+        return [...this.sg.graph.getEdges()].filter(predicate);
     }
 
     getEdgesForNode(nodeId: string): Edge[] {

@@ -26,7 +26,6 @@ export class HUDStatusBar extends HUDElement {
                 <span id="sg-status-nodes" style="display: none">Nodes: 0</span>
                 <span id="sg-status-edges" style="display: none">Edges: 0</span>
                 <span id="sg-status-camera">Camera: 2D</span>
-                <span id="sg-status-layout" style="display: none">Layout: Idle</span>
             `,
         };
     }
@@ -58,13 +57,5 @@ export class HUDStatusBar extends HUDElement {
     updateCamera(is3D: boolean): void {
         const el = HUDDOMFactory.getElementById('sg-status-camera');
         if (el) el.textContent = `Camera: ${is3D ? '3D' : '2D'}`;
-    }
-
-    updateLayout(isActive: boolean): void {
-        const el = HUDDOMFactory.getElementById('sg-status-layout');
-        if (el) {
-            el.textContent = `Layout: ${isActive ? 'Running' : 'Idle'}`;
-            el.style.display = isActive ? 'inline' : 'none';
-        }
     }
 }

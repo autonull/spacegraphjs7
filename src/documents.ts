@@ -1,4 +1,5 @@
 import { escapeHtml, inlineHTML, SAFE_IMAGE } from './markup';
+import { clamp } from './utils/math';
 
 export type DocumentBlock =
     | { readonly kind: 'heading'; readonly level: number; readonly text: string }
@@ -95,7 +96,7 @@ export const documentHTML = (blocks: readonly DocumentBlock[]): string =>
     blocks.map((block) => {
         switch (block.kind) {
             case 'heading': {
-                const level = Math.min(6, Math.max(1, block.level));
+                const level = clamp(block.level, 1, 6);
                 return `<h${level}>${inlineHTML(block.text)}</h${level}>`;
             }
             case 'paragraph': return `<p>${inlineHTML(block.text)}</p>`;

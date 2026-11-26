@@ -10,7 +10,7 @@ export interface Disposable {
 export class EventEmitter<T extends Record<string, any> = any> {
     private handlers = new Map<keyof T, Set<(event: any) => void>>();
     private batched = new Map<keyof T, any[]>();
-    private batchId: number | ReturnType<typeof setTimeout> | null = null;
+    private cancelBatch: (() => void) | null = null;
 
     on<K extends keyof T>(event: K, handler: (event: T[K]) => void): Disposable {
         const set = this.handlers.get(event) ?? new Set();
@@ -39,11 +39,15 @@ export class EventEmitter<T extends Record<string, any> = any> {
         const arr = this.batched.get(event) ?? [];
         if (!this.batched.has(event)) this.batched.set(event, arr);
         arr.push(data);
-        if (!this.batchId) {
-            this.batchId =
-                typeof window !== 'undefined' && 'requestAnimationFrame' in window
-                    ? requestAnimationFrame(() => this.flushBatch())
-                    : setTimeout(() => this.flushBatch(), 0);
+        if (!this.cancelBatch) {
+            const flush = () => this.flushBatch();
+            if (typeof window !== 'undefined' && 'requestAnimationFrame' in window) {
+                const id = requestAnimationFrame(flush);
+                this.cancelBatch = () => cancelAnimationFrame(id);
+            } else {
+                const id = setTimeout(flush, 0);
+                this.cancelBatch = () => clearTimeout(id);
+            }
         }
     }
 
@@ -74,10 +78,9 @@ export class EventEmitter<T extends Record<string, any> = any> {
     }
 
     clear(): void {
-        if (this.batchId) {
-            if (typeof this.batchId === 'number') cancelAnimationFrame(this.batchId);
-            else clearTimeout(this.batchId);
-            this.batchId = null;
+        if (this.cancelBatch) {
+            this.cancelBatch();
+            this.cancelBatch = null;
         }
         this.batched.clear();
         this.handlers.clear();
@@ -95,7 +98,7 @@ export class EventEmitter<T extends Record<string, any> = any> {
     }
 
     private flushBatch(): void {
-        this.batchId = null;
+        this.cancelBatch = null;
         for (const [event, arr] of this.batched) {
             const handlers = this.handlers.get(event);
             if (handlers) {

@@ -8,71 +8,59 @@ import type {
     MermaidLayoutType,
 } from '../types';
 
+const EDGE_MARKERS = ['-->', '-.->', '==>', '---'] as const;
+const isEdgeLine = (line: string): boolean => EDGE_MARKERS.some((marker) => line.includes(marker));
+
 export class MermaidParser {
     private nodes: Map<string, DiagramNode> = new Map();
     private edges: DiagramEdge[] = [];
     private clusters: Map<string, DiagramCluster> = new Map();
     private defaultDirection: MermaidLayoutType = 'TD';
     private currentCluster: string | null = null;
-
     parse(mermaidCode: string): DiagramParseResult {
         this.nodes.clear();
         this.edges = [];
         this.clusters.clear();
         this.defaultDirection = 'TD';
         this.currentCluster = null;
-
         const lines = mermaidCode
             .split('\n')
             .map((l) => l.trim())
             .filter((l) => l && !l.startsWith('%%'));
-
         for (const line of lines) {
             if (line.startsWith('graph ') || line.startsWith('flowchart ')) {
-                const dir = this.parseDirection(line);
-                this.defaultDirection = dir;
+                this.defaultDirection = this.parseDirection(line);
                 continue;
             }
-
             if (line.startsWith('subgraph ')) {
                 this.parseSubgraphStart(line);
                 continue;
             }
-
             if (line === 'end') {
                 this.currentCluster = null;
                 continue;
             }
-
-            if (line.includes('-->') || line.includes('-.->') || line.includes('---')) {
-                this.parseEdge(line);
-            }
+            if (isEdgeLine(line)) this.parseEdge(line);
         }
-
         for (const line of lines) {
             if (
                 !line.startsWith('graph ') &&
                 !line.startsWith('flowchart ') &&
                 !line.startsWith('subgraph ') &&
                 line !== 'end' &&
-                !line.includes('-->') &&
-                !line.includes('-.->') &&
-                !line.includes('---')
+                !isEdgeLine(line)
             ) {
                 this.parseNode(line);
             }
         }
-
         return this.buildResult();
     }
-
     private parseDirection(line: string): MermaidLayoutType {
         const match =
             line.match(/^graph\s+(TD|TB|BT|LR|RL)/) || line.match(/^flowchart\s+(TD|TB|BT|LR|RL)/);
         if (match) return match[1] as MermaidLayoutType;
         return this.defaultDirection;
     }
-
     private parseSubgraphStart(line: string): void {
         const match = line.match(/^subgraph\s+(\w+)(?:\s+\[([^\]]+)\])?/);
         if (match) {
@@ -82,7 +70,6 @@ export class MermaidParser {
             this.clusters.set(clusterId, { id: clusterId, label: clusterLabel });
         }
     }
-
     private parseNode(line: string): void {
         const defs = [
             { regex: /^([A-Za-z0-9_]+)\[([^\]]+)\]/, shape: 'rect' },
@@ -90,7 +77,6 @@ export class MermaidParser {
             { regex: /^([A-Za-z0-9_]+)\{([^}]+)\}/, shape: 'diamond' },
             { regex: /^([A-Za-z0-9_]+)>([^<]+)</, shape: 'trapezoid' },
         ];
-
         for (const { regex, shape } of defs) {
             const match = line.match(regex);
             if (match) {
@@ -98,29 +84,30 @@ export class MermaidParser {
                 return;
             }
         }
-
         const simpleRef = line.match(/^([A-Za-z0-9_]+)$/);
         if (simpleRef && !this.nodes.has(simpleRef[1])) {
             this.registerNode(simpleRef[1], simpleRef[1], 'rect');
         }
     }
-
     private parseEdge(line: string): void {
-        const patterns = [
-            { regex: /^([A-Za-z0-9_]+)\s*-->\s*([A-Za-z0-9_]+)/, style: 'solid' as EdgeStyle },
+        const patterns: Array<{ regex: RegExp; style: EdgeStyle }> = [
             {
                 regex: /^([A-Za-z0-9_]+)\s*-->\s*\|([^|]+)\|\s*([A-Za-z0-9_]+)/,
-                style: 'solid' as EdgeStyle,
+                style: 'solid',
             },
-            { regex: /^([A-Za-z0-9_]+)\s*-\.->\s*([A-Za-z0-9_]+)/, style: 'dotted' as EdgeStyle },
+            { regex: /^([A-Za-z0-9_]+)\s*-->\s*([A-Za-z0-9_]+)/, style: 'solid' },
             {
-                regex: /^([A-Za-z0-9_]+)\s*-.->\s*\|([^|]+)\|\s*([A-Za-z0-9_]+)/,
-                style: 'dotted' as EdgeStyle,
+                regex: /^([A-Za-z0-9_]+)\s*-\.->\s*\|([^|]+)\|\s*([A-Za-z0-9_]+)/,
+                style: 'dotted',
             },
-            { regex: /^([A-Za-z0-9_]+)\s*==>\s*([A-Za-z0-9_]+)/, style: 'bold' as EdgeStyle },
-            { regex: /^([A-Za-z0-9_]+)\s*---?\s*([A-Za-z0-9_]+)/, style: 'solid' as EdgeStyle },
+            { regex: /^([A-Za-z0-9_]+)\s*-\.->\s*([A-Za-z0-9_]+)/, style: 'dotted' },
+            {
+                regex: /^([A-Za-z0-9_]+)\s*==>\s*\|([^|]+)\|\s*([A-Za-z0-9_]+)/,
+                style: 'bold',
+            },
+            { regex: /^([A-Za-z0-9_]+)\s*==>\s*([A-Za-z0-9_]+)/, style: 'bold' },
+            { regex: /^([A-Za-z0-9_]+)\s*---\s*([A-Za-z0-9_]+)/, style: 'solid' },
         ];
-
         for (const { regex, style } of patterns) {
             const match = line.match(regex);
             if (match) {
@@ -130,12 +117,7 @@ export class MermaidParser {
                     target: match[3] || match[2],
                     style,
                 };
-                if (match[2] && !match[3]) {
-                    // Could be label match on solid edge
-                    if (!['source', 'target'].includes(match[2])) {
-                        edge.label = match[2];
-                    }
-                }
+                if (match[3]) edge.label = match[2];
                 this.registerNodeIfNeeded(edge.source);
                 this.registerNodeIfNeeded(edge.target);
                 this.edges.push(edge);
@@ -143,25 +125,21 @@ export class MermaidParser {
             }
         }
     }
-
     private registerNodeIfNeeded(id: string): void {
         if (!this.nodes.has(id)) {
             this.registerNode(id, id, 'rect');
         }
     }
-
     private registerNode(id: string, label: string, shape: string): void {
         if (!this.nodes.has(id)) {
             this.nodes.set(id, { id, label, shape, cluster: this.currentCluster || undefined });
         }
     }
-
     private buildResult(): DiagramParseResult {
         const suggestedLayout =
             this.defaultDirection === 'LR' || this.defaultDirection === 'RL'
                 ? 'tree'
                 : 'hierarchical';
-
         return result(
             'mermaid',
             this.nodes.values(),

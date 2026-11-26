@@ -182,8 +182,8 @@ export class GraphAlgorithms {
         starts: readonly Node[],
         links: ReadonlyMap<string, Node[]>,
         visit: (node: Node, depth: number, from: Node | null) => T | undefined,
+        visited = new Set<string>(),
     ): T | undefined {
-        const visited = new Set<string>();
         const queue: Array<{ node: Node; depth: number; from: Node | null }> = starts.map(
             (node) => ({
                 node,
@@ -208,19 +208,23 @@ export class GraphAlgorithms {
     }
 
     /** The ids reachable from a start id, breadth first. The visited set is shared and extended. */
-    #reachable(links: Map<string, Node[]>, startId: string, visited: Set<string>): string[] {
-        const queue = [startId];
+    #reachable(
+        links: ReadonlyMap<string, Node[]>,
+        startId: string,
+        visited: Set<string>,
+    ): string[] {
+        const start = this.nodes.get(startId);
+        if (!start) return [];
         const reached: string[] = [];
-
-        for (let head = 0; head < queue.length; head++) {
-            const id = queue[head]!;
-            if (visited.has(id)) continue;
-            visited.add(id);
-            reached.push(id);
-            for (const neighbor of links.get(id) ?? []) {
-                if (!visited.has(neighbor.id)) queue.push(neighbor.id);
-            }
-        }
+        this.#walkBreadthFirst(
+            [start],
+            links,
+            (node) => {
+                reached.push(node.id);
+                return undefined;
+            },
+            visited,
+        );
         return reached;
     }
 }

@@ -80,13 +80,11 @@ export class MarkdownNode extends BaseContentNode {
             if (updates.data.width !== undefined) {
                 this.domElement.style.width = `${updates.data.width}px`;
             }
-            if (updates.data.color !== undefined) {
-                this.domElement.style.background = updates.data.color as string;
-            }
             if (updates.data.textColor !== undefined) {
                 this.domElement.style.color = updates.data.textColor as string;
             }
         }
+        this.syncDataColor(updates);
 
         if (updates.data?.markdown !== undefined || updates.label !== undefined) {
             const md = (updates.data?.markdown as string) ?? updates.label ?? '';

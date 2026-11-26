@@ -39,7 +39,7 @@ export const crossTracePath = (
     const seen = new Set([start]);
     let current = start;
 
-    for (let hop = 0; hop <= links.length; hop++) {
+    for (let hop = 0; hop < links.length; hop++) {
         const origin = direction === 'forward' ? 'from' : 'to';
         const destination = direction === 'forward' ? 'to' : 'from';
         const candidates = [current, ...peers(nodesByDomain, current)];

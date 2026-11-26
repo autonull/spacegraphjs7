@@ -77,9 +77,7 @@ export class NoteNode extends BaseContentNode {
         if (updates.data?.text !== undefined && this.bodyElement) {
             this.bodyElement.textContent = updates.data.text as string;
         }
-        if (updates.data?.color) {
-            this.domElement.style.background = updates.data.color as string;
-        }
+        this.syncDataColor(updates);
         return this;
     }
 
