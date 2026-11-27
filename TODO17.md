@@ -370,6 +370,13 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   height and step are one character line (18 px) rather than a card height plus gap; only overlay gaps
   add extra space. The prompt sits one row below the tail. `CONSOLE_GRID` is the single source for the
   grid and the camera inset. Eight console shots regenerated.
+- **Terminal aesthetic pass (2026-11-27).** Node-level focus/selection rings and rounded corners are
+  suppressed in the transcript view; line nodes are square and frameless. Subtle per-type treatments
+  (background tint, weight, italic, letter-spacing) distinguish user input, assistant messages, tools,
+  boundaries, state/thinking and approvals while normal text stays gray. Selection is now an inset
+  accent bar plus tint driven by `data-selected`, not a white outline. The prompt caret blinks and its
+  underline replaces the boxed frame. Fit insets pin the first line near the top-left. Eight console
+  shots regenerated.
 
 ## 10. Next session entry points
 

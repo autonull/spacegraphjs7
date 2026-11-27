@@ -52,10 +52,12 @@ import {
     terminalLineSize,
     terminalPalette,
     terminalReplaySteps,
+    terminalOrder,
     terminalOverlayGaps,
     terminalOverlays,
     terminalPromptHTML,
     terminalRangeFromKey,
+    terminalRangeIDs,
     terminalRangeKey,
     terminalSlots,
     terminalVisibleAt,
@@ -1000,9 +1002,14 @@ export class DurableHost {
         this.#recordHistory();
     }
 
-    /** Frame the console inside a narrow left region so the spine reads like a text console. */
+    /** Frame the console inside a narrow top-left region like a text terminal. */
     #frameConsole(): void {
-        const width = el('stage').clientWidth || 1600;
+        const stage = el('stage');
+        const width = stage.clientWidth || 1600;
+        const height = stage.clientHeight || 900;
+        const count = this.#terminalController?.lines().length ?? 1;
+        const contentHeight =
+            count * CONSOLE_GRID.lineHeight + Math.floor(count / 4) * CONSOLE_GRID.lineHeight * 2 + 24;
         this.renderer.fit(undefined, {
             padding: 12,
             minScale: 0.8,
@@ -1010,7 +1017,7 @@ export class DurableHost {
                 left: 0,
                 top: 0,
                 right: Math.max(0, width - CONSOLE_GRID.maxWidth - 48),
-                bottom: 0,
+                bottom: Math.max(0, height - contentHeight - 24),
             },
         });
         this.#consoleFramed = true;
@@ -2573,6 +2580,10 @@ export class DurableHost {
             grid,
             windowConfig: { size: 28, margin: 6, hysteresis: 5 },
             project: ({ visible, order, overlays, band }) => {
+                const range = this.#terminalController?.selection();
+                const selected = range
+                    ? new Set(terminalRangeIDs(range, terminalOrder(this.#terminalController?.lines() ?? [])))
+                    : new Set<string>();
                 const revealed = terminalOverlays(overlays, { band });
                 const offsets = terminalGaps(
                     order,
@@ -2587,11 +2598,11 @@ export class DurableHost {
                         id: entry.id,
                         kind: entry.kind,
                         label: entry.label,
-                        html: `<div class="sg-terminal-line" data-kind="${escapeHTML(
-                            entry.kind,
-                        )}" data-status="${escapeHTML(entry.status)}" data-role="${escapeHTML(
-                            entry.role ?? '',
-                        )}">${lineHTML(
+                        html: `<div class="sg-terminal-line" data-selected="${selected.has(
+                            entry.id,
+                        )}" data-kind="${escapeHTML(entry.kind)}" data-status="${escapeHTML(
+                            entry.status,
+                        )}" data-role="${escapeHTML(entry.role ?? '')}">${lineHTML(
                             entry,
                             terminalPalette(this.#terminalController?.palette() ?? 'classic').glyphs,
                         )}</div>`,
