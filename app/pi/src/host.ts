@@ -237,10 +237,10 @@ export class PiHost {
     readonly director = new MotionDirector();
     readonly playSession: PhysicsPlaySession;
 
-    #cameraMotion: CameraMotionHandlers | undefined;
+    #cameraMotion!: CameraMotionHandlers;
 
     get cameraMotion(): CameraMotionHandlers {
-        return (this.#cameraMotion ??= this.registerMotion());
+        return this.#cameraMotion;
     }
 
     #kernel = new Kernel();
@@ -689,6 +689,7 @@ export class PiHost {
         if (!supportsDepth(this.renderer.capabilities, this.#depth)) this.#depth = 'flat';
         this.renderer.setDepth(this.#depth);
         this.#controller.bind(this.renderer);
+        this.#cameraMotion = this.registerMotion();
         let mountedPanel: ReturnType<typeof mountPolicyPanel> | undefined;
         const policyRegistry = new WidgetRegistry().register({
             id: 'policy',
