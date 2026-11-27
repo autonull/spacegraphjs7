@@ -88,7 +88,7 @@
             .reading-backlink { display: inline-block; margin-top: 10px; color: var(--accent); font-size: 11px; }
             .sg-terminal-line { display: flex; align-items: baseline; gap: 8px; width: 100%; height: 100%;
                 box-sizing: border-box; overflow: hidden; color: var(--text); overflow-wrap: anywhere;
-                padding: 2px 8px; border: 1px solid transparent; border-radius: 4px;
+                padding: 0 8px; border: 1px solid transparent; border-radius: 4px;
                 font: 13px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
             .sg-terminal-line:hover, .sg-terminal-line:focus-visible {
                 border-color: var(--border); background: var(--panel); }
@@ -102,8 +102,8 @@
             .sg-terminal-line[data-kind='approval'] { --line-accent: #b48ead; }
             .sg-terminal-line[data-status='failed'] { --line-accent: #e06c75; }
             .tg-prompt { --line-accent: var(--accent); }
-            .tg-prompt { display: flex; align-items: flex-start; gap: 8px; width: 100%; height: 100%;
-                box-sizing: border-box; padding: 6px 8px; background: var(--panel); border: 1px solid var(--accent);
+            .tg-prompt { display: flex; align-items: center; gap: 8px; width: 100%; height: 100%;
+                box-sizing: border-box; padding: 0 8px; background: var(--panel); border: 1px solid var(--accent);
                 border-radius: 6px; color: var(--text);
                 font: 13px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
             .tg-caret { flex: none; color: var(--accent); font-weight: 700; }

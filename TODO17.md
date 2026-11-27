@@ -365,6 +365,11 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   `orders` spine is dotted and inferred, so it stays readable at text zoom and still reveals the
   conversation shape when zoomed out. `console-zoom` captures that fractal view; all eight console shots
   were regenerated.
+- **Console rhythm pass (2026-11-27).** The console camera now fits the line spine into a narrow left
+  region via renderer insets instead of centring it, so text starts at the left edge of the stage. Row
+  height and step are one character line (18 px) rather than a card height plus gap; only overlay gaps
+  add extra space. The prompt sits one row below the tail. `CONSOLE_GRID` is the single source for the
+  grid and the camera inset. Eight console shots regenerated.
 
 ## 10. Next session entry points
 

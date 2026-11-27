@@ -229,6 +229,14 @@ const THEME: RenderTheme = themeFromDesignTokens(DURABLE_TOKENS, {
     defaults: { ...DEFAULT_THEME, fontSize: 15 },
 });
 
+const CONSOLE_GRID = terminalGrid({
+    charWidth: 7.4,
+    lineHeight: 18,
+    gutter: 14,
+    minWidth: 260,
+    maxWidth: 720,
+});
+
 type Importance = 'hero' | 'medium' | 'compact';
 
 type DurableNode = AdapterNode & {
@@ -652,6 +660,7 @@ export class DurableHost {
     };
     #readerController: ReadingController | undefined;
     #terminalController: TerminalController | undefined;
+    #consoleFramed = false;
     #helpScope: ScopedOverlay | undefined;
     #mutedEdges = 0;
     #activeGroups = new Set<string>();
@@ -980,11 +989,31 @@ export class DurableHost {
 
     setView(name: ViewName): void {
         if (name === this.#viewName) return;
+        if (this.#viewName === 'transcript') this.#consoleFramed = false;
         this.#viewName = name;
         this.refresh();
-        requestAnimationFrame(() => this.viewOps.fit(undefined, DEFAULT_FIT_OPTIONS));
+        requestAnimationFrame(() => {
+            if (this.#viewName === 'transcript') this.#frameConsole();
+            else this.viewOps.fit(undefined, DEFAULT_FIT_OPTIONS);
+        });
         this.announce(`${name} view`);
         this.#recordHistory();
+    }
+
+    /** Frame the console inside a narrow left region so the spine reads like a text console. */
+    #frameConsole(): void {
+        const width = el('stage').clientWidth || 1600;
+        this.renderer.fit(undefined, {
+            padding: 12,
+            minScale: 0.8,
+            insets: {
+                left: 0,
+                top: 0,
+                right: Math.max(0, width - CONSOLE_GRID.maxWidth - 48),
+                bottom: 0,
+            },
+        });
+        this.#consoleFramed = true;
     }
 
     setRung(rung: Rung): boolean {
@@ -2529,13 +2558,7 @@ export class DurableHost {
 
     #terminal(): TerminalController {
         if (this.#terminalController) return this.#terminalController;
-        const grid = terminalGrid({
-            charWidth: 7.4,
-            lineHeight: 18,
-            gutter: 14,
-            minWidth: 260,
-            maxWidth: 720,
-        });
+        const grid = CONSOLE_GRID;
         const sink: TerminalSink<RenderModel> = {
             render: (model) => this.renderer.setModel(model),
             show: () => undefined,
@@ -2558,7 +2581,8 @@ export class DurableHost {
                 );
                 const lineWidth = grid.maxWidth;
                 const lineNodes: RenderNode[] = visible.map((entry, index) => {
-                    const [, height] = terminalLineSize(entry.text, grid, entry.octave ?? 0);
+                    const [, measured] = terminalLineSize(entry.text, grid, entry.octave ?? 0);
+                    const height = Math.max(grid.lineHeight, measured - grid.gutter);
                     return {
                         id: entry.id,
                         kind: entry.kind,
@@ -2571,7 +2595,7 @@ export class DurableHost {
                             entry,
                             terminalPalette(this.#terminalController?.palette() ?? 'classic').glyphs,
                         )}</div>`,
-                        position: [lineWidth / 2, -index * (height + 10) + (offsets.get(entry.id) ?? 0), 0],
+                        position: [lineWidth / 2, -index * height + (offsets.get(entry.id) ?? 0), 0],
                         size: [lineWidth, height, 1],
                         status:
                             entry.status === 'failed'
@@ -2620,8 +2644,8 @@ export class DurableHost {
                         kind: 'prompt',
                         label: 'Prompt',
                         html: terminalPromptHTML('Send a message'),
-                        position: [last.position[0], last.position[1] - 60, 0],
-                        size: [520, 44, 1],
+                        position: [last.position[0], last.position[1] - 24, 0],
+                        size: [lineWidth, 22, 1],
                         status: 'neutral',
                         interactive: true,
                         data: { terminal: true },
@@ -2629,14 +2653,12 @@ export class DurableHost {
                 return { nodes, edges };
             },
             onReveal: (id) => this.reveal(id),
-            onFocus: (id) => {
-                this.renderer.focus(id);
+            onFocus: (id) =>
                 requestAnimationFrame(() =>
                     el('canvas')
                         .querySelector<HTMLElement>(`[data-node-id="${id}"]`)
                         ?.focus({ preventScroll: true }),
-                );
-            },
+                ),
             announce: (message) => this.announce(message),
         });
         mountTerminalA11y(el('canvas'), {
@@ -2705,6 +2727,7 @@ export class DurableHost {
         const terminal = this.#terminal();
         terminal.setOverlays(overlays);
         terminal.setLines(lines);
+        if (!this.#consoleFramed) this.#frameConsole();
     }
 
     private renderLegend(): void {
