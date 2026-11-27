@@ -168,6 +168,36 @@ export const terminalLayout = (
 
 export type TerminalGap = { readonly after: string; readonly lines: number };
 
+/** Every visible gap overlay opens a fixed number of line units after its anchor. */
+export const terminalOverlayGaps = (
+    overlays: readonly TerminalOverlay[],
+    lineUnits = 2,
+): readonly TerminalGap[] => {
+    const counts = new Map<string, number>();
+    overlays
+        .filter((overlay) => overlay.slot === 'gap')
+        .forEach((overlay) =>
+            counts.set(overlay.lineID, (counts.get(overlay.lineID) ?? 0) + 1),
+        );
+    return [...counts].map(([after, count]) => ({ after, lines: count * lineUnits }));
+};
+
+/** Gutter and margin overlays grouped by the line they annotate, in declaration order. */
+export const terminalSlots = (
+    overlays: readonly TerminalOverlay[],
+    slot: Exclude<TerminalSlot, 'gap'>,
+): ReadonlyMap<string, readonly TerminalOverlay[]> => {
+    const byLine = new Map<string, TerminalOverlay[]>();
+    overlays
+        .filter((overlay) => overlay.slot === slot)
+        .forEach((overlay) => {
+            const list = byLine.get(overlay.lineID) ?? [];
+            list.push(overlay);
+            byLine.set(overlay.lineID, list);
+        });
+    return byLine;
+};
+
 /** Cumulative world-y shift per id: a gap opens after its anchor and moves only later lines. */
 export const terminalGaps = (
     order: readonly string[],

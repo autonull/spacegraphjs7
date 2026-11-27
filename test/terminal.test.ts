@@ -12,6 +12,8 @@ import {
     terminalCompare,
     terminalGaps,
     terminalGlyphs,
+    terminalOverlayGaps,
+    terminalSlots,
     terminalGrid,
     terminalLayout,
     terminalLineSize,
@@ -180,6 +182,40 @@ describe('glyph grammar', () => {
         expect(html).toContain('&lt;b&gt;x&lt;/b&gt;');
         expect(html).not.toContain('<b>');
         expect(html).toContain('×');
+    });
+});
+
+describe('elastic gaps and slots', () => {
+    it('derives line-unit gaps and cumulative offsets from gap overlays', () => {
+        const gaps = terminalOverlayGaps(
+            [
+                overlay('always', undefined, 'a'),
+                overlay('always', undefined, 'a'),
+                overlay('always', undefined, 'b'),
+                { ...overlay('always', undefined, 'c'), slot: 'gutter' },
+            ],
+            2,
+        );
+        expect(gaps).toEqual([
+            { after: 'a', lines: 4 },
+            { after: 'b', lines: 2 },
+        ]);
+        expect([...terminalGaps(['a', 'b', 'c'], gaps, 16).values()]).toEqual([0, -64, -96]);
+    });
+
+    it('groups gutter slots by line in declaration order', () => {
+        const slots = terminalSlots(
+            [
+                { ...overlay('always', undefined, 'a'), id: 'first', slot: 'gutter' },
+                { ...overlay('always', undefined, 'b'), id: 'other', slot: 'gutter' },
+                { ...overlay('always', undefined, 'a'), id: 'second', slot: 'gutter' },
+                { ...overlay('always', undefined, 'a'), id: 'margin', slot: 'margin' },
+            ],
+            'gutter',
+        );
+        expect(slots.get('a')?.map((entry) => entry.id)).toEqual(['first', 'second']);
+        expect(slots.get('b')?.map((entry) => entry.id)).toEqual(['other']);
+        expect(slots.has('c')).toBe(false);
     });
 });
 

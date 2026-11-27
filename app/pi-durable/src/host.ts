@@ -42,14 +42,19 @@ import {
     lineHTML,
     mountTerminalPrompt,
     mountTerminalSink,
+    terminalGaps,
     terminalGlyphs,
     terminalGrid,
     terminalLineSize,
+    terminalOverlayGaps,
+    terminalOverlays,
     terminalPromptHTML,
     terminalRangeFromKey,
     terminalRangeKey,
+    terminalSlots,
     type TerminalController,
     type TerminalLine,
+    type TerminalOverlay,
     type TerminalPromptController,
     type TerminalSink,
 } from 'spacegraphjs/terminal';
@@ -2533,15 +2538,21 @@ export class DurableHost {
         this.#terminalController = mountTerminalSink(sink, {
             grid,
             windowConfig: { size: 28, margin: 6, hysteresis: 5 },
-            project: ({ visible }) => {
-                const nodes: RenderNode[] = visible.map((entry, index) => {
+            project: ({ visible, order, overlays, band }) => {
+                const revealed = terminalOverlays(overlays, { band });
+                const offsets = terminalGaps(
+                    order,
+                    terminalOverlayGaps(revealed, 2),
+                    grid.lineHeight,
+                );
+                const lineNodes: RenderNode[] = visible.map((entry, index) => {
                     const [width, height] = terminalLineSize(entry.text, grid, entry.octave ?? 0);
                     return {
                         id: entry.id,
                         kind: entry.kind,
                         label: entry.label,
                         html: `<div class="sg-terminal-line">${lineHTML(entry, glyphs)}</div>`,
-                        position: [width / 2, -index * (height + 10), 0],
+                        position: [width / 2, -index * (height + 10) + (offsets.get(entry.id) ?? 0), 0],
                         size: [width, height, 1],
                         status:
                             entry.status === 'failed'
@@ -2553,14 +2564,36 @@ export class DurableHost {
                         data: { terminal: true },
                     };
                 });
-                const edges: RenderEdge[] = nodes.slice(1).map((node, index) => ({
-                    id: `${nodes[index]!.id}->${node.id}`,
-                    source: nodes[index]!.id,
+                const edges: RenderEdge[] = lineNodes.slice(1).map((node, index) => ({
+                    id: `${lineNodes[index]!.id}->${node.id}`,
+                    source: lineNodes[index]!.id,
                     target: node.id,
                     kind: 'orders',
                     style: 'solid' as const,
                 }));
-                const last = nodes.at(-1);
+                const nodes: RenderNode[] = [...lineNodes];
+                terminalSlots(revealed, 'gutter').forEach((entries, lineID) => {
+                    const line = lineNodes.find((node) => node.id === lineID);
+                    if (!line) return;
+                    entries.forEach((entry, index) => {
+                        nodes.push({
+                            id: entry.id,
+                            kind: 'terminal-gutter',
+                            label: 'attention',
+                            html: '<span class="sg-terminal-gutter">!</span>',
+                            position: [
+                                line.position[0] - (line.size?.[0] ?? 220) / 2 - 14,
+                                line.position[1] + index * 10,
+                                0,
+                            ],
+                            size: [12, 12, 1],
+                            status: 'warning',
+                            interactive: false,
+                            data: { terminalGutter: true },
+                        });
+                    });
+                });
+                const last = lineNodes.at(-1);
                 if (last)
                     nodes.push({
                         id: 'terminal-prompt',
@@ -2617,17 +2650,40 @@ export class DurableHost {
     }
 
     #renderConsole(kernel: Kernel): void {
-        const lines: readonly TerminalLine[] = kernel.nodes
-            .filter((node) => TRANSCRIPT_KINDS.has(node.kind))
-            .map((node) => ({
-                id: node.id,
-                kind: node.kind,
-                status: String(node.data?.['status'] ?? 'complete'),
-                label: labelForNode(node),
-                text: dataText(node),
-                octave: 0,
-            }));
-        this.#terminal().setLines(lines);
+        const transcript = kernel.nodes.filter((node) => TRANSCRIPT_KINDS.has(node.kind));
+        const lines: readonly TerminalLine[] = transcript.map((node) => ({
+            id: node.id,
+            kind: node.kind,
+            status: String(node.data?.['status'] ?? 'complete'),
+            label: labelForNode(node),
+            text: dataText(node),
+            octave: 0,
+        }));
+        const overlays: readonly TerminalOverlay[] = lines.flatMap((line, index) => [
+            ...(index % 4 === 0
+                ? [
+                      {
+                          id: `gap-${line.id}`,
+                          lineID: line.id,
+                          slot: 'gap' as const,
+                          reveal: 'always' as const,
+                      },
+                  ]
+                : []),
+            ...(index % 3 === 0
+                ? [
+                      {
+                          id: `gutter-${line.id}`,
+                          lineID: line.id,
+                          slot: 'gutter' as const,
+                          reveal: 'always' as const,
+                      },
+                  ]
+                : []),
+        ]);
+        const terminal = this.#terminal();
+        terminal.setOverlays(overlays);
+        terminal.setLines(lines);
     }
 
     private renderLegend(): void {

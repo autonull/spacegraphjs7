@@ -41,6 +41,13 @@ test('scene prompt submits inside the console without stealing shortcuts', async
     expect(errors).toEqual([]);
 });
 
+test('gutter slots mark boundaries without changing committed lines', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    await expect(page.locator('#canvas [data-node-id^="gutter-"]').first()).toBeVisible();
+    expect(errors).toEqual([]);
+});
+
 test('console selection and tail survive a compact permalink', async ({ page }) => {
     const errors = await boot(page, '?shot=basic-turn');
     await call(page, 'setView', 'transcript');
