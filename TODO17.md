@@ -355,6 +355,10 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   `console` as a group selector and individual console shot ids.
 - Console lines now fall back to node label/kind when a fact has no `text`, so tool and boundary rows
   stay readable; gutter markers use raw HTML to avoid heavy node frames.
+- **Console styling pass (2026-11-27).** All line nodes share a fixed width and one left edge; line
+  markup renders with `useRawHtml`, so there is no default frame. A border appears only on hover or
+  keyboard focus, and the core activity glow is suppressed for `#app[data-view='transcript']`. The demo
+  applies the same frameless rule to `.zcard`. Selection and focus rings remain for accessibility.
 
 ## 10. Next session entry points
 

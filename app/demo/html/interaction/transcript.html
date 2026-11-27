@@ -487,11 +487,9 @@
                 width: 100%;
                 height: 100%;
                 padding: 2px 8px;
-                background: var(--surface);
-                border: 1px solid var(--border);
-                border-left: 3px solid var(--accent);
+                background: transparent;
+                border: 1px solid transparent;
                 border-radius: 3px;
-                box-shadow: var(--shadow);
                 color: var(--text);
                 font:
                     13px/16px ui-monospace,
@@ -500,6 +498,10 @@
                     Consolas,
                     monospace;
                 white-space: normal;
+            }
+            .zcard:hover, .zcard:focus-visible {
+                border-color: var(--border);
+                background: var(--surface);
             }
             .zcard-prompt {
                 flex: none;
@@ -553,16 +555,9 @@
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
             }
-            .zcard[data-kind='error'] {
-                border-left-color: var(--error);
-                background: color-mix(in srgb, var(--error) 8%, var(--surface));
-            }
-            .zcard[data-kind='approval'] {
-                border-left-color: var(--warning);
-            }
-            .zcard[data-kind='artifact'] {
-                border-left-color: var(--success);
-            }
+            .zcard[data-kind='error'] .zcard-meta { color: var(--error); }
+            .zcard[data-kind='approval'] .zcard-meta { color: var(--warning); }
+            .zcard[data-kind='artifact'] .zcard-meta { color: var(--success); }
             .zcard[data-selected='true'] {
                 outline: 2px solid var(--accent);
                 outline-offset: 2px;
@@ -570,13 +565,11 @@
             .zcard[data-octave='-1'] {
                 gap: 4px;
                 padding: 0 5px;
-                border-left-width: 1px;
                 font-size: 10px;
             }
             .zcard[data-octave='-2'] {
                 gap: 3px;
                 padding: 0 4px;
-                border-left-width: 1px;
                 font-size: 9px;
             }
             .row[data-octave='-1'],

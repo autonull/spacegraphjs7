@@ -2479,6 +2479,7 @@ export class DurableHost {
     }
 
     private renderView(): void {
+        el('app').dataset['view'] = this.#viewName;
         el('view-badge').textContent = this.#viewName;
         el('tasks').toggleAttribute('data-active', this.#viewName === 'tasks');
         el('timeline').toggleAttribute('data-active', this.#viewName === 'timeline');
@@ -2555,8 +2556,9 @@ export class DurableHost {
                     terminalOverlayGaps(revealed, 2),
                     grid.lineHeight,
                 );
+                const lineWidth = grid.maxWidth;
                 const lineNodes: RenderNode[] = visible.map((entry, index) => {
-                    const [width, height] = terminalLineSize(entry.text, grid, entry.octave ?? 0);
+                    const [, height] = terminalLineSize(entry.text, grid, entry.octave ?? 0);
                     return {
                         id: entry.id,
                         kind: entry.kind,
@@ -2565,8 +2567,8 @@ export class DurableHost {
                             entry,
                             terminalPalette(this.#terminalController?.palette() ?? 'classic').glyphs,
                         )}</div>`,
-                        position: [width / 2, -index * (height + 10) + (offsets.get(entry.id) ?? 0), 0],
-                        size: [width, height, 1],
+                        position: [lineWidth / 2, -index * (height + 10) + (offsets.get(entry.id) ?? 0), 0],
+                        size: [lineWidth, height, 1],
                         status:
                             entry.status === 'failed'
                                 ? 'error'
@@ -2574,7 +2576,7 @@ export class DurableHost {
                                   ? 'warning'
                                   : 'success',
                         interactive: true,
-                        data: { terminal: true },
+                        data: { terminal: true, useRawHtml: true },
                     };
                 });
                 const edges: RenderEdge[] = lineNodes.slice(1).map((node, index) => ({

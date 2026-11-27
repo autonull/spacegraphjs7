@@ -88,7 +88,10 @@
             .reading-backlink { display: inline-block; margin-top: 10px; color: var(--accent); font-size: 11px; }
             .sg-terminal-line { display: flex; align-items: baseline; gap: 8px; width: 100%; height: 100%;
                 box-sizing: border-box; overflow: hidden; color: var(--text); overflow-wrap: anywhere;
+                padding: 2px 8px; border: 1px solid transparent; border-radius: 4px;
                 font: 13px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+            .sg-terminal-line:hover, .sg-terminal-line:focus-visible {
+                border-color: var(--border); background: var(--panel); }
             .sg-terminal-line .tg-gutter { flex: none; color: var(--muted); }
             .sg-terminal-line .tg-text { min-width: 0; white-space: pre-wrap; }
             .tg-prompt { display: flex; align-items: flex-start; gap: 8px; width: 100%; height: 100%;
@@ -173,6 +176,7 @@
             #tasks, #timeline { display: none; }
             #tasks[data-active], #timeline[data-active] { display: block; }
             #canvas .spacegraph-html-node { display: flex !important; flex-direction: column; }
+            #app[data-view='transcript'] #canvas .spacegraph-html-node { box-shadow: none !important; }
             #canvas .spacegraph-group-node { border: 0 !important; background: transparent !important;
                 box-shadow: none !important; border-radius: 0 !important; }
             .durable-band { width: 100%; height: 100%; box-sizing: border-box; pointer-events: none;
