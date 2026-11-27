@@ -404,6 +404,73 @@ export const terminalGlyphs = (
     kind: { ...KIND_GLYPHS, ...overrides.kind },
 });
 
+/** Palettes name theme tokens; hosts supply the actual colours in their CSS. */
+export type TerminalPalette = {
+    readonly id: string;
+    readonly label: string;
+    readonly glyphs: TerminalGlyphs;
+    readonly tokens: Readonly<Record<string, string>>;
+};
+
+const retroGlyphs = terminalGlyphs({
+    kind: { user: '>', assistant: '*', file: '#', tool: '~', approval: '!', error: 'x', artifact: 'o' },
+    status: { complete: 'v', pending: '.', failed: 'x' },
+});
+
+export const TERMINAL_PALETTES: readonly TerminalPalette[] = [
+    {
+        id: 'classic',
+        label: 'Classic',
+        glyphs: terminalGlyphs(),
+        tokens: {
+            background: '--surface',
+            text: '--text',
+            accent: '--accent',
+            muted: '--muted',
+            attention: '--warn',
+        },
+    },
+    {
+        id: 'amber',
+        label: 'Amber',
+        glyphs: terminalGlyphs(),
+        tokens: {
+            background: '--surface',
+            text: '--accent',
+            accent: '--accent',
+            muted: '--muted',
+            attention: '--warn',
+        },
+    },
+    {
+        id: 'green',
+        label: 'Phosphor',
+        glyphs: terminalGlyphs(),
+        tokens: {
+            background: '--surface',
+            text: '--success',
+            accent: '--success',
+            muted: '--muted',
+            attention: '--warn',
+        },
+    },
+    {
+        id: 'retro',
+        label: 'Retro',
+        glyphs: retroGlyphs,
+        tokens: {
+            background: '--surface',
+            text: '--text',
+            accent: '--text',
+            muted: '--muted',
+            attention: '--warn',
+        },
+    },
+];
+
+export const terminalPalette = (id: string): TerminalPalette =>
+    TERMINAL_PALETTES.find((palette) => palette.id === id) ?? TERMINAL_PALETTES[0]!;
+
 export const lineGlyph = (line: TerminalLine, glyphs: TerminalGlyphs = terminalGlyphs()): string =>
     glyphs.kind[line.kind] ?? '·';
 export const statusGlyph = (line: TerminalLine, glyphs: TerminalGlyphs = terminalGlyphs()): string =>
@@ -646,6 +713,8 @@ export type TerminalHooks<Model = GraphSpec> = {
     readonly windowConfig?: TerminalWindowConfig;
     readonly gaps?: readonly TerminalGap[];
     readonly overlays?: readonly TerminalOverlay[];
+    /** Initial palette id or explicit palette; supplies glyphs for the default line markup. */
+    readonly palette?: string | TerminalPalette;
     readonly onReveal?: (id: string) => void;
     readonly onFocus?: (id: string) => void;
     readonly onCopy?: (text: string) => void;
@@ -668,6 +737,9 @@ export type TerminalController = {
     tail(): string | undefined;
     /** Committed line text joined by newlines; indices match `terminalPointAtIndex`. */
     text(): string;
+    /** Active palette id; hosts can map its token names onto their CSS. */
+    palette(): string;
+    setPalette(id: string): void;
     copy(): string;
     setOverlays(overlays: readonly TerminalOverlay[]): void;
     followTail(enabled: boolean): void;
@@ -689,6 +761,10 @@ export const mountTerminalSink = <Model = GraphSpec>(
     const gaps = hooks.gaps ?? [];
     let band = 'dot';
     let following = true;
+    let palette: TerminalPalette =
+        typeof hooks.palette === 'string'
+            ? terminalPalette(hooks.palette)
+            : (hooks.palette ?? TERMINAL_PALETTES[0]!);
 
     const order = (): readonly string[] => lines.map((line) => line.id);
     const layout = (): TerminalLayout => terminalLayout(lines, hooks.grid ?? terminalGrid(), hooks.lane);
@@ -720,6 +796,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
             range: windowState,
             gaps,
             overlays: terminalOverlays(overlays, { band, selected: new Set(selectedIDs()) }),
+            glyphs: palette.glyphs,
         }).spec as Model;
     };
 
@@ -776,6 +853,11 @@ export const mountTerminalSink = <Model = GraphSpec>(
         selection: () => range,
         tail: () => focusID || undefined,
         text: () => terminalFlatten(lines).text,
+        palette: () => palette.id,
+        setPalette: (id) => {
+            palette = terminalPalette(id);
+            apply();
+        },
         copy: () => {
             const text = range
                 ? terminalRangeText(range, lines)

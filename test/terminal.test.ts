@@ -7,6 +7,8 @@ import {
     mountTerminal,
     mountTerminalPrompt,
     STATUS_GLYPHS,
+    TERMINAL_PALETTES,
+    terminalPalette,
     terminalPromptHTML,
     terminalPromptNode,
     terminalCompare,
@@ -251,6 +253,43 @@ describe('elastic gaps and slots', () => {
         expect(slots.get('a')?.map((entry) => entry.id)).toEqual(['first', 'second']);
         expect(slots.get('b')?.map((entry) => entry.id)).toEqual(['other']);
         expect(slots.has('c')).toBe(false);
+    });
+});
+
+describe('palettes', () => {
+    it('names theme tokens rather than colours', () => {
+        expect(TERMINAL_PALETTES.map((palette) => palette.id)).toEqual([
+            'classic', 'amber', 'green', 'retro',
+        ]);
+        for (const palette of TERMINAL_PALETTES) {
+            for (const token of Object.values(palette.tokens)) {
+                expect(token.startsWith('--')).toBe(true);
+                expect(token).not.toMatch(/#[0-9a-f]{3,8}|rgb\(/i);
+            }
+        }
+    });
+
+    it('uses a palette glyph set in the default line markup', () => {
+        expect(terminalPalette('retro').glyphs.kind['user']).toBe('>');
+        expect(terminalPalette('missing')).toBe(TERMINAL_PALETTES[0]);
+        const graph = graphDouble();
+        const terminal = mountTerminal(graph, { palette: 'retro' });
+        terminal.append([line('a', 'alpha')]);
+        const html = String(graph.nodes.get('a')?.data?.['html']);
+        expect(html).toContain('&gt;');
+        expect(html).not.toContain('@');
+        terminal.destroy();
+    });
+
+    it('switches palettes at runtime', () => {
+        const graph = graphDouble();
+        const terminal = mountTerminal(graph);
+        terminal.append([line('a', 'alpha')]);
+        expect(terminal.palette()).toBe('classic');
+        terminal.setPalette('retro');
+        expect(terminal.palette()).toBe('retro');
+        expect(String(graph.nodes.get('a')?.data?.['html'])).toContain('&gt;');
+        terminal.destroy();
     });
 });
 

@@ -1,6 +1,6 @@
 # TODO17 — Terminal: a vector console for durable agents
 
-> **Status: Stages 1–3 landed; Stage 4 has E1/E2, E6, E7 and E12 (2026-11-27).** Continue from §10. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
+> **Status: Stages 1–3 landed; Stage 4 has E1/E2, E6, E7, E10 and E12 (2026-11-27).** Continue from §10. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
 > Agent REPL that faithfully reads like a styled monospace text console while using vector/ZUI space
 > to add graph, fractal and margin overlays that a DOM console cannot express.
 
@@ -200,7 +200,7 @@ surface. None needs a second renderer or a second store.
 4. **Stage 4 — extensions.** Land E1–E12 individually, library-first, each with a unit test and one
    E2E or screenshot when the visual shape changes. No bundled mega-change.
 
-**Status:** Stages 1–3 landed, E1/E2, E6, E7 and E12 landed 2026-11-27. Remaining Stage 4 extensions are listed in §10.
+**Status:** Stages 1–3 landed, E1/E2, E6, E7, E10 and E12 landed 2026-11-27. Remaining Stage 4 extensions are listed in §10.
 
 ## 7. Verification ladder
 
@@ -310,11 +310,19 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   adds a `consoleText` hook.
 - `test/terminal.test.ts`: 30 tests. Full suite: 200 files / 1331 tests. Pi Durable `verify:fast`:
   75 E2E passing (5 skipped). Root `check` and `test:exports` pass.
+- **Stage 4 / E10 landed (2026-11-27).** `TERMINAL_PALETTES` (classic, amber, green, retro) name theme
+  tokens and glyph sets rather than colours. `terminalPalette(id)` resolves a preset; the controller
+  exposes `palette()`/`setPalette(id)` so glyphs can change at runtime. Pi Durable adds `consolePalettes`
+  and `setConsolePalette` hooks, and renders line markup from the active palette.
+- E3–E5 are already covered by the earlier stages: reveal policies (`terminalVisible`), windowed lane
+  with tail-follow (`terminalWindow`, `mountTerminalSink`), and anchored ranges (`terminalRange*`).
+- `test/terminal.test.ts`: 33 tests. Full suite: 200 files / 1334 tests. Pi Durable `verify:fast`:
+  76 E2E passing (5 skipped), including palette switching. Root `check` and `test:exports` pass.
 
 ## 10. Next session entry points
 
-1. **Stage 4 — extensions.** Land the remaining E3–E5 and E8–E11 individually, library-first, each
-   with a unit test and one E2E or screenshot when the visual shape changes.
+1. **Stage 4 — extensions.** Land the remaining E8, E9 and E11 individually, library-first, each with
+   a unit test and one E2E or screenshot when the visual shape changes.
 2. **Remaining deferred work.** Camera pan-to-scroll and explicit tail-follow re-engagement (End,
-   minimap, badge); time-axis integration (E8); multiple consoles (E9); theme palettes (E10); RTL
-   decision (§8); measure window hysteresis before tuning; a11y parity beyond roving focus (E11).
+   minimap, badge); time-axis integration (E8); multiple consoles (E9); RTL decision (§8); measure
+   window hysteresis before tuning; a11y parity beyond roving focus (E11).

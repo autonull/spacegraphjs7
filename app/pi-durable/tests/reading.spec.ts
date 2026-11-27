@@ -42,6 +42,17 @@ test('scene prompt submits inside the console without stealing shortcuts', async
     expect(errors).toEqual([]);
 });
 
+test('palette selection changes console glyphs', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    expect((await call<{ id: string }[]>(page, 'consolePalettes')).map((entry) => entry.id)).toContain(
+        'retro',
+    );
+    await call(page, 'setConsolePalette', 'retro');
+    await expect(page.locator('#canvas .tg-gutter').first()).toContainText('v');
+    expect(errors).toEqual([]);
+});
+
 test('gutter slots mark boundaries without changing committed lines', async ({ page }) => {
     const errors = await boot(page, '?shot=basic-turn');
     await call(page, 'setView', 'transcript');

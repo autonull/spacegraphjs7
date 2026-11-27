@@ -42,9 +42,10 @@ import {
     lineHTML,
     mountTerminalPrompt,
     mountTerminalSink,
+    TERMINAL_PALETTES,
     terminalGaps,
-    terminalGlyphs,
     terminalGrid,
+    terminalPalette,
     terminalLineSize,
     terminalOverlayGaps,
     terminalOverlays,
@@ -1741,6 +1742,8 @@ export class DurableHost {
             },
             copyConsole: () => this.#terminalController?.copy(),
             consoleText: () => this.#terminalController?.text(),
+            consolePalettes: () => TERMINAL_PALETTES.map(({ id, label }) => ({ id, label })),
+            setConsolePalette: (id: string) => this.#terminal()?.setPalette(id),
             focus: (id: string) => this.focus(id),
             applyShot: (id: string) => this.applyShot(id),
             setAsOf: (seq?: number) => this.setAsOf(seq),
@@ -2515,7 +2518,6 @@ export class DurableHost {
             minWidth: 260,
             maxWidth: 720,
         });
-        const glyphs = terminalGlyphs();
         const sink: TerminalSink<RenderModel> = {
             render: (model) => {
                 this.renderer.setModel(model);
@@ -2552,7 +2554,10 @@ export class DurableHost {
                         id: entry.id,
                         kind: entry.kind,
                         label: entry.label,
-                        html: `<div class="sg-terminal-line">${lineHTML(entry, glyphs)}</div>`,
+                        html: `<div class="sg-terminal-line">${lineHTML(
+                            entry,
+                            terminalPalette(this.#terminalController?.palette() ?? 'classic').glyphs,
+                        )}</div>`,
                         position: [width / 2, -index * (height + 10) + (offsets.get(entry.id) ?? 0), 0],
                         size: [width, height, 1],
                         status:
