@@ -1,6 +1,6 @@
 # TODO17 — Terminal: a vector console for durable agents
 
-> **Status: Stages 1–3 landed (2026-11-27); Stage 4 planned.** Continue from §10. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
+> **Status: Stages 1–3 landed; Stage 4 begun with E6 (2026-11-27).** Continue from §10. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
 > Agent REPL that faithfully reads like a styled monospace text console while using vector/ZUI space
 > to add graph, fractal and margin overlays that a DOM console cannot express.
 
@@ -200,7 +200,7 @@ surface. None needs a second renderer or a second store.
 4. **Stage 4 — extensions.** Land E1–E12 individually, library-first, each with a unit test and one
    E2E or screenshot when the visual shape changes. No bundled mega-change.
 
-**Status:** Stages 1–3 landed 2026-11-27. Stage 4 (E1–E12) remains.
+**Status:** Stages 1–3 landed, E6 landed 2026-11-27. Remaining Stage 4 extensions are listed in §10.
 
 ## 7. Verification ladder
 
@@ -279,14 +279,21 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   `representations.spec.ts` now target `#canvas [data-node-id]` and `.sg-terminal-line`.
 - `app/pi-durable`: 20 files / 99 unit tests passing; `verify:fast` 72 E2E passing (5 skipped). Root
   `pnpm run check`, full suite (1323 tests), `test:exports` and demo `transcript.spec.ts` all pass.
+- **Stage 4 / E6 landed (2026-11-27).** `terminalPromptHTML`, `terminalPromptNode` and
+  `mountTerminalPrompt` in `src/terminal.ts` create an `HtmlNode` tail node with a real textarea wired
+  to `mountComposer`; a `MutationObserver` attaches once the scene DOM appears. Both the demo and Pi
+  Durable project the prompt node and route its submits through their existing prompt loops. The host
+  footer form remains as the accessible fallback. Scene textareas are typing targets, so global
+  shortcuts keep their existing "never while typing" rule (invariant 6).
+- `test/terminal.test.ts`: 25 tests (three new prompt tests). Full suite: 200 files / 1326 tests.
+  `app/demo/tests/transcript.spec.ts`: 4/4 including scene-prompt submit. Pi Durable `verify:fast`:
+  73 E2E passing (5 skipped), including scene-prompt submit. Root `check` and `test:exports` pass.
 
 ## 10. Next session entry points
 
-1. **Stage 4 — extensions.** Land E1–E12 individually, library-first, each with a unit test and one
-   E2E or screenshot when the visual shape changes.
-2. **Prompt node (E6) first.** Pi Durable and the demo still own their prompt forms; add an
-   `HtmlNode` tail node wired to `mountComposer` so Enter/Shift+Enter/history work inside the console.
-   Confirm the scene prompt does not steal global shortcuts (invariant 6).
-3. **Remaining deferred work.** Camera pan-to-scroll and explicit tail-follow re-engagement (End,
-   minimap, badge); exported ranges and permalink hydration from `sel`/`tail`; RTL decision (§8);
-   measure window hysteresis before tuning; a11y parity beyond roving focus (E11).
+1. **Stage 4 — extensions.** Land the remaining E1–E5 and E7–E12 individually, library-first, each
+   with a unit test and one E2E or screenshot when the visual shape changes.
+2. **Remaining deferred work.** Camera pan-to-scroll and explicit tail-follow re-engagement (End,
+   minimap, badge); elastic gaps and gutter/margin slots (E1/E2) in the Pi Durable console; exported
+   ranges and permalink hydration from `sel`/`tail` (E12); RTL decision (§8); measure window hysteresis
+   before tuning; a11y parity beyond roving focus (E11).

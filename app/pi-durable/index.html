@@ -87,6 +87,13 @@
                 font: 13px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
             .sg-terminal-line .tg-gutter { flex: none; color: var(--muted); }
             .sg-terminal-line .tg-text { min-width: 0; white-space: pre-wrap; }
+            .tg-prompt { display: flex; align-items: flex-start; gap: 8px; width: 100%; height: 100%;
+                box-sizing: border-box; padding: 6px 8px; background: var(--panel); border: 1px solid var(--accent);
+                border-radius: 6px; color: var(--text);
+                font: 13px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+            .tg-caret { flex: none; color: var(--accent); font-weight: 700; }
+            .tg-prompt textarea { flex: 1; min-width: 0; resize: none; border: 0; outline: 0;
+                background: transparent; color: inherit; font: inherit; }
             #lens-bar { display: flex; align-items: center; gap: 6px; flex: 1 1 240px; max-width: 420px;
                 padding-left: 8px; border-left: 1px solid var(--line); }
             #lens-input::placeholder { color: var(--muted); opacity: .8; }

@@ -29,6 +29,18 @@ test('console lines are keyboard navigable', async ({ page }) => {
     expect(errors).toEqual([]);
 });
 
+test('scene prompt submits inside the console without stealing shortcuts', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    const field = page.locator('#canvas [data-terminal-prompt]');
+    await expect(field).toBeVisible();
+    await field.fill('hello from the console');
+    await field.press('Enter');
+    await expect(page.locator('#announcer')).toContainText(/Local answer|Prompt/);
+    expect(await call<string>(page, 'viewName')).toBe('transcript');
+    expect(errors).toEqual([]);
+});
+
 test('documents render as a readable document with graph backlinks', async ({ page }) => {
     const errors = await boot(page, '?shot=docs');
     await expect(page.locator('#reader')).toBeVisible();

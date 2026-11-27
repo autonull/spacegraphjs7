@@ -5,6 +5,21 @@ const expanded = (page: import('@playwright/test').Page): Promise<string[]> =>
         (window as unknown as { __transcript: { expanded(): string[] } }).__transcript.expanded(),
     );
 
+test('scene prompt submits through the console', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto('/html/interaction/transcript.html');
+    await page.waitForFunction(() => Boolean((window as { __transcript?: unknown }).__transcript));
+
+    const field = page.locator('[data-node-id="terminal-prompt"] [data-terminal-prompt]');
+    await expect(field).toBeVisible();
+    await field.fill('from the scene');
+    await field.press('Enter');
+    await expect(page.locator('#announcer')).toContainText('Sent: from the scene');
+    await expect(field).toHaveValue('');
+    expect(errors).toEqual([]);
+});
+
 test('transcript rows toggle an expandable detail panel', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));

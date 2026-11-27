@@ -6,6 +6,8 @@ import { SpaceGraph, type EdgeSpec, type GraphSpec, type NodeSpec } from 'spaceg
 import { transcriptLane } from 'spacegraphjs/layout';
 import {
     mountTerminal,
+    mountTerminalPrompt,
+    terminalPromptNode,
     type TerminalController,
     type TerminalGraph,
     type TerminalLine,
@@ -381,7 +383,7 @@ export async function boot(): Promise<void> {
         announcer.textContent = `${item.kind}: ${item.label} — ${item.text}`;
     };
     terminal = mountTerminal(terminalGraph, {
-        project: ({ visible }) => {
+        project: ({ visible, order }) => {
             const seeds = visible.map((entry) => ({
                 id: entry.id,
                 kind: entry.kind as EventKind,
@@ -393,7 +395,14 @@ export async function boot(): Promise<void> {
                 spine: entry.parent === undefined,
                 octave: 0,
             }));
-            return buildSpec(layoutEvents(seeds));
+            const spec = buildSpec(layoutEvents(seeds));
+            const last = visible.at(-1);
+            const index = last ? order.indexOf(last.id) : -1;
+            const prompt = terminalPromptNode([260, -(index + 1) * 60, 0]);
+            return {
+                nodes: [...(spec.nodes ?? []), prompt],
+                edges: spec.edges ?? [],
+            };
         },
         filter: (entry) => {
             const item = items.find((candidate) => candidate.id === entry.id);
@@ -410,6 +419,7 @@ export async function boot(): Promise<void> {
             announcer.textContent = message;
         },
     });
+    terminal.refresh();
     const toggleExpanded = (id: string): void => {
         if (expanded.has(id)) expanded.delete(id);
         else expanded.add(id);
@@ -473,6 +483,12 @@ export async function boot(): Promise<void> {
             reveal(`${id}-reply`);
         }, 420);
     };
+    const scenePrompt = mountTerminalPrompt(canvas, {
+        onSubmit: (text) => {
+            submit(text);
+            scenePrompt.composer()?.clear();
+        },
+    });
     const setView = (view: View): void => {
         root.dataset.view = view;
         document.querySelectorAll<HTMLButtonElement>('[data-view-value]').forEach((button) => {

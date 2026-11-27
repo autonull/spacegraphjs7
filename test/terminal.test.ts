@@ -1,11 +1,14 @@
-// @vitest-environment node
+// @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import {
     KIND_GLYPHS,
     lineGlyph,
     lineHTML,
     mountTerminal,
+    mountTerminalPrompt,
     STATUS_GLYPHS,
+    terminalPromptHTML,
+    terminalPromptNode,
     terminalCompare,
     terminalGaps,
     terminalGlyphs,
@@ -354,5 +357,47 @@ describe('mountTerminal', () => {
             ['b', true],
         ]);
         terminal.destroy();
+    });
+});
+
+describe('scene prompt', () => {
+    it('renders an escaped textarea in a sized HtmlNode', () => {
+        const node = terminalPromptNode([10, -20, 0], { placeholder: '<ask>' });
+        expect(node.type).toBe('HtmlNode');
+        expect(node.position).toEqual([10, -20, 0]);
+        expect(node.data?.['html']).toContain('data-terminal-prompt');
+        expect(node.data?.['html']).toContain('&lt;ask&gt;');
+        expect(node.data?.['height']).toBe(44);
+        expect(terminalPromptHTML()).toContain('tg-caret');
+    });
+
+    it('wires composer behaviour to a textarea that is already mounted', () => {
+        const container = document.createElement('div');
+        container.innerHTML = terminalPromptHTML();
+        const onSubmit = vi.fn();
+        const prompt = mountTerminalPrompt(container, { onSubmit, history: ['previous'] });
+        const field = container.querySelector<HTMLTextAreaElement>('[data-terminal-prompt]')!;
+        expect(prompt.composer()?.element).toBe(field);
+        field.value = 'hello';
+        field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(onSubmit).toHaveBeenCalledWith('hello');
+        prompt.destroy();
+        field.value = 'ignored';
+        field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+
+    it('attaches once the scene textarea appears and keeps history', async () => {
+        const container = document.createElement('div');
+        const onSubmit = vi.fn();
+        const prompt = mountTerminalPrompt(container, { onSubmit, history: ['earlier'] });
+        expect(prompt.composer()).toBeUndefined();
+        container.innerHTML = terminalPromptHTML();
+        await Promise.resolve();
+        const field = container.querySelector<HTMLTextAreaElement>('[data-terminal-prompt]')!;
+        expect(prompt.composer()?.element).toBe(field);
+        field.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+        expect(field.value).toBe('earlier');
+        prompt.destroy();
     });
 });

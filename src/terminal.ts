@@ -1,6 +1,7 @@
 // `spacegraphjs/terminal` — pure projection primitives for a line-addressable vector console.
 // The host owns vocabulary, theme and camera; nothing here imports a graph runtime or an app.
 
+import { mountComposer, type ComposerController, type ComposerOptions } from './composer';
 import { transcriptLane, type TranscriptLaneOptions } from './layout/transcript';
 import { escapeHtml } from './markup';
 import { DEFAULT_RUNG_IDS } from './representations/ladder';
@@ -303,6 +304,79 @@ export const statusGlyph = (line: TerminalLine, glyphs: TerminalGlyphs = termina
 
 export const lineHTML = (line: TerminalLine, glyphs: TerminalGlyphs = terminalGlyphs()): string =>
     `<span class="tg-gutter">${escapeHtml(lineGlyph(line, glyphs))} ${escapeHtml(statusGlyph(line, glyphs))}</span><span class="tg-text">${escapeHtml(line.text)}</span>`;
+
+/** Caret and textarea markup for an `HtmlNode` tail node; the host owns the CSS. */
+export const terminalPromptHTML = (placeholder = 'Send a message'): string =>
+    `<div class="tg-prompt"><span class="tg-caret">›</span><textarea data-terminal-prompt rows="1" placeholder="${escapeHtml(placeholder)}" aria-label="Console prompt"></textarea></div>`;
+
+export type TerminalPromptNodeOptions = {
+    readonly id?: string;
+    readonly placeholder?: string;
+    readonly width?: number;
+    readonly height?: number;
+};
+
+export const terminalPromptNode = (
+    position: readonly [number, number, number],
+    options: TerminalPromptNodeOptions = {},
+): NodeSpec => ({
+    id: options.id ?? 'terminal-prompt',
+    type: 'HtmlNode',
+    label: 'Prompt',
+    position: [...position],
+    data: {
+        html: terminalPromptHTML(options.placeholder),
+        useRawHtml: true,
+        showControls: false,
+        pointerEvents: 'auto',
+        width: options.width ?? 520,
+        height: options.height ?? 44,
+        minWidth: 120,
+        minHeight: 24,
+    },
+});
+
+export type TerminalPromptOptions = ComposerOptions & {
+    /** Selector for the textarea inside the rendered node. */
+    readonly selector?: string;
+};
+
+export type TerminalPromptController = {
+    readonly composer: () => ComposerController | undefined;
+    destroy(): void;
+};
+
+/** Waits for the scene textarea to mount, then wires composer behaviour to it. */
+export const mountTerminalPrompt = (
+    container: HTMLElement,
+    options: TerminalPromptOptions,
+): TerminalPromptController => {
+    const selector = options.selector ?? '[data-terminal-prompt]';
+    let composer: ComposerController | undefined;
+    let observer: MutationObserver | undefined;
+    const attach = (): boolean => {
+        const field = container.querySelector<HTMLTextAreaElement>(selector);
+        if (!field || composer?.element === field) return false;
+        composer = mountComposer(field, { onSubmit: options.onSubmit, history: options.history });
+        observer?.disconnect();
+        observer = undefined;
+        return true;
+    };
+    if (!attach()) {
+        observer = new MutationObserver(() => {
+            attach();
+        });
+        observer.observe(container, { childList: true, subtree: true });
+    }
+    return {
+        composer: () => composer,
+        destroy: () => {
+            observer?.disconnect();
+            composer?.destroy();
+            composer = undefined;
+        },
+    };
+};
 
 export type TerminalRevealState = {
     readonly band?: string;

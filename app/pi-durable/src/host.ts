@@ -40,14 +40,18 @@ import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import {
     lineHTML,
+    mountTerminalPrompt,
     mountTerminalSink,
     terminalGlyphs,
     terminalGrid,
     terminalLineSize,
+    terminalPromptHTML,
     type TerminalController,
     type TerminalLine,
+    type TerminalPromptController,
     type TerminalSink,
 } from 'spacegraphjs/terminal';
+import { isEditableTarget } from 'spacegraphjs/utils';
 import { type ScaleSample } from 'spacegraphjs/zoom';
 import { decodeAddress, encodeAddress, type Address } from './address';
 import { exportURL } from './api';
@@ -2533,6 +2537,19 @@ export class DurableHost {
                     kind: 'orders',
                     style: 'solid' as const,
                 }));
+                const last = nodes.at(-1);
+                if (last)
+                    nodes.push({
+                        id: 'terminal-prompt',
+                        kind: 'prompt',
+                        label: 'Prompt',
+                        html: terminalPromptHTML('Send a message'),
+                        position: [last.position[0], last.position[1] - 60, 0],
+                        size: [520, 44, 1],
+                        status: 'neutral',
+                        interactive: true,
+                        data: { terminal: true },
+                    });
                 return { nodes, edges };
             },
             onReveal: (id) => this.reveal(id),
@@ -2547,6 +2564,7 @@ export class DurableHost {
             announce: (message) => this.announce(message),
         });
         el('canvas').addEventListener('keydown', (event) => {
+            if (isEditableTarget(event.target)) return;
             const target = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-node-id]');
             if (!target || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
             event.preventDefault();
@@ -2563,6 +2581,14 @@ export class DurableHost {
             node.focus();
             this.#terminalController?.focusLine(node.dataset['nodeId']);
             this.announce(`Line ${next + 1} of ${nodes.length}`);
+        });
+        let prompt: TerminalPromptController | undefined;
+        prompt = mountTerminalPrompt(el('canvas'), {
+            onSubmit: (text) => {
+                el<HTMLInputElement>('prompt-input').value = text;
+                el<HTMLFormElement>('prompt-form').requestSubmit();
+                prompt?.composer()?.clear();
+            },
         });
         return this.#terminalController;
     }
