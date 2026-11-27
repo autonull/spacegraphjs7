@@ -46,6 +46,14 @@ for (const [width, height] of [
                 rail: rect('#rail'),
                 strip: rect('#rail-strip'),
                 transcript: rect('#transcript'),
+                barBottom: rect('#transcript-bar').bottom,
+                overviewTop: rect('#transcript-overview').top,
+                legendRight: Math.max(
+                    ...[...document.querySelectorAll('#transcript-legend span')].map(
+                        (node) => node.getBoundingClientRect().right,
+                    ),
+                ),
+                contentRight: rect('#transcript').right - 26,
             };
         });
         expect(bounds.header.bottom).toBeLessThanOrEqual(bounds.surface.top + 1);
@@ -56,6 +64,8 @@ for (const [width, height] of [
         expect(bounds.rail.bottom).toBeLessThanOrEqual(height + 1);
         expect(bounds.transcript.right).toBeLessThanOrEqual(bounds.rail.left + 1);
         expect(bounds.transcript.width).toBeGreaterThanOrEqual(240);
+        expect(bounds.legendRight).toBeLessThanOrEqual(bounds.contentRight + 1);
+        expect(bounds.overviewTop).toBeGreaterThanOrEqual(bounds.barBottom - 1);
         expect(bounds.strip.left).toBeGreaterThanOrEqual(bounds.rail.right - 1);
         expect(errors).toEqual([]);
     });

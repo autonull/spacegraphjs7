@@ -25,6 +25,7 @@ import {
 import { rankedSearch } from '@spacegraphjs/search';
 import { createAnnouncer } from 'spacegraphjs/a11y';
 import type { GraphViewData } from '@spacegraphjs/shared';
+import { defaultTokens, themeFromDesignTokens, type DesignTokens } from '@spacegraphjs/shared/tokens';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { ScopeSimulation, solveNodeAreaDensity, type ScopeSpec } from 'spacegraphjs/layout';
 import { Navigation, type MinimapProjection } from 'spacegraphjs/navigation';
@@ -175,24 +176,31 @@ const flowPositions = (
     );
 };
 
-const THEME: RenderTheme = {
-    ...DEFAULT_THEME,
-    background: '#0f0e0c',
-    surface: '#191713',
-    surfaceMuted: '#14120f',
-    text: '#f2ede3',
-    textMuted: '#d8c9ad',
-    border: '#3a352c',
-    accent: '#d7a45f',
-    success: '#8fb98a',
-    warning: '#e2b169',
-    error: '#d98379',
-    edge: '#6a6254',
-    edgeMuted: '#3a352c',
-    selection: '#d7a45f',
-    focus: '#e2b169',
-    fontSize: 15,
+const DURABLE_TOKENS: DesignTokens = {
+    ...defaultTokens,
+    colors: {
+        ...defaultTokens.colors,
+        background: '#0f0e0c',
+        card: '#191713',
+        muted: '#14120f',
+        foreground: '#f2ede3',
+        mutedForeground: '#d8c9ad',
+        border: '#3a352c',
+        accent: '#d7a45f',
+        success: '#8fb98a',
+        warning: '#e2b169',
+        destructive: '#d98379',
+        edge: '#6a6254',
+        edgeMuted: '#3a352c',
+        selection: '#d7a45f',
+        ring: '#e2b169',
+        canvasText: '#f2ede3',
+    },
 };
+
+const THEME: RenderTheme = themeFromDesignTokens(DURABLE_TOKENS, {
+    defaults: { ...DEFAULT_THEME, fontSize: 15 },
+});
 
 type Importance = 'hero' | 'medium' | 'compact';
 

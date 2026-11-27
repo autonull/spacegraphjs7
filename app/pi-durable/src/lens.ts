@@ -1,4 +1,5 @@
 import { parseNavigation } from '@spacegraphjs/search';
+import { CommandRegistry, type Command } from 'spacegraphjs/commands';
 import { isRung, RUNG_IDS, type Rung } from './rungs';
 import { VIEW_NAMES, type ViewName } from './scenarios';
 
@@ -16,10 +17,21 @@ export type LensCommand =
 
 export const LAYOUT_NAMES: readonly LayoutName[] = ['grid', 'radial', 'timeline'];
 
-const LENS_STEMS: readonly string[] = [
-    'view', 'rung', 'as of', 'tab', 'layout', 'find', 'focus', 'why', 'help',
-    ...VIEW_NAMES, ...RUNG_IDS, ...LAYOUT_NAMES,
-];
+const entry = (id: string, label: string, group: string): Command => ({
+    id: `lens.${group}.${id}`,
+    label,
+    group,
+});
+
+/** One contributed command set drives completion and help; the parser below stays the grammar. */
+export const LENS_COMMANDS = new CommandRegistry([
+    ...['view', 'rung', 'as of', 'tab', 'layout', 'find', 'focus', 'why', 'help'].map((verb) =>
+        entry(verb, verb, 'grammar'),
+    ),
+    ...VIEW_NAMES.map((view) => entry(view, view, 'surface')),
+    ...RUNG_IDS.map((rung) => entry(rung, rung, 'scale')),
+    ...LAYOUT_NAMES.map((layout) => entry(layout, layout, 'placement')),
+]);
 
 const MNEMONICS: Readonly<Record<string, ViewName>> = {
     s: 'graph', t: 'tasks', m: 'timeline', f: 'diff',
@@ -63,9 +75,9 @@ export const parseLens = (query: string): LensCommand | undefined => {
 };
 
 /** Prefix completion over the same vocabulary the parser accepts. */
-export const lensCompletions = (prefix: string): readonly string[] => {
-    const needle = prefix.trim().toLowerCase();
-    return (needle ? LENS_STEMS.filter((stem) => stem.startsWith(needle)) : LENS_STEMS).slice(0, 8);
-};
+export const lensCompletions = (prefix: string): readonly string[] =>
+    LENS_COMMANDS.filter(prefix.trim().toLowerCase())
+        .map((command) => command.label)
+        .slice(0, 8);
 
 export const LENS_HELP = 'view <name> · rung <landmark> · as of <seq> · tab <id> · layout <grid|radial|timeline> · find <text> [status:<s>] [kind:<k>] · focus <id> · why';

@@ -352,7 +352,31 @@ export type GraphRenderer = {
 
 /** Capabilities a host can query before it offers an affordance. */
 export type RendererCapability =
-    Projection | 'domNodes' | 'edgeLabels' | 'clusterNodes' | 'minimap' | 'widgets';
+    | Projection
+    | 'domNodes'
+    | 'edgeLabels'
+    | 'clusterNodes'
+    | 'minimap'
+    | 'widgets'
+    | 'cardFacing'
+    | 'fitInsets'
+    | 'zoomRange'
+    | 'depth'
+    | 'emphasis'
+    | 'motionVerb'
+    | 'sceneFeature'
+    | 'sensorySeam';
+
+/**
+ * One query shape for every capability axis. Flag queries reuse `RendererCapability`; axis queries
+ * carry the value a control would offer, so a host never branches on renderer identity.
+ */
+export type CapabilityQuery =
+    | { readonly flag: RendererCapability }
+    | { readonly axis: 'projection'; readonly value: Projection }
+    | { readonly axis: 'depth'; readonly value: DepthMode }
+    | { readonly axis: 'emphasis'; readonly value: EmphasisChannel }
+    | { readonly axis: 'motionVerb' | 'sceneFeature' | 'sensorySeam'; readonly value: string };
 
 /** Generic membership gate for an optional capability descriptor list. */
 export function supportsList<T extends string>(list: readonly T[] | undefined, value: T): boolean {
@@ -378,14 +402,52 @@ export function supports(
             return supportsList(capabilities.projections, capability);
         case 'widgets':
             return Boolean(capabilities.widgetSlots?.length);
+        case 'depth':
+            return capabilities.depths.length > 0;
+        case 'emphasis':
+            return Boolean(capabilities.emphasis?.length);
+        case 'motionVerb':
+            return Boolean(capabilities.motionVerbs?.length);
+        case 'sceneFeature':
+            return Boolean(capabilities.sceneFeatures?.length);
+        case 'sensorySeam':
+            return Boolean(capabilities.sensorySeams?.length);
+        case 'cardFacing':
+            return capabilities.cardFacing === true;
+        case 'fitInsets':
+            return capabilities.fitInsets === true;
+        case 'zoomRange':
+            return capabilities.zoomRange !== undefined;
         default:
             return capabilities[capability];
     }
 }
 
+/** The single predicate a control builder needs for any advertised capability. */
+export function supportsQuery(
+    capabilities: RendererCapabilities,
+    query: CapabilityQuery,
+): boolean {
+    if ('flag' in query) return supports(capabilities, query.flag);
+    switch (query.axis) {
+        case 'projection':
+            return supportsList(capabilities.projections, query.value);
+        case 'depth':
+            return supportsList(capabilities.depths, query.value);
+        case 'emphasis':
+            return supportsList(capabilities.emphasis, query.value);
+        case 'motionVerb':
+            return supportsList(capabilities.motionVerbs, query.value);
+        case 'sceneFeature':
+            return supportsList(capabilities.sceneFeatures, query.value);
+        case 'sensorySeam':
+            return supportsList(capabilities.sensorySeams, query.value);
+    }
+}
+
 /** Whether a renderer can honour a depth treatment; hosts gate the depth chooser on this. */
 export function supportsDepth(capabilities: RendererCapabilities, depth: DepthMode): boolean {
-    return supportsList(capabilities.depths, depth);
+    return supportsQuery(capabilities, { axis: 'depth', value: depth });
 }
 
 /** Whether a renderer can drive an emphasis channel; unknown channels are never assumed. */
@@ -393,22 +455,22 @@ export function supportsEmphasis(
     capabilities: RendererCapabilities,
     channel: EmphasisChannel,
 ): boolean {
-    return supportsList(capabilities.emphasis, channel);
+    return supportsQuery(capabilities, { axis: 'emphasis', value: channel });
 }
 
 /** Whether a renderer can drive a camera motion verb; unknown verbs are never assumed. */
 export function supportsMotionVerb(capabilities: RendererCapabilities, verb: string): boolean {
-    return supportsList(capabilities.motionVerbs, verb);
+    return supportsQuery(capabilities, { axis: 'motionVerb', value: verb });
 }
 
 /** Whether a renderer can honour a scene feature; unknown features are never assumed. */
 export function supportsSceneFeature(capabilities: RendererCapabilities, feature: string): boolean {
-    return supportsList(capabilities.sceneFeatures, feature);
+    return supportsQuery(capabilities, { axis: 'sceneFeature', value: feature });
 }
 
 /** Whether a renderer can drive a sensory seam; unknown seams are never assumed. */
 export function supportsSensorySeam(capabilities: RendererCapabilities, seam: string): boolean {
-    return supportsList(capabilities.sensorySeams, seam);
+    return supportsQuery(capabilities, { axis: 'sensorySeam', value: seam });
 }
 
 /**

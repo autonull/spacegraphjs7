@@ -3,6 +3,7 @@
  * host state. Encoding is URI-safe JSON so a link is readable, round-trips exactly and needs no
  * runtime dependency.
  */
+import { viewStateCodec, type ViewStateRecord } from 'spacegraphjs/view-state';
 import type { PinnedNote } from './annotations';
 import { isUIPresetID } from './ui/presets';
 
@@ -74,18 +75,34 @@ const isPermalinkState = (value: unknown): value is PermalinkState => {
     );
 };
 
+const CORE_ALIASES = new Set(['version', 'view', 'band', 'zoom', 'layout']);
+
+/** Pi's fields stay verbatim; the shared aliases are a projection, not a second store. */
+const flatten = (state: PermalinkState): ViewStateRecord => ({
+    version: 1,
+    view: state.surface,
+    band: state.level,
+    zoom: state.viewport.zoom,
+    layout: state.graphLayout,
+    ...state,
+});
+
+const parse = (record: ViewStateRecord): PermalinkState | undefined => {
+    const state = Object.fromEntries(
+        Object.entries(record).filter(([key]) => !CORE_ALIASES.has(key)),
+    );
+    return isPermalinkState(state) ? (state as PermalinkState) : undefined;
+};
+
+const codec = viewStateCodec<PermalinkState>({ format: 'json', flatten, parse });
+
 export const encodePermalink = (state: PermalinkState): string =>
-    `#${PERMALINK_PREFIX}${encodeURIComponent(JSON.stringify(state))}`;
+    `#${PERMALINK_PREFIX}${codec.encode(state)}`;
 
 export const decodePermalink = (hash: string): PermalinkState | null => {
     const raw = hash.replace(/^#/, '');
     if (!raw.startsWith(PERMALINK_PREFIX)) return null;
-    try {
-        const parsed: unknown = JSON.parse(decodeURIComponent(raw.slice(PERMALINK_PREFIX.length)));
-        return isPermalinkState(parsed) ? parsed : null;
-    } catch {
-        return null;
-    }
+    return codec.decode(raw.slice(PERMALINK_PREFIX.length)) ?? null;
 };
 
 export const isRevealHash = (hash: string): boolean => /^#graph:.+/.test(hash);

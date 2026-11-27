@@ -103,6 +103,8 @@ Design rules that keep the layers honest:
 | `spacegraphjs/core`, `/nodes`, `/edges`, `/plugins`, `/input`, `/utils`, `/builder`, `/types` | Focused subpath exports                                            |
 | `spacegraphjs/zoom`, `/layout`, `/a11y`, `/navigation`, `/depth`, `/control`                  | Generic capabilities with minimal structural types                 |
 | `spacegraphjs/reading`, `/documents`, `/composer`                                             | Text projections, safe document rendering and the prompt editor    |
+| `spacegraphjs/view-state`                                                                     | Versioned deep-link and navigation-history codec shared by hosts   |
+| `spacegraphjs/commands`                                                                       | Contributed verbs, filtering and untimed guidance steps            |
 | `spacegraphjs/vision`                                                                         | Vision analyzers, strategies, auto-fix, model loading              |
 | `spacegraphjs/quality`                                                                        | Pure quality gates and vision assertions for tests and CI          |
 | `@spacegraphjs/renderer`                                                                      | Dependency-free renderer contract                                  |

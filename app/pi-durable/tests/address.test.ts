@@ -11,6 +11,14 @@ describe('deep-link codec', () => {
         expect(decodeAddress(encodeAddress(address))).toEqual(address);
     });
 
+    it('reads legacy rung addresses without a version', () => {
+        const legacy = btoa('view=graph&rung=passage&focus=n1')
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
+        expect(decodeAddress(legacy)).toEqual({ view: 'graph', rung: 'passage', focus: 'n1' });
+    });
+
     it('rejects malformed or unknown addresses', () => {
         expect(decodeAddress('')).toBeUndefined();
         expect(decodeAddress('not-base64!!')).toBeUndefined();

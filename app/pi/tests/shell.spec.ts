@@ -192,11 +192,52 @@ test.describe('the one-surface shell', () => {
         const legend = page.locator('#transcript-legend span');
         await expect(legend).toHaveCount(4);
         await expect(legend).toHaveText(['user', 'tool', 'artifact', 'error']);
+        const fits = () =>
+            page.evaluate(() => {
+                const rect = (id: string) =>
+                    document.querySelector<HTMLElement>(id)!.getBoundingClientRect();
+                const legendElement = document.querySelector<HTMLElement>('#transcript-legend')!;
+                const items = [...legendElement.querySelectorAll('span')].map((node) =>
+                    node.getBoundingClientRect(),
+                );
+                return {
+                    overflow: legendElement.scrollWidth - legendElement.clientWidth,
+                    right: Math.max(...items.map((item) => item.right)),
+                    contentRight: rect('#transcript').right - 26,
+                    barBottom: rect('#transcript-bar').bottom,
+                    overviewTop: rect('#transcript-overview').top,
+                    listTop: rect('#transcript-list').top,
+                };
+            });
+        for (const [width, height] of [[1600, 900], [900, 1000]]) {
+            await page.setViewportSize({ width, height });
+            const bounds = await fits();
+            expect(bounds.overflow).toBeLessThanOrEqual(1);
+            expect(bounds.right).toBeLessThanOrEqual(bounds.contentRight + 1);
+            expect(bounds.barBottom).toBeLessThanOrEqual(bounds.listTop + 1);
+            expect(bounds.overviewTop).toBeGreaterThanOrEqual(bounds.barBottom - 1);
+        }
         await expect(page.locator('#attention')).toContainText(/files? changed/);
         const failures = await page.evaluate(
             () => (window as any).__pi.attention().failures as number,
         );
         if (failures > 0) await expect(page.locator('#attention')).toContainText('latest:');
+        expect(errors).toEqual([]);
+    });
+
+    test('transcript disclosures announce their state and target', async ({ page }) => {
+        const errors = await boot(page);
+        const expand = page.locator('.spine-expand').first();
+        await expect(expand).toHaveAttribute('aria-expanded', /true|false/);
+        expect(await expand.getAttribute('aria-label')).toMatch(/^(Expand|Collapse) detail for /);
+        const controls = await expand.getAttribute('aria-controls');
+        await expect(page.locator(`#${controls}`)).toHaveCount(1);
+        const before = await expand.getAttribute('aria-expanded');
+        await expand.click();
+        await expect(page.locator('.spine-expand').first()).toHaveAttribute(
+            'aria-expanded',
+            before === 'true' ? 'false' : 'true',
+        );
         expect(errors).toEqual([]);
     });
 

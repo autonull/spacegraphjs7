@@ -165,6 +165,15 @@ test.describe('configuration explorer (P0.3)', () => {
 });
 
 test.describe('salience and emphasis (P2)', () => {
+    test('the salience panel has one clear empty state', async ({ page }) => {
+        const errors = await boot(page, '/explorer.html', { viewport: false });
+        await expect(page.locator('#explain')).toHaveText('No node selected.');
+        const hint = await page.locator('fieldset:has(#explain) .meta').textContent();
+        expect(hint).toContain('Select a node');
+        expect(hint).not.toContain('Click a node');
+        noErrors(errors);
+    });
+
     test('composes weighted signals and explains a selected node', async ({ page }) => {
         await boot(page, '/explorer.html', { viewport: false });
         await api(page, 'set', 'salience', 'combined');

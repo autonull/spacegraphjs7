@@ -1238,6 +1238,79 @@
                 grid-template-rows: minmax(0, 1fr);
                 position: relative;
             }
+            #reading {
+                position: absolute;
+                inset: 0;
+                z-index: 9;
+                overflow: auto;
+                padding: var(--sg-spacing-md) var(--sg-spacing-lg);
+                background: var(--sg-colors-background);
+                color: var(--sg-colors-foreground);
+                font-family: ui-sans-serif, system-ui, sans-serif;
+                line-height: 1.6;
+            }
+            #reading[hidden] {
+                display: none;
+            }
+            #reading-bar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: var(--sg-spacing-sm);
+                padding-bottom: var(--sg-spacing-xs);
+                border-bottom: 1px solid var(--sg-colors-border);
+            }
+            #reading-bar strong {
+                font-size: var(--sg-font-sizes-base);
+            }
+            #reading-bar button,
+            #reading .reading-backlink {
+                border: 1px solid var(--sg-colors-border);
+                background: transparent;
+                color: var(--sg-colors-accent);
+                padding: var(--sg-spacing-hair) var(--sg-spacing-xs);
+                font: inherit;
+                cursor: pointer;
+                text-decoration: none;
+            }
+            .spacegraph-reading {
+                max-width: 78ch;
+                margin: 0 auto;
+            }
+            .reading-sections {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+            .reading-section {
+                padding: var(--sg-spacing-md) 0;
+                border-bottom: 1px solid var(--sg-colors-border);
+            }
+            .reading-section h2,
+            .reading-section h3,
+            .reading-section h4 {
+                margin: 0 0 var(--sg-spacing-xs);
+                font-size: var(--sg-font-sizes-lg);
+            }
+            .reading-text {
+                margin: 0 0 var(--sg-spacing-xs);
+                white-space: pre-wrap;
+            }
+            .reading-meta {
+                display: flex;
+                flex-wrap: wrap;
+                gap: var(--sg-spacing-hair) var(--sg-spacing-sm);
+                margin: 0 0 var(--sg-spacing-xs);
+                color: var(--sg-colors-muted-foreground);
+                font-size: var(--sg-font-sizes-xs);
+            }
+            .reading-meta dt {
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+            }
+            .reading-meta dd {
+                margin: 0 var(--sg-spacing-sm) 0 0;
+            }
             #canvas {
                 position: relative;
                 min-width: 0;
@@ -1644,6 +1717,7 @@
                 font-size: var(--sg-font-sizes-micro);
             }
             #transcript {
+                --transcript-bar-height: 48px;
                 position: relative;
                 min-height: 0;
                 overflow: auto;
@@ -1652,16 +1726,17 @@
                 padding-inline: var(--sg-spacing-md) 26px;
             }
             #transcript-bar {
-                display: flex;
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
                 align-items: center;
-                justify-content: space-between;
-                flex-wrap: wrap;
                 gap: var(--sg-spacing-hair) var(--sg-spacing-sm);
             }
             #transcript-legend {
+                grid-area: 2 / 1;
                 min-width: 0;
             }
             #transcript-bar strong {
+                grid-row: 1;
                 color: var(--sg-colors-foreground);
                 font-size: var(--sg-font-sizes-base);
                 font-weight: 600;
@@ -1697,6 +1772,7 @@
                 border-color: var(--kind-error, #ff8aa0);
             }
             #transcript-toggle {
+                grid-area: 1 / 2;
                 border: 0;
                 background: none;
                 color: var(--sg-colors-foreground);
@@ -1707,7 +1783,7 @@
             #transcript-resize {
                 position: absolute;
                 inset-inline-start: 0;
-                top: 34px;
+                top: var(--transcript-bar-height);
                 bottom: 0;
                 width: 6px;
                 cursor: col-resize;
@@ -1717,12 +1793,15 @@
                 opacity: 0.5;
             }
             #surface[data-arrangement='stacked'] #transcript-resize {
-                top: 34px;
+                top: var(--transcript-bar-height);
                 inset-inline: 0;
                 bottom: auto;
                 width: auto;
                 height: 6px;
                 cursor: row-resize;
+            }
+            #surface[data-transcript-collapsed='true'] #transcript {
+                --transcript-bar-height: 34px;
             }
             #surface[data-transcript-collapsed='true'] #transcript-list,
             #surface[data-transcript-collapsed='true'] #transcript-resize,
@@ -1871,7 +1950,7 @@
             }
             #transcript-overview {
                 position: absolute;
-                top: 34px;
+                top: var(--transcript-bar-height);
                 inset-inline-end: 0;
                 bottom: 8px;
                 width: 16px;
@@ -2297,6 +2376,14 @@
                     >
                         diagnostics
                     </button>
+                    <button
+                        type="button"
+                        id="read-toggle"
+                        aria-pressed="false"
+                        aria-label="Read the committed transcript as a document"
+                    >
+                        read
+                    </button>
                 </div>
             </details>
         </header>
@@ -2319,6 +2406,15 @@
             <div id="canvas">
                 <div id="hud" aria-label="Heads-up display">starting…</div>
             </div>
+            <section id="reading" aria-label="Reading view" hidden>
+                <div id="reading-bar">
+                    <strong>Read · committed transcript</strong>
+                    <button type="button" id="reading-close" aria-label="Return to the graph">
+                        graph →
+                    </button>
+                </div>
+                <div id="reading-content"></div>
+            </section>
             <div id="first-run-hint" class="first-run-hint" role="status" hidden>
                 <span>Double-click an edge to travel · <kbd>/</kbd> lists every verb</span>
                 <button type="button" aria-label="Dismiss hint">×</button>

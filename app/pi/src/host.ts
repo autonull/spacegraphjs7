@@ -150,6 +150,12 @@ import { SHOTS, shotById, type Shot } from './shots';
 import { decodePermalink, encodePermalink, isRevealHash, type PermalinkState } from './permalink';
 import { UI_PRESETS, applyUIPreset, uiPresetById, type UIPreset } from './ui/presets';
 import {
+    mountReading,
+    readingOrder,
+    type ReadingController,
+    type ReadingNode,
+} from 'spacegraphjs/reading';
+import {
     createPhysicsPlaySession,
     type GravityPreset,
     type PhysicsPlaySession,
@@ -186,7 +192,7 @@ import {
 } from './index-views';
 import { drawMinimap, installMinimapKeys } from './minimap';
 import { configureVision, VisionController } from './vision-controller';
-import { TranscriptView } from './transcript';
+import { TRANSCRIPT_KINDS, TranscriptView } from './transcript';
 
 export type Arrangement = 'stacked' | 'side' | 'floating';
 export type Surface = 'log' | 'map' | 'hybrid';
@@ -280,6 +286,8 @@ export class PiHost {
     #graphLayoutPositions?: ReadonlyMap<string, Position>;
     #octaveScales?: ReadonlyMap<string, { readonly octave: number; readonly scale: number }>;
     #surface: Surface = 'hybrid';
+    #readingOpen = false;
+    #readingController?: ReadingController;
     #depthAxis: DepthAxis = 'turn';
     #depth: DepthMode = 'orbit';
     #projection: Projection;
@@ -2026,6 +2034,9 @@ export class PiHost {
             command('ui.catalog', 'Toggle catalog', 'interface', () => this.toggleCatalog()),
             command('ui.rail', 'Toggle rail', 'interface', () => this.toggleRail()),
             command('ui.transcript', 'Toggle transcript', 'interface', () => this.toggleTranscript()),
+            command('ui.read', 'Read the committed transcript', 'interface', () =>
+                this.toggleReading(),
+            ),
             command('ui.pin', 'Toggle inspector pin', 'interface', () => this.#inspector?.setPinned(!this.#inspector.pinned)),
             ...INSPECTOR_TABS.map((tab) => ({
                 id: `ui.tab.${tab}`,
@@ -2237,6 +2248,8 @@ export class PiHost {
             ergonomics: () => this.ergonomics(),
             transcriptCollapsed: () => this.#transcriptCollapsed,
             toggleTranscript: () => this.toggleTranscript(),
+            readingOpen: () => this.#readingOpen,
+            toggleReading: (open?: boolean) => this.toggleReading(open),
             toggleCatalog: (open?: boolean) => this.toggleCatalog(open),
             openQuestions: () => this.openQuestions(),
             toggleRail: (open?: boolean) => this.toggleRail(open),
@@ -2946,6 +2959,8 @@ export class PiHost {
         const toggle = el<HTMLButtonElement>('transcript-toggle');
         const handle = el('transcript-resize');
         toggle.addEventListener('click', () => this.toggleTranscript());
+        el('read-toggle').addEventListener('click', () => this.toggleReading());
+        el('reading-close').addEventListener('click', () => this.toggleReading(false));
         handle.addEventListener('pointerdown', (event) => {
             const transcript = el('transcript');
             const surface = el('surface');
@@ -3083,6 +3098,55 @@ export class PiHost {
         this.recordEvent('transcript:toggle', { collapsed: this.#transcriptCollapsed });
     }
 
+    toggleReading(open = !this.#readingOpen): boolean {
+        this.#readingOpen = open;
+        el('reading').toggleAttribute('hidden', !open);
+        el<HTMLButtonElement>('read-toggle').setAttribute('aria-pressed', String(open));
+        document.body.dataset.reading = String(open);
+        if (open) {
+            this.renderReading();
+            requestAnimationFrame(() => el<HTMLButtonElement>('reading-close').focus());
+        } else {
+            this.#readingController?.destroy();
+            this.#readingController = undefined;
+        }
+        this.recordEvent('reading:toggle', { open });
+        return open;
+    }
+
+    /** A readable projection of the same committed facts, with a link back to every section. */
+    private renderReading(): void {
+        if (!this.#readingOpen) return;
+        const nodes: readonly ReadingNode[] = this.#view.nodes
+            .filter((node) => TRANSCRIPT_KINDS.has(node.kind))
+            .map((node) => ({
+                id: node.id,
+                label: String(node.data?.fullLabel ?? node.label),
+                text: String(node.data?.text ?? node.summary ?? ''),
+                meta: {
+                    kind: node.kind,
+                    ...(node.status ? { status: node.status } : {}),
+                },
+            }));
+        const ids = new Set(nodes.map((node) => node.id));
+        const edges = this.#view.edges
+            .filter(
+                (edge) =>
+                    ids.has(edge.source) &&
+                    ids.has(edge.target) &&
+                    ['orders', 'contains'].includes(edge.kind),
+            )
+            .map((edge) => ({ source: edge.source, target: edge.target }));
+        this.#readingController?.destroy();
+        this.#readingController = mountReading(el('reading-content'), readingOrder(nodes, edges), {
+            title: 'Pi · committed transcript',
+            onReveal: (id) => {
+                this.toggleReading(false);
+                this.reveal(id);
+            },
+        });
+    }
+
     private renderGallery(): void {
         const minimal = this.#resolved.values['orchestration.verbs'] === 'minimal';
         const visible = minimal ? CAPABILITIES.slice(0, 3) : CAPABILITIES;
@@ -3181,6 +3245,7 @@ export class PiHost {
 
     private renderTranscript(): void {
         this.transcript.render();
+        this.renderReading();
     }
 
     private updateTranscriptOverview(): void {

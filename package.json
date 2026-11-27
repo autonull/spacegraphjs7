@@ -106,6 +106,16 @@
             "import": "./dist/reading.js",
             "default": "./dist/reading.js"
         },
+        "./commands": {
+            "types": "./dist/commands.d.ts",
+            "import": "./dist/commands.js",
+            "default": "./dist/commands.js"
+        },
+        "./view-state": {
+            "types": "./dist/view-state.d.ts",
+            "import": "./dist/view-state.js",
+            "default": "./dist/view-state.js"
+        },
         "./composer": {
             "types": "./dist/composer.d.ts",
             "import": "./dist/composer.js",

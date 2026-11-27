@@ -5,14 +5,7 @@ import {
     type DesignTokens,
 } from '@spacegraphjs/shared/tokens';
 
-type ShellColors = DesignTokens['colors'] & {
-    readonly success: string;
-    readonly warning: string;
-    readonly edge: string;
-    readonly edgeMuted: string;
-    readonly selection: string;
-    readonly canvasText: string;
-};
+type ShellColors = DesignTokens['colors'];
 type ShellFontSizes = DesignTokens['fontSizes'] & { readonly micro: string; readonly nano: string };
 type ShellSpacing = DesignTokens['spacing'] & {
     readonly hair: string;

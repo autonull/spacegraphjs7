@@ -1,12 +1,9 @@
-export type CommandMode = 'palette' | 'commands' | 'help';
+import { filterCommands, type Command } from 'spacegraphjs/commands';
 
-export interface Command {
-    readonly id: string;
-    readonly label: string;
-    readonly group: string;
-    readonly hint?: string;
-    readonly run?: () => void;
-}
+export { filterCommands };
+export type { Command };
+
+export type CommandMode = 'palette' | 'commands' | 'help';
 
 export interface CommandSurface {
     readonly element: HTMLElement;
@@ -14,22 +11,6 @@ export interface CommandSurface {
     open(mode?: CommandMode, query?: string): void;
     close(keepFocus?: boolean): void;
 }
-
-const matches = (command: Command, query: string): boolean =>
-    [command.label, command.group, command.hint ?? '', command.id].some((value) =>
-        value.toLowerCase().includes(query),
-    );
-
-/** Pure filter: prefix matches rank first, original order breaks ties. */
-export const filterCommands = (commands: readonly Command[], query: string): readonly Command[] => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return commands;
-    const found = commands.filter((command) => matches(command, needle));
-    return [
-        ...found.filter((command) => command.label.toLowerCase().startsWith(needle)),
-        ...found.filter((command) => !command.label.toLowerCase().startsWith(needle)),
-    ];
-};
 
 export const createCommandSurface = (
     commands: () => readonly Command[],

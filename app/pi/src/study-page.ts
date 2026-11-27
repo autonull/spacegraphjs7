@@ -13,6 +13,7 @@ import {
     type StudyDepth,
     type StudySurface,
 } from './study';
+import { Tour } from 'spacegraphjs/commands';
 import { requireElement } from 'spacegraphjs/utils';
 import type { GraphLayoutMode } from './graph-layout';
 
@@ -44,7 +45,14 @@ const copyReport = element<HTMLButtonElement>('copy-report');
 
 let assignments: readonly { taskID: string; surface: StudySurface }[] = [];
 let index = 0;
-let practiceDone = false;
+const practice = new Tour([
+    {
+        id: 'practice-controls',
+        title: 'Practice (untimed)',
+        instruction: 'Reveal a row, trace its edge, then press Home to return.',
+        hint: 'Enter · t · Home',
+    },
+]);
 let recorder: StudyRecorder | undefined;
 let startedAt = 0;
 let matrix = studyMatrix();
@@ -147,7 +155,7 @@ const submit = (): void => {
                 matrix,
                 graphLayout,
                 ui: uiPreset,
-                practiceCompleted: practiceDone,
+                practiceCompleted: practice.done,
                 report,
             },
         });
@@ -155,12 +163,14 @@ const submit = (): void => {
 };
 
 element<HTMLButtonElement>('practice-done').addEventListener('click', () => {
-    practiceDone = true;
-    element<HTMLButtonElement>('start').disabled = false;
-    status.textContent = 'Practice complete. Trial 1 timing starts when you press Start.';
+    practice.advance();
+    element<HTMLButtonElement>('start').disabled = !practice.done;
+    status.textContent = practice.done
+        ? 'Practice complete. Trial 1 timing starts when you press Start.'
+        : `${practice.current?.title}: ${practice.current?.instruction}`;
 });
 element<HTMLButtonElement>('start').addEventListener('click', () => {
-    if (practiceDone) void begin();
+    if (practice.done) void begin();
 });
 submitButton.addEventListener('click', submit);
 copyReport.addEventListener('click', () => {

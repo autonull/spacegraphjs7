@@ -662,7 +662,7 @@ function renderExplain(): void {
     const root = element('explain');
     root.replaceChildren();
     if (!selectedNode || !lastSalience) {
-        root.textContent = 'Click a node to see why it is big.';
+        root.textContent = 'No node selected.';
         return;
     }
     const score = lastSalience.values.get(selectedNode) ?? 0;

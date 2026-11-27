@@ -10,7 +10,7 @@ export interface TranscriptHost {
     align(): void;
 }
 
-const TRANSCRIPT_KINDS = new Set([
+export const TRANSCRIPT_KINDS = new Set([
     'message',
     'tool',
     'read-tool',
@@ -31,7 +31,7 @@ export class TranscriptView {
         const messages = view.nodes.filter((node) => TRANSCRIPT_KINDS.has(node.kind));
         const byID = new Map(view.nodes.map((node) => [node.id, node]));
         const revealed = this.host.revealed();
-        const rows = messages.map((node) => {
+        const rows = messages.map((node, index) => {
             const expanded = this.#expanded.has(node.id);
             const row = document.createElement('div');
             row.className = 'spine-row';
@@ -39,17 +39,22 @@ export class TranscriptView {
             row.dataset.kind = node.kind;
             const fullLabel = String(node.data?.fullLabel ?? node.label);
             const text = String(node.data?.text ?? node.summary ?? '');
+            const detailID = `transcript-detail-${index}`;
             const head = document.createElement('div');
             head.className = 'spine-head';
+            const expand = button(expanded ? '▾' : '▸', () => this.toggle(node.id), {
+                className: 'spine-expand',
+                title: expanded ? 'Collapse detail' : 'Expand detail',
+                ariaLabel: `${expanded ? 'Collapse' : 'Expand'} detail for ${fullLabel}: ${text}`,
+            });
+            expand.setAttribute('aria-expanded', String(expanded));
+            expand.setAttribute('aria-controls', detailID);
             head.append(
                 button(`${fullLabel}: ${text}`, () => this.host.reveal(node.id), {
                     className: 'transcript-row',
                     dataset: { node: node.id, revealed: String(node.id === revealed) },
                 }),
-                button(expanded ? '▾' : '▸', () => this.toggle(node.id), {
-                    className: 'spine-expand',
-                    title: expanded ? 'Collapse detail' : 'Expand detail',
-                }),
+                expand,
             );
             const links = view.edges
                 .filter((edge) => edge.source === node.id || edge.target === node.id)
@@ -62,6 +67,7 @@ export class TranscriptView {
                 });
             const detail = document.createElement('div');
             detail.className = 'transcript-detail';
+            detail.id = detailID;
             detail.textContent = [`${node.kind} · ${node.status}`, ...links].join(' · ');
             row.append(head, detail);
             return row;

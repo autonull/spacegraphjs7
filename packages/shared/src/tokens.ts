@@ -3,6 +3,14 @@
  * Maps to CSS custom properties for consistent theming across hosts.
  */
 
+import {
+    DEFAULT_THEME,
+    resolveTheme,
+    type RenderTheme,
+    type SemanticTokenMap,
+} from '@spacegraphjs/renderer';
+
+
 export interface DesignTokens {
     /** Color tokens */
     colors: {
@@ -24,6 +32,18 @@ export interface DesignTokens {
         destructive: string;
         /** Destructive foreground */
         destructiveForeground: string;
+        /** Success feedback */
+        success: string;
+        /** Warning feedback */
+        warning: string;
+        /** Canvas edge */
+        edge: string;
+        /** De-emphasised canvas edge */
+        edgeMuted: string;
+        /** Selection accent */
+        selection: string;
+        /** Text drawn on the canvas */
+        canvasText: string;
         /** Border color */
         border: string;
         /** Input border color */
@@ -136,6 +156,12 @@ export const defaultTokens: DesignTokens = {
         accentForeground: 'hsl(222.2 47.4% 11.2%)',
         destructive: 'hsl(0 84.2% 60.2%)',
         destructiveForeground: 'hsl(210 40% 98%)',
+        success: 'hsl(142.1 76.2% 36.3%)',
+        warning: 'hsl(32.1 94.6% 43.7%)',
+        edge: 'hsl(215.4 16.3% 46.9%)',
+        edgeMuted: 'hsl(214.3 31.8% 91.4%)',
+        selection: 'hsl(221.2 83.2% 53.3%)',
+        canvasText: 'hsl(222.2 84% 4.9%)',
         border: 'hsl(214.3 31.8% 91.4%)',
         input: 'hsl(214.3 31.8% 91.4%)',
         ring: 'hsl(221.2 83.2% 53.3%)',
@@ -221,6 +247,12 @@ export const darkTokens: DesignTokens = {
         accentForeground: 'hsl(210 40% 98%)',
         destructive: 'hsl(0 62.8% 30.6%)',
         destructiveForeground: 'hsl(210 40% 98%)',
+        success: 'hsl(142.1 70.6% 45.3%)',
+        warning: 'hsl(32.1 94.6% 43.7%)',
+        edge: 'hsl(215 20.2% 65.1%)',
+        edgeMuted: 'hsl(217.2 32.6% 17.5%)',
+        selection: 'hsl(224.3 76.3% 48%)',
+        canvasText: 'hsl(210 40% 98%)',
         border: 'hsl(217.2 32.6% 17.5%)',
         input: 'hsl(217.2 32.6% 17.5%)',
         ring: 'hsl(224.3 76.3% 48%)',
@@ -254,3 +286,59 @@ export function generateTokenCSS(tokens: DesignTokens, prefix = 'sg'): string {
     flatten(tokens as Record<string, unknown>);
     return `:root {\n${lines.join('\n')}\n}`;
 }
+
+/** Renderer role → design-token colour. One mapping serves CSS readers and direct token readers. */
+const THEME_TOKEN_KEYS = {
+    background: 'background',
+    surface: 'card',
+    surfaceMuted: 'muted',
+    text: 'foreground',
+    textMuted: 'mutedForeground',
+    border: 'border',
+    accent: 'accent',
+    success: 'success',
+    warning: 'warning',
+    error: 'destructive',
+    edge: 'edge',
+    edgeMuted: 'edgeMuted',
+    selection: 'selection',
+    focus: 'ring',
+} as const satisfies Partial<Record<keyof RenderTheme, keyof DesignTokens['colors']>>;
+
+/** The canonical `--sg-colors-*` variables that carry each renderer role. */
+export const DESIGN_TOKEN_THEME_VARS: SemanticTokenMap = {
+    ...Object.fromEntries(
+        Object.entries(THEME_TOKEN_KEYS).map(([role, key]) => [
+            role,
+            `--sg-colors-${key.replace(/[A-Z]/g, (character) => `-${character.toLowerCase()}`)}`,
+        ]),
+    ),
+    fontFamily: '--sg-font-family',
+};
+
+/** Resolves a renderer theme from the canonical design-token CSS variables. */
+export const readDesignTokenTheme = (
+    read: (variable: string) => string,
+    defaults: RenderTheme = DEFAULT_THEME,
+): RenderTheme => resolveTheme(DESIGN_TOKEN_THEME_VARS, read, defaults);
+
+export type DesignTokenThemeOptions = {
+    readonly defaults?: RenderTheme;
+    readonly fontFamily?: string;
+    readonly fontSize?: number;
+};
+
+/** Resolves a renderer theme directly from a token object, for hosts without a token stylesheet. */
+export const themeFromDesignTokens = (
+    tokens: DesignTokens,
+    options: DesignTokenThemeOptions = {},
+): RenderTheme => {
+    const theme = { ...(options.defaults ?? DEFAULT_THEME) };
+    for (const [role, key] of Object.entries(THEME_TOKEN_KEYS)) {
+        const value = tokens.colors[key];
+        if (value) Object.assign(theme, { [role]: value });
+    }
+    if (options.fontFamily) theme.fontFamily = options.fontFamily;
+    if (options.fontSize !== undefined) theme.fontSize = options.fontSize;
+    return theme;
+};

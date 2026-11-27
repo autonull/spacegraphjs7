@@ -7,6 +7,7 @@ export const el = <T extends HTMLElement = HTMLElement>(id: string, label = 'app
 export type ButtonOptions = {
     className?: string;
     title?: string;
+    ariaLabel?: string;
     dataset?: Record<string, string>;
 };
 export function button(
@@ -19,6 +20,7 @@ export function button(
     element.textContent = label;
     if (options.className) element.className = options.className;
     if (options.title) element.title = options.title;
+    if (options.ariaLabel) element.setAttribute('aria-label', options.ariaLabel);
     for (const [key, value] of Object.entries(options.dataset ?? {})) element.dataset[key] = value;
     element.addEventListener('click', onClick);
     return element;

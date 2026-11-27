@@ -89,11 +89,18 @@ renderer.setModel(model);
 - Fall back on a mount failure: construct the next adapter on the same container and keep the model.
 - Gate every capability: `supports(renderer.capabilities, '3d')` before offering a 3D affordance.
   Disable unsupported actions with an explanation; never call a method the adapter declares it lacks.
+  For descriptor values use `supportsQuery(capabilities, { axis, value })` — projection, depth,
+  emphasis, motion verb, scene feature and sensory seam all share that one predicate.
 
 ## 4. Theming
 
 `RenderTheme` is a flat object of colors, fonts, and an optional `direction`. Map your design tokens to
 it once and re-resolve on a color-scheme change (theme the renderer, do not remount it).
+
+`@spacegraphjs/shared/tokens` owns that mapping: `themeFromDesignTokens(tokens)` resolves it from a token
+object, and `readDesignTokenTheme(read)` resolves it from the canonical `--sg-colors-*` variables. Both
+use one role map, so adding a role happens in one place; hosts keep their own vocabulary and override
+only the values they own.
 
 ```ts
 const theme: RenderTheme = {
@@ -147,6 +154,9 @@ renderer.setTheme(theme);
   (mapped from `RenderModel.nodes`) so keyboard users reach what the canvas draws.
 - `spacegraphjs/navigation` (`Trail`) is a breadcrumb/focus history that reconciles by ID across model
   updates; `GraphController` drives it for you, but it is usable on its own.
+- `spacegraphjs/commands` supplies `Command`, `filterCommands`, `CommandRegistry` and `Tour`. Contribute
+  verbs with hints, keywords and a `disabledReason` for capability gaps; the host still owns the palette,
+  Lens grammar and DOM rendering.
 - `GraphBinding` (also `spacegraphjs/control`) owns the renderer lifecycle for one container: construct
   it with `createRenderer`, `theme`, `model`, and `projection`, then `mount(container)`; the setters
   push updates and `dispose()` tears down the renderer and the controller. A mount that resolves after
@@ -157,6 +167,10 @@ renderer.setTheme(theme);
 
 - Persistence is entirely yours. Persist selection, level, projection, and renderer per session in your
   own view state; the library keeps none.
+- `spacegraphjs/view-state` is a versioned codec for the shared part of that state (`view`, `band`,
+  `layout`, `focus`, `zoom`, `asOf`). Hosts project their own fields into the same record and keep their
+  own vocabulary. Use it for full-state deep links and navigation history; the `DeepLinkParts` codec in
+  `@spacegraphjs/navigation` stays the minimal reveal-only form.
 - Export with `renderToSVG(model, options)` (pure, runs in Node) or `InlineGraph(container, options)` for an
   embedded static preview. `responsive: true` makes the SVG fill its container with an aspect-preserving
   viewBox instead of a fixed pixel canvas. The viewBox frames complete node footprints, so a wide card is

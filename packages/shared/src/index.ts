@@ -116,8 +116,15 @@ export type { KeyboardShortcut } from './keyboard';
 export { useKeyboardShortcuts, matchShortcut } from './keyboard';
 
 // Tokens
-export type { DesignTokens } from './tokens';
-export { defaultTokens, darkTokens, generateTokenCSS } from './tokens';
+export type { DesignTokenThemeOptions, DesignTokens } from './tokens';
+export {
+    defaultTokens,
+    darkTokens,
+    generateTokenCSS,
+    DESIGN_TOKEN_THEME_VARS,
+    readDesignTokenTheme,
+    themeFromDesignTokens,
+} from './tokens';
 
 // CSS utilities
 export { cx, styleVar, generateId, fixedSize, absolutePosition } from './css';

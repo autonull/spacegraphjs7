@@ -86,6 +86,18 @@ export const LIBRARY_ENTRIES: LibraryEntry[] = [
         types: 'dist/representations.d.ts',
     },
     { subpath: './reading', name: 'reading', source: 'src/reading.ts', types: 'dist/reading.d.ts' },
+    {
+        subpath: './commands',
+        name: 'commands',
+        source: 'src/commands/index.ts',
+        types: 'dist/commands.d.ts',
+    },
+    {
+        subpath: './view-state',
+        name: 'view-state',
+        source: 'src/view-state.ts',
+        types: 'dist/view-state.d.ts',
+    },
     { subpath: './composer', name: 'composer', source: 'src/composer.ts', types: 'dist/composer.d.ts' },
     {
         subpath: './documents',

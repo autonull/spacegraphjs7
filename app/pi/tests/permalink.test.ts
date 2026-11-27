@@ -29,6 +29,18 @@ describe('full-state permalinks', () => {
         expect(decodePermalink(hash)).toEqual(state);
     });
 
+    test('publishes the shared view fields and still reads legacy links', () => {
+        const payload = decodeURIComponent(encodePermalink(state).slice('#s='.length));
+        expect(JSON.parse(payload)).toMatchObject({
+            version: 1,
+            view: state.surface,
+            band: state.level,
+            focus: state.focus,
+            zoom: state.viewport.zoom,
+        });
+        expect(decodePermalink(`#s=${encodeURIComponent(JSON.stringify(state))}`)).toEqual(state);
+    });
+
     test('round-trips a v2 policy vector and fixture', () => {
         const vector = {
             ...Object.fromEntries(POLICY_SCHEMA.knobs.map((knob) => [knob.id, knob.default])),
