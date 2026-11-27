@@ -16,4 +16,4 @@ enters the browser bundle and no host vocabulary enters the library.
   reaches a `RenderModel` without leaking source-code vocabulary into the library.
 
 The demo's `source-graph.html` is the first consumer; a second host can supply its own snapshot
-without changing this package. See [`docs/semantic-wrappers.md`](../../docs/semantic-wrappers.md).
+without changing this package. See [`docs/semantic-wrappers.md`](../../../docs/semantic-wrappers.md).

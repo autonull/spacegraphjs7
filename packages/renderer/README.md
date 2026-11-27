@@ -9,15 +9,25 @@ adapter implements. Types plus the `supports` capability predicate; **zero runti
 - The `spacegraphjs` core never imports this package.
 
 ```ts
-import { supports, type GraphRenderer, type RenderModel } from '@spacegraphjs/renderer';
+import {
+    DEFAULT_THEME,
+    type GraphRenderer,
+    type RenderModel,
+    type RenderTheme,
+} from '@spacegraphjs/renderer';
 
-export function mountGraph(renderer: GraphRenderer, container: HTMLElement, model: RenderModel) {
+export function mountGraph(
+    renderer: GraphRenderer,
+    container: HTMLElement,
+    model: RenderModel,
+    theme: RenderTheme = DEFAULT_THEME,
+) {
     renderer.mount(container, { theme, projection: '2d' });
     renderer.setModel(model);
 }
 ```
 
-Rules (see `SPACEGRAPH.md` §4.5): the renderer owns geometry, hit-testing, camera, and animation;
+Rules (see [`docs/host-integration.md`](../../docs/host-integration.md)): the renderer owns geometry, hit-testing, camera, and animation;
 the host owns semantic zoom, clustering, layout, and detail content. Positions are authoritative from
 the host; renderers never auto-layout. Events carry string IDs and primitives only. HTML cards are
 host-provided and sanitized; the renderer never fetches or evaluates them. Capability flags drive UI

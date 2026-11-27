@@ -15,4 +15,4 @@ semantic-wrapper recipe is repeatable, not a host SDK and not an n8n adapter.
   `RenderModel` without leaking workflow vocabulary into the library.
 
 No workflow-engine or provider types appear here. Hosts supply their own vocabulary and may ignore
-any capability they do not have. See [`docs/semantic-wrappers.md`](../../docs/semantic-wrappers.md).
+any capability they do not have. See [`docs/semantic-wrappers.md`](../../../docs/semantic-wrappers.md).

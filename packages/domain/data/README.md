@@ -17,4 +17,4 @@ execution-heavy one.
   reaches a `RenderModel` without leaking data vocabulary into the library.
 
 No pipeline provider or host types appear here. Hosts supply their own vocabulary and may ignore any
-capability they do not have. See [`docs/semantic-wrappers.md`](../../docs/semantic-wrappers.md).
+capability they do not have. See [`docs/semantic-wrappers.md`](../../../docs/semantic-wrappers.md).

@@ -1,7 +1,14 @@
-import type { RendererViewport, RenderTheme, Position, GraphViewData, GraphNode } from '@spacegraphjs/shared';
+import type {
+    RendererViewport,
+    RenderTheme,
+    Position,
+    GraphViewData,
+    GraphNode,
+} from '@spacegraphjs/shared';
 import { passthroughI18n, type I18n } from '@spacegraphjs/shared';
 import { Navigation } from '@spacegraphjs/shared';
 import { createMemo, For, Show, createSignal } from 'solid-js';
+import { statusAccent } from './legendUtils';
 
 const BOX_W = 176;
 const BOX_H = 132;
@@ -65,18 +72,7 @@ export const GraphMinimap = (props: GraphMinimapProps) => {
 
     // A neutral node has no outcome to show, so it keeps a muted mark: the dot is all the minimap
     // draws, and a border-coloured one would disappear into the surface.
-    const colorFor = createMemo(() => (node: GraphNode) => {
-        // Use a simple status-based color mapping
-        const statusColors: Record<string, string> = {
-            pending: props.theme.textMuted,
-            running: props.theme.accent,
-            success: props.theme.success,
-            failed: props.theme.error,
-            interrupted: props.theme.warning,
-            neutral: props.theme.textMuted,
-        };
-        return statusColors[node.status] ?? props.theme.textMuted;
-    });
+    const colorFor = createMemo(() => (node: GraphNode) => statusAccent(props.theme, node.status));
 
     const panTo = (clientX: number, clientY: number, target: SVGSVGElement) => {
         if (placed().length === 0) return;

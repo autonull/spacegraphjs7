@@ -61,7 +61,6 @@ export function snapshotEvents(snapshot: SourceSnapshot): readonly SourceEvent[]
     const symbols = new Map<string, string>();
     const filePackages = new Map(snapshot.files.map((file) => [file.id, file.packageId]));
     for (const file of snapshot.files) {
-        const fileID = sourceID(snapshot.id, file.packageId, file.id);
         events.push({ type: 'file', packageId: file.packageId, fileId: file.id, path: file.path });
         for (const symbol of file.symbols) {
             const key = `${file.id}:${symbol.name}`;

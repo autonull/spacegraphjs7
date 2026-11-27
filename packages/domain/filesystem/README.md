@@ -16,4 +16,4 @@ semantic-wrapper recipe holds for a second, visibly different vocabulary.
   reaches a `RenderModel` without leaking filesystem vocabulary into the library.
 
 No repository provider or host types appear here. Hosts supply their own vocabulary and may ignore
-any capability they do not have. See [`docs/semantic-wrappers.md`](../../docs/semantic-wrappers.md).
+any capability they do not have. See [`docs/semantic-wrappers.md`](../../../docs/semantic-wrappers.md).
