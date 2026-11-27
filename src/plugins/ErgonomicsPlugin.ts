@@ -108,6 +108,7 @@ export class ErgonomicsPlugin extends BaseSystemPlugin {
     public calibrating = false;
     private activeSessions: Map<string, InteractionSession> = new Map();
     private cameraSession: CameraSession | null = null;
+    private calibrationTimer: ReturnType<typeof setInterval> | null = null;
 
     protected onInit(): void {
         this._applyConfig();
@@ -130,6 +131,7 @@ export class ErgonomicsPlugin extends BaseSystemPlugin {
         configB: Partial<ErgonomicsConfig>,
         interactionsPerRound = 10,
     ): void {
+        if (this.calibrating) return;
         this.calibrating = true;
 
         let activeConfig: 'A' | 'B' = 'A';
@@ -143,9 +145,9 @@ export class ErgonomicsPlugin extends BaseSystemPlugin {
         this.updateConfig(configA);
         this.metrics.totalInteractions = 0;
 
-        const checkRound = setInterval(() => {
+        this.calibrationTimer = setInterval(() => {
             if (!this.calibrating) {
-                clearInterval(checkRound);
+                this._stopCalibration();
                 return;
             }
 
@@ -160,8 +162,7 @@ export class ErgonomicsPlugin extends BaseSystemPlugin {
                     this.metrics.avgEfficiency = 1.0;
                     this.metrics.avgJitter = 0.0;
                 } else {
-                    clearInterval(checkRound);
-                    this.calibrating = false;
+                    this._stopCalibration();
 
                     const scoreA =
                         scores.A.efficiency -
@@ -180,6 +181,19 @@ export class ErgonomicsPlugin extends BaseSystemPlugin {
                 }
             }
         }, ERGONOMICS_CONFIG.CALIBRATION_CHECK_INTERVAL_MS);
+    }
+
+    dispose(): void {
+        this._stopCalibration();
+        super.dispose();
+    }
+
+    private _stopCalibration(): void {
+        if (this.calibrationTimer !== null) {
+            clearInterval(this.calibrationTimer);
+            this.calibrationTimer = null;
+        }
+        this.calibrating = false;
     }
 
     onPreRender(_delta: number): void {

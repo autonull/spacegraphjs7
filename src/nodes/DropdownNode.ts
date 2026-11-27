@@ -43,7 +43,6 @@ export class DropdownNode extends HtmlNode {
             const option = DOMUtils.createElement('option') as HTMLOptionElement;
             option.value = opt.id;
             option.textContent = opt.label;
-            if (opt.value !== undefined) option.value = String(opt.value);
             this.selectElement?.appendChild(option);
         }
     }
@@ -77,9 +76,9 @@ export class DropdownNode extends HtmlNode {
         wrapper.appendChild(this.selectElement);
     }
 
-    private _onSelectionChange(value: string): void {
-        this.selectedValue = value;
-        const option = this.options.find((o) => o.id === value);
-        this.setDataField('value', value, { label: option?.label });
+    private _onSelectionChange(id: string): void {
+        this.selectedValue = id;
+        const option = this.options.find((o) => o.id === id);
+        this.setDataField('value', option?.value ?? id, { label: option?.label });
     }
 }

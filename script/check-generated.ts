@@ -34,8 +34,13 @@ try {
         cwd: root,
         stdio: 'inherit',
     });
+    execFileSync(tsx, ['script/source-snapshot.ts', '--out', join(workspace, 'source-api.json')], {
+        cwd: root,
+        stdio: 'inherit',
+    });
 
     compare(join(workspace, 'registry.ts'), 'app/demo/src/registry.ts');
+    compare(join(workspace, 'source-api.json'), 'public/source-graph/source-api.json');
     compare(join(workspace, 'manifests/package.json'), 'package.json');
     for (const name of manifests) {
         compare(
@@ -43,7 +48,9 @@ try {
             join('packages', name, 'package.json'),
         );
     }
-    console.log('generated check passed: registry and published manifests match their generators');
+    console.log(
+    'generated check passed: registry, source snapshot and manifests match their generators',
+);
 } finally {
     rmSync(workspace, { recursive: true, force: true });
 }

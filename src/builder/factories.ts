@@ -51,10 +51,18 @@ export const NodeFactory = Object.freeze({
         return new NodeBuilder(id, 'MeterNode').data({ value, min, max, width: 200, height: 30 });
     },
     colorPicker(id: string, value = '#ff0000'): NodeBuilder {
-        return new NodeBuilder(id, 'ColorPickerNode').data({ value, width: 150, height: 40 });
+        return new NodeBuilder(id, 'ColorPickerNode').data({
+            color: value,
+            width: 150,
+            height: 40,
+        });
     },
     dropdown(id: string, options: string[] = []): NodeBuilder {
-        return new NodeBuilder(id, 'DropdownNode').data({ options, width: 150, height: 40 });
+        return new NodeBuilder(id, 'DropdownNode').data({
+            options: options.map((label) => ({ id: label, label })),
+            width: 150,
+            height: 40,
+        });
     },
 
     // Content Containers
@@ -83,7 +91,11 @@ export const NodeFactory = Object.freeze({
         return new NodeBuilder(id, 'TabContainerNode').data({ width: 300, height: 250 });
     },
     port(id: string, direction: 'input' | 'output' = 'input'): NodeBuilder {
-        return new NodeBuilder(id, 'PortNode').data({ direction, width: 30, height: 30 });
+        return new NodeBuilder(id, 'PortNode').data({
+            portDirection: direction,
+            width: 30,
+            height: 30,
+        });
     },
 
     // Rich Content
@@ -94,7 +106,11 @@ export const NodeFactory = Object.freeze({
         return new NodeBuilder(id, 'HtmlNode').data({ html, width: 200, height: 150 });
     },
     markdown(id: string, content = ''): NodeBuilder {
-        return new NodeBuilder(id, 'MarkdownNode').data({ content, width: 250, height: 150 });
+        return new NodeBuilder(id, 'MarkdownNode').data({
+            markdown: content,
+            width: 250,
+            height: 150,
+        });
     },
     chart(id: string, chartType: 'bar' | 'line' | 'pie' = 'bar'): NodeBuilder {
         return new NodeBuilder(id, 'ChartNode').data({ chartType, width: 300, height: 200 });
@@ -103,7 +119,7 @@ export const NodeFactory = Object.freeze({
         return new NodeBuilder(id, 'CodeEditorNode').data({ language, width: 300, height: 200 });
     },
     math(id: string, formula = ''): NodeBuilder {
-        return new NodeBuilder(id, 'MathNode').data({ formula, width: 200, height: 80 });
+        return new NodeBuilder(id, 'MathNode').data({ math: formula, width: 200, height: 80 });
     },
 
     // Media
@@ -111,10 +127,10 @@ export const NodeFactory = Object.freeze({
         return new NodeBuilder(id, 'ImageNode').data({ url, width: 200, height: 200 });
     },
     video(id: string, url: string): NodeBuilder {
-        return new NodeBuilder(id, 'VideoNode').data({ url, width: 320, height: 180 });
+        return new NodeBuilder(id, 'VideoNode').data({ src: url, width: 320, height: 180 });
     },
     audio(id: string, url?: string): NodeBuilder {
-        return new NodeBuilder(id, 'AudioNode').data({ url, width: 200, height: 50 });
+        return new NodeBuilder(id, 'AudioNode').data({ src: url, width: 200, height: 50 });
     },
     globe(id: string): NodeBuilder {
         return new NodeBuilder(id, 'GlobeNode').data({ width: 300, height: 300 });

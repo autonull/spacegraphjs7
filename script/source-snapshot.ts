@@ -14,7 +14,11 @@ import type {
 } from '../packages/domain/source/src/snapshot';
 
 const workspace = resolve(import.meta.dirname, '..');
-const output = resolve(workspace, 'public/source-graph/source-api.json');
+const outputFlag = process.argv.indexOf('--out');
+const output = resolve(
+    workspace,
+    outputFlag >= 0 ? process.argv[outputFlag + 1]! : 'public/source-graph/source-api.json',
+);
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'dist-demo', '.turbo', '.git', 'coverage']);
 
 const walk = (dir: string): string[] =>

@@ -1564,6 +1564,14 @@ describe('ErgonomicsPlugin', () => {
         expect(ergo.calibrating).toBe(false);
         expect(ergo.config.dampingFactor).toBe(0.9);
     });
+
+    it('ignores a second calibration round while one is active', () => {
+        ergo.startCalibrationRound({ dampingFactor: 0.1 }, { dampingFactor: 0.9 }, 2);
+        ergo.startCalibrationRound({ dampingFactor: 0.3 }, { dampingFactor: 0.7 }, 2);
+        expect(ergo.calibrating).toBe(true);
+        expect(ergo.config.dampingFactor).toBe(0.1);
+        vi.clearAllTimers();
+    });
 });
 
 describe('VisionManager Auto-Correction Loop', () => {

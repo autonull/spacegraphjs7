@@ -11,7 +11,7 @@
           "name": "AccessibilityLayerConfig",
           "kind": "type",
           "fileId": "packages/a11y/src/AccessibilityLayer",
-          "line": 10,
+          "line": 6,
           "signature": "export type AccessibilityLayerConfig = import('spacegraphjs/a11y').AccessibilityLayerOptions & {",
           "doc": "Configuration for the AccessibilityLayer (alias for compatibility with host API)."
         }
@@ -2562,8 +2562,8 @@
           "name": "sourceOps",
           "kind": "const",
           "fileId": "packages/domain/source/src/mapping",
-          "line": 89,
-          "signature": "sourceOps = (events: readonly SourceEvent[], snapshotID: string): readonly KernelOp[] =>"
+          "line": 94,
+          "signature": "sourceOps = ("
         }
       ],
       "imports": [
@@ -2586,57 +2586,57 @@
           "name": "SourceTrace",
           "kind": "type",
           "fileId": "packages/domain/source/src/selectors",
-          "line": 9,
+          "line": 16,
           "signature": "export type SourceTrace = Trace;"
         },
         {
           "name": "symbolsOf",
           "kind": "const",
           "fileId": "packages/domain/source/src/selectors",
-          "line": 23,
+          "line": 30,
           "signature": "symbolsOf = (view: SourceView, fileID: string): readonly string[] =>"
         },
         {
           "name": "dependenciesOf",
           "kind": "const",
           "fileId": "packages/domain/source/src/selectors",
-          "line": 29,
+          "line": 36,
           "signature": "dependenciesOf = (view: SourceView, id: string): readonly string[] => ["
         },
         {
           "name": "dependentsOf",
           "kind": "const",
           "fileId": "packages/domain/source/src/selectors",
-          "line": 34,
+          "line": 41,
           "signature": "dependentsOf = (view: SourceView, id: string): readonly string[] => ["
         },
         {
           "name": "referencesOf",
           "kind": "const",
           "fileId": "packages/domain/source/src/selectors",
-          "line": 39,
+          "line": 46,
           "signature": "referencesOf = (view: SourceView, symbolID: string): readonly string[] => ["
         },
         {
           "name": "SourceFileFact",
           "kind": "type",
           "fileId": "packages/domain/source/src/selectors",
-          "line": 43,
+          "line": 50,
           "signature": "export type SourceFileFact = {"
         },
         {
           "name": "fileFacts",
           "kind": "const",
           "fileId": "packages/domain/source/src/selectors",
-          "line": 50,
+          "line": 57,
           "signature": "fileFacts = (view: SourceView): readonly SourceFileFact[] =>"
         },
         {
           "name": "apiCensus",
           "kind": "const",
           "fileId": "packages/domain/source/src/selectors",
-          "line": 57,
-          "signature": "apiCensus = (view: SourceView): Readonly<Record<SourceRoleCount, number>> => {"
+          "line": 64,
+          "signature": "apiCensus = (view: SourceView): Readonly<Record<SourceRole, number>> => {"
         }
       ],
       "imports": [
@@ -2647,6 +2647,8 @@
             "dataString",
             "roleOf",
             "SOURCE_RELATIONS",
+            "SOURCE_ROLES",
+            "SourceRole",
             "SourceView"
           ],
           "kind": "import"
@@ -6204,10 +6206,18 @@
           "doc": "Capabilities a host can query before it offers an affordance."
         },
         {
+          "name": "CapabilityQuery",
+          "kind": "type",
+          "fileId": "packages/renderer/src/index",
+          "line": 374,
+          "signature": "export type CapabilityQuery =",
+          "doc": "One query shape for every capability axis. Flag queries reuse `RendererCapability`; axis queries"
+        },
+        {
           "name": "supportsList",
           "kind": "function",
           "fileId": "packages/renderer/src/index",
-          "line": 358,
+          "line": 382,
           "signature": "export function supportsList<T extends string>(list: readonly T[] | undefined, value: T): boolean {",
           "doc": "Generic membership gate for an optional capability descriptor list."
         },
@@ -6215,7 +6225,7 @@
           "name": "supportedValues",
           "kind": "function",
           "fileId": "packages/renderer/src/index",
-          "line": 363,
+          "line": 387,
           "signature": "export function supportedValues<T extends string>(",
           "doc": "Filters candidates down to the values a renderer advertises."
         },
@@ -6223,15 +6233,23 @@
           "name": "supports",
           "kind": "function",
           "fileId": "packages/renderer/src/index",
-          "line": 371,
+          "line": 395,
           "signature": "export function supports(",
           "doc": "Single predicate for capability-gated UI (L1.28). Unknown capabilities are never assumed."
+        },
+        {
+          "name": "supportsQuery",
+          "kind": "function",
+          "fileId": "packages/renderer/src/index",
+          "line": 427,
+          "signature": "export function supportsQuery(",
+          "doc": "The single predicate a control builder needs for any advertised capability."
         },
         {
           "name": "supportsDepth",
           "kind": "function",
           "fileId": "packages/renderer/src/index",
-          "line": 387,
+          "line": 449,
           "signature": "export function supportsDepth(capabilities: RendererCapabilities, depth: DepthMode): boolean {",
           "doc": "Whether a renderer can honour a depth treatment; hosts gate the depth chooser on this."
         },
@@ -6239,7 +6257,7 @@
           "name": "supportsEmphasis",
           "kind": "function",
           "fileId": "packages/renderer/src/index",
-          "line": 392,
+          "line": 454,
           "signature": "export function supportsEmphasis(",
           "doc": "Whether a renderer can drive an emphasis channel; unknown channels are never assumed."
         },
@@ -6247,7 +6265,7 @@
           "name": "supportsMotionVerb",
           "kind": "function",
           "fileId": "packages/renderer/src/index",
-          "line": 400,
+          "line": 462,
           "signature": "export function supportsMotionVerb(capabilities: RendererCapabilities, verb: string): boolean {",
           "doc": "Whether a renderer can drive a camera motion verb; unknown verbs are never assumed."
         },
@@ -6255,7 +6273,7 @@
           "name": "supportsSceneFeature",
           "kind": "function",
           "fileId": "packages/renderer/src/index",
-          "line": 405,
+          "line": 467,
           "signature": "export function supportsSceneFeature(capabilities: RendererCapabilities, feature: string): boolean {",
           "doc": "Whether a renderer can honour a scene feature; unknown features are never assumed."
         },
@@ -6263,7 +6281,7 @@
           "name": "supportsSensorySeam",
           "kind": "function",
           "fileId": "packages/renderer/src/index",
-          "line": 410,
+          "line": 472,
           "signature": "export function supportsSensorySeam(capabilities: RendererCapabilities, seam: string): boolean {",
           "doc": "Whether a renderer can drive a sensory seam; unknown seams are never assumed."
         },
@@ -6271,7 +6289,7 @@
           "name": "createRenderClock",
           "kind": "function",
           "fileId": "packages/renderer/src/index",
-          "line": 418,
+          "line": 480,
           "signature": "export function createRenderClock(",
           "doc": "Creates a render clock for interpolating between render models."
         }
@@ -7836,6 +7854,7 @@
           "specifier": "./tokens",
           "fileId": "packages/shared/src/tokens",
           "names": [
+            "DesignTokenThemeOptions",
             "DesignTokens"
           ],
           "kind": "export"
@@ -7846,7 +7865,10 @@
           "names": [
             "defaultTokens",
             "darkTokens",
-            "generateTokenCSS"
+            "generateTokenCSS",
+            "DESIGN_TOKEN_THEME_VARS",
+            "readDesignTokenTheme",
+            "themeFromDesignTokens"
           ],
           "kind": "export"
         },
@@ -8063,31 +8085,58 @@
           "name": "DesignTokens",
           "kind": "interface",
           "fileId": "packages/shared/src/tokens",
-          "line": 6,
-          "signature": "export interface DesignTokens {",
-          "doc": "Design tokens for SpaceGraphJS components."
+          "line": 14,
+          "signature": "export interface DesignTokens {"
         },
         {
           "name": "defaultTokens",
           "kind": "const",
           "fileId": "packages/shared/src/tokens",
-          "line": 128,
+          "line": 148,
           "signature": "defaultTokens: DesignTokens = {"
         },
         {
           "name": "darkTokens",
           "kind": "const",
           "fileId": "packages/shared/src/tokens",
-          "line": 212,
+          "line": 238,
           "signature": "darkTokens: DesignTokens = {"
         },
         {
           "name": "generateTokenCSS",
           "kind": "function",
           "fileId": "packages/shared/src/tokens",
-          "line": 242,
+          "line": 274,
           "signature": "export function generateTokenCSS(tokens: DesignTokens, prefix = 'sg'): string {",
           "doc": "Generates CSS custom property declarations from tokens."
+        },
+        {
+          "name": "DESIGN_TOKEN_THEME_VARS",
+          "kind": "const",
+          "fileId": "packages/shared/src/tokens",
+          "line": 309,
+          "signature": "DESIGN_TOKEN_THEME_VARS: SemanticTokenMap = {"
+        },
+        {
+          "name": "readDesignTokenTheme",
+          "kind": "const",
+          "fileId": "packages/shared/src/tokens",
+          "line": 320,
+          "signature": "readDesignTokenTheme = ("
+        },
+        {
+          "name": "DesignTokenThemeOptions",
+          "kind": "type",
+          "fileId": "packages/shared/src/tokens",
+          "line": 325,
+          "signature": "export type DesignTokenThemeOptions = {"
+        },
+        {
+          "name": "themeFromDesignTokens",
+          "kind": "const",
+          "fileId": "packages/shared/src/tokens",
+          "line": 332,
+          "signature": "themeFromDesignTokens = ("
         }
       ],
       "imports": []
@@ -9893,14 +9942,14 @@
           "name": "EdgeFactory",
           "kind": "const",
           "fileId": "src/builder/factories",
-          "line": 139,
+          "line": 155,
           "signature": "EdgeFactory = Object.freeze({"
         },
         {
           "name": "Layout",
           "kind": "const",
           "fileId": "src/builder/factories",
-          "line": 171,
+          "line": 187,
           "signature": "Layout = Object.freeze({",
           "references": [
             "packages/shared/src/types:Layout"
@@ -9910,21 +9959,21 @@
           "name": "Presets",
           "kind": "const",
           "fileId": "src/builder/factories",
-          "line": 195,
+          "line": 211,
           "signature": "Presets = Object.freeze({"
         },
         {
           "name": "DataUtils",
           "kind": "const",
           "fileId": "src/builder/factories",
-          "line": 219,
+          "line": 235,
           "signature": "DataUtils = Object.freeze({"
         },
         {
           "name": "Batch",
           "kind": "const",
           "fileId": "src/builder/factories",
-          "line": 247,
+          "line": 263,
           "signature": "Batch = Object.freeze({"
         }
       ],
@@ -10287,6 +10336,52 @@
           "kind": "import"
         }
       ]
+    },
+    {
+      "id": "src/commands/index",
+      "path": "src/commands/index.ts",
+      "packageId": "spacegraphjs",
+      "symbols": [
+        {
+          "name": "Command",
+          "kind": "interface",
+          "fileId": "src/commands/index",
+          "line": 5,
+          "signature": "export interface Command {",
+          "doc": "Host-agnostic command data and contribution registry."
+        },
+        {
+          "name": "filterCommands",
+          "kind": "const",
+          "fileId": "src/commands/index",
+          "line": 28,
+          "signature": "filterCommands = (commands: readonly Command[], query: string): readonly Command[] => {"
+        },
+        {
+          "name": "CommandRegistry",
+          "kind": "class",
+          "fileId": "src/commands/index",
+          "line": 39,
+          "signature": "export class CommandRegistry {",
+          "doc": "A named set of contributed commands, keyed by stable id."
+        },
+        {
+          "name": "TourStep",
+          "kind": "interface",
+          "fileId": "src/commands/index",
+          "line": 85,
+          "signature": "export interface TourStep {"
+        },
+        {
+          "name": "Tour",
+          "kind": "class",
+          "fileId": "src/commands/index",
+          "line": 93,
+          "signature": "export class Tour {",
+          "doc": "An untimed sequence of guidance steps; hosts render the step and own completion."
+        }
+      ],
+      "imports": []
     },
     {
       "id": "src/composer",
@@ -11170,21 +11265,21 @@
           "name": "SpaceGraphAppOptions",
           "kind": "interface",
           "fileId": "src/core/SpaceGraphApp",
-          "line": 18,
+          "line": 15,
           "signature": "export interface SpaceGraphAppOptions {"
         },
         {
           "name": "AppButtonConfig",
           "kind": "interface",
           "fileId": "src/core/SpaceGraphApp",
-          "line": 50,
+          "line": 47,
           "signature": "export interface AppButtonConfig {"
         },
         {
           "name": "SpaceGraphApp",
           "kind": "class",
           "fileId": "src/core/SpaceGraphApp",
-          "line": 57,
+          "line": 54,
           "signature": "export class SpaceGraphApp {"
         }
       ],
@@ -11230,10 +11325,7 @@
           "names": [
             "addGrid",
             "renderButtons",
-            "renderTitleCard",
-            "renderToolbar",
             "renderToolbarActions",
-            "setupSearchHUD",
             "syncModeToggle",
             "updateStatsHUD"
           ],
@@ -11389,7 +11481,7 @@
           "name": "setupHotkeys",
           "kind": "function",
           "fileId": "src/core/SpaceGraphAppInteraction",
-          "line": 157,
+          "line": 152,
           "signature": "export function setupHotkeys(app: SpaceGraphApp): () => void {"
         }
       ],
@@ -19990,7 +20082,7 @@
           "name": "ProgressBarNode",
           "kind": "class",
           "fileId": "src/nodes/ProgressBarNode",
-          "line": 8,
+          "line": 23,
           "signature": "export class ProgressBarNode extends HtmlNode {"
         }
       ],
@@ -22599,14 +22691,14 @@
           "name": "HUD_POSITIONS",
           "kind": "const",
           "fileId": "src/plugins/hud/HUDStyles",
-          "line": 86,
+          "line": 92,
           "signature": "HUD_POSITIONS = {"
         },
         {
           "name": "HUD_ANIMATIONS",
           "kind": "const",
           "fileId": "src/plugins/hud/HUDStyles",
-          "line": 98,
+          "line": 104,
           "signature": "HUD_ANIMATIONS = {"
         }
       ],
@@ -24438,7 +24530,7 @@
           "name": "injectMermaidStyles",
           "kind": "function",
           "fileId": "src/plugins/mermaid/MermaidPlugin",
-          "line": 458,
+          "line": 454,
           "signature": "export function injectMermaidStyles(): void {"
         }
       ],
@@ -29050,6 +29142,56 @@
           "line": 19,
           "signature": "export function latLngToVec3(",
           "doc": "A point on a sphere, from geographic coordinates in degrees. The north pole is +Y and the"
+        }
+      ],
+      "imports": []
+    },
+    {
+      "id": "src/view-state",
+      "path": "src/view-state.ts",
+      "packageId": "spacegraphjs",
+      "symbols": [
+        {
+          "name": "VIEW_STATE_VERSION",
+          "kind": "const",
+          "fileId": "src/view-state",
+          "line": 6,
+          "signature": "VIEW_STATE_VERSION = 1 as const"
+        },
+        {
+          "name": "ViewState",
+          "kind": "type",
+          "fileId": "src/view-state",
+          "line": 8,
+          "signature": "export type ViewState = {"
+        },
+        {
+          "name": "ViewStateRecord",
+          "kind": "type",
+          "fileId": "src/view-state",
+          "line": 18,
+          "signature": "export type ViewStateRecord = Readonly<Record<string, unknown>> & ViewState;"
+        },
+        {
+          "name": "ViewStateCodec",
+          "kind": "interface",
+          "fileId": "src/view-state",
+          "line": 20,
+          "signature": "export interface ViewStateCodec<S> {"
+        },
+        {
+          "name": "ViewStateCodecOptions",
+          "kind": "interface",
+          "fileId": "src/view-state",
+          "line": 25,
+          "signature": "export interface ViewStateCodecOptions<S> {"
+        },
+        {
+          "name": "viewStateCodec",
+          "kind": "const",
+          "fileId": "src/view-state",
+          "line": 114,
+          "signature": "viewStateCodec = <S>(options: ViewStateCodecOptions<S>): ViewStateCodec<S> =>"
         }
       ],
       "imports": []

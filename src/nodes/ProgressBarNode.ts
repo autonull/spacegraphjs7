@@ -5,6 +5,21 @@ import { DOMUtils } from '../utils/DOMUtils';
 import { clamp } from '../utils/math';
 import { HtmlNode } from './HtmlNode';
 
+const KEYFRAMES_ID = 'sg-progress-indeterminate';
+
+const ensureIndeterminateKeyframes = (): void => {
+    if (document.getElementById(KEYFRAMES_ID)) return;
+    const style = document.createElement('style');
+    style.id = KEYFRAMES_ID;
+    style.textContent = `
+        @keyframes indeterminate {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(400%); }
+        }
+    `;
+    document.head.appendChild(style);
+};
+
 export class ProgressBarNode extends HtmlNode {
     static readonly typeName: string = 'ProgressBarNode';
     private progressBar: HTMLElement | null = null;
@@ -88,18 +103,11 @@ export class ProgressBarNode extends HtmlNode {
     }
 
     private _startIndeterminate(): void {
-        if (!this.progressFill) return;
+        if (!this.progressFill || this.indeterminateAnim !== null) return;
         this.progressFill.style.width = '30%';
         this.progressFill.style.animation = 'indeterminate 1.5s infinite ease-in-out';
 
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes indeterminate {
-                0% { transform: translateX(-100%); }
-                100% { transform: translateX(400%); }
-            }
-        `;
-        document.head.appendChild(style);
+        ensureIndeterminateKeyframes();
         this.indeterminateAnim = window.setInterval(() => {
             this.progressFill!.style.transform = 'translateX(0)';
         }, 1500);
