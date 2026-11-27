@@ -17,6 +17,7 @@ import {
     type CameraMove,
     type FollowMode,
 } from '@spacegraphjs/navigation/follow';
+import { createAnnouncer } from 'spacegraphjs/a11y';
 import { GraphController } from 'spacegraphjs/control';
 import { sampleDepth, type DepthAxis } from 'spacegraphjs/depth';
 import { Trail } from 'spacegraphjs/navigation';
@@ -177,8 +178,9 @@ import {
     type InspectorTab,
     type StateFrame,
 } from './shell';
-import { SHORTCUT_HELP } from './help';
+import { MOUSE_HELP, SHORTCUT_HELP } from './help';
 import { ChromeController, installPulldowns } from './chrome';
+import { errorMessage } from 'pi-kit';
 import { downloadBlob } from 'pi-kit/download';
 import { createViewportController } from 'pi-kit/viewport';
 import { button, el, ensureChild, pruneChildren } from './dom';
@@ -189,6 +191,8 @@ import {
     renderProofLine,
     renderTurnMap,
     renderEvidence,
+    renderMouseReference,
+    renderShortcutReference,
 } from './index-views';
 import { drawMinimap, installMinimapKeys } from './minimap';
 import { configureVision, VisionController } from './vision-controller';
@@ -263,6 +267,7 @@ export class PiHost {
     #positions = new Map<string, Position>();
     #attention = { failures: 0, latest: '', changed: 0 };
     #evidence: readonly string[] = [];
+    readonly #announcer = createAnnouncer(el('announcer'));
     #followMode: FollowMode = DEFAULT_LIVE_FOLLOW_MODE;
     #lastFollowFrame: CameraMove | null = null;
     #traceIds: readonly string[] = [];
@@ -537,6 +542,10 @@ export class PiHost {
         for (const id of ids) delete panel[id];
         this.#policyLayers = { ...this.#policyLayers, panel };
         this.#commitPolicy();
+    }
+
+    announce(message: string): void {
+        this.#announcer.announce(message);
     }
 
     recordEvent(
@@ -1287,6 +1296,7 @@ export class PiHost {
         const node = this.#view.nodes.find((candidate) => candidate.id === id);
         if (!node) return;
         this.#revealed = id;
+        this.announce(`Revealed ${node.label}`);
         this.recordEvent('reveal', {
             target: id,
             kind: node.kind,
@@ -1592,12 +1602,16 @@ export class PiHost {
 
     /** Explicit host toggle: no analysis or retargeting happens until this is enabled. */
     setVisionLoop(enabled: boolean): boolean {
-        return this.vision.setEnabled(enabled);
+        const applied = this.vision.setEnabled(enabled);
+        el('vision-loop-toggle').setAttribute('aria-pressed', String(this.vision.enabled));
+        this.announce(this.vision.enabled ? 'Layout check on' : 'Layout check off');
+        return applied;
     }
 
     setArrangement(arrangement: Arrangement): Arrangement {
         if (!ARRANGEMENTS.includes(arrangement)) return this.#arrangement;
         this.setKnob('surface.arrangement', arrangement);
+        this.announce(`${arrangement} transcript`);
         return this.#arrangement;
     }
 
@@ -1693,6 +1707,7 @@ export class PiHost {
     setSurface(surface: Surface): Surface {
         if (!SURFACES.includes(surface)) return this.#surface;
         this.setKnob('surface.mode', surface);
+        this.announce(`${surface} surface`);
         return this.#surface;
     }
 
@@ -1700,6 +1715,9 @@ export class PiHost {
         const active = this.playSession.play(preset);
         this.simulation.setSignals(this.simulation.signals);
         el('play-start').setAttribute('data-active', String(active));
+        el('play-start').textContent = 'Stop';
+        el('play-start').title = 'Stop physics and restore the layout';
+        this.announce(`Playing ${preset}`);
         this.syncClock();
         return active;
     }
@@ -1707,6 +1725,9 @@ export class PiHost {
     reconcilePlay(): boolean {
         const settled = this.playSession.reconcile();
         el('play-start').setAttribute('data-active', 'false');
+        el('play-start').textContent = 'Play';
+        el('play-start').title = 'Borrow the layout for physics';
+        this.announce('Play stopped — layout restored');
         this.renderPositions();
         this.renderHud();
         this.syncClock();
@@ -1790,13 +1811,21 @@ export class PiHost {
         return encodePermalink(state);
     }
 
-    private copyText(text: string): void {
-        void navigator.clipboard?.writeText(text).catch(() => undefined);
+    private async copyText(text: string): Promise<boolean> {
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch {
+            return false;
+        }
     }
 
-    private shareView(): void {
+    private async shareView(): Promise<void> {
         location.hash = this.permalink().slice(1);
-        this.copyText(location.href);
+        const copied = await this.copyText(location.href);
+        this.announce(
+            copied ? 'Link copied to clipboard' : 'Copy failed — the address bar holds the link',
+        );
     }
 
     applyPermalink(hash: string): boolean {
@@ -1879,7 +1908,7 @@ export class PiHost {
             this.showEvidence([`prompt${mode ? ` · ${mode}` : ''}: ${prompt}`]);
             return { ok: true };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+            const message = errorMessage(error);
             this.showEvidence([`prompt: ${message}`]);
             return { ok: false, error: message };
         }
@@ -2279,6 +2308,8 @@ export class PiHost {
             returnHome: () => this.returnHome(),
             setClientID: (id: string) => this.setClientID(id),
             setFrame: (state: FrameState | null, detail?: string) => this.setFrame(state, detail),
+            announce: (message: string) => this.announce(message),
+            help: () => this.help(),
             sendPrompt: (text: string, mode?: 'steer' | 'followUp') => this.sendPrompt(text, mode),
             approve: (target: string, decision: 'approve' | 'reject' = 'approve') =>
                 this.approve(target, decision),
@@ -2670,13 +2701,32 @@ export class PiHost {
 
     private bindControls(): void {
         installPulldowns();
+        renderShortcutReference(this.help());
+        renderMouseReference(MOUSE_HELP);
         document.body.dataset.catalog ??= 'closed';
         document.body.dataset.rail ??= 'open';
         el('catalog-toggle').addEventListener('click', () => this.toggleCatalog());
         el('catalog').addEventListener('click', (event) => {
-            const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('[data-question]');
-            if (!link?.dataset.question) return;
-            this.run(link.dataset.question);
+            const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[data-preset], a[data-cell], a[data-question]');
+            if (!link) return;
+            if (link.dataset.preset) {
+                event.preventDefault();
+                const vector = presetVector(POLICY_SCHEMA, link.dataset.preset);
+                if (!vector) return;
+                this.setPolicyLayer('preset', vector);
+                this.announce(`${link.dataset.preset} preset applied`);
+                return;
+            }
+            if (link.dataset.cell) {
+                event.preventDefault();
+                const encoded = new URL(link.href).searchParams.get('policy') ?? '';
+                const vector = decodePolicyVector(POLICY_SCHEMA, encoded);
+                if (!vector) return;
+                this.setPolicyLayer('url', vector);
+                this.announce(`${link.dataset.cell} policy applied`);
+                return;
+            }
+            if (link.dataset.question) this.run(link.dataset.question);
         });
         el('proof-line').addEventListener('click', () => this.toggleCatalog(true));
         for (const button of document.querySelectorAll<HTMLButtonElement>('#proof-menu button[data-proof-group]')) {
@@ -2781,9 +2831,10 @@ export class PiHost {
             if (this.playSession.active)
                 this.play((event.target as HTMLSelectElement).value as GravityPreset);
         });
-        el('play-start').addEventListener('click', () =>
-            this.play(el<HTMLSelectElement>('play-preset').value as GravityPreset),
-        );
+        el('play-start').addEventListener('click', () => {
+            if (this.playSession.active) this.reconcilePlay();
+            else this.play(el<HTMLSelectElement>('play-preset').value as GravityPreset);
+        });
         el('play-reconcile').addEventListener('click', () => this.reconcilePlay());
         el('vision-loop-toggle').addEventListener('click', () =>
             this.setVisionLoop(!this.vision.enabled),
@@ -2839,6 +2890,7 @@ export class PiHost {
                       : 'text/html',
         });
         downloadBlob(blob, `pi-graph.${format}`);
+        this.announce(`Graph exported as ${format.toUpperCase()}`);
     }
 
     private applySurface(): void {
@@ -2846,9 +2898,8 @@ export class PiHost {
         main.dataset.surface = this.#surface;
         main.dataset.arrangement = this.#arrangement;
         main.dataset.primaryIndex = this.primaryIndex();
-        main.style.setProperty(
-            '--transcript-size',
-            `${this.#arrangement === 'stacked' ? this.#transcriptHeight : this.#transcriptWidth}px`,
+        this.setTranscriptSize(
+            this.#arrangement === 'stacked' ? this.#transcriptHeight : this.#transcriptWidth,
         );
         for (const surface of SURFACES) {
             const button = el(`surface-${surface}`);
@@ -2856,6 +2907,29 @@ export class PiHost {
             button.setAttribute('data-active', active);
             button.setAttribute('aria-pressed', active);
         }
+    }
+
+    private setTranscriptSize(size: number): void {
+        const stacked = this.#arrangement === 'stacked';
+        const surface = el('surface');
+        if (stacked) this.#transcriptHeight = size;
+        else this.#transcriptWidth = size;
+        surface.style.setProperty('--transcript-size', `${size}px`);
+        if (this.#arrangement === 'floating') el('transcript').style.width = `${size}px`;
+        const handle = el('transcript-resize');
+        handle.setAttribute('aria-orientation', stacked ? 'horizontal' : 'vertical');
+        handle.setAttribute('aria-valuemin', String(stacked ? 120 : 200));
+        handle.setAttribute(
+            'aria-valuemax',
+            String(
+                Math.round(
+                    stacked
+                        ? Math.max(surface.clientHeight - 120, 120)
+                        : Math.max(surface.clientWidth - 240, 200),
+                ),
+            ),
+        );
+        handle.setAttribute('aria-valuenow', String(Math.round(size)));
     }
 
     /** Frame the visible graph inside aspect-derived CSS insets; the renderer owns world-unit padding. */
@@ -2979,10 +3053,7 @@ export class PiHost {
                           Math.max(startWidth - (next.clientX - startX), 200),
                           Math.max(surface.clientWidth - 240, 200),
                       );
-                if (stacked) this.#transcriptHeight = size;
-                else this.#transcriptWidth = size;
-                surface.style.setProperty('--transcript-size', `${size}px`);
-                if (this.#arrangement === 'floating') transcript.style.width = `${size}px`;
+                this.setTranscriptSize(size);
             }, () => {
                 this.recordEvent('transcript:resize', {
                     arrangement: this.#arrangement,
@@ -3048,10 +3119,7 @@ export class PiHost {
                 ? Math.max(surface.clientHeight - 120, 120)
                 : Math.max(surface.clientWidth - 240, 200);
             const size = Math.min(Math.max(current + delta, floor), limit);
-            if (stacked) this.#transcriptHeight = size;
-            else this.#transcriptWidth = size;
-            surface.style.setProperty('--transcript-size', `${size}px`);
-            if (this.#arrangement === 'floating') el('transcript').style.width = `${size}px`;
+            this.setTranscriptSize(size);
             this.recordEvent('transcript:resize', { arrangement: this.#arrangement, size });
         });
     }
@@ -3096,6 +3164,7 @@ export class PiHost {
             this.#transcriptCollapsed ? 'Expand transcript' : 'Collapse transcript',
         );
         this.recordEvent('transcript:toggle', { collapsed: this.#transcriptCollapsed });
+        this.announce(this.#transcriptCollapsed ? 'Transcript collapsed' : 'Transcript expanded');
     }
 
     toggleReading(open = !this.#readingOpen): boolean {
@@ -3111,6 +3180,7 @@ export class PiHost {
             this.#readingController = undefined;
         }
         this.recordEvent('reading:toggle', { open });
+        this.announce(open ? 'Reading view opened' : 'Reading view closed');
         return open;
     }
 

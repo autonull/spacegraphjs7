@@ -1,24 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { crossTracePath, type CrossTraceLink } from '../src/cross-trace';
+import { CROSS_TRACE_LINKS, crossTracePath } from '../src/cross-trace';
 import { worldScopes, worldTrace } from '../src/world-scopes';
-
-const links: readonly CrossTraceLink[] = [
-    {
-        id: 'cross:session:compile',
-        from: ['agent', 'agent:r:session'],
-        to: ['workflow', 'workflow:wf:compile'],
-    },
-    {
-        id: 'cross:artifact:file',
-        from: ['workflow', 'workflow:wf:out'],
-        to: ['filesystem', 'filesystem:c1:session'],
-    },
-    {
-        id: 'cross:change:metric',
-        from: ['filesystem', 'filesystem:c1:edit'],
-        to: ['data', 'data:p1:auc'],
-    },
-];
 
 const nodesByDomain = {
     agent: ['agent:r:run', 'agent:r:session', 'agent:r:read'],
@@ -29,7 +11,7 @@ const nodesByDomain = {
 
 describe('cross-domain trace', () => {
     it('follows links forward through same-scope peers', () => {
-        expect(crossTracePath(links, nodesByDomain, 'agent:r:session')).toEqual([
+        expect(crossTracePath(CROSS_TRACE_LINKS, nodesByDomain, 'agent:r:session')).toEqual([
             { domain: 'agent', node: 'agent:r:session' },
             { domain: 'workflow', node: 'workflow:wf:compile', via: 'cross:session:compile' },
             { domain: 'workflow', node: 'workflow:wf:out', via: 'scope:wf' },
@@ -40,7 +22,7 @@ describe('cross-domain trace', () => {
     });
 
     it('walks backward from a metric to its producing artifact', () => {
-        expect(crossTracePath(links, nodesByDomain, 'data:p1:auc', 'backward')).toEqual([
+        expect(crossTracePath(CROSS_TRACE_LINKS, nodesByDomain, 'data:p1:auc', 'backward')).toEqual([
             { domain: 'data', node: 'data:p1:auc' },
             { domain: 'filesystem', node: 'filesystem:c1:edit', via: 'cross:change:metric' },
             { domain: 'filesystem', node: 'filesystem:c1:session', via: 'scope:c1' },
@@ -51,7 +33,7 @@ describe('cross-domain trace', () => {
     });
 
     it('stops at a node with no link and never revisits a node', () => {
-        expect(crossTracePath(links, nodesByDomain, 'data:p1:auc')).toEqual([
+        expect(crossTracePath(CROSS_TRACE_LINKS, nodesByDomain, 'data:p1:auc')).toEqual([
             { domain: 'data', node: 'data:p1:auc' },
         ]);
         expect(crossTracePath([], nodesByDomain, 'agent:r:session')).toHaveLength(1);
@@ -64,7 +46,7 @@ describe('cross-domain trace', () => {
                 nodes: nodes.map((node) => ({ id: node })),
             })),
         );
-        const steps = crossTracePath(links, nodesByDomain, 'data:p1:auc', 'backward');
+        const steps = crossTracePath(CROSS_TRACE_LINKS, nodesByDomain, 'data:p1:auc', 'backward');
         expect(
             worldTrace(
                 world,

@@ -57,6 +57,7 @@ export const createInspector = (
         const button = document.createElement('button');
         button.type = 'button';
         button.setAttribute('role', 'tab');
+        button.id = `inspector-tab-${id}`;
         button.dataset.tabTarget = id;
         button.textContent = id;
         button.setAttribute('aria-controls', body.id);
@@ -92,8 +93,11 @@ export const createInspector = (
         setTab(next: InspectorTab) {
             tab = next;
             element.dataset.tab = next;
+            body.setAttribute('aria-labelledby', `inspector-tab-${next}`);
             for (const button of buttons) {
-                button.setAttribute('aria-selected', String(button.dataset.tabTarget === next));
+                const selected = button.dataset.tabTarget === next;
+                button.setAttribute('aria-selected', String(selected));
+                button.tabIndex = selected ? 0 : -1;
             }
             signals.hidden = next !== 'signals';
             onChange?.(tab, pinned);

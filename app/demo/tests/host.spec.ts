@@ -76,6 +76,7 @@ test.describe('the demo host (T6.12)', () => {
 
         await page.locator('#renderer-svg').click();
         await expect(page.locator('#stage')).toHaveAttribute('data-renderer', 'svg');
+        await expect(page.locator('#state')).toContainText('static — no pan, zoom or selection');
         await expect(page.locator('#svg svg')).toBeVisible();
         await expect(page.locator('#svg')).toContainText('Scope the release');
 
@@ -123,6 +124,21 @@ test.describe('the demo host (T6.12)', () => {
         ]);
         await expect(page.locator('#trail')).toContainText('vitest run');
 
+        noErrors(errors);
+    });
+
+    test('Enter selects the first search result without an arrow key', async ({ page }) => {
+        const errors = await boot(page, '/', { viewport: false });
+        await page.locator('#search').fill('vitest');
+        await expect(page.locator('#search-status')).toContainText('2 matches');
+        await page.locator('#search').press('Enter');
+        expect(await page.evaluate(() => (window as any).__demo.selection())).toEqual([
+            'test:unit',
+        ]);
+        await expect(page.locator('#results .result').first()).toHaveAttribute(
+            'aria-selected',
+            'true',
+        );
         noErrors(errors);
     });
 

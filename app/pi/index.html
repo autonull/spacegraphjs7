@@ -367,6 +367,9 @@
                 display: grid;
                 gap: var(--sg-spacing-xs);
             }
+            .catalog-group[hidden] {
+                display: none;
+            }
             .catalog-group > h3 {
                 color: var(--sg-colors-muted-foreground);
                 font-size: var(--sg-font-sizes-sm);
@@ -383,6 +386,7 @@
                 color: var(--sg-colors-foreground);
                 font: inherit;
             }
+            #vision-loop-toggle,
             #gallery button,
             #catalog a,
             #overview button,
@@ -398,6 +402,18 @@
                 padding: var(--sg-spacing-xs) var(--sg-spacing-sm);
                 text-align: start;
                 cursor: pointer;
+            }
+            #vision-loop-toggle {
+                border-color: var(--sg-colors-border);
+                background: var(--sg-colors-card);
+                width: 100%;
+            }
+            #vision-loop-toggle[aria-pressed='true'] {
+                border-color: var(--sg-colors-accent);
+                background: var(--sg-colors-muted);
+            }
+            #vision-loop-toggle:hover {
+                background: var(--sg-colors-muted);
             }
             #gallery button:hover,
             #catalog a:hover,
@@ -473,6 +489,17 @@
             }
             #status {
                 color: var(--sg-colors-accent);
+            }
+            #announcer {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                margin: -1px;
+                padding: 0;
+                overflow: hidden;
+                clip-path: inset(50%);
+                white-space: nowrap;
+                border: 0;
             }
             #hud {
                 position: absolute;
@@ -558,6 +585,22 @@
             #history-banner {
                 font-size: var(--sg-font-sizes-xs);
                 color: var(--sg-colors-muted-foreground);
+            }
+            #mouse-map,
+            #keyboard-map {
+                display: grid;
+                gap: 6px;
+            }
+            .reference-row {
+                display: grid;
+                grid-template-columns: minmax(84px, auto) minmax(0, 1fr);
+                gap: var(--sg-spacing-sm);
+                align-items: baseline;
+            }
+            .reference-row kbd {
+                font: inherit;
+                color: var(--sg-colors-foreground);
+                white-space: nowrap;
             }
             #trail-nav,
             #trail-list,
@@ -1702,6 +1745,19 @@
             .command-row[aria-selected='true'] {
                 background: var(--sg-colors-muted);
             }
+            .command-row--disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+            .command-row--disabled .command-hint {
+                color: var(--sg-colors-destructive);
+            }
+            .command-empty {
+                margin: 0;
+                padding: var(--sg-spacing-md);
+                color: var(--sg-colors-muted-foreground);
+                font-size: var(--sg-font-sizes-sm);
+            }
             .command-group,
             .command-hint {
                 color: var(--sg-colors-muted-foreground);
@@ -2215,6 +2271,11 @@
                 border: 1px solid var(--sg-colors-border);
                 background: var(--sg-colors-background);
             }
+            .catalog-empty {
+                margin: var(--sg-spacing-sm) 0;
+                color: var(--sg-colors-muted-foreground);
+                font-size: var(--sg-font-sizes-xs);
+            }
             .catalog-card > summary::before {
                 content: '▸';
                 color: var(--sg-colors-accent);
@@ -2274,6 +2335,7 @@
     <body>
         <header id="command-bar">
             <h1>pi · SpaceGraphJS</h1>
+            <div id="announcer"></div>
             <span id="status" aria-live="polite">connecting…</span>
             <button
                 type="button"
@@ -2438,7 +2500,16 @@
                         −
                     </button>
                 </div>
-                <div id="transcript-resize" role="separator" tabindex="0" aria-label="Resize transcript"></div>
+                <div
+                    id="transcript-resize"
+                    role="separator"
+                    tabindex="0"
+                    aria-label="Resize transcript"
+                    aria-orientation="vertical"
+                    aria-valuemin="200"
+                    aria-valuemax="1000"
+                    aria-valuenow="320"
+                ></div>
                 <div
                     id="transcript-overview"
                     role="scrollbar"
@@ -2499,7 +2570,7 @@
                         <span class="jargon-label">Vision loop</span
                         ><span class="plain-label">Layout check</span>
                     </strong>
-                    <button type="button" id="vision-loop-toggle">Toggle runtime vision loop</button>
+                    <button type="button" id="vision-loop-toggle" aria-pressed="false">Toggle runtime vision loop</button>
                     <div id="vision-loop-state">off · strategy heuristics</div>
                     <div>Opt-in: analyze → retarget layout → measure again. No mutation until enabled.</div>
                 </div>
@@ -2551,15 +2622,9 @@
                     <strong>Study questions</strong>
                     <button type="button" id="guided-replay">Open the five questions</button>
                     <strong>Mouse map</strong>
-                    <div id="mouse-map">
-                        right-drag pan · wheel zoom · middle-drag orbit · click select · node drag ·
-                        shift-drag box-select
-                    </div>
+                    <div id="mouse-map"></div>
                     <strong>Keyboard</strong>
-                    <div id="keyboard-map">
-                        arrows pan · +/− zoom · Enter reveal · PgDn/PgUp descend/ascend · t trace ·
-                        Home/Esc return · f focus
-                    </div>
+                    <div id="keyboard-map"></div>
                     <strong>Known limitations</strong>
                     <div id="limitations">
                         WebXR, sound and haptics are report-only seams; no immersive default. True
@@ -2588,7 +2653,7 @@
                     <option value="steer">steer</option>
                     <option value="followUp">follow up</option>
                 </select>
-                <button type="submit">Send</button>
+                <button type="submit" id="prompt-send">Send</button>
             </form>
         </footer>
         <script type="module" src="./src/client.ts"></script>

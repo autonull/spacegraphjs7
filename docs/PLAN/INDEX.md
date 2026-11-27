@@ -118,7 +118,7 @@ These 17 documents were consolidated into the 10 core documents above. They rema
 | ENHANCEMENT-PLAN.md                                                                                                               | → [GROWTH.md](./GROWTH.md)       |
 | CONTINGENCY-PLAN.md                                                                                                               | → [RISKS.md](./RISKS.md)         |
 | PACKAGE-TEMPLATE.md                                                                                                               | → [TEMPLATES.md](./TEMPLATES.md) |
-| PHASE-1-AUDIT.md, PHASE-2-USABILITY.md, PHASE-3-DISTRIBUTION.md, PHASE-4-EXPOSURE.md, PHASE-5-SUSTAINABILITY.md, PLAN-ANALYSIS.md | → [STRATEGY.md](./STRATEGY.md)   |
+| PHASE-2-USABILITY.md, PHASE-3-DISTRIBUTION.md, PHASE-4-EXPOSURE.md, PHASE-5-SUSTAINABILITY.md, PLAN-ANALYSIS.md | → [STRATEGY.md](./STRATEGY.md)   |
 | LAUNCH-8HOURS.md, WEEK-1-CHECKLIST.md                                                                                             | → Superseded (skip)              |
 | GITHUB-ACTIONS.md, CONTENT-TEMPLATES.md, RELEASE-CHECKLIST.md                                                                     | → Month 2+ (deferred)            |
 

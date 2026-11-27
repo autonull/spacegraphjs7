@@ -35,8 +35,7 @@ expressed with what already exists.
 integration, comparison artifacts, gallery evidence, and the test-agility work in §6.
 
 **Out of scope:** a new policy vector version, new contract fields or renderer branches, a second
-position authority, arbitrary CSS injection, changes to the 36-cell study matrix, and reopening closed
-findings in `docs/screenshots/reports/audit.json`.
+position authority, arbitrary CSS injection, changes to the 36-cell study matrix, and reopening closed findings.
 
 ---
 
@@ -306,7 +305,7 @@ pilot result has been fabricated.
 
 ### Handoff notes
 
-1. Read `AGENTS.md`, `TODO7.md:58-84` and `docs/pi-study-ui-audit.md` before starting.
+1. Read `AGENTS.md` and `TODO7.md:58-84` before starting.
 2. Use `pnpm` for all commands.
 3. Tier the loop: `check:fast` / `shots:focus` while iterating, `test:e2e` / `shots:all` at a slice
    boundary (`TODO7.md:243`). Use `--workers=2` on memory-constrained hosts.

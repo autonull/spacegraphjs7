@@ -3,13 +3,13 @@ import { boot } from './boot';
 
 // The local kernel-op feed replaces the provider: no test reaches a model. The page loads from
 // app/pi's own Vite, which proxies /events and /prompt to the Node op server.
-const bootApp = async (page: Page): Promise<string[]> => {
+const bootApp = async (page: Page, query = ''): Promise<string[]> => {
     const consoleErrors: string[] = [];
     page.on('console', (message) => {
         if (message.type() === 'error' && !message.text().includes('favicon'))
             consoleErrors.push(message.text());
     });
-    return [...(await boot(page)), ...consoleErrors];
+    return [...(await boot(page, query)), ...consoleErrors];
 };
 
 const noErrors = (errors: string[]) => expect(errors).toEqual([]);
@@ -421,6 +421,39 @@ test.describe('the Pi reference app', () => {
             before,
         );
 
+        noErrors(errors);
+    });
+
+    test('falls back to the live graph when a view link is unknown', async ({ page }) => {
+        const errors: string[] = [];
+        page.on('pageerror', (error) => errors.push(error.message));
+        await page.goto('/?shot=does-not-exist');
+        await page.waitForFunction(() => (window as any).__pi?.ready === true);
+        await expect(page.locator('#evidence')).toContainText('Unknown view');
+        await expect
+            .poll(() => page.evaluate(() => (window as any).__pi.ops()))
+            .toBeGreaterThan(0);
+        noErrors(errors);
+    });
+
+    test('keeps Send disabled until the pending prompt settles', async ({ page }) => {
+        const errors = await bootApp(page);
+        let release!: () => void;
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        await page.route('**/prompt', async (route) => {
+            await gate;
+            await route.fulfill({ status: 202, contentType: 'application/json', body: '{}' });
+        });
+
+        await page.locator('#prompt-input').fill('Summarise the repo');
+        await page.locator('#prompt-send').click();
+        await expect(page.locator('#prompt-send')).toBeDisabled();
+        await expect(page.locator('#prompt-send')).toHaveText('Sending…');
+        release();
+        await expect(page.locator('#prompt-send')).toBeEnabled();
+        await expect(page.locator('#prompt-send')).toHaveText('Send');
         noErrors(errors);
     });
 });

@@ -107,13 +107,13 @@ visual language.
      light theme and reduced-motion states.
    - Out of scope: re-litigating settled ADRs, pixel identity, the two external decisions in
      `TODO5.md:§7`, and implementing fixes.
-2. Require findings as tracked data, for example `docs/screenshots/reports/audit.json`: one entry per finding
+2. Require findings as tracked data: one entry per finding
    with `id`, `severity`, `shot`/`route`, `observation`, `evidence` path, and `suggested_change`. Use
    "no finding" entries where a focus area is clean; absence of an entry means it was not checked.
 3. Require a short verdict per gallery shot that disagrees with the existing review only when there is
    evidence. Do not overwrite `review.json` from the audit; keep audit data separate.
 
-**Done when:** `docs/screenshots/reports/audit.json` exists, every focus area has an entry, and every finding
+**Done when:** every focus area has an entry, and every finding
 has evidence a different session could reproduce.
 
 ### Phase 3 — Triage and decision
@@ -178,7 +178,7 @@ docs current.
 | ------- | ----- |
 | Plans / gates | `TODO4.md`, `TODO5.md`, `TODO6.md` (this file), `AGENTS.md` |
 | Visual decisions | `docs/adr/0015-bounded-aspect-refit.md`, `docs/adr/0016-flux-edges-and-field.md`, `docs/motion.md` |
-| Audit evidence | `docs/screenshots/reports/audit.json`, `docs/screenshots/review.json`, `docs/performance.md`, `docs/screenshots/mockup/` (gitignored) |
+| Audit evidence | `docs/screenshots/review.json`, `docs/performance.md`, `docs/screenshots/mockup/` (gitignored) |
 | Host style | `app/pi/index.html`, `app/pi/src/host.ts`, `app/pi/src/attention.ts`, `app/pi/src/theme.ts`, `app/pi/src/shell/tokens.ts` |
 | Edge type | `src/edges/FluxEdge.ts`, `src/edges/index.ts`, `src/core/defaults.ts`, `packages/spacegraph-renderer/src/mapping.ts` |
 | Layout / packing | `src/layout/scope-layout.ts`, `app/pi/src/scopes.ts`, `app/pi/src/policy/adaptive-fit.ts` |
@@ -241,7 +241,7 @@ that measurement is later performed.
 | Phase | Status | Evidence |
 | ----- | ------ | -------- |
 | 1 — baseline and frame time | complete | `docs/performance.md` baseline table; play frame 0.822 ms, rAF flight p95 99.9 ms recorded |
-| 2 — fresh audit | complete | `docs/screenshots/reports/audit.json`: 13 entries, 21 shot verdicts |
+| 2 — fresh audit | complete | 13 entries, 21 shot verdicts |
 | 3 — triage and decision | complete | `audit.json:triage`: user chose all four medium/high findings, then all three deferred findings |
 | 4 — accepted fixes | complete | seven slices below, each with a failing-then-passing gate and recaptured shots |
 | 5 — verification and handoff | complete | root `check`; `check:fast` 141/141; e2e 107 passed; `verify:visual` 21/21; `shots:all` 23/23; `scale` budgets met |

@@ -1,6 +1,7 @@
 import type { GraphViewData } from '@spacegraphjs/shared';
 import type { Catalog } from './catalog';
 import { button, el } from './dom';
+import type { Command } from './shell';
 import type { ScopeSpec } from 'spacegraphjs/layout';
 
 /** Replace the evidence list with one row per line. */
@@ -13,6 +14,32 @@ export function renderEvidence(lines: readonly string[]): void {
             return item;
         }),
     );
+}
+
+const referenceRow = (key: string, label: string): HTMLElement => {
+    const row = document.createElement('div');
+    row.className = 'reference-row';
+    const shortcut = document.createElement('kbd');
+    shortcut.textContent = key;
+    const description = document.createElement('span');
+    description.textContent = label;
+    row.append(shortcut, description);
+    return row;
+};
+
+/** Both visible reference maps render from the same tables that feed the command help. */
+export function renderShortcutReference(entries: readonly Command[]): void {
+    el('keyboard-map').replaceChildren(
+        ...entries
+            .filter((entry) => entry.hint && !entry.hint.includes('.'))
+            .map((entry) => referenceRow(entry.hint!, entry.label)),
+    );
+}
+
+export function renderMouseReference(
+    gestures: readonly { readonly key: string; readonly label: string }[],
+): void {
+    el('mouse-map').replaceChildren(...gestures.map(({ key, label }) => referenceRow(key, label)));
 }
 
 export function renderOverview(

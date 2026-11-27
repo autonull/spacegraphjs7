@@ -1,7 +1,7 @@
 import { createServer, type ServerResponse } from 'node:http';
 import { AgentEventMapper, type AgentEvent } from '@spacegraphjs/agent';
 import type { KernelOp } from '@spacegraphjs/kernel';
-import { encodeOp, readRawBody, sendJSON } from 'pi-kit';
+import { encodeOp, errorMessage, readRawBody, sendJSON } from 'pi-kit';
 import { localOps } from './local-feed';
 import { PiEventTranslator, type PiEvent } from './pi-events';
 
@@ -107,13 +107,13 @@ const server = createServer(async (request, response) => {
                         runId: RUN_ID,
                         unitId: '1',
                         reason: 'error',
-                        level: error instanceof Error ? error.message : String(error),
+                        level: errorMessage(error),
                     });
                 });
             return json(response, 202, { status: 'accepted' });
         } catch (error) {
             return json(response, 500, {
-                error: error instanceof Error ? error.message : String(error),
+                error: errorMessage(error),
             });
         }
     }

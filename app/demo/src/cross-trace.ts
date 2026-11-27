@@ -13,6 +13,24 @@ export type CrossTraceStep = {
     readonly via?: string;
 };
 
+export const CROSS_TRACE_LINKS: readonly CrossTraceLink[] = [
+    {
+        id: 'cross:session:compile',
+        from: ['agent', 'agent:r:session'],
+        to: ['workflow', 'workflow:wf:compile'],
+    },
+    {
+        id: 'cross:artifact:file',
+        from: ['workflow', 'workflow:wf:out'],
+        to: ['filesystem', 'filesystem:c1:session'],
+    },
+    {
+        id: 'cross:change:metric',
+        from: ['filesystem', 'filesystem:c1:edit'],
+        to: ['data', 'data:p1:auc'],
+    },
+];
+
 const domainOf = (id: string): string => id.split(':')[0] ?? '';
 const scopeOf = (id: string): string => id.split(':')[1] ?? '';
 

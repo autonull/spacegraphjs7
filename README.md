@@ -134,7 +134,7 @@ Install with `pnpm add spacegraphjs three`. Three.js is a required peer. Optiona
 
 ### See it run
 
-Run `pnpm run dev:demo` and open `/` for the complete demo: a capability gallery, programmatic demos at `/showcase.html`, and every standalone feature page. `pnpm run dev` serves the engine demos. In the gallery, `/` focuses search, `↑`/`↓` and `Enter` navigate results, `F` fits the graph, and clicking the minimap navigates the canvas.
+Run `pnpm run dev:demo` and open `/` for the complete demo: a capability gallery, programmatic demos at `/showcase.html`, and every standalone feature page. All browsable pages live under `app/demo`; the root `pnpm run dev` starts Vite without a root page. In the gallery, `/` focuses search, `↑`/`↓` and `Enter` navigate results, `F` fits the graph, and clicking the minimap navigates the canvas.
 
 The provider-free Pi flagship runs with `PI_LOCAL_FEED=1 pnpm --filter pi dev`; its shell and study harness are documented in `app/pi/README.md`.
 
@@ -710,7 +710,7 @@ The most useful contributions right now are API stabilization, performance work,
 A practical contribution loop:
 
 1. Clone the repository and install with `pnpm install`.
-2. Run `pnpm run dev:demo` and open `/` for the complete demo, or `pnpm run dev` for the engine demos.
+2. Run `pnpm run dev:demo` and open `/` for the complete demo.
 3. Pick an issue, or start from a failing test.
 4. Add or update tests. Use `visionAssert(spec)` for model-level quality invariants and Playwright specs for interaction.
 5. Run `pnpm run lint`, `pnpm run format:check`, `pnpm test`, and the relevant demo or vision suite.

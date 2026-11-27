@@ -22,7 +22,7 @@ import {
     workflowDomain,
 } from '@spacegraphjs/workflow';
 import type { Position } from 'spacegraphjs/layout';
-import type { CrossTraceLink } from './cross-trace';
+import { CROSS_TRACE_LINKS, type CrossTraceLink } from './cross-trace';
 import type { WorldHostDomain, WorldHostNode } from './world-host';
 
 export interface WorldFixtureDomain extends WorldHostDomain {
@@ -132,26 +132,9 @@ export const buildWorldFixture = (): WorldFixture => {
         positions,
     }));
 
-    const links: readonly CrossTraceLink[] = [
-        {
-            id: 'cross:session:compile',
-            from: ['agent', 'agent:r:session'],
-            to: ['workflow', 'workflow:wf:compile'],
-        },
-        {
-            id: 'cross:artifact:file',
-            from: ['workflow', 'workflow:wf:out'],
-            to: ['filesystem', 'filesystem:c1:session'],
-        },
-        {
-            id: 'cross:change:metric',
-            from: ['filesystem', 'filesystem:c1:edit'],
-            to: ['data', 'data:p1:auc'],
-        },
-    ];
     const nodesByDomain = Object.fromEntries(
         domains.map((domain) => [domain.id, domain.nodes.map((node) => node.id)]),
     );
 
-    return { domains, links, nodesByDomain };
+    return { domains, links: CROSS_TRACE_LINKS, nodesByDomain };
 };

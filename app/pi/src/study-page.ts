@@ -86,9 +86,15 @@ const current = (): Frame | undefined => {
         : undefined;
 };
 
+const answer = element<HTMLSelectElement>('answer');
+const requireAnswer = (): void => {
+    submitButton.disabled = !current() || !answer.value;
+};
+
 const show = (): void => {
     const next = current();
-    submitButton.disabled = !next;
+    answer.value = '';
+    requireAnswer();
     if (!next) {
         progress.textContent = `Complete · ${assignments.length} of ${assignments.length}`;
         question.textContent = 'Run complete. Report below; copy it into the study record.';
@@ -172,6 +178,7 @@ element<HTMLButtonElement>('practice-done').addEventListener('click', () => {
 element<HTMLButtonElement>('start').addEventListener('click', () => {
     if (practice.done) void begin();
 });
+answer.addEventListener('change', requireAnswer);
 submitButton.addEventListener('click', submit);
 copyReport.addEventListener('click', () => {
     void navigator.clipboard

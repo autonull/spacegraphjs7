@@ -5,10 +5,7 @@ import type { Edge, GraphSpec, Node } from '../types';
 import {
     addGrid,
     renderButtons,
-    renderTitleCard,
-    renderToolbar,
     renderToolbarActions,
-    setupSearchHUD,
     syncModeToggle,
     updateStatsHUD,
 } from './SpaceGraphAppHUD';

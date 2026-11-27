@@ -37,10 +37,10 @@ To start contributing, set up your standard NodeJS environment.
 
 3. **Run the Interactive Examples**
     ```bash
-    pnpm run dev
+    pnpm run dev:demo
     ```
-    Navigate to `http://localhost:5173/examples/index.html` to see the live templates, including the
-    `VisionOverlayPlugin` in action.
+    Navigate to `http://localhost:5173/` for the gallery, `/showcase.html` for programmatic demos,
+    and the standalone pages under `/html/` for individual features.
 
 ## 🏗 Project Architecture
 
@@ -54,9 +54,9 @@ The workspace is split into core rendering and CLI tooling:
     - `src/quality/`: the published quality floor and the `spacegraphVision` / `visionAssert` helpers.
     - `src/vision/`: analyzers, the vision loop, the browser test helper and the ML analyzer.
 - `packages/`: Additional workspaces
-    - `packages/cli/`: `sg6 fix` CLI tool for auto-fixing code using AI telemetry.
+    - `packages/cli/`: `sg fix` CLI tool for reviewing vision-generated patches.
     - `packages/create-spacegraph/`: `sg6 create` scaffolding tool.
-- `examples/`: Sample `html` entry points used for local development and documentation.
+- `app/demo/html/`: standalone HTML pages served by `pnpm run dev:demo`.
 
 ## ✅ Pull Request Process
 

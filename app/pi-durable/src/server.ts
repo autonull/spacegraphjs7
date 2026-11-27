@@ -25,7 +25,7 @@ import { registerStorageConformance } from '@earendil-works/pi-durable/testing';
 import { bool, obj } from '@earendil-works/pi-schema';
 import { KernelCodec, SessionKernel } from '@spacegraphjs/kernel';
 import { escapeXml } from '@spacegraphjs/renderer';
-import { encodeOp, opID, readRawBody, sendJSON, type KernelOp } from 'pi-kit';
+import { encodeOp, errorMessage, opID, readRawBody, sendJSON, type KernelOp } from 'pi-kit';
 import { SCENARIOS } from './scenarios';
 import {
     forkOps,
@@ -162,7 +162,7 @@ if (process.env.PI_DURABLE_CODEMODE === '1') {
     } catch (error) {
         console.warn(
             '[pi-durable] code mode unavailable:',
-            error instanceof Error ? error.message : String(error),
+            errorMessage(error),
         );
     }
 }
@@ -177,7 +177,7 @@ if (process.env.PI_DURABLE_IMAGES === '1') {
     } catch (error) {
         console.warn(
             '[pi-durable] image workshop unavailable:',
-            error instanceof Error ? error.message : String(error),
+            errorMessage(error),
         );
     }
 }
@@ -399,7 +399,7 @@ const runStorageConformance = async (): Promise<readonly ConformanceReport[]> =>
                 passed += 1;
             } catch (error) {
                 failures.push(
-                    `${entry.name}: ${error instanceof Error ? error.message : String(error)}`,
+                    `${entry.name}: ${errorMessage(error)}`,
                 );
             }
         }
@@ -675,7 +675,7 @@ const server = createServer(async (request, response) => {
         return json(response, 404, { error: 'not-found', recovery: 'check the URL' });
     } catch (error) {
         return json(response, 500, {
-            error: error instanceof Error ? error.message : String(error),
+            error: errorMessage(error),
             recovery: 'reload and retry',
         });
     }

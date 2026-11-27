@@ -528,43 +528,28 @@ export const CAPABILITIES: readonly Capability[] = [
         summary: 'Classify why/led-here/related/downstream overlays over a cause graph.',
         run: (context) => {
             const model = context.model as unknown as TraceModel;
+            const chain = (m: TraceModel, id: string, kind: string): TraceNode[] => {
+                const result: TraceNode[] = [];
+                const next = new Map<string, string>();
+                for (const edge of m.edges)
+                    if (edge.kind === kind) next.set(edge.source, edge.target);
+                const nodes = new Map(m.nodes.map((n) => [n.id, n]));
+                let current = id;
+                for (;;) {
+                    const n = next.get(current);
+                    if (!n) break;
+                    const node = nodes.get(n);
+                    if (!node) break;
+                    result.push(node);
+                    current = n;
+                }
+                return result;
+            };
             const traversal = {
                 incoming: (m: TraceModel, id: string) => m.edges.filter((e) => e.target === id),
                 outgoing: (m: TraceModel, id: string) => m.edges.filter((e) => e.source === id),
-                ancestors: (m: TraceModel, id: string) => {
-                    const result: TraceNode[] = [];
-                    const parents = new Map<string, string>();
-                    for (const edge of m.edges)
-                        if (edge.kind === 'part-of') parents.set(edge.source, edge.target);
-                    const nodes = new Map(m.nodes.map((n) => [n.id, n]));
-                    let current = id;
-                    for (;;) {
-                        const parent = parents.get(current);
-                        if (!parent) break;
-                        const node = nodes.get(parent);
-                        if (!node) break;
-                        result.push(node);
-                        current = parent;
-                    }
-                    return result;
-                },
-                forwardChain: (m: TraceModel, id: string) => {
-                    const result: TraceNode[] = [];
-                    const next = new Map<string, string>();
-                    for (const edge of m.edges)
-                        if (edge.kind === 'sequence') next.set(edge.source, edge.target);
-                    const nodes = new Map(m.nodes.map((n) => [n.id, n]));
-                    let current = id;
-                    for (;;) {
-                        const n = next.get(current);
-                        if (!n) break;
-                        const node = nodes.get(n);
-                        if (!node) break;
-                        result.push(node);
-                        current = n;
-                    }
-                    return result;
-                },
+                ancestors: (m: TraceModel, id: string) => chain(m, id, 'part-of'),
+                forwardChain: (m: TraceModel, id: string) => chain(m, id, 'sequence'),
                 downstreamChain: (m: TraceModel, id: string) => {
                     const result: { node: TraceNode; edge: TraceEdge; confidence: string }[] = [];
                     const seen = new Set([id]);

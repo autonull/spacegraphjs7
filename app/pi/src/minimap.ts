@@ -38,6 +38,7 @@ export function drawMinimap(
             revealed && positions.has(revealed) ? revealed : (positions.keys().next().value ?? '');
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
+    svg.setAttribute('role', 'presentation');
     if (projection.viewRect) {
         const view = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         view.dataset.minimapView = 'true';
@@ -62,6 +63,8 @@ export function drawMinimap(
             'fill',
             id === revealed ? 'var(--sg-colors-ring)' : 'var(--sg-colors-edge)',
         );
+        dot.setAttribute('role', 'option');
+        dot.setAttribute('aria-selected', String(id === activeID));
         dot.setAttribute('aria-label', `Reveal ${labels.get(id) || id}`);
         svg.append(dot);
     }
@@ -77,7 +80,11 @@ export function installMinimapKeys(reveal: (id: string) => void): void {
     const select = (id: string) => {
         activeID = id;
         container.setAttribute('aria-activedescendant', id ? dotID(id) : '');
-        for (const dot of dots()) dot.dataset.active = String(dot.dataset.minimapNode === id);
+        for (const dot of dots()) {
+            const selected = dot.dataset.minimapNode === id;
+            dot.dataset.active = String(selected);
+            dot.setAttribute('aria-selected', String(selected));
+        }
     };
     container.addEventListener('keydown', (event) => {
         const list = dots().map((dot) => dot.dataset.minimapNode ?? '');

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { CrossTraceLink } from '../src/cross-trace';
+import { CROSS_TRACE_LINKS } from '../src/cross-trace';
 import { createWorldHost, type WorldHostDomain } from '../src/world-host';
 import { buildWorldFixture } from '../src/world-fixture';
 
@@ -30,25 +30,7 @@ const domains: readonly WorldHostDomain[] = [
     { id: 'data', nodes: [{ id: 'data:p1:auc' }, { id: 'data:p1:gbdt' }] },
 ];
 
-const links: readonly CrossTraceLink[] = [
-    {
-        id: 'cross:session:compile',
-        from: ['agent', 'agent:r:session'],
-        to: ['workflow', 'workflow:wf:compile'],
-    },
-    {
-        id: 'cross:artifact:file',
-        from: ['workflow', 'workflow:wf:out'],
-        to: ['filesystem', 'filesystem:c1:session'],
-    },
-    {
-        id: 'cross:change:metric',
-        from: ['filesystem', 'filesystem:c1:edit'],
-        to: ['data', 'data:p1:auc'],
-    },
-];
-
-const host = () => createWorldHost(domains, { links });
+const host = () => createWorldHost(domains, { links: CROSS_TRACE_LINKS });
 
 describe('one-canvas world host', () => {
     it('feeds one simulation and one path-qualified model', () => {
@@ -86,7 +68,7 @@ describe('one-canvas world host', () => {
     it('renders cross-domain links as ordinary edges inside the one graph', () => {
         const edges = host().renderModel().edges;
         const cross = edges.filter((edge) => edge.kind === 'cross-domain');
-        expect(cross.map((edge) => edge.id)).toEqual(links.map((link) => link.id));
+        expect(cross.map((edge) => edge.id)).toEqual(CROSS_TRACE_LINKS.map((link) => link.id));
         expect(cross.every((edge) => edge.style === 'dashed')).toBe(true);
         expect(cross[0]?.source).toBe('world/domain:agent/agent:r:session');
         expect(cross[0]?.target).toBe('world/domain:workflow/workflow:wf:compile');

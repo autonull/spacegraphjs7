@@ -18,8 +18,8 @@ default and fabricates no study result.
    images that a reviewer is about to judge.
 3. TODO9 consumes TODO8 as substrate: new experiments become named presets once the knob exists; new
    states get incumbent/variant pairs through `shots:compare`; task effects go through `?studyUI=`.
-4. The implementation backlog already exists and has no plan owner: `docs/pi-study-ui-audit.md`
-   PIUX-01…10 are findings, not work items. TODO9 turns the highest-value ones into gated changes.
+4. The implementation backlog has no plan owner: PIUX-01…10 are findings, not work items. TODO9 turns
+   the highest-value ones into gated changes.
 
 ---
 
@@ -419,7 +419,7 @@ default. The chapters view remains a separate subgraph-presentation experiment.
 
 ### Handoff notes
 
-1. Read `TODO8.md:§9`, `TODO7.md:§2`, `TODO6.md:§0` and `docs/pi-study-ui-audit.md` first.
+1. Read `TODO8.md:§9`, `TODO7.md:§2` and `TODO6.md:§0` first.
 2. Every implementation slice is complete: Phases 0–3 plus Phase 4's PIUX-03/05/06/07/09/10. New
    geometry still travels as opaque `data` through registered types, never a host renderer branch.
 3. Reuse TODO8's harness: named preset, `?ui=`, `shots:compare`, `?studyUI=`, `review.json`.

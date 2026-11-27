@@ -7,6 +7,8 @@ test('the overview reaches every node by keyboard', async ({ page }) => {
     expect(await dots.count()).toBeGreaterThan(1);
 
     const container = page.locator('#minimap');
+    await expect(dots.first()).toHaveAttribute('role', 'option');
+    await expect(dots.first()).toHaveAttribute('aria-selected', 'true');
     await page.evaluate(() => (window as any).__pi.openNavigate());
     await container.focus();
     await expect(container).toBeFocused();
@@ -22,6 +24,8 @@ test('the overview reaches every node by keyboard', async ({ page }) => {
         'aria-activedescendant',
         `minimap-node-${target?.replace(/[^a-zA-Z0-9_-]/g, '-')}`,
     );
+    await expect(dots.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(dots.first()).toHaveAttribute('aria-selected', 'false');
 
     await page.keyboard.press('Enter');
     await expect.poll(() => page.evaluate(() => (window as any).__pi.revealed())).toBe(target);

@@ -1149,7 +1149,10 @@ export class DurableHost {
             ? (this.registry.get(id)?.id ??
               tabs.find((tab) => tabKernel(tab).nodes.some((node) => node.id === id))?.id)
             : tabs.find((tab) => tab.id !== this.registry.activeID())?.id;
-        if (!target) return false;
+        if (!target) {
+            this.announce('Open a second conversation to compare');
+            return false;
+        }
         this.#pinnedID = target;
         this.#comparePrior ??= this.#viewName;
         if (this.#viewName === 'diff') this.refresh();
@@ -1477,6 +1480,8 @@ export class DurableHost {
             el('app').dataset['asof'] = String(seq);
             badge.textContent = `as of ${seq}`;
             badge.hidden = false;
+            el('readonly-message').textContent =
+                `Viewing entry ${seq} (read-only) — prompt and actions are hidden. Return to present to use them.`;
         }
         this.renderInsights();
         this.#recordHistory();
@@ -2242,6 +2247,11 @@ export class DurableHost {
         );
         const active = this.registry.activeID();
         if (active) el('stage').setAttribute('aria-labelledby', `tab-${active}`);
+        const pin = el<HTMLButtonElement>('compare-pin');
+        pin.disabled = this.registry.list().length < 2;
+        pin.title = pin.disabled
+            ? 'Open a second conversation to compare'
+            : 'Pin another conversation for comparison';
     }
 
     private renderStatus(): void {

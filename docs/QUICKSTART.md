@@ -24,7 +24,7 @@ pnpm install
 The scaffold writes `index.html`, `src/main.ts`, `tsconfig.json` and `vite.config.ts`, and declares
 `spacegraphjs` and `three` as dependencies. Run `pnpm run dev` now to see a two-node graph.
 
-### 2. Use this `index.html` (or keep the scaffold's version)
+### 2. Replace `index.html` with this file
 
 ```html
 <!DOCTYPE html>
@@ -181,8 +181,8 @@ assertions.noOverlap();
 assertions.meetsFloor(80);
 ```
 
-`visionAssert.accessible()` checks the DOM mirror, so pass `dom` (and `direction` / `reducedMotion`
-when relevant) to both helpers.
+`visionAssert(spec, { dom: mirror }).accessible()` checks the DOM mirror, so pass `dom` (and
+`direction` / `reducedMotion` when relevant) to both helpers.
 
 ---
 

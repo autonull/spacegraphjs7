@@ -4,6 +4,7 @@ import {
     demuxOp,
     dispatchKeys,
     el,
+    errorMessage,
     plainKey,
     renderShortcuts as renderShortcutList,
     shiftedKey,
@@ -47,8 +48,23 @@ const readOnly = (action: string): boolean => {
     return true;
 };
 const announceError = (error: unknown): void =>
-    host.announce(error instanceof Error ? error.message : String(error));
-if (observer) el('app').dataset['observer'] = 'true';
+    host.announce(errorMessage(error));
+const visibleError = (id: 'prompt-error' | 'lens-error', message: string): void => {
+    const target = el(id);
+    target.textContent = message;
+    target.hidden = false;
+    host.announce(message);
+};
+const clearError = (id: 'prompt-error' | 'lens-error'): void => {
+    const target = el(id);
+    target.textContent = '';
+    target.hidden = true;
+};
+if (observer) {
+    el('app').dataset['observer'] = 'true';
+    el('readonly-message').textContent =
+        'Observer mode (read-only) — prompt and actions are hidden.';
+}
 
 const initialID = scenario ?? shot ?? replayID ?? (asOf === undefined ? undefined : 'time-travel') ?? 'basic-turn';
 let selectedID = initialID;
@@ -130,7 +146,7 @@ const bindPrompt = (): void => {
 
 const submitPrompt = async (text: string): Promise<void> => {
     if (!text || promptInFlight || readOnly('commit')) return;
-    composer?.clear();
+    clearError('prompt-error');
     const mode = el<HTMLSelectElement>('prompt-mode').value as 'steer' | 'followUp';
     const requestID = offline ? undefined : `ui-${crypto.randomUUID()}`;
     if (requestID) {
@@ -149,8 +165,9 @@ const submitPrompt = async (text: string): Promise<void> => {
             );
             host.announce(`Prompt ${result.status} ${result.requestId}`);
         }
+        composer?.clear();
     } catch (error) {
-        announceError(error);
+        visibleError('prompt-error', errorMessage(error));
     } finally {
         if (requestID) {
             promptInFlight = false;
@@ -298,9 +315,14 @@ const bindLens = (): void => {
         event.preventDefault();
         const query = input.value.trim();
         if (!query) return;
+        if (!host.lens(query)) {
+            visibleError('lens-error', `Unknown command: ${query}. Try “view diff”.`);
+            return;
+        }
+        clearError('lens-error');
         history.push(query);
         cursor = history.length;
-        if (host.lens(query)) input.value = '';
+        input.value = '';
     });
     input.addEventListener('keydown', (event) => {
         if (event.key === 'ArrowUp' && history.length) {
@@ -311,7 +333,13 @@ const bindLens = (): void => {
             event.preventDefault();
             cursor = Math.min(history.length, cursor + 1);
             input.value = history[cursor] ?? '';
-        } else if (event.key === 'Tab') {
+        } else if (
+            event.key === 'Tab' &&
+            !event.shiftKey &&
+            !event.altKey &&
+            !event.ctrlKey &&
+            !event.metaKey
+        ) {
             const [completion] = lensCompletions(input.value);
             if (!completion) return;
             event.preventDefault();
@@ -471,9 +499,11 @@ const bindChrome = (): void => {
     bindCatalog();
     bindPanelChrome();
     bindCardFocus();
-    el('export-format').addEventListener('change', (event) =>
-        host.export((event.target as HTMLSelectElement).value),
-    );
+    el('export-button').addEventListener('click', () => {
+        const format = el<HTMLSelectElement>('export-format').value;
+        host.export(format);
+        host.announce(`Exporting ${format}`);
+    });
     el('permalink-button').addEventListener('click', () => {
         const link = new URL(host.permalink(), location.href).href;
         history.replaceState(null, '', link);
@@ -485,6 +515,7 @@ const bindChrome = (): void => {
     el<HTMLInputElement>('time-scrub').addEventListener('change', (event) =>
         host.scrubTo(Number((event.target as HTMLInputElement).value)));
     el('time-present').addEventListener('click', () => host.scrubTo(undefined));
+    el('readonly-return').addEventListener('click', () => host.scrubTo(undefined));
     el('route-prev').addEventListener('click', () => host.routeStep(-1));
     el('route-next').addEventListener('click', () => host.routeStep(1));
     el('compare-pin').addEventListener('click', () => host.pinCompare());

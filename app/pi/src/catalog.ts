@@ -100,11 +100,20 @@ export const mountCatalog = (container: HTMLElement, catalog: Catalog): void => 
         group('questions', 'Study questions', catalog.questions.map((question) =>
             card(question.label, 'Open the evidence for this task.', [link(question, 'question')], 'question'))),
     ];
-    container.replaceChildren(search, ...sections);
+    const status = document.createElement('p');
+    status.className = 'catalog-empty';
+    status.setAttribute('role', 'status');
+    container.replaceChildren(search, ...sections, status);
 
     const cards = sections.flatMap((section) => [...section.querySelectorAll<HTMLElement>('.catalog-card')]);
     search.addEventListener('input', () => {
         const term = search.value.trim().toLowerCase();
         for (const entry of cards) entry.hidden = !entry.textContent?.toLowerCase().includes(term);
+        for (const section of sections)
+            section.hidden = ![...section.querySelectorAll<HTMLElement>('.catalog-card')].some(
+                (entry) => !entry.hidden,
+            );
+        const matches = cards.filter((entry) => !entry.hidden).length;
+        status.textContent = term && !matches ? 'No catalog entries match — try another word.' : '';
     });
 };

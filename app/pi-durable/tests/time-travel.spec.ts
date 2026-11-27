@@ -7,6 +7,11 @@ test('asOf renders a historical view with a badge and no commit controls', async
     await expect(page.locator('#canvas')).toContainText('First answer.');
     await expect(page.locator('#canvas')).not.toContainText('Second answer.');
     await expect(page.locator('#prompt-form')).toBeHidden();
+    await expect(page.locator('#readonly-banner')).toBeVisible();
+    await expect(page.locator('#readonly-message')).toContainText('Viewing entry 2 (read-only)');
+    await page.locator('#readonly-return').click();
+    await expect(page.locator('#readonly-banner')).toBeHidden();
+    await expect(page.locator('#prompt-form')).toBeVisible();
     expect(errors).toEqual([]);
 
     await page.goto('/?asOf=4');

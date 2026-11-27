@@ -31,9 +31,14 @@ export const createCommandSurface = (
     input.type = 'search';
     input.autocomplete = 'off';
     input.setAttribute('aria-label', 'Filter commands');
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-controls', 'command-list');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-expanded', 'false');
     const list = document.createElement('div');
     list.id = 'command-list';
     list.setAttribute('role', 'listbox');
+    list.setAttribute('aria-label', 'Commands');
     const foot = document.createElement('div');
     foot.className = 'command-foot';
     foot.textContent = '↑↓ select · Enter run · Esc close';
@@ -41,12 +46,13 @@ export const createCommandSurface = (
     element.append(panel);
 
     let mode: CommandMode | undefined;
-    let active = 0;
+    let active = -1;
     let shown: readonly Command[] = [];
     let previousFocus: HTMLElement | null = null;
 
     /** A command may switch surface or move focus; neither should be undone by closing. */
     const runCommand = (command: Command): void => {
+        if (command.disabledReason) return;
         const beforeMode = mode;
         const beforeFocus = document.activeElement;
         command.run?.();
@@ -55,11 +61,23 @@ export const createCommandSurface = (
     };
 
     const select = (index: number): void => {
-        active = Math.min(Math.max(index, 0), Math.max(shown.length - 1, 0));
+        const enabled = shown.flatMap((command, position) =>
+            command.disabledReason ? [] : [position],
+        );
+        const forward = index > active;
+        active = enabled.length
+            ? (enabled.find((position) =>
+                  forward ? position > (active < 0 ? -1 : active) : position < active,
+              ) ?? enabled[forward ? enabled.length - 1 : 0]!)
+            : -1;
+        const selected = active >= 0 ? `command-option-${active}` : '';
         for (const [rowIndex, row] of [...list.children].entries()) {
-            row.setAttribute('aria-selected', String(rowIndex === active));
+            if (row.getAttribute('role') === 'option')
+                row.setAttribute('aria-selected', String(rowIndex === active));
         }
-        list.children[active]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        if (selected) input.setAttribute('aria-activedescendant', selected);
+        else input.removeAttribute('aria-activedescendant');
+        list.children[active]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
     };
 
     const render = (): void => {
@@ -71,13 +89,28 @@ export const createCommandSurface = (
                 : commands(),
             input.value,
         );
-        active = 0;
+        active = -1;
+        if (!shown.length) {
+            const status = document.createElement('p');
+            status.className = 'command-empty';
+            status.setAttribute('role', 'status');
+            status.textContent = 'No commands match — try another word.';
+            list.replaceChildren(status);
+            input.removeAttribute('aria-activedescendant');
+            return;
+        }
         list.replaceChildren(
-            ...shown.map((command) => {
-                const row = document.createElement('button');
-                row.type = 'button';
+            ...shown.map((command, rowIndex) => {
+                const row = document.createElement('div');
                 row.className = 'command-row';
                 row.setAttribute('role', 'option');
+                row.id = `command-option-${rowIndex}`;
+                row.setAttribute('tabindex', '-1');
+                row.setAttribute('aria-selected', 'false');
+                if (command.disabledReason) {
+                    row.setAttribute('aria-disabled', 'true');
+                    row.classList.add('command-row--disabled');
+                }
                 row.dataset.commandId = command.id;
                 const label = document.createElement('span');
                 label.className = 'command-label';
@@ -86,12 +119,10 @@ export const createCommandSurface = (
                 group.className = 'command-group';
                 group.textContent = command.group;
                 row.append(label, group);
-                if (command.hint) {
-                    const hint = document.createElement('span');
-                    hint.className = 'command-hint';
-                    hint.textContent = command.hint;
-                    row.append(hint);
-                }
+                const hint = document.createElement('span');
+                hint.className = 'command-hint';
+                hint.textContent = command.disabledReason ?? command.hint ?? '';
+                if (hint.textContent) row.append(hint);
                 row.addEventListener('click', () => runCommand(command));
                 return row;
             }),
@@ -101,10 +132,7 @@ export const createCommandSurface = (
 
     input.addEventListener('input', render);
     input.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            event.preventDefault();
-            surface.close();
-        } else if (event.key === 'ArrowDown') {
+        if (event.key === 'ArrowDown') {
             event.preventDefault();
             select(active + 1);
         } else if (event.key === 'ArrowUp') {
@@ -114,6 +142,15 @@ export const createCommandSurface = (
             event.preventDefault();
             const command = shown[active];
             if (command) runCommand(command);
+        }
+    });
+    element.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            surface.close();
+        } else if (event.key === 'Tab') {
+            event.preventDefault();
+            input.focus();
         }
     });
     element.addEventListener('pointerdown', (event) => {
@@ -131,12 +168,15 @@ export const createCommandSurface = (
             input.placeholder = next === 'help' ? 'Search shortcuts…' : 'Search verbs and knobs…';
             element.dataset.mode = next;
             element.hidden = false;
+            input.setAttribute('aria-expanded', 'true');
             input.value = query;
             render();
             input.focus();
         },
         close(keepFocus = false) {
             element.hidden = true;
+            input.setAttribute('aria-expanded', 'false');
+            input.removeAttribute('aria-activedescendant');
             mode = undefined;
             if (!keepFocus) previousFocus?.focus();
             previousFocus = null;

@@ -63,8 +63,13 @@ test('the untimed practice gates trial timing and stays out of trial metrics', a
     await page.locator('#start').click();
     await expect(page.locator('#question')).toContainText('1/5');
     await expect(page.locator('#progress')).toHaveText('Trial 1 of 5');
+    await expect(page.locator('#submit')).toBeDisabled();
+    await page.locator('#answer').selectOption('yes');
     await expect(page.locator('#submit')).toBeEnabled();
-    for (let trial = 0; trial < 5; trial += 1) await page.locator('#submit').click();
+    for (let trial = 0; trial < 5; trial += 1) {
+        await page.locator('#answer').selectOption('yes');
+        await page.locator('#submit').click();
+    }
     const study = await page.evaluate(() => (window as any).__study);
     expect(study.trials).toHaveLength(5);
     expect(study.practiceCompleted).toBe(true);
@@ -78,7 +83,10 @@ test('the finished report can be copied without editing the captured text', asyn
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
     await bootStudy(page);
     await startTrial(page);
-    for (let trial = 0; trial < 5; trial += 1) await page.locator('#submit').click();
+    for (let trial = 0; trial < 5; trial += 1) {
+        await page.locator('#answer').selectOption('yes');
+        await page.locator('#submit').click();
+    }
     await page.locator('#copy-report').click();
     await expect(page.locator('#status')).toContainText('copied');
     const copied = await page.evaluate(() => navigator.clipboard.readText());

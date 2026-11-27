@@ -29,3 +29,13 @@ test('Lens handles commands from the keyboard and keeps focus state', async ({ p
     expect(await call<string>(page, 'viewName')).toBe('transcript');
     expect(errors).toEqual([]);
 });
+
+test('Shift+Tab leaves Lens even when a completion is available', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await page.keyboard.press('Control+k');
+    await expect(page.locator('#lens-input')).toBeFocused();
+    await page.locator('#lens-input').fill('view diff');
+    await page.keyboard.press('Shift+Tab');
+    expect(await page.evaluate(() => document.activeElement?.id)).not.toBe('lens-input');
+    expect(errors).toEqual([]);
+});

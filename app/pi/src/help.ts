@@ -16,10 +16,23 @@ export const SHORTCUT_HELP: readonly Command[] = [
     shortcut('home', 'Return home, close the surface', 'Home / Esc'),
     shortcut('pan', 'Pan and zoom', 'arrows / +−'),
     shortcut('focus', 'Center the focused node', 'f'),
+    shortcut('preset', 'Filter UI presets', 'u'),
     shortcut('graphView', 'Cycle graph views', 'g'),
     shortcut('graphAligned', 'Toggle aligned transcript', 'a'),
     shortcut('corridor', 'Toggle ribbon corridor', 'r'),
     shortcut('graphMorph', 'Toggle graph morph', 'm'),
     shortcut('continuity', 'Toggle continuous connection grammar', 'view.continuity'),
     shortcut('fieldTargets', 'Toggle scope fields anchored to solved targets', 'view.fieldTargets'),
+];
+
+/** Mouse gestures mirror the library contract; the reference map renders this table. */
+export const MOUSE_HELP: readonly { readonly key: string; readonly label: string }[] = [
+    { key: 'Right-drag', label: 'Pan the view' },
+    { key: 'Wheel', label: 'Zoom at the pointer' },
+    { key: 'Left-drag void', label: 'Pan the view' },
+    { key: 'Middle-click node', label: 'Frame that node' },
+    { key: 'Left-click node', label: 'Select it' },
+    { key: 'Left-drag node', label: 'Move it' },
+    { key: 'Shift-drag void', label: 'Box-select' },
+    { key: 'Middle-drag', label: 'Orbit in perspective' },
 ];

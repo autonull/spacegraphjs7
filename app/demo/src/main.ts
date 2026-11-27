@@ -302,7 +302,9 @@ function paint() {
     );
     mirror?.setSelected(host.controller.selection);
 
-    el('state').textContent = `${host.view} · ${host.level} · ${host.depth} · ${rendererID}`;
+    el('state').textContent =
+        `${host.view} · ${host.level} · ${host.depth} · ${rendererID}` +
+        (rendererID === 'svg' ? ' (static — no pan, zoom or selection)' : '');
     paintTrail(
         el('trail'),
         host.controller.trail,
@@ -591,9 +593,12 @@ async function main(): Promise<void> {
             const step = event.key === 'ArrowDown' ? 1 : -1;
             searchIndex = (searchIndex + step + searchResults.length) % searchResults.length;
             paintSearchCursor();
-        } else if (event.key === 'Enter' && searchIndex >= 0) {
+        } else if (event.key === 'Enter' && searchResults.length) {
             event.preventDefault();
-            select([searchResults[searchIndex]!.id]);
+            const index = searchIndex < 0 ? 0 : searchIndex;
+            searchIndex = index;
+            paintSearchCursor();
+            select([searchResults[index]!.id]);
         } else if (event.key === 'Escape') {
             searchInput.value = '';
             renderSearch('', true);

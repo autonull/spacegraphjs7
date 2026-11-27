@@ -43,13 +43,23 @@ test('chrome announces every outcome and has no dead control offline', async ({ 
     await page.click('#permalink-button');
     await expect(announcer).toContainText(/Permalink copied|Could not copy permalink/);
     await page.selectOption('#export-format', 'md');
-    await expect(announcer).not.toHaveText('');
+    await expect(page.locator('#export-button')).toBeVisible();
+    await page.click('#export-button');
+    await expect(announcer).toContainText('Exporting md');
 
     const views = page.locator('#view-switch button');
     for (let index = 0; index < (await views.count()); index++) {
         await views.nth(index).click();
         await expect(announcer).toContainText('view');
     }
+    expect(errors).toEqual([]);
+});
+
+test('prompt mode names its busy behavior', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    const mode = page.locator('#prompt-mode');
+    await expect(mode).toHaveAttribute('title', /Interrupt replaces it; Queue waits behind it/);
+    await expect(mode.locator('option')).toHaveText(['Interrupt', 'Queue']);
     expect(errors).toEqual([]);
 });
 

@@ -92,6 +92,8 @@
             #lens-go { min-height: 30px; padding: 0 8px; border: 1px solid var(--line); border-radius: 4px;
                 background: var(--panel-2); font-size: 12px; }
             #lens-hint { font-size: 11px; color: var(--muted); white-space: nowrap; }
+            #lens-error, #prompt-error { margin: 4px 0 0; color: var(--error); font-size: 12px; }
+            #prompt-error { margin-left: 8px; }
             #lens-hint kbd { padding: 1px 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel-2); }
             #catalog { position: absolute; left: 12px; top: 12px; width: 220px; max-height: 70%;
                 overflow: auto; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius);
@@ -281,6 +283,13 @@
                 letter-spacing: .1em; color: var(--muted); font-weight: 600; }
             #time-scrub { width: 100%; min-height: 28px; accent-color: var(--accent); }
             #time-badge { display: inline-block; margin: 4px 0; font: 11px ui-monospace, monospace; color: var(--accent); }
+            #readonly-banner { display: none; align-items: center; gap: 8px; margin: 0 0 8px;
+                padding: 8px 10px; border: 1px solid var(--warn); border-radius: var(--radius);
+                color: var(--warn); font-size: 12px; }
+            #app[data-asof] #readonly-banner, #app[data-observer="true"] #readonly-banner { display: flex; }
+            #app[data-observer="true"] #readonly-return { display: none; }
+            #readonly-return { margin-inline-start: auto; min-height: 28px; padding: 0 8px;
+                border: 1px solid var(--warn); border-radius: var(--radius); background: transparent; color: inherit; }
             #digest { font-size: 11px; line-height: 1.5; }
             .shortcut { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 12px; }
             .shortcut span { color: var(--muted); }
@@ -362,6 +371,7 @@
                         <button type="submit" id="lens-go">Go</button>
                     </form>
                     <span id="lens-hint"><kbd>Ctrl/⌘ K</kbd></span>
+                    <span id="lens-error" role="status" hidden></span>
                 </div>
                 <div id="tab-strip" role="tablist" aria-label="Conversations"></div>
             </header>
@@ -431,7 +441,8 @@
                             <select id="export-format" aria-label="Export format">
                                 <option value="json">JSON</option><option value="session">Session</option>
                                 <option value="svg">SVG</option><option value="md">Markdown</option>
-                            </select></div>
+                            </select>
+                            <button type="button" class="action" id="export-button">Export</button></div>
                         <div class="row"><span class="label">Permalink</span>
                             <button type="button" class="action" id="permalink-button">Copy</button></div>
                         <div class="row"><span class="label">Catalog</span>
@@ -493,14 +504,18 @@
                 </aside>
             </main>
             <footer>
+                <p id="readonly-banner"><span id="readonly-message"></span><button type="button" id="readonly-return">Return to present</button></p>
                 <form id="prompt-form">
                     <textarea id="prompt-input" rows="1" autocomplete="off" placeholder="Ask something — no API key needed (Enter sends, Shift+Enter adds a line)" aria-label="Prompt"></textarea>
-                    <select id="prompt-mode" aria-label="Prompt mode">
-                        <option value="steer">steer</option><option value="followUp">followUp</option>
+                    <select id="prompt-mode" aria-label="Prompt mode while busy"
+                        title="While an answer is active: Interrupt replaces it; Queue waits behind it">
+                        <option value="steer" title="Replace the active answer">Interrupt</option>
+                        <option value="followUp" title="Wait behind the active answer">Queue</option>
                     </select>
                     <button id="prompt-submit" type="submit">Send</button>
                     <button id="prompt-cancel" type="button" title="Cancel prompt (Ctrl+Enter)" aria-label="Cancel prompt">Cancel</button>
                 </form>
+                <p id="prompt-error" role="status" hidden></p>
             </footer>
         </div>
         <button id="present-exit" type="button" class="action" aria-label="Exit presentation mode" title="Exit presentation mode (Shift+F)">Exit presentation</button>

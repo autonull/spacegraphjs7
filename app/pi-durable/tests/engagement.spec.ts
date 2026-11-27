@@ -137,6 +137,17 @@ test('ZUI — rung emphasis and band folding mute without changing the fold', as
     expect(errors).toEqual([]);
 });
 
+test('pin reference waits for a second conversation', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await openPanel(page, 'insights');
+    await expect(page.locator('#compare-pin')).toBeDisabled();
+    await expect(page.locator('#compare-pin')).toHaveAttribute(
+        'title',
+        'Open a second conversation to compare',
+    );
+    expect(errors).toEqual([]);
+});
+
 test('C1 — the drawer pins a reference, diffs committed ids and clears the view', async ({ page }) => {
     const errors = await boot(page, '?shot=fork-tabs');
     await openPanel(page, 'insights');

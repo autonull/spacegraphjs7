@@ -46,6 +46,7 @@ export class TranscriptView {
                 className: 'spine-expand',
                 title: expanded ? 'Collapse detail' : 'Expand detail',
                 ariaLabel: `${expanded ? 'Collapse' : 'Expand'} detail for ${fullLabel}: ${text}`,
+                dataset: { expand: node.id },
             });
             expand.setAttribute('aria-expanded', String(expanded));
             expand.setAttribute('aria-controls', detailID);
@@ -78,10 +79,16 @@ export class TranscriptView {
     }
 
     toggle(id: string): void {
+        const focused = document.activeElement as HTMLElement | null;
+        const restore = focused?.dataset.expand === id ? id : undefined;
         if (this.#expanded.has(id)) this.#expanded.delete(id);
         else this.#expanded.add(id);
         this.host.record('transcript:expand', { node: id, expanded: this.#expanded.has(id) });
         this.render();
+        if (restore)
+            [...el('transcript-list').querySelectorAll<HTMLButtonElement>('.spine-expand')]
+                .find((node) => node.dataset.expand === restore)
+                ?.focus();
     }
 
     updateOverview(): void {

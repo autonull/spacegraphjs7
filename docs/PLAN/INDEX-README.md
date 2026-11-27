@@ -44,7 +44,6 @@
 
 | Document                                                 | Purpose                             | When      |
 | -------------------------------------------------------- | ----------------------------------- | --------- |
-| [PHASE-1-AUDIT.md](./PHASE-1-AUDIT.md)                   | 6-U SWOT, ICP, Critical Gaps        | Reference |
 | [PHASE-2-USABILITY.md](./PHASE-2-USABILITY.md)           | Friction Log, TTHW Strategy         | Reference |
 | [PHASE-3-DISTRIBUTION.md](./PHASE-3-DISTRIBUTION.md)     | Distribution Channels, Integrations | Reference |
 | [PHASE-4-EXPOSURE.md](./PHASE-4-EXPOSURE.md)             | Content Strategy, 90-Day GTM        | Reference |

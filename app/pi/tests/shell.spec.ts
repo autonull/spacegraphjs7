@@ -238,6 +238,12 @@ test.describe('the one-surface shell', () => {
             'aria-expanded',
             before === 'true' ? 'false' : 'true',
         );
+        const target = await expand.getAttribute('data-expand');
+        await expand.focus();
+        await page.keyboard.press('Enter');
+        expect(await page.evaluate(() => (document.activeElement as HTMLElement)?.dataset.expand)).toBe(
+            target,
+        );
         expect(errors).toEqual([]);
     });
 
@@ -365,6 +371,76 @@ test.describe('the one-surface shell', () => {
         await page.locator('#focus-lens [data-tab-target="detail"]').focus();
         await page.keyboard.press('ArrowLeft');
         expect(await page.evaluate(() => (window as any).__pi.inspectorTab())).toBe('inner');
+        expect(errors).toEqual([]);
+    });
+
+    test('the transcript resizer reports its size and keyboard changes', async ({ page }) => {
+        await boot(page);
+        const handle = page.locator('#transcript-resize');
+        await expect(handle).toHaveAttribute('aria-orientation', 'vertical');
+        const before = Number(await handle.getAttribute('aria-valuenow'));
+        expect(Number(await handle.getAttribute('aria-valuemax'))).toBeGreaterThan(before);
+        await handle.focus();
+        await page.keyboard.press('ArrowRight');
+        await expect
+            .poll(async () => Number(await handle.getAttribute('aria-valuenow')))
+            .toBeGreaterThan(before);
+    });
+
+    test('chrome announces view, transcript and reading outcomes on one channel', async ({
+        page,
+    }) => {
+        const errors = await boot(page);
+        const announcer = page.locator('#announcer');
+        await expect(announcer).toHaveAttribute('role', 'status');
+        await expect(announcer).toHaveAttribute('aria-live', 'polite');
+
+        await page.locator('#transcript-toggle').click();
+        await expect(announcer).toContainText('Transcript collapsed');
+        await page.locator('#transcript-toggle').click();
+        await expect(announcer).toContainText('Transcript expanded');
+        await page.locator('#settings-menu summary').click();
+        await page.locator('#read-toggle').click();
+        await expect(announcer).toContainText('Reading view opened');
+        await page.locator('#reading-close').click();
+        await expect(announcer).toContainText('Reading view closed');
+        await page.locator('#surface-map').click();
+        await expect(announcer).toContainText('map surface');
+        await page.evaluate(() => (window as any).__pi.openRailPanel('rail-share'));
+        await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+        await page.locator('#permalink-copy').click();
+        await expect(announcer).toContainText(/Link copied to clipboard|Copy failed/);
+        expect(errors).toEqual([]);
+    });
+
+    test('play toggles into stop and restores the layout', async ({ page }) => {
+        const errors = await boot(page);
+        await page.evaluate(() => (window as any).__pi.openRailPanel('rail-learn'));
+        const play = page.locator('#play-start');
+        await expect(play).toHaveText('Play');
+        await play.click();
+        await expect(play).toHaveText('Stop');
+        await expect(play).toHaveAttribute('data-active', 'true');
+        await expect(page.locator('#announcer')).toContainText('Playing zero-g');
+        await play.click();
+        await expect(play).toHaveText('Play');
+        await expect(play).toHaveAttribute('data-active', 'false');
+        await expect(page.locator('#announcer')).toContainText('Play stopped');
+        expect(errors).toEqual([]);
+    });
+
+    test('reference maps render from the same table as command help', async ({ page }) => {
+        const errors = await boot(page);
+        const entries: readonly { hint?: string; label: string }[] = await page.evaluate(
+            () => (window as any).__pi.help(),
+        );
+        const keys = entries
+            .map((entry) => entry.hint)
+            .filter((hint): hint is string => Boolean(hint && !hint.includes('.')));
+        await expect(page.locator('#keyboard-map .reference-row')).toHaveCount(keys.length);
+        const text = await page.locator('#keyboard-map').textContent();
+        for (const key of keys) expect(text).toContain(key);
+        expect(await page.locator('#mouse-map .reference-row').count()).toBeGreaterThan(4);
         expect(errors).toEqual([]);
     });
 });

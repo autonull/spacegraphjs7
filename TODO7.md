@@ -21,8 +21,7 @@ The remaining complaint is structural, not cosmetic. Every gallery shot shows th
   visible structure.
 - One halo and one causal ribbon per node means nothing is visually dominant.
 
-`docs/pi-study-ui-audit.md` (2026-11-22) covers the participant flow and chrome; this plan covers the
-graph itself. The two documents do not overlap.
+This plan covers the graph itself; participant-flow findings are no longer tracked in a separate audit document.
 
 ---
 
@@ -31,7 +30,7 @@ graph itself. The two documents do not overlap.
 | Area | State | Evidence |
 | ---- | ----- | -------- |
 | Prior plan | complete | `TODO6.md:232-247`; commits `28a2c8a`, `aaf9543`, `e197a7c`, `9c83535`, `8df5221` |
-| Audit | closed | `docs/screenshots/reports/audit.json`: 13 findings, 21 shot verdicts, all triaged and closed |
+| Audit | closed | 13 findings, 21 shot verdicts, all triaged and closed |
 | Gallery | reviewed | all 21 verdicts in `docs/screenshots/review.json` |
 | Position authority | one | `ScopeSimulation` springs chase solved targets; no in-memory tool loop |
 | Root scope | freeform force | `app/pi/src/scopes.ts:183-203`; `ScopeSimulation` seeded zero-gravity, `seed 7` |
@@ -78,7 +77,7 @@ graph itself. The two documents do not overlap.
 12. **Default visual changes need an ADR 0008 comparison** with incumbent/variant images, comparison
     data and a logged human decision (`TODO6.md:261-272`).
 13. **No commit or push unless explicitly asked.** Leave increments reviewable in the tree.
-14. **Audit does not implement.** This file is a plan; findings stay in `docs/pi-study-ui-audit.md`.
+14. **Audit does not implement.** This file is a plan; findings stay in the change set that opens them.
 15. **No view is removed when a default changes.** Every graph layout stays reachable by command and
     URL; a default flip is a policy change, not a deletion.
 
@@ -191,7 +190,7 @@ shots pass overlap/legibility gates; hulls are visible but do not reduce label c
    (`app/pi/src/attention.ts:18-29`). The failing-call path should be the visually dominant line.
 3. Offer a flat dark backdrop as the work default; keep grid and starfield as opt-in palettes.
 4. Raise `ladder.minLabelPx` from 14 toward 16 together with the chrome type fix in
-   `docs/pi-study-ui-audit.md` PIUX-03.
+   the PIUX-03 chrome type fix.
 5. For each changed default, record an incumbent and variant image under `docs/screenshots/`, write a
    comparison JSON, and log a human decision before it becomes default (invariant 12).
 
@@ -203,8 +202,8 @@ shots pass overlap/legibility gates; hulls are visible but do not reduce label c
    `verify:visual`, `shots:all`, `scale`.
 2. Re-run the frame-time recipe from `TODO6.md:307-310` only if a hardware measurement is now possible;
    otherwise compare against `docs/performance.md` and state that no new claim is made.
-3. Update this status table, `docs/screenshots/review.json`, `CHANGELOG.md` and
-   `docs/pi-study-ui-audit.md` only if a finding is actually closed.
+3. Update this status table, `docs/screenshots/review.json` and `CHANGELOG.md` only if a finding is
+   actually closed.
 4. Do not commit or push unless explicitly asked.
 
 **Done when:** all gates green, every layout slice has a gallery verdict, and the four Phase 0 measures
@@ -216,7 +215,7 @@ are reported as met or explicitly deferred with a reason.
 
 | Concern | Files |
 | ------- | ----- |
-| Plans / audits | `TODO4.md`, `TODO5.md`, `TODO6.md`, `TODO7.md` (this file), `docs/pi-study-ui-audit.md`, `AGENTS.md` |
+| Plans / audits | `TODO4.md`, `TODO5.md`, `TODO6.md`, `TODO7.md` (this file), `AGENTS.md` |
 | Visual decisions | `docs/adr/0015-bounded-aspect-refit.md`, `docs/adr/0016-flux-edges-and-field.md`, `docs/motion.md` |
 | Scope layout | `src/layout/scope.ts`, `scope-layout.ts`, `scope-simulation.ts`, `scope-policy.ts`, `grid.ts`, `LaneLayout.ts`, `strategies.ts` |
 | PI host | `app/pi/src/host.ts`, `scopes.ts`, `attention.ts`, `shots.ts` |
@@ -350,8 +349,7 @@ positions; aligned transcript; square scope hulls and turn tabs; opt-in corridor
 3. **Phase 4 defaults (human).** Lower ambient glow with selective halos, rank-driven ribbon width,
    flat dark backdrop and `ladder.minLabelPx` → 16. Each needs its own incumbent/variant pair and an
    ADR 0008 decision. None were changed here, so no decision is implied.
-4. **Final docs pass (after items 1–3).** Update `docs/pi-study-ui-audit.md` only if a finding is
-   actually closed; do not edit closed findings in `docs/screenshots/reports/audit.json`.
+4. **Final docs pass (after items 1–3).** Update the change set only if a finding is actually closed.
 
 ### User decisions recorded
 
@@ -359,13 +357,12 @@ positions; aligned transcript; square scope hulls and turn tabs; opt-in corridor
 - Timeline may become the default **only if** it is flexible enough to keep the other views usable;
   it must not become the only view. The flexibility gate in Phase 1 defines "flexible enough" and is
   now automated and green; the study decision is still outstanding.
-- Scope: graph visualization first; participant-flow findings in `docs/pi-study-ui-audit.md` stay a
-  separate change set.
+- Scope: graph visualization first; participant-flow findings stay a separate change set.
 - The user asked to continue implementation, commit this increment and minimise redundant test runs.
 
 ### Handoff notes
 
-1. Do not edit closed findings in `docs/screenshots/reports/audit.json`; reopen work with a new entry.
+1. Reopen closed findings with a new entry instead of rewriting history.
 2. A new arrangement is an opt-in experiment first. Promotion to default follows ADR 0008 and the
    study stop rule, never visual preference alone.
 3. If a phase needs a new contract field, stop and record the blocker instead of adding a branch.
