@@ -1,4 +1,5 @@
 import type { GraphViewData } from '@spacegraphjs/shared';
+import { shortcutRow } from 'pi-kit/keyboard';
 import type { Catalog } from './catalog';
 import { button, el } from './dom';
 import type { Command } from './shell';
@@ -16,30 +17,21 @@ export function renderEvidence(lines: readonly string[]): void {
     );
 }
 
-const referenceRow = (key: string, label: string): HTMLElement => {
-    const row = document.createElement('div');
-    row.className = 'reference-row';
-    const shortcut = document.createElement('kbd');
-    shortcut.textContent = key;
-    const description = document.createElement('span');
-    description.textContent = label;
-    row.append(shortcut, description);
-    return row;
-};
-
 /** Both visible reference maps render from the same tables that feed the command help. */
 export function renderShortcutReference(entries: readonly Command[]): void {
     el('keyboard-map').replaceChildren(
         ...entries
             .filter((entry) => entry.hint && !entry.hint.includes('.'))
-            .map((entry) => referenceRow(entry.hint!, entry.label)),
+            .map((entry) => shortcutRow(entry.hint!, entry.label, 'reference-row')),
     );
 }
 
 export function renderMouseReference(
     gestures: readonly { readonly key: string; readonly label: string }[],
 ): void {
-    el('mouse-map').replaceChildren(...gestures.map(({ key, label }) => referenceRow(key, label)));
+    el('mouse-map').replaceChildren(
+        ...gestures.map(({ key, label }) => shortcutRow(key, label, 'reference-row')),
+    );
 }
 
 export function renderOverview(

@@ -34,20 +34,22 @@ export const dispatchKeys = (
     binding.run(event);
     return true;
 };
+export const shortcutRow = (key: string, label: string, className = 'shortcut'): HTMLElement => {
+    const row = document.createElement('div');
+    row.className = className;
+    const keys = document.createElement('kbd');
+    keys.textContent = key;
+    const description = document.createElement('span');
+    description.textContent = label;
+    row.append(keys, description);
+    return row;
+};
+
 export const renderShortcuts = (
     container: HTMLElement,
     bindings: readonly KeyBinding[],
 ): void => {
     container.replaceChildren(
-        ...bindings.map((binding) => {
-            const row = document.createElement('div');
-            row.className = 'shortcut';
-            const keys = document.createElement('kbd');
-            keys.textContent = binding.keys;
-            const label = document.createElement('span');
-            label.textContent = binding.label;
-            row.append(keys, label);
-            return row;
-        }),
+        ...bindings.map((binding) => shortcutRow(binding.keys, binding.label)),
     );
 };
