@@ -1,6 +1,6 @@
 # TODO17 — Terminal: a vector console for durable agents
 
-> **Status: Stages 1–3 landed; Stage 4 has E1/E2, E6–E8, E10–E12 and camera follow (2026-11-27).** Continue from §10. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
+> **Status: Stages 1–4 landed (2026-11-27); only deferred polish remains (§10).** Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
 > Agent REPL that faithfully reads like a styled monospace text console while using vector/ZUI space
 > to add graph, fractal and margin overlays that a DOM console cannot express.
 
@@ -200,7 +200,7 @@ surface. None needs a second renderer or a second store.
 4. **Stage 4 — extensions.** Land E1–E12 individually, library-first, each with a unit test and one
    E2E or screenshot when the visual shape changes. No bundled mega-change.
 
-**Status:** Stages 1–3 landed, E1/E2, E6–E8, E10–E12 and camera tail-follow landed 2026-11-27. Remaining work is listed in §10.
+**Status:** Stages 1–4 landed 2026-11-27. E1–E12 are in place; remaining polish is listed in §10.
 
 ## 7. Verification ladder
 
@@ -339,11 +339,19 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
 - `test/terminal.test.ts`: 40 tests. Full suite: 200 files / 1341 tests. Pi Durable `verify:fast`:
   78 E2E passing (5 skipped), including chapters and replay steps. Root `check` and `test:exports`
   pass.
+- **Stage 4 / E9 landed (2026-11-27).** `terminalDiff` compares two projections by stable line ids;
+  `terminalLink(controllers).sync()` copies selection and followed tail across consoles. Pi Durable
+  adds a `consoleCompare` hook that diffs the active console against another tab's kernel. With E3–E5
+  already covered by earlier stages, all E1–E12 are now in place.
+- `test/terminal.test.ts`: 42 tests. Full suite: 200 files / 1343 tests. Pi Durable `verify:fast`:
+  79 E2E passing (5 skipped), including cross-tab console comparison. Root `check` and `test:exports`
+  pass.
 
 ## 10. Next session entry points
 
-1. **Stage 4 — extensions.** Land E9 (multiple consoles over one kernel) library-first, with a unit
-   test and an E2E or screenshot when the visual shape changes.
-2. **Remaining deferred work.** RTL decision (§8); measure window hysteresis before tuning. Minimap
-   click re-engagement is still not wired; End and the badge are. Two-tail diff and chapter scrubbing
-   are exposed as primitives but not yet surfaced in the console UI.
+1. **Deferred polish, not new capability.** RTL decision (§8); measure window hysteresis before
+   tuning; minimap-click re-engagement (End and the badge are wired); surface two-tail diff and chapter
+   scrubbing in the console UI rather than only through hooks.
+2. **Verification for future console changes.** Tier 1: package `typecheck`, `pi-durable check:fast`,
+   `test:exports`. Tier 2: root `pnpm run check`. Tier 3: `pi-durable verify:fast` and demo
+   `transcript.spec.ts`; regenerate story screenshots only when shape changes.

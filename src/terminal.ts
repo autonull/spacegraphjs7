@@ -254,6 +254,45 @@ export const terminalWindow = (
     return { start: ids[lo]!, end: ids[hi]! };
 };
 
+export type TerminalLineDiff = {
+    readonly added: readonly string[];
+    readonly removed: readonly string[];
+    readonly changed: readonly string[];
+};
+
+/** Compare two projections of one kernel without inventing or dropping committed ids. */
+export const terminalDiff = (
+    left: readonly TerminalLine[],
+    right: readonly TerminalLine[],
+): TerminalLineDiff => {
+    const byID = new Map(left.map((line) => [line.id, line] as const));
+    const nextIDs = new Set(right.map((line) => line.id));
+    return {
+        added: right.filter((line) => !byID.has(line.id)).map((line) => line.id),
+        removed: left.filter((line) => !nextIDs.has(line.id)).map((line) => line.id),
+        changed: right
+            .filter((line) => byID.get(line.id)?.text !== line.text && byID.has(line.id))
+            .map((line) => line.id),
+    };
+};
+
+/** Copy selection and followed tail from the first controller that has them to its peers. */
+export const terminalLink = (
+    controllers: readonly TerminalController[],
+): { sync(): void } => ({
+    sync: () => {
+        const leader = controllers.find((controller) => controller.selection() || controller.tail());
+        if (!leader) return;
+        const range = leader.selection();
+        const tail = leader.tail();
+        controllers.forEach((controller) => {
+            if (controller === leader) return;
+            controller.select(range);
+            if (tail) controller.focusLine(tail);
+        });
+    },
+});
+
 /** Lines committed at or before `asOf`; undated lines always remain visible. */
 export const terminalVisibleAt = (
     lines: readonly TerminalLine[],

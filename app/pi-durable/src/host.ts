@@ -46,6 +46,7 @@ import {
     mountTerminalSink,
     TERMINAL_PALETTES,
     terminalChapters,
+    terminalDiff,
     terminalGaps,
     terminalGrid,
     terminalLineSize,
@@ -1749,6 +1750,14 @@ export class DurableHost {
             consoleChapters: () => terminalChapters(this.#terminalController?.lines() ?? []),
             consoleReplaySteps: () =>
                 terminalReplaySteps(this.#terminalController?.lines() ?? []).length,
+            consoleCompare: (peerID: string) => {
+                const peer = this.registry.get(peerID);
+                if (!peer) return undefined;
+                return terminalDiff(
+                    this.#terminalController?.lines() ?? [],
+                    this.#consoleLines(tabKernel(peer)),
+                );
+            },
             consolePalettes: () => TERMINAL_PALETTES.map(({ id, label }) => ({ id, label })),
             setConsolePalette: (id: string) => this.#terminal()?.setPalette(id),
             focus: (id: string) => this.focus(id),
@@ -2643,25 +2652,26 @@ export class DurableHost {
         return this.#terminalController;
     }
 
-    #renderConsole(kernel: Kernel): void {
-        const transcript = kernel.nodes.filter((node) => TRANSCRIPT_KINDS.has(node.kind));
-        const at = (node: { readonly data?: Readonly<Record<string, unknown>> }): number | undefined =>
-            typeof node.data?.['at'] === 'number' ? node.data['at'] : undefined;
-        const turn = (node: { readonly data?: Readonly<Record<string, unknown>> }): number | undefined =>
-            typeof node.data?.['turn'] === 'number' ? node.data['turn'] : undefined;
-        const lines = terminalVisibleAt(
-            transcript.map((node): TerminalLine => ({
-                id: node.id,
-                kind: node.kind,
-                status: String(node.data?.['status'] ?? 'complete'),
-                label: labelForNode(node),
-                text: dataText(node),
-                turn: turn(node),
-                at: at(node),
-                octave: 0,
-            })),
+    #consoleLines(kernel: Kernel): readonly TerminalLine[] {
+        return terminalVisibleAt(
+            kernel.nodes
+                .filter((node) => TRANSCRIPT_KINDS.has(node.kind))
+                .map((node): TerminalLine => ({
+                    id: node.id,
+                    kind: node.kind,
+                    status: String(node.data?.['status'] ?? 'complete'),
+                    label: labelForNode(node),
+                    text: dataText(node),
+                    turn: typeof node.data?.['turn'] === 'number' ? node.data['turn'] : undefined,
+                    at: typeof node.data?.['at'] === 'number' ? node.data['at'] : undefined,
+                    octave: 0,
+                })),
             this.#asOf,
         );
+    }
+
+    #renderConsole(kernel: Kernel): void {
+        const lines = this.#consoleLines(kernel);
         const overlays: readonly TerminalOverlay[] = lines.flatMap((line, index) => [
             ...(index % 4 === 0
                 ? [

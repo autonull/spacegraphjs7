@@ -42,6 +42,22 @@ test('scene prompt submits inside the console without stealing shortcuts', async
     expect(errors).toEqual([]);
 });
 
+test('console compares two tabs over one kernel', async ({ page }) => {
+    const errors = await boot(page, '?shot=fork-tabs');
+    await call(page, 'setView', 'transcript');
+    const active = await call<string>(page, 'activeTab');
+    const peer = (await call<string[]>(page, 'sessions')).find((id) => id !== active);
+    expect(peer).toBeTruthy();
+    const diff = await call<{ added: string[]; removed: string[]; changed: string[] }>(
+        page,
+        'consoleCompare',
+        peer,
+    );
+    expect(diff).toBeDefined();
+    expect(Array.isArray(diff!.added)).toBe(true);
+    expect(errors).toEqual([]);
+});
+
 test('console exposes chapters and replay steps over committed lines', async ({ page }) => {
     const errors = await boot(page, '?shot=basic-turn');
     await call(page, 'setView', 'transcript');

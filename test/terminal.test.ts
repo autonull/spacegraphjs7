@@ -11,6 +11,8 @@ import {
     STATUS_GLYPHS,
     TERMINAL_PALETTES,
     terminalChapters,
+    terminalDiff,
+    terminalLink,
     terminalPalette,
     terminalReplaySteps,
     terminalPromptHTML,
@@ -125,6 +127,31 @@ describe('terminalWindow', () => {
         expect(terminalWindow([], 'l0', config)).toEqual({ start: '', end: '' });
         expect(terminalWindow(ids, 'l0', config)).toEqual({ start: 'l0', end: 'l7' });
         expect(terminalWindow(ids, 'l19', config)).toEqual({ start: 'l14', end: 'l19' });
+    });
+});
+
+describe('multiple consoles', () => {
+    it('diffs two projections by stable line ids', () => {
+        expect(
+            terminalDiff(
+                [line('a', 'alpha'), line('b', 'beta'), line('c', 'old')],
+                [line('b', 'beta'), line('c', 'new'), line('d', 'delta')],
+            ),
+        ).toEqual({ added: ['d'], removed: ['a'], changed: ['c'] });
+    });
+
+    it('copies selection and tail from the leading console', () => {
+        const first = mountTerminal(graphDouble());
+        const second = mountTerminal(graphDouble());
+        first.append([line('a', 'alpha'), line('b', 'beta')]);
+        second.append([line('a', 'alpha'), line('b', 'beta')]);
+        const range = { anchor: { nodeID: 'a', offset: 1 }, focus: { nodeID: 'b', offset: 2 } };
+        first.select(range);
+        terminalLink([first, second]).sync();
+        expect(second.selection()).toEqual(range);
+        expect(second.tail()).toBe(first.tail());
+        first.destroy();
+        second.destroy();
     });
 });
 
