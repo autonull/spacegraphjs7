@@ -10,7 +10,10 @@ import {
     terminalPromptHTML,
     terminalPromptNode,
     terminalCompare,
+    terminalFlatten,
     terminalGaps,
+    terminalIndexOfPoint,
+    terminalPointAtIndex,
     terminalGlyphs,
     terminalOverlayGaps,
     terminalSlots,
@@ -19,6 +22,7 @@ import {
     terminalLineSize,
     terminalMoveLine,
     terminalOrder,
+    terminalRangeFromIndices,
     terminalOverlays,
     terminalRange,
     terminalRangeFromKey,
@@ -114,6 +118,37 @@ describe('terminalWindow', () => {
         expect(terminalWindow([], 'l0', config)).toEqual({ start: '', end: '' });
         expect(terminalWindow(ids, 'l0', config)).toEqual({ start: 'l0', end: 'l7' });
         expect(terminalWindow(ids, 'l19', config)).toEqual({ start: 'l14', end: 'l19' });
+    });
+});
+
+describe('character spans', () => {
+    const lines = [line('a', 'alpha'), line('b', 'beta'), line('c', 'gamma')];
+    const flat = terminalFlatten(lines);
+
+    it('maps global character indices to entry ids and local offsets', () => {
+        expect(flat.text).toBe('alpha\nbeta\ngamma');
+        expect(flat.spans.map((span) => [span.lineID, span.start, span.end])).toEqual([
+            ['a', 0, 5],
+            ['b', 6, 10],
+            ['c', 11, 16],
+        ]);
+        expect(terminalPointAtIndex(flat, 0)).toEqual({ nodeID: 'a', offset: 0 });
+        expect(terminalPointAtIndex(flat, 6)).toEqual({ nodeID: 'b', offset: 0 });
+        expect(terminalPointAtIndex(flat, 8)).toEqual({ nodeID: 'b', offset: 2 });
+        expect(terminalPointAtIndex(flat, 5)).toEqual({ nodeID: 'a', offset: 5 });
+        expect(terminalPointAtIndex(flat, 99)).toEqual({ nodeID: 'c', offset: 5 });
+    });
+
+    it('maps points back to global indices and builds ranges from them', () => {
+        expect(terminalIndexOfPoint(flat, { nodeID: 'c', offset: 2 })).toBe(13);
+        expect(terminalIndexOfPoint(flat, { nodeID: 'missing', offset: 0 })).toBeUndefined();
+        const range = terminalRangeFromIndices(flat, 1, 8);
+        expect(range).toEqual({
+            anchor: { nodeID: 'a', offset: 1 },
+            focus: { nodeID: 'b', offset: 2 },
+        });
+        expect(terminalRangeText(range!, lines)).toBe(flat.text.slice(1, 8));
+        expect(terminalPointAtIndex(terminalFlatten([]), 0)).toBeUndefined();
     });
 });
 

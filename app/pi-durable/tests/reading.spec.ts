@@ -11,6 +11,7 @@ test('transcript is a vector console over the same committed facts', async ({ pa
     expect(await lines.count()).toBeGreaterThan(8);
     await expect(lines.first()).toHaveAttribute('data-node-id', /^d:1:/);
     await expect(page.locator('#canvas .sg-terminal-line').first()).toBeVisible();
+    expect(await call<string>(page, 'consoleText')).toContain('Capital of France?');
 
     await lines.first().click();
     expect(await call<string>(page, 'viewName')).toBe('transcript');

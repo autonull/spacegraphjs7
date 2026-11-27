@@ -250,6 +250,64 @@ export const terminalWindow = (
     return { start: ids[lo]!, end: ids[hi]! };
 };
 
+export type TerminalSpan = {
+    readonly lineID: string;
+    /** Inclusive global index in the flattened console text. */
+    readonly start: number;
+    /** Exclusive global index; the separator that follows this line is not part of the span. */
+    readonly end: number;
+};
+
+export type TerminalFlatText = {
+    /** Committed line text joined by newlines, so global indices match copied ranges. */
+    readonly text: string;
+    readonly spans: readonly TerminalSpan[];
+};
+
+export const terminalFlatten = (lines: readonly TerminalLine[]): TerminalFlatText => {
+    const spans: TerminalSpan[] = [];
+    let text = '';
+    lines.forEach((line, index) => {
+        const start = text.length;
+        text += line.text;
+        spans.push({ lineID: line.id, start, end: text.length });
+        if (index < lines.length - 1) text += '\n';
+    });
+    return { text, spans };
+};
+
+export const terminalPointAtIndex = (
+    flat: TerminalFlatText,
+    index: number,
+): TerminalPoint | undefined => {
+    if (!flat.spans.length) return undefined;
+    const at = Math.max(0, Math.min(flat.text.length, Math.floor(index)));
+    const span =
+        flat.spans.find((entry) => at >= entry.start && at < entry.end) ??
+        flat.spans.find((entry) => at === entry.end) ??
+        flat.spans.at(-1)!;
+    return { nodeID: span.lineID, offset: at - span.start };
+};
+
+export const terminalIndexOfPoint = (
+    flat: TerminalFlatText,
+    point: TerminalPoint,
+): number | undefined => {
+    const span = flat.spans.find((entry) => entry.lineID === point.nodeID);
+    if (!span) return undefined;
+    return span.start + Math.max(0, Math.min(span.end - span.start, Math.floor(point.offset)));
+};
+
+export const terminalRangeFromIndices = (
+    flat: TerminalFlatText,
+    start: number,
+    end: number,
+): TerminalRange | undefined => {
+    const anchor = terminalPointAtIndex(flat, start);
+    const focus = terminalPointAtIndex(flat, end);
+    return anchor && focus ? { anchor, focus } : undefined;
+};
+
 export const terminalOrder = (lines: readonly TerminalLine[]): ReadonlyMap<string, number> =>
     new Map(lines.map((line, index) => [line.id, index] as const));
 
@@ -608,6 +666,8 @@ export type TerminalController = {
     selection(): TerminalRange | undefined;
     /** Currently focused or followed line id. */
     tail(): string | undefined;
+    /** Committed line text joined by newlines; indices match `terminalPointAtIndex`. */
+    text(): string;
     copy(): string;
     setOverlays(overlays: readonly TerminalOverlay[]): void;
     followTail(enabled: boolean): void;
@@ -715,6 +775,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
         },
         selection: () => range,
         tail: () => focusID || undefined,
+        text: () => terminalFlatten(lines).text,
         copy: () => {
             const text = range
                 ? terminalRangeText(range, lines)

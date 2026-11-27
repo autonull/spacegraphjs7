@@ -1740,6 +1740,7 @@ export class DurableHost {
                 return range ? terminalRangeKey(range) : undefined;
             },
             copyConsole: () => this.#terminalController?.copy(),
+            consoleText: () => this.#terminalController?.text(),
             focus: (id: string) => this.focus(id),
             applyShot: (id: string) => this.applyShot(id),
             setAsOf: (seq?: number) => this.setAsOf(seq),
