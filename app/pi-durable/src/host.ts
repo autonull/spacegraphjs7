@@ -1002,23 +1002,12 @@ export class DurableHost {
         this.#recordHistory();
     }
 
-    /** Frame the console inside a narrow top-left region like a text terminal. */
+    /** Zoom the console to the visible stage and keep its first line at the top-left. */
     #frameConsole(): void {
-        const stage = el('stage');
-        const width = stage.clientWidth || 1600;
-        const height = stage.clientHeight || 900;
-        const count = this.#terminalController?.lines().length ?? 1;
-        const contentHeight =
-            count * CONSOLE_GRID.lineHeight + Math.floor(count / 4) * CONSOLE_GRID.lineHeight * 2 + 24;
         this.renderer.fit(undefined, {
             padding: 12,
-            minScale: 0.8,
-            insets: {
-                left: 0,
-                top: 0,
-                right: Math.max(0, width - CONSOLE_GRID.maxWidth - 48),
-                bottom: Math.max(0, height - contentHeight - 24),
-            },
+            minScale: 1,
+            insets: { left: 0, top: 0, right: 48, bottom: 48 },
         });
         this.#consoleFramed = true;
     }
@@ -2618,14 +2607,6 @@ export class DurableHost {
                         data: { terminal: true, useRawHtml: true },
                     };
                 });
-                const edges: RenderEdge[] = lineNodes.slice(1).map((node, index) => ({
-                    id: `${lineNodes[index]!.id}->${node.id}`,
-                    source: lineNodes[index]!.id,
-                    target: node.id,
-                    kind: 'orders',
-                    confidence: 'inferred',
-                    style: 'dotted',
-                }));
                 const nodes: RenderNode[] = [...lineNodes];
                 terminalSlots(revealed, 'gutter').forEach((entries, lineID) => {
                     const line = lineNodes.find((node) => node.id === lineID);
@@ -2661,7 +2642,7 @@ export class DurableHost {
                         interactive: true,
                         data: { terminal: true },
                     });
-                return { nodes, edges };
+                return { nodes, edges: [] };
             },
             onReveal: (id) => this.reveal(id),
             onFocus: (id) =>

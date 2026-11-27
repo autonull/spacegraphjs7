@@ -377,6 +377,10 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   accent bar plus tint driven by `data-selected`, not a white outline. The prompt caret blinks and its
   underline replaces the boxed frame. Fit insets pin the first line near the top-left. Eight console
   shots regenerated.
+- **Maximal console framing (2026-11-27).** The console fit now uses only 48 px right/bottom insets and
+  `minScale: 1`, so the line column fills the stage and stays anchored top-left. The dotted `orders`
+  edges were removed from the console projection; they added noise without helping readability. Gaps,
+  gutter markers, selection bars and zoom still expose the underlying vector surface.
 
 ## 10. Next session entry points
 
