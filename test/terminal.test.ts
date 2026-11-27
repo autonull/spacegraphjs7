@@ -10,7 +10,9 @@ import {
     mountTerminalPrompt,
     STATUS_GLYPHS,
     TERMINAL_PALETTES,
+    terminalChapters,
     terminalPalette,
+    terminalReplaySteps,
     terminalPromptHTML,
     terminalPromptNode,
     terminalCompare,
@@ -35,6 +37,7 @@ import {
     terminalRangeText,
     terminalSpec,
     terminalVisible,
+    terminalVisibleAt,
     terminalWindow,
     terminalWrap,
     type TerminalGraph,
@@ -122,6 +125,34 @@ describe('terminalWindow', () => {
         expect(terminalWindow([], 'l0', config)).toEqual({ start: '', end: '' });
         expect(terminalWindow(ids, 'l0', config)).toEqual({ start: 'l0', end: 'l7' });
         expect(terminalWindow(ids, 'l19', config)).toEqual({ start: 'l14', end: 'l19' });
+    });
+});
+
+describe('time axis', () => {
+    const timed = [
+        { ...line('a', 'first'), turn: 1, at: 10 },
+        { ...line('b', 'second'), turn: 1, at: 20 },
+        { ...line('c', 'third'), turn: 2, at: 30 },
+        line('d', 'undated'),
+    ];
+
+    it('filters historical lines while keeping undated ones', () => {
+        expect(terminalVisibleAt(timed, undefined)).toHaveLength(4);
+        expect(terminalVisibleAt(timed, 20).map((entry) => entry.id)).toEqual(['a', 'b', 'd']);
+    });
+
+    it('groups turns into chapters with stable line anchors', () => {
+        expect(terminalChapters(timed)).toEqual([
+            { id: 'chapter-1', label: 'Turn 1', startID: 'a', endID: 'b', turn: 1, at: 10 },
+            { id: 'chapter-2', label: 'Turn 2', startID: 'c', endID: 'c', turn: 2, at: 30 },
+            { id: 'chapter-3', label: 'Lines 3', startID: 'd', endID: 'd', turn: undefined, at: undefined },
+        ]);
+    });
+
+    it('produces replay prefixes over committed lines', () => {
+        const steps = terminalReplaySteps(timed);
+        expect(steps.map((step) => step.length)).toEqual([1, 2, 3, 4]);
+        expect(steps[2]?.map((entry) => entry.id)).toEqual(['a', 'b', 'c']);
     });
 });
 

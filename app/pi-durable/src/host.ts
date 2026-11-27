@@ -45,16 +45,19 @@ import {
     mountTerminalPrompt,
     mountTerminalSink,
     TERMINAL_PALETTES,
+    terminalChapters,
     terminalGaps,
     terminalGrid,
-    terminalPalette,
     terminalLineSize,
+    terminalPalette,
+    terminalReplaySteps,
     terminalOverlayGaps,
     terminalOverlays,
     terminalPromptHTML,
     terminalRangeFromKey,
     terminalRangeKey,
     terminalSlots,
+    terminalVisibleAt,
     type TerminalController,
     type TerminalLine,
     type TerminalOverlay,
@@ -1743,6 +1746,9 @@ export class DurableHost {
             },
             copyConsole: () => this.#terminalController?.copy(),
             consoleText: () => this.#terminalController?.text(),
+            consoleChapters: () => terminalChapters(this.#terminalController?.lines() ?? []),
+            consoleReplaySteps: () =>
+                terminalReplaySteps(this.#terminalController?.lines() ?? []).length,
             consolePalettes: () => TERMINAL_PALETTES.map(({ id, label }) => ({ id, label })),
             setConsolePalette: (id: string) => this.#terminal()?.setPalette(id),
             focus: (id: string) => this.focus(id),
@@ -2639,14 +2645,23 @@ export class DurableHost {
 
     #renderConsole(kernel: Kernel): void {
         const transcript = kernel.nodes.filter((node) => TRANSCRIPT_KINDS.has(node.kind));
-        const lines: readonly TerminalLine[] = transcript.map((node) => ({
-            id: node.id,
-            kind: node.kind,
-            status: String(node.data?.['status'] ?? 'complete'),
-            label: labelForNode(node),
-            text: dataText(node),
-            octave: 0,
-        }));
+        const at = (node: { readonly data?: Readonly<Record<string, unknown>> }): number | undefined =>
+            typeof node.data?.['at'] === 'number' ? node.data['at'] : undefined;
+        const turn = (node: { readonly data?: Readonly<Record<string, unknown>> }): number | undefined =>
+            typeof node.data?.['turn'] === 'number' ? node.data['turn'] : undefined;
+        const lines = terminalVisibleAt(
+            transcript.map((node): TerminalLine => ({
+                id: node.id,
+                kind: node.kind,
+                status: String(node.data?.['status'] ?? 'complete'),
+                label: labelForNode(node),
+                text: dataText(node),
+                turn: turn(node),
+                at: at(node),
+                octave: 0,
+            })),
+            this.#asOf,
+        );
         const overlays: readonly TerminalOverlay[] = lines.flatMap((line, index) => [
             ...(index % 4 === 0
                 ? [

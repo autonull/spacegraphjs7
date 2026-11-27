@@ -42,6 +42,17 @@ test('scene prompt submits inside the console without stealing shortcuts', async
     expect(errors).toEqual([]);
 });
 
+test('console exposes chapters and replay steps over committed lines', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    const chapters = await call<{ id: string; startID: string }[]>(page, 'consoleChapters');
+    expect(chapters.length).toBeGreaterThan(0);
+    expect(chapters[0]?.id).toBe('chapter-1');
+    const steps = await call<number>(page, 'consoleReplaySteps');
+    expect(steps).toBe(await page.locator('#canvas .sg-terminal-line').count());
+    expect(errors).toEqual([]);
+});
+
 test('wheel pan releases tail follow and the badge restores it', async ({ page }) => {
     const errors = await boot(page, '?shot=basic-turn');
     await call(page, 'setView', 'transcript');

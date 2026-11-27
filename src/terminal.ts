@@ -17,6 +17,8 @@ export type TerminalLine = {
     readonly label: string;
     readonly text: string;
     readonly turn?: number;
+    /** Optional timestamp or ordered time value used by historical views. */
+    readonly at?: number;
     readonly parent?: string;
     readonly octave?: number;
 };
@@ -251,6 +253,48 @@ export const terminalWindow = (
     const hi = clamp(first + size - 1 + margin, 0, ids.length - 1);
     return { start: ids[lo]!, end: ids[hi]! };
 };
+
+/** Lines committed at or before `asOf`; undated lines always remain visible. */
+export const terminalVisibleAt = (
+    lines: readonly TerminalLine[],
+    asOf: number | undefined,
+): readonly TerminalLine[] =>
+    asOf === undefined ? lines : lines.filter((line) => line.at === undefined || line.at <= asOf);
+
+export type TerminalChapter = {
+    readonly id: string;
+    readonly label: string;
+    readonly startID: string;
+    readonly endID: string;
+    readonly turn?: number;
+    readonly at?: number;
+};
+
+/** Consecutive lines sharing a turn form one chapter; ids and offsets stay addressable. */
+export const terminalChapters = (lines: readonly TerminalLine[]): readonly TerminalChapter[] => {
+    const groups: { readonly turn?: number; readonly lines: TerminalLine[] }[] = [];
+    lines.forEach((line) => {
+        const last = groups.at(-1);
+        if (!last || last.turn !== line.turn) groups.push({ turn: line.turn, lines: [line] });
+        else last.lines.push(line);
+    });
+    return groups.map((group, index) => {
+        const first = group.lines[0]!;
+        return {
+            id: `chapter-${index + 1}`,
+            label: group.turn === undefined ? `Lines ${index + 1}` : `Turn ${group.turn}`,
+            startID: first.id,
+            endID: group.lines.at(-1)!.id,
+            turn: group.turn,
+            at: group.lines.find((line) => line.at !== undefined)?.at,
+        };
+    });
+};
+
+/** Progressive prefixes for replay-as-typing; each step keeps the same committed ids. */
+export const terminalReplaySteps = (
+    lines: readonly TerminalLine[],
+): readonly (readonly TerminalLine[])[] => lines.map((_, index) => lines.slice(0, index + 1));
 
 export type TerminalSpan = {
     readonly lineID: string;
@@ -847,6 +891,7 @@ export type TerminalController = {
     tail(): string | undefined;
     /** Committed line text joined by newlines; indices match `terminalPointAtIndex`. */
     text(): string;
+    lines(): readonly TerminalLine[];
     /** Active palette id; hosts can map its token names onto their CSS. */
     palette(): string;
     setPalette(id: string): void;
@@ -964,6 +1009,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
         selection: () => range,
         tail: () => focusID || undefined,
         text: () => terminalFlatten(lines).text,
+        lines: () => lines,
         palette: () => palette.id,
         setPalette: (id) => {
             palette = terminalPalette(id);
