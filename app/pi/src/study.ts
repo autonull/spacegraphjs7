@@ -8,6 +8,14 @@ import {
 } from 'spacegraphjs/experiments';
 import { isGraphLayoutMode, type GraphLayoutMode } from './graph-layout';
 import { uiPresetById } from './ui/presets';
+import {
+    ARRANGEMENTS,
+    DEPTHS,
+    SURFACES,
+    type Arrangement,
+    type Depth,
+    type Surface,
+} from './view-modes';
 
 export const STUDY_GRAPH_LAYOUT_PARAM = 'studyGraphLayout';
 export const STUDY_UI_PARAM = 'studyUI';
@@ -24,13 +32,13 @@ export const studyUI = (search: string): string | undefined => {
     return uiPresetById(value)?.id;
 };
 
-export type StudySurface = 'log' | 'map' | 'hybrid';
-export type StudyDepth = 'flat' | 'layered' | 'depth-stack' | 'orbit';
-export type StudyArrangement = 'stacked' | 'side' | 'floating';
+export type StudySurface = Surface;
+export type StudyDepth = Depth;
+export type StudyArrangement = Arrangement;
 
-export const STUDY_SURFACES: readonly StudySurface[] = ['log', 'map', 'hybrid'];
-export const STUDY_DEPTHS: readonly StudyDepth[] = ['flat', 'layered', 'depth-stack', 'orbit'];
-export const STUDY_ARRANGEMENTS: readonly StudyArrangement[] = ['stacked', 'side', 'floating'];
+export const STUDY_SURFACES = SURFACES;
+export const STUDY_DEPTHS = DEPTHS;
+export const STUDY_ARRANGEMENTS = ARRANGEMENTS;
 
 export interface StudyTask {
     readonly id: string;

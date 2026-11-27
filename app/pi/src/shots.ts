@@ -1,14 +1,15 @@
 import { findShotByID } from 'spacegraphjs/experiments';
 import type { PolicyVector } from './policy';
 import { FIT_OCTAVES } from './policy/adaptive-fit';
+import type { Arrangement, Rung, Surface } from './view-modes';
 
 /** Pi keeps its one-argument adapter; the lookup itself is host-neutral. */
 export const shotById = (id: string | null | undefined): Shot | undefined =>
     findShotByID(SHOTS, id);
 
-export type ShotSurface = 'log' | 'map' | 'hybrid';
-export type ShotArrangement = 'stacked' | 'side' | 'floating';
-export type ShotLevel = 'overview' | 'execution' | 'detail';
+export type ShotSurface = Surface;
+export type ShotArrangement = Arrangement;
+export type ShotLevel = Rung;
 
 /** A deterministic view of the flagship. Pure data: one URL launches exactly this state. */
 export interface Shot {

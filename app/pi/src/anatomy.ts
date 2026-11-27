@@ -1,7 +1,8 @@
 import { escapeHtml, type CardContext } from '@spacegraphjs/adapter';
 import { innerConnectors, innerPlacements, type InnerChip, type InnerLayout } from './inner';
+import type { Rung } from './view-modes';
 
-export type AnatomyRung = 'overview' | 'execution' | 'detail';
+export type AnatomyRung = Rung;
 export type PortSide = 'start' | 'end' | 'top' | 'bottom';
 
 export interface NodePorts {

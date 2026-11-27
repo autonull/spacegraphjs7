@@ -1,6 +1,6 @@
 {
   "rule": "ADR 0008 — a default visual change needs incumbent/variant evidence and a logged human decision. This file indexes pending work; it never records a verdict.",
-  "sourceHash": "cdf2fde82df40fccc9baafceae12955f9bb6b8d9ac5ffddf08b867ccde3569ad",
+  "sourceHash": "a7c67d651eb554d4ed7d039de7ab41a5b1965b3488c4ba2122e1356ba8e17b78",
   "sources": [
     "docs/screenshots/experiments.json",
     "docs/screenshots/review.json",

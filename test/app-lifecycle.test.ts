@@ -62,7 +62,7 @@ describe('SpaceGraphApp setup cleanup', () => {
                         edges: new Set(ids.filter((id) => id === 'e1')),
                         timestamp: 0,
                     }),
-                selection: { has: (id: string) => false },
+                selection: { has: () => false },
                 clearSelection: () => undefined,
             },
             clearSelectionStyles: () => undefined,

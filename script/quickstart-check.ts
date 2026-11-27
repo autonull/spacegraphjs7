@@ -83,7 +83,7 @@ try {
     symlinkSync(join(consumer, 'node_modules'), join(app, 'node_modules'), 'dir');
 
     console.log('\nguide: write the documented index.html, src/main.ts and vite.config.ts');
-    writeFileSync(join(app, 'index.html'), blockAfter('2. Use this `index.html` (or keep the scaffold\'s version)'));
+    writeFileSync(join(app, 'index.html'), blockAfter('2. Replace `index.html` with this file'));
     writeFileSync(join(app, 'src/main.ts'), blockAfter('3. Replace `src/main.ts` with this graph'));
     writeFileSync(join(app, 'vite.config.ts'), blockAfter('4. Keep the generated `vite.config.ts`'));
 

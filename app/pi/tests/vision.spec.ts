@@ -5,9 +5,7 @@ import { FIT_OCTAVES } from '../src/policy/adaptive-fit';
 import { GRAPH_LAYOUTS } from '../src/graph-layout';
 import { SHOTS } from '../src/shots';
 import { boot, ready, settle } from './boot';
-
-const DEPTHS = ['flat', 'layered', 'depth-stack', 'orbit'] as const;
-const ARRANGEMENTS = ['stacked', 'side', 'floating'] as const;
+import { ARRANGEMENTS, DEPTHS } from '../src/view-modes';
 
 const settledBoot = async (page: Page): Promise<void> => {
     await boot(page);

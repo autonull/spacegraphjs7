@@ -197,16 +197,13 @@ import {
 import { drawMinimap, installMinimapKeys } from './minimap';
 import { configureVision, VisionController } from './vision-controller';
 import { TRANSCRIPT_KINDS, TranscriptView } from './transcript';
+import { ARRANGEMENTS, SURFACES, type Arrangement, type Surface } from './view-modes';
 
-export type Arrangement = 'stacked' | 'side' | 'floating';
-export type Surface = 'log' | 'map' | 'hybrid';
 export type LevelMode = AgentLevel | 'auto';
 
 const FOLLOW_MODES: readonly FollowMode[] = ['off', 'turn', 'node', 'node+focus'];
 const LEVELS: readonly AgentLevel[] = ['overview', 'execution', 'detail'];
 const LEVEL_MODES: readonly LevelMode[] = ['auto', ...LEVELS];
-const ARRANGEMENTS: readonly Arrangement[] = ['stacked', 'side', 'floating'];
-const SURFACES: readonly Surface[] = ['log', 'map', 'hybrid'];
 const GLOBAL_GRAPH_KEYS = new Set(['f', 't', 's', 'u', 'n', '+', '=', '-']);
 const OCTAVE_PALETTE = ['#3b527f', '#3f6a86', '#4a7f78', '#7f6a4a'] as const;
 

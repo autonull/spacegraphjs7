@@ -582,14 +582,15 @@ export class DurableHost {
     #layoutName: LayoutName = 'grid';
     #asOf: number | undefined;
     readonly #scale = createScaleDomain();
-    #sample: ScaleSample;
+    get #sample(): ScaleSample {
+        return sampleForRung(this.#scale, this.#rung);
+    }
     #attention: ReadonlyMap<string, number> = new Map();
     #baseModel: RenderModel | undefined;
     #model: RenderModel | undefined;
     #motionToken = 0;
     #ready = false;
     #offline = false;
-    #edgeCount = 0;
     #fitted = false;
     #shot: string | undefined;
     #story: Story | undefined;
@@ -654,7 +655,6 @@ export class DurableHost {
         this.#shot = shot;
         this.#seed = seed;
         this.#rung = rung && isRung(rung) ? rung : this.#rung;
-        this.#sample = sampleForRung(this.#scale, this.#rung);
     }
 
     async mount(container: HTMLElement): Promise<void> {
@@ -927,7 +927,6 @@ export class DurableHost {
         );
         this.#baseModel = model;
         this.#setModel(this.#emphasised(model));
-        this.#edgeCount = model.edges.length;
         this.#edgeLabels = model.edges.flatMap((edge) => (edge.label ? [edge.label] : []));
         if (!this.#fitted && presented.nodes.length) {
             this.#fitted = true;
@@ -962,7 +961,6 @@ export class DurableHost {
         if (!isRung(rung)) return false;
         if (rung === this.#rung) return false;
         this.#rung = rung;
-        this.#sample = sampleForRung(this.#scale, rung);
         this.renderRungs();
         this.#recordHistory();
         if (!this.#ready) return true;
@@ -1846,7 +1844,7 @@ export class DurableHost {
         const cards = el('canvas').querySelectorAll('[data-kind]').length;
         const score =
             canvas && this.opsCount > 0 ? Math.min(1, 0.5 + cards / 40 + this.opsCount / 100) : 0;
-        return { score, nodes: this.opsCount, edges: this.#edgeCount, canvas };
+        return { score, nodes: this.opsCount, edges: this.#baseModel?.edges.length ?? 0, canvas };
     }
 
     async abort(): Promise<boolean> {
@@ -2035,13 +2033,17 @@ export class DurableHost {
     }
 
     #heroIDs(nodes: readonly ScopeNode[]): Set<string> {
-        const heroes = new Set<string>();
-        for (const node of nodes) {
-            if (node.kind === 'conversation' || node.kind === 'run') heroes.add(node.id);
-            if (node.kind === 'message' && node.data?.['role'] === 'assistant') heroes.add(node.id);
-            if (node.kind === 'boundary' && node.data?.['head'] !== undefined) heroes.add(node.id);
-        }
-        return heroes;
+        return new Set(
+            nodes
+                .filter(
+                    (node) =>
+                        node.kind === 'conversation' ||
+                        node.kind === 'run' ||
+                        (node.kind === 'message' && node.data?.['role'] === 'assistant') ||
+                        (node.kind === 'boundary' && node.data?.['head'] !== undefined),
+                )
+                .map((node) => node.id),
+        );
     }
 
     #importanceOf(node: ScopeNode): Importance {

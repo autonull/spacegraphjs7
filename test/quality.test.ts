@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { checkQuality, correctQuality, type QualityModel } from '../src/quality';
-import { defectiveModel, heavyModel } from './fixtures/quality';
+import { defectiveModel } from './fixtures/quality';
 
 const model = defectiveModel();
 
