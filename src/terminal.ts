@@ -1,11 +1,13 @@
 // `spacegraphjs/terminal` — pure projection primitives for a line-addressable vector console.
 // The host owns vocabulary, theme and camera; nothing here imports a graph runtime or an app.
 
+import { createAnnouncer } from './a11y/announcer';
 import { mountComposer, type ComposerController, type ComposerOptions } from './composer';
 import { transcriptLane, type TranscriptLaneOptions } from './layout/transcript';
 import { escapeHtml } from './markup';
 import { DEFAULT_RUNG_IDS } from './representations/ladder';
 import type { EdgeSpec, GraphSpec, NodeSpec } from './types';
+import { isEditableTarget } from './utils/DOMUtils';
 import { clamp } from './utils/math';
 
 export type TerminalLine = {
@@ -548,6 +550,60 @@ export const mountTerminalPrompt = (
             observer?.disconnect();
             composer?.destroy();
             composer = undefined;
+        },
+    };
+};
+
+export type TerminalA11yOptions = {
+    /** Selector that identifies addressable line nodes inside the container. */
+    readonly selector?: string;
+    readonly announce?: (message: string) => void;
+    readonly onFocus?: (id: string) => void;
+};
+
+/** Roving focus, list roles and announced line navigation over scene-rendered nodes. */
+export const mountTerminalA11y = (
+    container: HTMLElement,
+    options: TerminalA11yOptions = {},
+): { destroy(): void } => {
+    const selector = options.selector ?? '[data-node-id]';
+    const announcer = options.announce ? undefined : createAnnouncer();
+    const say = (message: string): void => (options.announce ?? announcer?.announce)?.(message);
+    const decorate = (): void => {
+        container.querySelectorAll<HTMLElement>(selector).forEach((node) => {
+            if (isEditableTarget(node)) return;
+            node.tabIndex = 0;
+            node.setAttribute('role', 'listitem');
+        });
+    };
+    const observer = new MutationObserver(decorate);
+    observer.observe(container, { childList: true, subtree: true });
+    decorate();
+    const onKeyDown = (event: KeyboardEvent): void => {
+        if (isEditableTarget(event.target)) return;
+        const target = (event.target as HTMLElement | null)?.closest<HTMLElement>(selector);
+        if (!target || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        const nodes = [...container.querySelectorAll<HTMLElement>(selector)];
+        const index = nodes.indexOf(target);
+        const next =
+            event.key === 'Home'
+                ? 0
+                : event.key === 'End'
+                  ? nodes.length - 1
+                  : Math.max(0, Math.min(nodes.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1)));
+        const node = nodes[next];
+        if (!node?.dataset['nodeId']) return;
+        node.focus();
+        options.onFocus?.(node.dataset['nodeId']);
+        say(`Line ${next + 1} of ${nodes.length}`);
+    };
+    container.addEventListener('keydown', onKeyDown);
+    return {
+        destroy: () => {
+            observer.disconnect();
+            container.removeEventListener('keydown', onKeyDown);
+            announcer?.destroy();
         },
     };
 };

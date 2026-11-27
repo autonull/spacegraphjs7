@@ -5,6 +5,7 @@ import {
     lineGlyph,
     lineHTML,
     mountTerminal,
+    mountTerminalA11y,
     mountTerminalPrompt,
     STATUS_GLYPHS,
     TERMINAL_PALETTES,
@@ -481,6 +482,53 @@ describe('mountTerminal', () => {
             ['b', true],
         ]);
         terminal.destroy();
+    });
+});
+
+describe('a11y navigation', () => {
+    const containerWithLines = (): HTMLElement => {
+        const container = document.createElement('div');
+        ['a', 'b', 'c'].forEach((id) => {
+            const node = document.createElement('div');
+            node.dataset['nodeId'] = id;
+            container.append(node);
+        });
+        document.body.append(container);
+        return container;
+    };
+
+    it('decorates nodes and announces roving focus', async () => {
+        const container = containerWithLines();
+        const announce = vi.fn();
+        const a11y = mountTerminalA11y(container, { announce });
+        await Promise.resolve();
+        const nodes = [...container.querySelectorAll<HTMLElement>('[data-node-id]')];
+        expect(nodes.every((node) => node.tabIndex === 0 && node.getAttribute('role') === 'listitem')).toBe(
+            true,
+        );
+        nodes[0]!.focus();
+        nodes[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+        expect(nodes[1]).toHaveFocus();
+        expect(announce).toHaveBeenCalledWith('Line 2 of 3');
+        a11y.destroy();
+        container.remove();
+    });
+
+    it('ignores editable targets and stops after destroy', async () => {
+        const container = containerWithLines();
+        const field = document.createElement('textarea');
+        container.append(field);
+        const onFocus = vi.fn();
+        const a11y = mountTerminalA11y(container, { onFocus });
+        await Promise.resolve();
+        field.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+        expect(onFocus).not.toHaveBeenCalled();
+        a11y.destroy();
+        const node = container.querySelector<HTMLElement>('[data-node-id="a"]')!;
+        node.focus();
+        node.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+        expect(onFocus).not.toHaveBeenCalled();
+        container.remove();
     });
 });
 

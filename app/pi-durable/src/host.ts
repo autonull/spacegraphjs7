@@ -40,6 +40,7 @@ import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import {
     lineHTML,
+    mountTerminalA11y,
     mountTerminalPrompt,
     mountTerminalSink,
     TERMINAL_PALETTES,
@@ -59,7 +60,6 @@ import {
     type TerminalPromptController,
     type TerminalSink,
 } from 'spacegraphjs/terminal';
-import { isEditableTarget } from 'spacegraphjs/utils';
 import { type ScaleSample } from 'spacegraphjs/zoom';
 import { decodeAddress, encodeAddress, type Address } from './address';
 import { exportURL } from './api';
@@ -2519,17 +2519,7 @@ export class DurableHost {
             maxWidth: 720,
         });
         const sink: TerminalSink<RenderModel> = {
-            render: (model) => {
-                this.renderer.setModel(model);
-                requestAnimationFrame(() => {
-                    el('canvas')
-                        .querySelectorAll<HTMLElement>('[data-node-id]')
-                        .forEach((node) => {
-                            node.tabIndex = 0;
-                            node.setAttribute('role', 'listitem');
-                        });
-                });
-            },
+            render: (model) => this.renderer.setModel(model),
             show: () => undefined,
             select: (target) =>
                 this.renderer.setSelection(
@@ -2625,24 +2615,9 @@ export class DurableHost {
             },
             announce: (message) => this.announce(message),
         });
-        el('canvas').addEventListener('keydown', (event) => {
-            if (isEditableTarget(event.target)) return;
-            const target = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-node-id]');
-            if (!target || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
-            event.preventDefault();
-            const nodes = [...el('canvas').querySelectorAll<HTMLElement>('[data-node-id]')];
-            const index = nodes.indexOf(target);
-            const next =
-                event.key === 'Home'
-                    ? 0
-                    : event.key === 'End'
-                      ? nodes.length - 1
-                      : Math.max(0, Math.min(nodes.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1)));
-            const node = nodes[next];
-            if (!node?.dataset['nodeId']) return;
-            node.focus();
-            this.#terminalController?.focusLine(node.dataset['nodeId']);
-            this.announce(`Line ${next + 1} of ${nodes.length}`);
+        mountTerminalA11y(el('canvas'), {
+            announce: (message) => this.announce(message),
+            onFocus: (id) => this.#terminalController?.focusLine(id),
         });
         let prompt: TerminalPromptController | undefined;
         prompt = mountTerminalPrompt(el('canvas'), {
