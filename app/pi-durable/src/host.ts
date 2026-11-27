@@ -48,12 +48,14 @@ import {
     terminalChapters,
     terminalDetailHTML,
     terminalDiff,
+    terminalExport,
     terminalGrid,
     terminalPalette,
     terminalRangeFromKey,
     terminalRangeKey,
     terminalReplaySteps,
     terminalVisibleAt,
+    type TerminalCameraController,
     type TerminalController,
     type TerminalDetail,
     type TerminalLine,
@@ -62,7 +64,14 @@ import {
     type TerminalSink,
 } from 'spacegraphjs/terminal';
 import { type ScaleSample } from 'spacegraphjs/zoom';
-import { decodeAddress, encodeAddress, type Address } from './address';
+import {
+    decodeAddress,
+    detailKey,
+    encodeAddress,
+    parseDetailKey,
+    type Address,
+    type ConsoleDetailMode,
+} from './address';
 import { consoleModel } from './console-model';
 import { exportURL } from './api';
 import { edgeStyleForKind } from './edge-style';
@@ -657,6 +666,7 @@ export class DurableHost {
     };
     #readerController: ReadingController | undefined;
     #terminalController: TerminalController | undefined;
+    #terminalCamera: TerminalCameraController | undefined;
     #consoleFramed = false;
     #detailMode: 'inline' | 'popup' | 'rail' = 'inline';
     #expandedLine: string | undefined;
@@ -1678,6 +1688,10 @@ export class DurableHost {
         if (selection) params.set('sel', terminalRangeKey(selection));
         const tail = this.#terminalController?.tail();
         if (tail) params.set('tail', tail);
+        const palette = this.#terminalController?.palette();
+        if (palette && palette !== 'classic') params.set('pal', palette);
+        const detail = this.#consoleDetailKey();
+        if (detail) params.set('det', detail);
         const viewport = this.renderer.getViewport?.();
         if (viewport) params.set('zoom', viewport.zoom.toFixed(3));
         return `${location.pathname}?${params.toString()}`;
@@ -1704,6 +1718,8 @@ export class DurableHost {
             focus: params.get('focus') ?? undefined,
             sel: params.get('sel') ?? undefined,
             tail: params.get('tail') ?? undefined,
+            pal: params.get('pal') ?? undefined,
+            det: params.get('det') ?? undefined,
         });
     }
 
@@ -1723,7 +1739,25 @@ export class DurableHost {
             focus: this.registry.active()?.view.focus,
             sel: selection ? terminalRangeKey(selection) : undefined,
             tail: tail || undefined,
+            pal: inConsole && this.#terminalController?.palette() !== 'classic'
+                ? this.#terminalController?.palette()
+                : undefined,
+            det: this.#consoleDetailKey(),
         };
+    }
+
+    #consoleDetailKey(): string | undefined {
+        if (this.#viewName !== 'transcript') return undefined;
+        return this.#detailMode !== 'inline' || this.#expandedLine
+            ? detailKey(this.#detailMode, this.#expandedLine)
+            : undefined;
+    }
+
+    #setConsoleDetail(mode: ConsoleDetailMode, expanded?: string): void {
+        this.#detailMode = mode;
+        this.#expandedLine = expanded;
+        this.#consoleFramed = false;
+        this.refresh();
     }
 
     applyAddress(address: Address): boolean {
@@ -1750,6 +1784,9 @@ export class DurableHost {
             if (address.tail) this.#terminalController?.focusLine(address.tail);
             const range = terminalRangeFromKey(address.sel);
             this.#terminalController?.select(range);
+            if (address.pal) this.#terminal()?.setPalette(address.pal);
+            const detail = parseDetailKey(address.det);
+            if (detail) this.#setConsoleDetail(detail.mode, detail.id);
         }
         this.#history.suppress(false);
         return tabApplied || Boolean(address.focus);
@@ -1775,23 +1812,27 @@ export class DurableHost {
             },
             copyConsole: () => this.#terminalController?.copy(),
             consoleText: () => this.#terminalController?.text(),
+            exportConsole: (format: 'markdown' | 'json') => {
+                const terminal = this.#terminal();
+                return terminalExport(terminal.lines(), terminal.selection(), format);
+            },
             consoleChapters: () => terminalChapters(lines()),
             consoleReplaySteps: () => terminalReplaySteps(lines()).length,
             consoleDetailMode: () => this.#detailMode,
             consoleExpanded: () => this.#expandedLine,
             setConsoleDetailMode: (mode: string) => {
-                if (!['inline', 'popup', 'rail'].includes(mode)) return false;
-                this.#detailMode = mode as 'inline' | 'popup' | 'rail';
-                this.#consoleFramed = false;
-                this.refresh();
+                const detail = parseDetailKey(mode);
+                if (!detail) return false;
+                this.#setConsoleDetail(detail.mode, this.#expandedLine);
                 return true;
             },
             toggleConsoleDetail: (id?: string) => {
                 const target = id ?? this.#terminalController?.tail();
                 if (!target) return false;
-                this.#expandedLine = this.#expandedLine === target ? undefined : target;
-                this.#consoleFramed = false;
-                this.refresh();
+                this.#setConsoleDetail(
+                    this.#detailMode,
+                    this.#expandedLine === target ? undefined : target,
+                );
                 return true;
             },
             consoleCompare: (peerID: string) => {
@@ -2590,6 +2631,7 @@ export class DurableHost {
                     glyphs: terminalPalette(this.#terminalController?.palette() ?? 'classic').glyphs,
                     lines: this.#terminalController?.lines() ?? [],
                     selection: this.#terminalController?.selection(),
+                    index: context.index,
                     detailMode: this.#detailMode,
                 }),
             onReveal: (id) => {
@@ -2608,10 +2650,13 @@ export class DurableHost {
             announce: (message) => this.announce(message),
         });
         mountTerminalA11y(el('canvas'), {
+            selector: '[data-node-id]:has(.sg-terminal-line)',
             announce: (message) => this.announce(message),
             onFocus: (id) => this.#terminalController?.focusLine(id),
+            selection: () => this.#terminalController?.selection(),
+            onSelect: (range) => this.#terminalController?.select(range),
         });
-        mountTerminalCamera(el('canvas'), this.#terminalController, {
+        this.#terminalCamera = mountTerminalCamera(el('canvas'), this.#terminalController, {
             badge: el('follow-badge'),
             onFollowChange: (enabled) =>
                 this.announce(enabled ? 'Following the console tail' : 'Camera released from tail'),
@@ -2736,6 +2781,7 @@ export class DurableHost {
         el('survey').addEventListener('click', (event) => {
             const projection = this.#overviewProjection;
             if (!projection) return;
+            if (this.#viewName === 'transcript') this.#terminalCamera?.follow(true);
             const rect = el('survey').getBoundingClientRect();
             this.#panOverviewTo(
                 projection.unproject({

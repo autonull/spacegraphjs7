@@ -19,6 +19,7 @@ import {
     terminalPromptNode,
     terminalCompare,
     terminalDetailHTML,
+    terminalExport,
     terminalFlatten,
     terminalGaps,
     terminalIndexOfPoint,
@@ -693,5 +694,109 @@ describe('scene prompt', () => {
         field.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
         expect(field.value).toBe('earlier');
         prompt.destroy();
+    });
+});
+
+describe('range export', () => {
+    const lines = [line('a', 'alpha'), line('b', 'beta'), line('c', 'gamma')];
+    const range = {
+        anchor: { nodeID: 'a', offset: 0 },
+        focus: { nodeID: 'b', offset: 3 },
+    };
+
+    it('emits a Markdown excerpt of the addressed lines', () => {
+        expect(terminalExport(lines, range, 'markdown')).toBe('- @ alpha `a`\n- @ beta `b`');
+    });
+
+    it('emits stable ids and turns as JSON, or the whole console without a range', () => {
+        expect(JSON.parse(terminalExport(lines, range, 'json')).map((entry: { id: string }) => entry.id)).toEqual([
+            'a',
+            'b',
+        ]);
+        expect(terminalExport(lines, undefined, 'json')).toContain('"id":"c"');
+    });
+});
+
+describe('cached indices', () => {
+    it('supplies the cached order map and flattened text to hosts and copy', () => {
+        const graph = graphDouble();
+        let cached: ReadonlyMap<string, number> | undefined;
+        const terminal = mountTerminal(graph, {
+            project: ({ index }) => {
+                cached = index;
+                return { nodes: [], edges: [] };
+            },
+        });
+        terminal.append([line('a', 'alpha'), line('b', 'beta')]);
+        expect(cached?.get('b')).toBe(1);
+        terminal.select({ anchor: { nodeID: 'a', offset: 0 }, focus: { nodeID: 'b', offset: 3 } });
+        expect(terminal.copy()).toBe('alpha\nbet');
+        expect(terminal.text()).toBe('alpha\nbeta');
+        terminal.destroy();
+    });
+});
+
+describe('shift selection', () => {
+    it('extends the anchored range with Shift+Arrow and announces the span', () => {
+        const container = document.createElement('div');
+        ['a', 'b', 'c'].forEach((id) => {
+            const node = document.createElement('div');
+            node.dataset['nodeId'] = id;
+            container.append(node);
+        });
+        document.body.append(container);
+        const announce = vi.fn();
+        const onSelect = vi.fn();
+        let current: ReturnType<typeof terminalRangeFromKey> | undefined;
+        const a11y = mountTerminalA11y(container, {
+            announce,
+            selection: () => current,
+            onSelect: (next) => {
+                current = next;
+                onSelect(next);
+            },
+        });
+        const nodes = [...container.querySelectorAll<HTMLElement>('[data-node-id]')];
+        nodes[0]!.focus();
+        nodes[0]!.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowDown', shiftKey: true, bubbles: true }),
+        );
+        expect(current).toEqual({
+            anchor: { nodeID: 'a', offset: 0 },
+            focus: { nodeID: 'b', offset: 0 },
+        });
+        nodes[1]!.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'ArrowDown', shiftKey: true, bubbles: true }),
+        );
+        expect(current?.focus).toEqual({ nodeID: 'c', offset: 0 });
+        expect(current?.anchor).toEqual({ nodeID: 'a', offset: 0 });
+        expect(announce).toHaveBeenLastCalledWith('Selected 3 lines');
+        expect(onSelect).toHaveBeenCalledTimes(2);
+        a11y.destroy();
+        container.remove();
+    });
+});
+
+describe('camera follow API', () => {
+    it('lets a host re-engage follow through the badge path', () => {
+        const container = document.createElement('div');
+        document.body.append(container);
+        const badge = document.createElement('button');
+        const terminal = mountTerminal(graphDouble());
+        terminal.append([line('a', 'alpha'), line('b', 'beta')]);
+        const changes: boolean[] = [];
+        const camera = mountTerminalCamera(container, terminal, {
+            badge,
+            onFollowChange: (value) => changes.push(value),
+        });
+        container.dispatchEvent(new WheelEvent('wheel', { deltaY: 30, bubbles: true }));
+        expect(terminal.following()).toBe(false);
+        camera.follow(true);
+        expect(terminal.following()).toBe(true);
+        expect(badge.textContent).toBe('tail: follow');
+        expect(changes).toEqual([true, false, true]);
+        camera.destroy();
+        terminal.destroy();
+        container.remove();
     });
 });

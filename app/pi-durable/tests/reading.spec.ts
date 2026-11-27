@@ -134,6 +134,70 @@ test('console selection and tail survive a compact permalink', async ({ page }) 
     expect(errors).toEqual([]);
 });
 
+test('Shift+Arrow extends a console range and announces the span', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    const lines = page.locator('#canvas [data-node-id]');
+    await lines.first().focus();
+    await page.keyboard.press('Shift+ArrowDown');
+    await expect(page.locator('#announcer')).toContainText('Selected 2 lines');
+    expect(await call<string | undefined>(page, 'consoleRange')).toMatch(/:0~.*:0$/);
+    await expect(lines.nth(1)).toBeFocused();
+    expect(errors).toEqual([]);
+});
+
+test('minimap click re-engages tail follow', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    const badge = page.locator('#follow-badge');
+    await page.locator('#canvas').hover();
+    await page.mouse.wheel(0, 200);
+    await expect(badge).toContainText('free');
+    await page.locator('#survey').click();
+    await expect(badge).toHaveText('tail: follow');
+    expect(errors).toEqual([]);
+});
+
+test('palette and detail state survive a compact permalink', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    const id = await page.locator('#canvas [data-node-id]').first().getAttribute('data-node-id');
+    await call(page, 'setConsolePalette', 'retro');
+    await call(page, 'setConsoleDetailMode', 'popup');
+    await call(page, 'toggleConsoleDetail', id);
+    await expect(page.locator('.terminal-detail-popup').first()).toBeVisible();
+    const before = await call<{ pal?: string; det?: string }>(page, 'address');
+    expect(before.pal).toBe('retro');
+    expect(before.det).toBe(`popup~${id}`);
+    const compact = await call<string>(page, 'compactAddress');
+    await call(page, 'applyAddress', compact.slice(compact.indexOf('at=') + 3));
+    const after = await call<{ pal?: string; det?: string }>(page, 'address');
+    expect(after.pal).toBe('retro');
+    expect(after.det).toBe(`popup~${id}`);
+    await expect(page.locator('#canvas .tg-gutter').first()).toContainText('v');
+    expect(errors).toEqual([]);
+});
+
+test('exports a selected console range as Markdown and JSON', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    const ids = await page.locator('#canvas [data-node-id]').evaluateAll((nodes) =>
+        nodes.map((node) => node.getAttribute('data-node-id') ?? ''),
+    );
+    const sel = `${ids[0]}:0~${ids[1]}:0`;
+    const value = btoa(`view=transcript&sel=${sel}&version=1`)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    await call(page, 'applyAddress', value);
+    const markdown = await call<string>(page, 'exportConsole', 'markdown');
+    expect(markdown).toContain(`\`${ids[0]}\``);
+    expect(markdown).toContain(`\`${ids[1]}\``);
+    const json = await call<string>(page, 'exportConsole', 'json');
+    expect(JSON.parse(json).map((entry: { id: string }) => entry.id)).toEqual([ids[0], ids[1]]);
+    expect(errors).toEqual([]);
+});
+
 test('documents render as a readable document with graph backlinks', async ({ page }) => {
     const errors = await boot(page, '?shot=docs');
     await expect(page.locator('#reader')).toBeVisible();

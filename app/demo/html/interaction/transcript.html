@@ -555,6 +555,21 @@
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
             }
+            .tg-detail {
+                box-sizing: border-box;
+                width: 100%;
+                height: 100%;
+                padding: 6px 8px;
+                overflow: hidden;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 3px;
+                color: var(--text);
+                font: 11px/14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            }
+            .tg-detail strong { color: var(--accent); }
+            .tg-detail p { margin: 4px 0; }
+            .tg-detail-fields { display: flex; flex-wrap: wrap; gap: 8px; color: var(--muted); }
             .zcard[data-kind='error'] .zcard-meta { color: var(--error); }
             .zcard[data-kind='approval'] .zcard-meta { color: var(--warning); }
             .zcard[data-kind='artifact'] .zcard-meta { color: var(--success); }

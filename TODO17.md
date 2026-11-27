@@ -1,6 +1,6 @@
 # TODO17 — Terminal: a vector console for durable agents
 
-> **Status: complete (2026-11-27).** Stages 1–4 and all E1–E12 landed in the demo and Pi Durable. See §11 for the opportunity backlog. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
+> **Status: Stages 1–4, E1–E12 and backlog items 1, 2, 3, 7, 12, 13 complete (2026-11-27).** See §11 for the remaining backlog. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
 > Agent REPL that faithfully reads like a styled monospace text console while using vector/ZUI space
 > to add graph, fractal and margin overlays that a DOM console cannot express.
 
@@ -200,7 +200,7 @@ surface. None needs a second renderer or a second store.
 4. **Stage 4 — extensions.** Land E1–E12 individually, library-first, each with a unit test and one
    E2E or screenshot when the visual shape changes. No bundled mega-change.
 
-**Status:** Stages 1–4 landed 2026-11-27. E1–E12 are in place; remaining polish is listed in §10.
+**Status:** Stages 1–4 and E1–E12 landed 2026-11-27. Six low-effort backlog items landed in the follow-up pass; remaining work is listed in §11.
 
 ## 7. Verification ladder
 
@@ -223,8 +223,8 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   Follow the existing rule: shortcuts never fire while the composer or another text field has focus.
 - **Selection across unmounted lines.** Must anchor to `{id, offset}`, not DOM index or window
   position, or copy breaks when the window slides.
-- **Tail-follow re-engagement.** Define exactly when panning disables follow and what restores it
-  (End key, minimap click, explicit badge). Avoid fighting the user's camera.
+- **Tail-follow re-engagement — resolved.** Wheel travel beyond 24 px releases follow; End, the
+  badge and a console-view minimap click restore it through `mountTerminalCamera().follow(true)`.
 - **Pan churn.** Window mount/unmount needs hysteresis and a prefetch margin; measure before
   tuning. Reject the alternative of keeping all nodes and relying only on frustum culling — the
   decision is a windowed set.
@@ -394,16 +394,37 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   `terminalFlatten`/`terminalIndexOfPoint`, replaced array-membership scans with Sets, removed unused
   imports, and deduped the screenshot line-id lookup. Low-effort fixes: unknown statuses map to
   `neutral`, and the controller's initial band comes from `DEFAULT_RUNG_IDS` instead of a literal.
+- **Backlog pass (2026-11-27).** Six low-effort items from §11 landed together; each is library-first
+  with a unit test and an app assertion:
+  - **#1 Keyboard range selection.** `mountTerminalA11y` reads `selection()` and extends the anchored
+    range with Shift+Arrow/Home/End, announcing the span; Pi Durable restricts roving focus to line
+    nodes with `[data-node-id]:has(.sg-terminal-line)` and routes selection to the controller.
+  - **#2 Persist palette and detail state.** `Address` carries `pal` and `det` (`mode~lineID`);
+    `applyAddress` hydrates both, and `permalink()`/`address()` emit them. `setConsoleDetailMode` and
+    `toggleConsoleDetail` share one `#setConsoleDetail` path.
+  - **#3 Minimap-click tail-follow.** `mountTerminalCamera().follow(enabled)` reuses the badge and
+    announcement path; a `#survey` click in the console view re-engages follow.
+  - **#7 Cache hot-path indices.** The controller caches ids, `terminalOrder` and `terminalFlatten`
+    in `commit()`; the projection context exposes `index`, `consoleModel` consumes it, and copy/text
+    reuse the cached flat text.
+  - **#12 Demo detail modalities.** The demo projects `terminalDetailHTML` cards in inline/popup/rail
+    modes and toggles them from scene clicks; row clicks and scene clicks share `toggleExpanded`.
+  - **#13 Range export.** `terminalExcerpt` and `terminalExport` emit Markdown/JSON excerpts with
+    stable ids; Pi Durable exposes `exportConsole(format)`.
+- **Backlog-pass checks (2026-11-27).** Root `pnpm run check`, full suite 201 files / 1353 tests,
+  `test:exports` (6), Pi Durable `verify:fast` (84 E2E passing, 16 capture-only skipped), demo
+  `transcript.spec.ts` (5 passing). No console shot was regenerated: the pass changed interaction,
+  address codec and caching, not visual shape.
 
 ## 10. Handoff and final verification
 
 - **Final state.** `spacegraphjs/terminal` publishes the projection, controller, a11y, camera, prompt,
-  detail and time-axis primitives. The demo and Pi Durable both consume them; Pi Durable's `transcript`
-  view is a vector console with per-kind accents, elastic gaps, gutter markers, anchored selection,
-  three detail modalities, tail-follow and permalink hydration.
-- **Final checks (2026-11-27).** Root `pnpm run check`, 201 unit-test files / 1347 tests, 6 export
-  tests, Pi Durable `verify:fast` (80 E2E passing, 16 capture-only skipped), demo
-  `transcript.spec.ts` (4 passing), and `shots:console` (11 captures) all pass.
+  detail, time-axis and export primitives. The demo and Pi Durable both consume them; Pi Durable's
+  `transcript` view is a vector console with per-kind accents, elastic gaps, gutter markers, anchored
+  keyboard selection, three detail modalities, tail-follow and permalink hydration.
+- **Final checks (2026-11-27).** Root `pnpm run check`, 201 unit-test files / 1353 tests, 6 export
+  tests, Pi Durable `verify:fast` (84 E2E passing, 16 capture-only skipped), demo
+  `transcript.spec.ts` (5 passing), and `shots:console` (11 captures) all pass.
 - **Verification ladder for future changes.** Tier 1: package `typecheck`, `pi-durable check:fast`,
   `test:exports`. Tier 2: root `pnpm run check`. Tier 3: `pi-durable verify:fast` and demo
   `transcript.spec.ts`. Regenerate `shots:console` when console shape, palette, selection, detail or
@@ -415,24 +436,35 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
 
 ## 11. Opportunity backlog
 
-Ordered by value per unit of effort. Items marked **low** are small, isolated changes; **medium** and
-**large** touch multiple layers and should land separately.
+Ordered by value per unit of effort. **Done** items landed in the 2026-11-27 backlog pass; **medium**
+and **large** items touch multiple layers and should land separately, each with its own test and shot
+when the visual shape changes.
 
-| Priority | Opportunity | Effort | Why |
-| -------- | ----------- | ------ | --- |
-| 1 | **Keyboard range selection.** Wire Shift+Arrow to `terminalMoveLine` + `terminalRange` and announce the selected span; plain arrows already move focus. | low | Completes parity of interaction (§2.6) and makes copy/permalink usable without a mouse. |
-| 2 | **Persist palette and detail state.** Add `pal` and `det` keys to `Address` alongside `sel`/`tail`, hydrate them in `applyAddress`. | low | Console appearance becomes shareable; codec already supports extra string keys. |
-| 3 | **Minimap-click tail-follow.** Call `controller.followTail(true)` on `#survey` click; End and the badge are wired. | low | Closes the last open question in §8. |
-| 4 | **Chapter scrubbing UI.** Use `terminalChapters` to render a chapter rail in the stage; `consoleChapters` already exists as a hook. | medium | Makes the E8 primitive visible instead of hook-only. |
-| 5 | **Two-tail diff view.** Render `terminalDiff` between two tabs as a side-by-side console using `terminalLink`; `consoleCompare` already computes the diff. | medium | Demonstrates E9 without a second renderer. |
-| 6 | **Replay-as-typing.** Animate `terminalReplaySteps` prefixes on chapter load, honouring reduced motion. | medium | Turns the time-axis primitives into a visible narrative. |
-| 7 | **Cache hot-path indices.** Keep `terminalOrder` and `terminalFlatten` results in the controller, invalidated by `setLines`/`append`. | low | `apply()` currently rebuilds both on every selection or overlay change. |
-| 8 | **Unify projection contracts.** Share the node/overlay placement between `terminalSpec` and `consoleModel` instead of maintaining two builders. | large | Removes the last real duplication; needs care because the demo and Pi Durable style nodes differently. |
-| 9 | **RTL decision (§8).** Decide whether spine and gutter mirror or only text mirrors; preserve logical selection order. | medium | Existing app supports `dir="rtl"`; the console currently assumes LTR. |
-| 10 | **Hysteresis telemetry.** Measure window mount/unmount churn during fast pans before tuning `terminalWindow` defaults. | medium | Replaces guessed constants with evidence. |
-| 11 | **Emoji/wide-glyph width map.** Extend `terminalWrap` beyond fixed character counts for hosts that need inline emoji. | medium | Keeps the character grid honest without a special case. |
-| 12 | **Demo detail modalities.** Bring `terminalDetailHTML` and click-to-toggle to `app/demo/transcript.ts`. | low | Makes the demo a full reference consumer, not just the library smoke test. |
-| 13 | **Range export.** Emit Markdown and JSON excerpts from `terminalRangeText` plus `sel` for copy/quote/cite. | low | Completes E12's sharing story. |
-| 14 | **Visual regression gate.** Compare `shots:console` output against committed baselines in CI. | medium | Protects the carefully tuned console aesthetic from silent drift. |
+| Priority | Opportunity | Effort | Status | Why / remaining step |
+| -------- | ----------- | ------ | ------ | -------------------- |
+| 1 | **Keyboard range selection.** Shift+Arrow extends the anchored range and announces the span. | low | **Done** | Parity of interaction (§2.6); copy/permalink work without a mouse. |
+| 2 | **Persist palette and detail state.** `pal` and `det` in `Address`, hydrated by `applyAddress`. | low | **Done** | Console appearance is shareable; codec accepts extra string keys. |
+| 3 | **Minimap-click tail-follow.** `#survey` click calls the camera controller's `follow(true)`. | low | **Done** | Closes the last open question in §8. |
+| 4 | **Chapter scrubbing UI.** Render a chapter rail in the stage from `terminalChapters`. | medium | Remaining | Add a rail element, project chapters as buttons wired to `scrub`/`setAsOf`, add a hook and a console shot. Primitive and hook already exist. |
+| 5 | **Two-tail diff view.** Side-by-side consoles over one kernel using `terminalLink`. | medium | Remaining | Mount a second `mountTerminalSink` in the `diff` view, sync with `terminalLink(...).sync()`, test on the `fork-tabs` shot. `consoleCompare` already computes the diff. |
+| 6 | **Replay-as-typing.** Animate `terminalReplaySteps` prefixes on chapter load. | medium | Remaining | Step prefixes with `requestAnimationFrame`; jump to the final prefix under `prefers-reduced-motion`; add an E2E assertion for both paths. |
+| 7 | **Cache hot-path indices.** Controller caches ids, order map and flat text. | low | **Done** | `apply()`, `text()` and `copy()` no longer rebuild both on every change. |
+| 8 | **Unify projection contracts.** Share node/overlay placement between `terminalSpec` and `consoleModel`. | large | Remaining | Extract one placement contract first, then port the two styling adapters; keep the demo and Pi Durable visuals unchanged and compare shots before/after. |
+| 9 | **RTL decision (§8).** Decide whether spine/gutter mirror or only text mirrors. | medium | Decision made, not implemented | Mirror **text only**: keep spine/gutter geometry and logical selection order LTR, apply `dir="rtl"` to line text, then add an RTL shot before considering mirrored geometry. |
+| 10 | **Hysteresis telemetry.** Measure mount/unmount churn during fast pans. | medium | Remaining | Add a dev-only churn counter to `onCamera`, record pan durations and window changes, then tune `terminalWindow` constants from data. |
+| 11 | **Emoji/wide-glyph width map.** Extend `terminalWrap` beyond fixed character counts. | medium | Remaining | Add an optional per-codepoint width callback (default 1), test surrogate pairs and combining marks, keep the console on the default until a host needs it. |
+| 12 | **Demo detail modalities.** `terminalDetailHTML` cards with click-to-toggle in the demo. | low | **Done** | The demo is now a full reference consumer, not just the library smoke test. |
+| 13 | **Range export.** Markdown/JSON excerpts via `terminalExcerpt`/`terminalExport`. | low | **Done** | Completes E12's copy/quote/cite story; `exportConsole(format)` is exposed to hosts and tests. |
+| 14 | **Visual regression gate.** Compare `shots:console` output against committed baselines in CI. | medium | Remaining | Add a script that diffs PNG hashes/dimensions against `docs/screenshots/pi-durable/console/`, wire it into CI, and use `shots:console` to accept intentional updates. |
+
+### Remaining work at a glance
+
+- No low-effort items remain. All six have unit tests, host hooks and E2E assertions.
+- **Visible UI next:** #4 chapter rail, then #5 side-by-side diff, then #6 replay animation, then
+  #14 CI gate. Each changes visual shape, so regenerate `shots:console` in the same change.
+- **Library next:** #11 width map (self-contained) and #10 telemetry (measure before tuning). #8 is the
+  only large item: do it after the visible UI items so its before/after shots cover all consumers.
+- **RTL (#9):** decision recorded above; implementation needs a dedicated RTL shot and must keep
+  selection order logical.
 
 Out of scope unless a host needs them: ANSI/SGR parsing, PTY and cursor-control emulation (§3 fidelity decision), and a second console store.

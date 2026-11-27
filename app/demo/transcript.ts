@@ -7,8 +7,10 @@ import { transcriptLane } from 'spacegraphjs/layout';
 import {
     mountTerminal,
     mountTerminalPrompt,
+    terminalDetailHTML,
     terminalPromptNode,
     type TerminalController,
+    type TerminalDetail,
     type TerminalGraph,
     type TerminalLine,
 } from 'spacegraphjs/terminal';
@@ -261,6 +263,23 @@ export async function boot(): Promise<void> {
     });
     let terminal: TerminalController;
     const expanded = new Set<string>();
+    let detailMode: 'inline' | 'popup' | 'rail' = 'inline';
+    const detailOf = (item: TranscriptEvent): TerminalDetail => {
+        const fields: (readonly [string, string])[] = [
+            ['status', item.status],
+            ['turn', String(item.turn)],
+            ['octave', String(item.octave)],
+        ];
+        if (item.parent) fields.push(['parent', item.parent]);
+        return { title: `${item.kind} · ${item.label}`, fields, text: item.text };
+    };
+    const setDetailMode = (mode: string): boolean => {
+        if (!['inline', 'popup', 'rail'].includes(mode)) return false;
+        detailMode = mode as 'inline' | 'popup' | 'rail';
+        terminal.refresh();
+        graph.render();
+        return true;
+    };
     const visibleIds = (): string[] =>
         items.filter((item) => matchesFilter(item, filter)).map((item) => item.id);
     const frame = (): void => {
@@ -399,8 +418,36 @@ export async function boot(): Promise<void> {
             const last = visible.at(-1);
             const index = last ? order.indexOf(last.id) : -1;
             const prompt = terminalPromptNode([260, -(index + 1) * 60, 0]);
+            const details = items
+                .filter((item) => expanded.has(item.id) && matchesFilter(item, filter))
+                .flatMap((item) => {
+                    const [x, y, z] = item.position;
+                    const width = detailMode === 'inline' ? 260 : 240;
+                    return [
+                        {
+                            id: `detail-${item.id}`,
+                            type: 'HtmlNode',
+                            label: 'detail',
+                            position: [
+                                detailMode === 'inline' ? x : x + 300,
+                                detailMode === 'inline' ? y - cardSize(item)[1] / 2 - 46 : y,
+                                z,
+                            ] as [number, number, number],
+                            data: {
+                                html: terminalDetailHTML(detailOf(item)),
+                                useRawHtml: true,
+                                showControls: false,
+                                pointerEvents: 'auto',
+                                width,
+                                height: detailMode === 'inline' ? 80 : 120,
+                                minWidth: 120,
+                                minHeight: 40,
+                            },
+                        },
+                    ];
+                });
             return {
-                nodes: [...(spec.nodes ?? []), prompt],
+                nodes: [...(spec.nodes ?? []), ...details, prompt],
                 edges: spec.edges ?? [],
             };
         },
@@ -408,7 +455,11 @@ export async function boot(): Promise<void> {
             const item = items.find((candidate) => candidate.id === entry.id);
             return item ? matchesFilter(item, filter) : false;
         },
-        onReveal: (id) => reveal(id),
+        onReveal: (id) => {
+            const target = id.startsWith('detail-') ? id.slice('detail-'.length) : id;
+            if (items.some((item) => item.id === target)) toggleExpanded(target);
+            reveal(target);
+        },
         onFocus: (id) => {
             if (root.dataset.view !== 'transcript') graph.inspect(id, { duration: 0.35 });
         },
@@ -423,6 +474,8 @@ export async function boot(): Promise<void> {
     const toggleExpanded = (id: string): void => {
         if (expanded.has(id)) expanded.delete(id);
         else expanded.add(id);
+        terminal.refresh();
+        graph.render();
         renderRows();
         announcer.textContent = `${expanded.has(id) ? 'Expanded' : 'Collapsed'} ${id}`;
     };
@@ -525,8 +578,7 @@ export async function boot(): Promise<void> {
         const row = target.closest<HTMLElement>('[data-node]');
         const id = row?.dataset.node;
         if (!id) return;
-        if (expanded.has(id)) expanded.delete(id);
-        else expanded.add(id);
+        toggleExpanded(id);
         reveal(id, true);
     });
     rows.addEventListener('keydown', (key) => {
@@ -599,6 +651,8 @@ export async function boot(): Promise<void> {
             zoom: (value: number) => graph.setZoom(value),
             toggle: toggleExpanded,
             expanded: () => [...expanded],
+            detailMode: () => detailMode,
+            setDetailMode,
             selected: () => selected,
             frame,
         },

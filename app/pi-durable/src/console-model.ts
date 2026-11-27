@@ -25,6 +25,8 @@ export type ConsoleModelState = {
     readonly glyphs: TerminalGlyphs;
     readonly lines: readonly TerminalLine[];
     readonly selection?: TerminalRange;
+    /** Controller cache; falls back to rebuilding the order for standalone callers. */
+    readonly index?: ReadonlyMap<string, number>;
     readonly detailMode: 'inline' | 'popup' | 'rail';
 };
 
@@ -44,7 +46,7 @@ export const consoleModel = (
 ): RenderModel => {
     const { grid, glyphs, lines, detailMode } = state;
     const selected = state.selection
-        ? new Set(terminalRangeIDs(state.selection, terminalOrder(lines)))
+        ? new Set(terminalRangeIDs(state.selection, state.index ?? terminalOrder(lines)))
         : new Set<string>();
     const revealed = terminalOverlays(overlays, { band });
     const offsets = terminalGaps(

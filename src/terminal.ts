@@ -435,12 +435,44 @@ export const terminalRangeText = (
     range: TerminalRange,
     lines: readonly TerminalLine[],
     order: ReadonlyMap<string, number> = terminalOrder(lines),
+    flat: TerminalFlatText = terminalFlatten(lines),
 ): string => {
     const normalized = terminalRange(range.anchor, range.focus, order);
-    const flat = terminalFlatten(lines);
     const from = terminalIndexOfPoint(flat, normalized.anchor);
     const to = terminalIndexOfPoint(flat, normalized.focus);
     return from === undefined || to === undefined ? '' : flat.text.slice(from, Math.max(from, to));
+};
+
+export type TerminalExportFormat = 'markdown' | 'json';
+
+/** Lines addressed by a range, in linear order; an absent range exports the whole console. */
+export const terminalExcerpt = (
+    lines: readonly TerminalLine[],
+    range?: TerminalRange,
+    order: ReadonlyMap<string, number> = terminalOrder(lines),
+): readonly TerminalLine[] => {
+    if (!range) return lines;
+    const byID = new Map(lines.map((line) => [line.id, line] as const));
+    return terminalRangeIDs(range, order)
+        .map((id) => byID.get(id))
+        .filter((line): line is TerminalLine => line !== undefined);
+};
+
+/** Shareable excerpt of a console range; ids and turn numbers stay stable across exports. */
+export const terminalExport = (
+    lines: readonly TerminalLine[],
+    range: TerminalRange | undefined,
+    format: TerminalExportFormat,
+    order: ReadonlyMap<string, number> = terminalOrder(lines),
+): string => {
+    const excerpt = terminalExcerpt(lines, range, order);
+    if (format === 'json')
+        return JSON.stringify(
+            excerpt.map(({ id, kind, status, text, turn }) => ({ id, kind, status, text, turn })),
+        );
+    return excerpt
+        .map((line) => `- ${lineGlyph(line)} ${line.text} \`${line.id}\``)
+        .join('\n');
 };
 
 export const terminalMoveLine = (
@@ -651,6 +683,9 @@ export type TerminalA11yOptions = {
     readonly selector?: string;
     readonly announce?: (message: string) => void;
     readonly onFocus?: (id: string) => void;
+    /** Current anchored range; Shift+Arrow extends it from the original anchor. */
+    readonly selection?: () => TerminalRange | undefined;
+    readonly onSelect?: (range: TerminalRange) => void;
 };
 
 /** Roving focus, list roles and announced line navigation over scene-rendered nodes. */
@@ -686,9 +721,22 @@ export const mountTerminalA11y = (
                   : Math.max(0, Math.min(nodes.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1)));
         const node = nodes[next];
         if (!node?.dataset['nodeId']) return;
+        if (event.shiftKey && options.onSelect) {
+            const ids = nodes.flatMap((entry) => {
+                const id = entry.dataset['nodeId'];
+                return id ? [id] : [];
+            });
+            const order = new Map(ids.map((id, position) => [id, position] as const));
+            const anchor = options.selection?.()?.anchor ?? {
+                nodeID: target.dataset['nodeId']!,
+                offset: 0,
+            };
+            const range = terminalRange(anchor, { nodeID: node.dataset['nodeId'], offset: 0 }, order);
+            options.onSelect(range);
+            say(`Selected ${terminalRangeIDs(range, order).length} lines`);
+        } else say(`Line ${next + 1} of ${nodes.length}`);
         node.focus();
         options.onFocus?.(node.dataset['nodeId']);
-        say(`Line ${next + 1} of ${nodes.length}`);
     };
     container.addEventListener('keydown', onKeyDown);
     return {
@@ -708,12 +756,18 @@ export type TerminalCameraOptions = {
     readonly onFollowChange?: (following: boolean) => void;
 };
 
-/** Wheel panning releases tail-follow; End or the badge restores it. */
+export type TerminalCameraController = {
+    /** Re-engage or release tail-follow through the same badge and announcement path. */
+    follow(enabled: boolean): void;
+    destroy(): void;
+};
+
+/** Wheel panning releases tail-follow; End, the badge or a host action restores it. */
 export const mountTerminalCamera = (
     container: HTMLElement,
     controller: TerminalController,
     options: TerminalCameraOptions = {},
-): { destroy(): void } => {
+): TerminalCameraController => {
     const threshold = Math.max(1, options.threshold ?? 24);
     let travel = 0;
     const report = (enabled: boolean): void => {
@@ -746,6 +800,7 @@ export const mountTerminalCamera = (
     options.badge?.addEventListener('click', onBadgeClick);
     report(controller.following());
     return {
+        follow: setFollow,
         destroy: () => {
             container.removeEventListener('wheel', onWheel);
             container.removeEventListener('keydown', onKeyDown);
@@ -898,6 +953,8 @@ export type TerminalProjectionContext = {
     readonly lines: readonly TerminalLine[];
     readonly visible: readonly TerminalLine[];
     readonly order: readonly string[];
+    /** Cached id-to-index map; hosts use it instead of rebuilding `terminalOrder`. */
+    readonly index: ReadonlyMap<string, number>;
     readonly window: TerminalWindow;
     readonly gaps: readonly TerminalGap[];
     readonly overlays: readonly TerminalOverlay[];
@@ -969,23 +1026,28 @@ export const mountTerminalSink = <Model = GraphSpec>(
         typeof hooks.palette === 'string'
             ? terminalPalette(hooks.palette)
             : (hooks.palette ?? TERMINAL_PALETTES[0]!);
-
-    const order = (): readonly string[] => lines.map((line) => line.id);
+    let ids: readonly string[] = [];
+    let index: ReadonlyMap<string, number> = new Map();
+    let flat: TerminalFlatText = { text: '', spans: [] };
+    const cacheIndices = (): void => {
+        ids = lines.map((line) => line.id);
+        index = terminalOrder(lines);
+        flat = terminalFlatten(lines);
+    };
     const layout = (): TerminalLayout => terminalLayout(lines, hooks.grid ?? terminalGrid(), hooks.lane);
     const windowed = (): readonly TerminalLine[] => {
-        const ids = order();
         const from = ids.indexOf(windowState.start);
         const to = ids.indexOf(windowState.end);
-        return lines.filter((_, index) => index >= from && index <= to);
+        return lines.filter((_, position) => position >= from && position <= to);
     };
-    const selectedIDs = (): readonly string[] =>
-        range ? terminalRangeIDs(range, terminalOrder(lines)) : [];
+    const selectedIDs = (): readonly string[] => (range ? terminalRangeIDs(range, index) : []);
 
     const project = (): Model => {
         const context: TerminalProjectionContext = {
             lines,
             visible: windowed(),
-            order: order(),
+            order: ids,
+            index,
             window: windowState,
             gaps,
             overlays,
@@ -1014,10 +1076,11 @@ export const mountTerminalSink = <Model = GraphSpec>(
     };
 
     const moveWindow = (id: string): void => {
-        windowState = terminalWindow(order(), id, hooks.windowConfig);
+        windowState = terminalWindow(ids, id, hooks.windowConfig);
     };
     const commit = (next: readonly TerminalLine[], focus?: string): void => {
         lines = [...next];
+        cacheIndices();
         focusID = focus ?? lines.at(-1)?.id ?? '';
         if (following) moveWindow(focusID);
         apply();
@@ -1059,7 +1122,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
         },
         selection: () => range,
         tail: () => focusID || undefined,
-        text: () => terminalFlatten(lines).text,
+        text: () => flat.text,
         lines: () => lines,
         palette: () => palette.id,
         setPalette: (id) => {
@@ -1069,7 +1132,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
         following: () => following,
         copy: () => {
             const text = range
-                ? terminalRangeText(range, lines)
+                ? terminalRangeText(range, lines, index, flat)
                 : (lines.find((entry) => entry.id === focusID)?.text ?? '');
             hooks.onCopy?.(text);
             return text;

@@ -41,6 +41,31 @@ test('transcript rows toggle an expandable detail panel', async ({ page }) => {
     expect(errors).toEqual([]);
 });
 
+test('scene detail toggles in inline, popup and rail modes', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto('/html/interaction/transcript.html');
+    await page.waitForFunction(() => Boolean((window as { __transcript?: unknown }).__transcript));
+
+    await page.locator('[data-node-id="e1"] .zcard').click();
+    expect(await expanded(page)).toContain('e1');
+    const detail = page.locator('[data-node-id="detail-e1"] .tg-detail');
+    await expect(detail).toBeVisible();
+
+    for (const mode of ['popup', 'rail']) {
+        await page.evaluate((value) => {
+            const api = (window as unknown as { __transcript: { setDetailMode(mode: string): void } })
+                .__transcript;
+            api.setDetailMode(value);
+        }, mode);
+        await expect(detail).toBeVisible();
+    }
+
+    await page.locator('[data-node-id="detail-e1"] .tg-detail').click();
+    await expect(detail).toHaveCount(0);
+    expect(errors).toEqual([]);
+});
+
 test('arrow keys and Home/End move through transcript rows', async ({ page }) => {
     await page.goto('/html/interaction/transcript.html');
     await page.waitForFunction(() => Boolean((window as { __transcript?: unknown }).__transcript));
