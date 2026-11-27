@@ -7,16 +7,16 @@
         <style>
             :root {
                 color-scheme: dark;
-                --bg: #0f0e0c;
-                --panel: #191713;
-                --panel-2: #211e18;
-                --line: #3a352c;
-                --text: #f2ede3;
-                --muted: #b0a596;
-                --accent: #d7a45f;
-                --ok: #8fb98a;
-                --warn: #e2b169;
-                --error: #d98379;
+                --bg: #0e1013;
+                --panel: #16191d;
+                --panel-2: #1e2227;
+                --line: #30353c;
+                --text: #c7cdd5;
+                --muted: #8b949e;
+                --accent: #9aa4b2;
+                --ok: #8fae93;
+                --warn: #b6a276;
+                --error: #c17d7d;
                 --radius: 4px;
                 --rail: 56px;
                 --drawer: 300px;
@@ -92,8 +92,16 @@
                 font: 13px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
             .sg-terminal-line:hover, .sg-terminal-line:focus-visible {
                 border-color: var(--border); background: var(--panel); }
-            .sg-terminal-line .tg-gutter { flex: none; color: var(--muted); }
-            .sg-terminal-line .tg-text { min-width: 0; white-space: pre-wrap; }
+            .sg-terminal-line { --line-accent: var(--muted); color: var(--text); }
+            .sg-terminal-line .tg-gutter { flex: none; color: var(--line-accent); }
+            .sg-terminal-line .tg-text { min-width: 0; color: var(--text); white-space: pre-wrap; }
+            .sg-terminal-line[data-role='user'] { --line-accent: #7aa2f7; }
+            .sg-terminal-line[data-role='assistant'] { --line-accent: #7ec87e; }
+            .sg-terminal-line[data-kind='action'] { --line-accent: #6cc7d4; }
+            .sg-terminal-line[data-kind='boundary'] { --line-accent: #d1a45a; }
+            .sg-terminal-line[data-kind='approval'] { --line-accent: #b48ead; }
+            .sg-terminal-line[data-status='failed'] { --line-accent: #e06c75; }
+            .tg-prompt { --line-accent: var(--accent); }
             .tg-prompt { display: flex; align-items: flex-start; gap: 8px; width: 100%; height: 100%;
                 box-sizing: border-box; padding: 6px 8px; background: var(--panel); border: 1px solid var(--accent);
                 border-radius: 6px; color: var(--text);

@@ -37,6 +37,10 @@ for (const shot of shots) {
             await call(page, 'setConsolePalette', shot.palette);
             await settle(page);
         }
+        if (shot.zoomOut) {
+            await call(page, 'zoomBy', shot.zoomOut);
+            await settle(page);
+        }
         if (shot.selection) {
             const ids = await page
                 .locator('#canvas .sg-terminal-line')

@@ -17,6 +17,8 @@ export type TerminalLine = {
     readonly label: string;
     readonly text: string;
     readonly turn?: number;
+    /** Host role such as user or assistant; used for colour coding, never for text. */
+    readonly role?: string;
     /** Optional timestamp or ordered time value used by historical views. */
     readonly at?: number;
     readonly parent?: string;

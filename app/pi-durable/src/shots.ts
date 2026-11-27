@@ -39,6 +39,8 @@ export type ConsoleShot = Shot & {
     readonly palette?: string;
     /** Indices of the first and last line to select, resolved from the rendered console. */
     readonly selection?: readonly [number, number];
+    /** Zoom factor applied after boot; below 1 reveals the graph structure behind the text. */
+    readonly zoomOut?: number;
     /** Extra query parameters, e.g. `asOf=2`. */
     readonly query?: string;
 };
@@ -71,6 +73,7 @@ export const CONSOLE_SHOTS: readonly ConsoleShot[] = [
         viewport: { width: 1000, height: 700 },
         selection: [0, 2],
     }),
+    consoleShot('console-zoom', 'basic-turn', { zoomOut: 0.38 }),
 ];
 
 const HERO_IDS = new Set(['basic-turn', 'sleeping-approval', 'fork-tabs', 'resumed']);

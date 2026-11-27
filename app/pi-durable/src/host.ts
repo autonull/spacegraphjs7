@@ -207,21 +207,21 @@ const DURABLE_TOKENS: DesignTokens = {
     ...defaultTokens,
     colors: {
         ...defaultTokens.colors,
-        background: '#0f0e0c',
-        card: '#191713',
-        muted: '#14120f',
-        foreground: '#f2ede3',
-        mutedForeground: '#d8c9ad',
-        border: '#3a352c',
-        accent: '#d7a45f',
-        success: '#8fb98a',
-        warning: '#e2b169',
-        destructive: '#d98379',
-        edge: '#6a6254',
-        edgeMuted: '#3a352c',
-        selection: '#d7a45f',
-        ring: '#e2b169',
-        canvasText: '#f2ede3',
+        background: '#0e1013',
+        card: '#16191d',
+        muted: '#14171b',
+        foreground: '#c7cdd5',
+        mutedForeground: '#8b949e',
+        border: '#30353c',
+        accent: '#9aa4b2',
+        success: '#8fae93',
+        warning: '#b6a276',
+        destructive: '#c17d7d',
+        edge: '#606a75',
+        edgeMuted: '#31363d',
+        selection: '#9aa4b2',
+        ring: '#9aa4b2',
+        canvasText: '#c7cdd5',
     },
 };
 
@@ -2563,7 +2563,11 @@ export class DurableHost {
                         id: entry.id,
                         kind: entry.kind,
                         label: entry.label,
-                        html: `<div class="sg-terminal-line">${lineHTML(
+                        html: `<div class="sg-terminal-line" data-kind="${escapeHTML(
+                            entry.kind,
+                        )}" data-status="${escapeHTML(entry.status)}" data-role="${escapeHTML(
+                            entry.role ?? '',
+                        )}">${lineHTML(
                             entry,
                             terminalPalette(this.#terminalController?.palette() ?? 'classic').glyphs,
                         )}</div>`,
@@ -2584,7 +2588,8 @@ export class DurableHost {
                     source: lineNodes[index]!.id,
                     target: node.id,
                     kind: 'orders',
-                    style: 'solid' as const,
+                    confidence: 'inferred',
+                    style: 'dotted',
                 }));
                 const nodes: RenderNode[] = [...lineNodes];
                 terminalSlots(revealed, 'gutter').forEach((entries, lineID) => {
@@ -2665,6 +2670,7 @@ export class DurableHost {
                     label: labelForNode(node),
                     text: dataText(node) || labelForNode(node) || node.kind,
                     turn: typeof node.data?.['turn'] === 'number' ? node.data['turn'] : undefined,
+                    role: typeof node.data?.['role'] === 'string' ? node.data['role'] : undefined,
                     at: typeof node.data?.['at'] === 'number' ? node.data['at'] : undefined,
                     octave: 0,
                 })),

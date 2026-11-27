@@ -359,6 +359,12 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   markup renders with `useRawHtml`, so there is no default frame. A border appears only on hover or
   keyboard focus, and the core activity glow is suppressed for `#app[data-view='transcript']`. The demo
   applies the same frameless rule to `.zcard`. Selection and focus rings remain for accessibility.
+- **Neutral palette pass (2026-11-27).** The app's CSS tokens and `DURABLE_TOKENS` are now neutral
+  grays; the warm amber chrome is gone. Line text stays gray while gutter glyphs carry per-role/per-kind
+  accents (user blue, assistant green, action cyan, boundary amber, approval violet, error red). The
+  `orders` spine is dotted and inferred, so it stays readable at text zoom and still reveals the
+  conversation shape when zoomed out. `console-zoom` captures that fractal view; all eight console shots
+  were regenerated.
 
 ## 10. Next session entry points
 
