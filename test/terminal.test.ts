@@ -6,6 +6,7 @@ import {
     lineHTML,
     mountTerminal,
     mountTerminalA11y,
+    mountTerminalCamera,
     mountTerminalPrompt,
     STATUS_GLYPHS,
     TERMINAL_PALETTES,
@@ -528,6 +529,54 @@ describe('a11y navigation', () => {
         node.focus();
         node.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
         expect(onFocus).not.toHaveBeenCalled();
+        container.remove();
+    });
+});
+
+describe('camera following', () => {
+    it('releases follow on wheel pan and restores it with End or the badge', () => {
+        const container = document.createElement('div');
+        document.body.append(container);
+        const badge = document.createElement('button');
+        const terminal = mountTerminal(graphDouble());
+        terminal.append([line('a', 'alpha'), line('b', 'beta')]);
+        const changes: boolean[] = [];
+        const camera = mountTerminalCamera(container, terminal, { badge, onFollowChange: (v) => changes.push(v) });
+        expect(terminal.following()).toBe(true);
+        expect(badge.getAttribute('aria-pressed')).toBe('true');
+
+        container.dispatchEvent(new WheelEvent('wheel', { deltaY: 30, bubbles: true }));
+        expect(terminal.following()).toBe(false);
+        expect(badge.textContent).toContain('free');
+
+        container.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+        expect(terminal.following()).toBe(true);
+        expect(badge.textContent).toBe('tail: follow');
+
+        container.dispatchEvent(new WheelEvent('wheel', { deltaY: 30, bubbles: true }));
+        badge.click();
+        expect(terminal.following()).toBe(true);
+        expect(changes).toEqual([true, false, true, false, true]);
+
+        camera.destroy();
+        container.dispatchEvent(new WheelEvent('wheel', { deltaY: 30, bubbles: true }));
+        expect(terminal.following()).toBe(true);
+        container.remove();
+        terminal.destroy();
+    });
+
+    it('ignores wheel events from editable targets', () => {
+        const container = document.createElement('div');
+        const field = document.createElement('textarea');
+        container.append(field);
+        document.body.append(container);
+        const terminal = mountTerminal(graphDouble());
+        terminal.append([line('a', 'alpha')]);
+        const camera = mountTerminalCamera(container, terminal);
+        field.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true }));
+        expect(terminal.following()).toBe(true);
+        camera.destroy();
+        terminal.destroy();
         container.remove();
     });
 });

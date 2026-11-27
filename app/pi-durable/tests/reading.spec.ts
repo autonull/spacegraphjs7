@@ -42,6 +42,20 @@ test('scene prompt submits inside the console without stealing shortcuts', async
     expect(errors).toEqual([]);
 });
 
+test('wheel pan releases tail follow and the badge restores it', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    const badge = page.locator('#follow-badge');
+    await expect(badge).toBeVisible();
+    await expect(badge).toHaveText('tail: follow');
+    await page.locator('#canvas').hover();
+    await page.mouse.wheel(0, 200);
+    await expect(badge).toContainText('free');
+    await badge.click();
+    await expect(badge).toHaveText('tail: follow');
+    expect(errors).toEqual([]);
+});
+
 test('palette selection changes console glyphs', async ({ page }) => {
     const errors = await boot(page, '?shot=basic-turn');
     await call(page, 'setView', 'transcript');

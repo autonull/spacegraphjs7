@@ -41,6 +41,7 @@ import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import {
     lineHTML,
     mountTerminalA11y,
+    mountTerminalCamera,
     mountTerminalPrompt,
     mountTerminalSink,
     TERMINAL_PALETTES,
@@ -2482,6 +2483,7 @@ export class DurableHost {
         reader.hidden = !docs;
         reader.setAttribute('aria-label', docs ? 'Documents' : 'Conversation transcript');
         el('canvas').hidden = docs;
+        el('follow-badge').hidden = this.#viewName !== 'transcript';
         if (docs) {
             const nodes: readonly ReadingNode[] = kernel.nodes
                 .filter((node) => typeof node.data?.['doc'] === 'string')
@@ -2618,6 +2620,11 @@ export class DurableHost {
         mountTerminalA11y(el('canvas'), {
             announce: (message) => this.announce(message),
             onFocus: (id) => this.#terminalController?.focusLine(id),
+        });
+        mountTerminalCamera(el('canvas'), this.#terminalController, {
+            badge: el('follow-badge'),
+            onFollowChange: (enabled) =>
+                this.announce(enabled ? 'Following the console tail' : 'Camera released from tail'),
         });
         let prompt: TerminalPromptController | undefined;
         prompt = mountTerminalPrompt(el('canvas'), {

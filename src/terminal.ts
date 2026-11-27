@@ -608,6 +608,60 @@ export const mountTerminalA11y = (
     };
 };
 
+export type TerminalCameraOptions = {
+    /** Wheel travel in pixels before the camera is considered user-controlled. */
+    readonly threshold?: number;
+    /** Optional badge; its label and click re-engage tail following. */
+    readonly badge?: HTMLElement;
+    readonly onFollowChange?: (following: boolean) => void;
+};
+
+/** Wheel panning releases tail-follow; End or the badge restores it. */
+export const mountTerminalCamera = (
+    container: HTMLElement,
+    controller: TerminalController,
+    options: TerminalCameraOptions = {},
+): { destroy(): void } => {
+    const threshold = Math.max(1, options.threshold ?? 24);
+    let travel = 0;
+    const report = (enabled: boolean): void => {
+        if (options.badge) {
+            options.badge.textContent = enabled ? 'tail: follow' : 'tail: free · click to follow';
+            options.badge.setAttribute('aria-pressed', String(enabled));
+        }
+        options.onFollowChange?.(enabled);
+    };
+    const setFollow = (enabled: boolean): void => {
+        if (controller.following() === enabled) return;
+        travel = 0;
+        controller.followTail(enabled);
+        report(enabled);
+    };
+    const onWheel = (event: WheelEvent): void => {
+        if (isEditableTarget(event.target)) return;
+        travel += Math.abs(event.deltaY) + Math.abs(event.deltaX);
+        if (travel >= threshold) setFollow(false);
+    };
+    const onKeyDown = (event: KeyboardEvent): void => {
+        if (isEditableTarget(event.target) || event.key !== 'End') return;
+        if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+        event.preventDefault();
+        setFollow(true);
+    };
+    const onBadgeClick = (): void => setFollow(true);
+    container.addEventListener('wheel', onWheel, { passive: true });
+    container.addEventListener('keydown', onKeyDown);
+    options.badge?.addEventListener('click', onBadgeClick);
+    report(controller.following());
+    return {
+        destroy: () => {
+            container.removeEventListener('wheel', onWheel);
+            container.removeEventListener('keydown', onKeyDown);
+            options.badge?.removeEventListener('click', onBadgeClick);
+        },
+    };
+};
+
 export type TerminalRevealState = {
     readonly band?: string;
     readonly hovered?: string;
@@ -796,6 +850,7 @@ export type TerminalController = {
     /** Active palette id; hosts can map its token names onto their CSS. */
     palette(): string;
     setPalette(id: string): void;
+    following(): boolean;
     copy(): string;
     setOverlays(overlays: readonly TerminalOverlay[]): void;
     followTail(enabled: boolean): void;
@@ -914,6 +969,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
             palette = terminalPalette(id);
             apply();
         },
+        following: () => following,
         copy: () => {
             const text = range
                 ? terminalRangeText(range, lines)
