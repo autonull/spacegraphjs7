@@ -434,6 +434,16 @@ export type TerminalGraph = {
     onZoomBand(callback: (band: string) => void): () => void;
 };
 
+/** A host-owned model sink. `project` may return any model the host can render. */
+export type TerminalSink<Model = GraphSpec> = {
+    render(model: Model): void;
+    show(id: string, visible: boolean): void;
+    select(target: string | readonly string[] | null): void;
+    onNodeClick(callback: (id: string) => void): () => void;
+    onZoomBand(callback: (band: string) => void): () => void;
+    destroy?(): void;
+};
+
 export type TerminalProjectionContext = {
     readonly lines: readonly TerminalLine[];
     readonly visible: readonly TerminalLine[];
@@ -445,9 +455,9 @@ export type TerminalProjectionContext = {
     readonly layout: TerminalLayout;
 };
 
-export type TerminalHooks = {
+export type TerminalHooks<Model = GraphSpec> = {
     /** Host projection; defaults to `terminalSpec` driven by the controller's state. */
-    readonly project?: (context: TerminalProjectionContext) => GraphSpec;
+    readonly project?: (context: TerminalProjectionContext) => Model;
     /** Host visibility predicate, re-evaluated by `refresh()`. */
     readonly filter?: (line: TerminalLine) => boolean;
     readonly grid?: TerminalGrid;
@@ -468,6 +478,8 @@ export type TerminalHooks = {
 
 export type TerminalController = {
     append(lines: readonly TerminalLine[]): void;
+    /** Replace the whole line set and re-anchor the window at the tail. */
+    setLines(lines: readonly TerminalLine[]): void;
     setWindow(startID: string, endID: string): void;
     select(range?: TerminalRange): void;
     selection(): TerminalRange | undefined;
@@ -479,8 +491,11 @@ export type TerminalController = {
     destroy(): void;
 };
 
-/** Drives a windowed line projection through a host-owned graph adapter. */
-export const mountTerminal = (graph: TerminalGraph, hooks: TerminalHooks = {}): TerminalController => {
+/** Drives a windowed line projection through a host-owned model sink. */
+export const mountTerminalSink = <Model = GraphSpec>(
+    sink: TerminalSink<Model>,
+    hooks: TerminalHooks<Model> = {},
+): TerminalController => {
     let lines: TerminalLine[] = [];
     let windowState: TerminalWindow = { start: '', end: '' };
     let focusID = '';
@@ -489,8 +504,6 @@ export const mountTerminal = (graph: TerminalGraph, hooks: TerminalHooks = {}): 
     const gaps = hooks.gaps ?? [];
     let band = 'dot';
     let following = true;
-    let nodeIDs: readonly string[] = [];
-    let edgeIDs: readonly string[] = [];
 
     const order = (): readonly string[] => lines.map((line) => line.id);
     const layout = (): TerminalLayout => terminalLayout(lines, hooks.grid ?? terminalGrid(), hooks.lane);
@@ -503,7 +516,7 @@ export const mountTerminal = (graph: TerminalGraph, hooks: TerminalHooks = {}): 
     const selectedIDs = (): readonly string[] =>
         range ? terminalRangeIDs(range, terminalOrder(lines)) : [];
 
-    const project = (): GraphSpec => {
+    const project = (): Model => {
         const context: TerminalProjectionContext = {
             lines,
             visible: windowed(),
@@ -522,29 +535,15 @@ export const mountTerminal = (graph: TerminalGraph, hooks: TerminalHooks = {}): 
             range: windowState,
             gaps,
             overlays: terminalOverlays(overlays, { band, selected: new Set(selectedIDs()) }),
-        }).spec;
+        }).spec as Model;
     };
 
     const apply = (): void => {
-        const spec = project();
-        const nodes = spec.nodes ?? [];
-        const edges = spec.edges ?? [];
-        const nextNodes = nodes.map((node) => node.id);
-        const nextEdges = edges.map((edge) => edge.id);
-        nodeIDs.filter((id) => !nextNodes.includes(id)).forEach((id) => graph.removeNode(id));
-        edgeIDs.filter((id) => !nextEdges.includes(id)).forEach((id) => graph.removeEdge(id));
-        nodes.forEach((node) => graph.addNode(node));
-        edges.forEach((edge) => graph.addEdge(edge));
-        const positions = Object.fromEntries(
-            nodes.filter((node) => node.position).map((node) => [node.id, node.position!]),
-        );
-        if (Object.keys(positions).length) graph.setPositions(positions);
+        sink.render(project());
         const filter = hooks.filter;
-        if (filter) lines.forEach((entry) => graph.show(entry.id, filter(entry)));
+        if (filter) lines.forEach((entry) => sink.show(entry.id, filter(entry)));
         const selected = selectedIDs();
-        graph.select(selected.length ? selected : focusID || null);
-        nodeIDs = nextNodes;
-        edgeIDs = nextEdges;
+        sink.select(selected.length ? selected : focusID || null);
         hooks.onCamera?.({ band, window: windowState, following });
     };
 
@@ -552,18 +551,25 @@ export const mountTerminal = (graph: TerminalGraph, hooks: TerminalHooks = {}): 
         windowState = terminalWindow(order(), id, hooks.windowConfig);
     };
 
-    const unsubscribeNode = graph.onNodeClick((id) => {
+    const unsubscribeNode = sink.onNodeClick((id) => {
         focusID = id;
-        graph.select(id);
+        sink.select(id);
         hooks.onReveal?.(id);
     });
-    const unsubscribeBand = graph.onZoomBand((next) => {
+    const unsubscribeBand = sink.onZoomBand((next) => {
         if (next === band) return;
         band = next;
         apply();
     });
 
     return {
+        setLines: (next) => {
+            lines = [...next];
+            focusID = lines.at(-1)?.id ?? '';
+            range = undefined;
+            if (following) moveWindow(focusID);
+            apply();
+        },
         append: (added) => {
             const incoming = new Map(added.map((entry) => [entry.id, entry] as const));
             lines = [...lines.filter((entry) => !incoming.has(entry.id)), ...added];
@@ -613,11 +619,48 @@ export const mountTerminal = (graph: TerminalGraph, hooks: TerminalHooks = {}): 
         destroy: () => {
             unsubscribeNode();
             unsubscribeBand();
-            nodeIDs.forEach((id) => graph.removeNode(id));
-            edgeIDs.forEach((id) => graph.removeEdge(id));
+            sink.destroy?.();
             lines = [];
-            nodeIDs = [];
-            edgeIDs = [];
         },
     };
+};
+
+/** Adapts SpaceGraph-style methods into a sink with incremental node and edge diffing. */
+export const mountTerminal = (
+    graph: TerminalGraph,
+    hooks: TerminalHooks<GraphSpec> = {},
+): TerminalController => {
+    let nodeIDs: readonly string[] = [];
+    let edgeIDs: readonly string[] = [];
+    const sink: TerminalSink<GraphSpec> = {
+        render: (spec) => {
+            const nodes = spec.nodes ?? [];
+            const edges = spec.edges ?? [];
+            const nextNodes = nodes.map((node) => node.id);
+            const nextEdges = edges.map((edge) => edge.id);
+            nodeIDs.filter((id) => !nextNodes.includes(id)).forEach((id) => graph.removeNode(id));
+            edgeIDs.filter((id) => !nextEdges.includes(id)).forEach((id) => graph.removeEdge(id));
+            nodes.forEach((node) => graph.addNode(node));
+            edges.forEach((edge) => graph.addEdge(edge));
+            const positions = Object.fromEntries(
+                nodes.filter((node) => node.position).map((node) => [node.id, node.position!]),
+            );
+            if (Object.keys(positions).length) graph.setPositions(positions);
+            nodeIDs = nextNodes;
+            edgeIDs = nextEdges;
+        },
+        show: (id, visible) => {
+            graph.show(id, visible);
+        },
+        select: (target) => {
+            graph.select(target);
+        },
+        onNodeClick: graph.onNodeClick,
+        onZoomBand: graph.onZoomBand,
+        destroy: () => {
+            nodeIDs.forEach((id) => graph.removeNode(id));
+            edgeIDs.forEach((id) => graph.removeEdge(id));
+        },
+    };
+    return mountTerminalSink(sink, hooks);
 };

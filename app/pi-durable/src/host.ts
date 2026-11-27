@@ -38,6 +38,16 @@ import {
 } from 'spacegraphjs/reading';
 import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
+import {
+    lineHTML,
+    mountTerminalSink,
+    terminalGlyphs,
+    terminalGrid,
+    terminalLineSize,
+    type TerminalController,
+    type TerminalLine,
+    type TerminalSink,
+} from 'spacegraphjs/terminal';
 import { type ScaleSample } from 'spacegraphjs/zoom';
 import { decodeAddress, encodeAddress, type Address } from './address';
 import { exportURL } from './api';
@@ -219,7 +229,7 @@ const VIEW_LABELS: Readonly<Record<ViewName, string>> = {
     diff: 'delta',
     trace: 'spans',
     docs: 'documents',
-    transcript: 'entries',
+    transcript: 'console',
 };
 
 const ATTENTION_MAPPING = mappingFor(['opacity', 'labelDensity'], {
@@ -624,6 +634,7 @@ export class DurableHost {
         target: NODES_AREA_DENSITY,
     };
     #readerController: ReadingController | undefined;
+    #terminalController: TerminalController | undefined;
     #helpScope: ScopedOverlay | undefined;
     #mutedEdges = 0;
     #activeGroups = new Set<string>();
@@ -659,7 +670,9 @@ export class DurableHost {
 
     async mount(container: HTMLElement): Promise<void> {
         await this.renderer.mount(container, { theme: THEME, projection: '2d' });
-        this.renderer.on('nodeClick', ({ id }) => this.focus(id));
+        this.renderer.on('nodeClick', ({ id }) => {
+            if (this.#viewName !== 'transcript') this.focus(id);
+        });
         this.renderer.on('nodeDoubleClick', ({ id }) => this.toggleFocusLens(id));
         this.renderer.on('viewportChange', ({ zoom, center }) => {
             this.patchView({ camera: { zoom, center } });
@@ -767,8 +780,8 @@ export class DurableHost {
     reveal(id: string): void {
         this.select(id);
         this.refresh();
-        if (this.#viewName === 'transcript' || this.#viewName === 'docs')
-            this.#readerController?.reveal(id);
+        if (this.#viewName === 'docs') this.#readerController?.reveal(id);
+        else if (this.#viewName === 'transcript') this.#terminalController?.focusLine(id);
         else this.renderer.focus(id);
         const label = this.#presented.nodes.find((node) => node.id === id)?.label ?? id;
         this.announce(`Revealed ${label}`);
@@ -777,7 +790,7 @@ export class DurableHost {
     readInTranscript(id?: string): void {
         const target = id ?? this.registry.active()?.view.focus;
         this.setView('transcript');
-        if (target) this.#readerController?.reveal(target);
+        if (target) this.#terminalController?.focusLine(target);
         const label = this.#presented.nodes.find((node) => node.id === target)?.label ?? target;
         this.announce(label ? `Reading passage ${label}` : 'Select a committed entry to read it');
     }
@@ -926,7 +939,7 @@ export class DurableHost {
             },
         );
         this.#baseModel = model;
-        this.#setModel(this.#emphasised(model));
+        if (this.#viewName !== 'transcript') this.#setModel(this.#emphasised(model));
         this.#edgeLabels = model.edges.flatMap((edge) => (edge.label ? [edge.label] : []));
         if (!this.#fitted && presented.nodes.length) {
             this.#fitted = true;
@@ -1355,7 +1368,7 @@ export class DurableHost {
     }
 
     regrade(): void {
-        if (!this.#baseModel) return;
+        if (!this.#baseModel || this.#viewName === 'transcript') return;
         this.#attention = this.#attentionFor(this.registry.active()?.view.focus).weights;
         this.#setModel(this.#emphasised(this.#baseModel), false);
     }
@@ -2424,71 +2437,148 @@ export class DurableHost {
             );
     }
 
-    /** Transcript is a readable projection of the same fold, with a link back to every fact. */
+    /** Documents keep the readable projection; transcript is a vector console over the same fold. */
     private renderReader(kernel: Kernel): void {
         const docs = this.#viewName === 'docs';
-        const reading = docs || this.#viewName === 'transcript';
         const reader = el('reader');
         this.#readerController?.destroy();
         this.#readerController = undefined;
-        reader.hidden = !reading;
+        reader.hidden = !docs;
         reader.setAttribute('aria-label', docs ? 'Documents' : 'Conversation transcript');
-        el('canvas').hidden = reading;
-        if (!reading) return;
-        const nodes: readonly ReadingNode[] = docs
-            ? kernel.nodes
-                  .filter((node) => typeof node.data?.['doc'] === 'string')
-                  .map((node) => ({
-                      id: node.id,
-                      label: labelForNode(node),
-                      text: String(node.data?.['doc']),
-                      format: 'markdown' as const,
-                      meta: {
-                          ...(typeof node.data?.['status'] === 'string'
-                              ? { status: String(node.data['status']) }
-                              : {}),
-                      },
-                  }))
-            : kernel.nodes
-                  .filter((node) => TRANSCRIPT_KINDS.has(node.kind))
-                  .map((node) => {
-                      const at = node.data?.['at'];
-                      const role = node.data?.['role'];
-                      const status = node.data?.['status'];
-                      return {
-                          id: node.id,
-                          label: labelForNode(node),
-                          text: dataText(node),
-                          format:
-                              node.kind === 'message' ? ('markdown' as const) : ('text' as const),
-                          meta: {
-                              ...(typeof role === 'string' ? { role } : {}),
-                              ...(typeof status === 'string' ? { status } : {}),
-                              ...(typeof at === 'number' ? { at: new Date(at).toISOString() } : {}),
-                          },
-                      };
-                  });
-        const ids = new Set(nodes.map((node) => node.id));
-        const edges = docs
-            ? []
-            : kernel.edges
-                  .filter(
-                      (edge) =>
-                          ['orders', 'checkpoint'].includes(edge.kind) &&
-                          ids.has(edge.source) &&
-                          ids.has(edge.target),
-                  )
-                  .map((edge) => ({ source: edge.source, target: edge.target }));
-        this.#readerController = mountReading(reader, readingOrder(nodes, edges), {
-            title: docs
-                ? `Documents — ${this.registry.active()?.id ?? ''}`
-                : `Conversation ${this.registry.active()?.id ?? ''} — transcript`,
-            announce: (message) => this.announce(message),
-            onReveal: (id) => {
-                this.setView('graph');
-                this.reveal(id);
-            },
+        el('canvas').hidden = docs;
+        if (docs) {
+            const nodes: readonly ReadingNode[] = kernel.nodes
+                .filter((node) => typeof node.data?.['doc'] === 'string')
+                .map((node) => ({
+                    id: node.id,
+                    label: labelForNode(node),
+                    text: String(node.data?.['doc']),
+                    format: 'markdown' as const,
+                    meta: {
+                        ...(typeof node.data?.['status'] === 'string'
+                            ? { status: String(node.data['status']) }
+                            : {}),
+                    },
+                }));
+            this.#readerController = mountReading(reader, readingOrder(nodes, []), {
+                title: `Documents — ${this.registry.active()?.id ?? ''}`,
+                announce: (message) => this.announce(message),
+                onReveal: (id) => {
+                    this.setView('graph');
+                    this.reveal(id);
+                },
+            });
+            return;
+        }
+        if (this.#viewName === 'transcript') this.#renderConsole(kernel);
+    }
+
+    #terminal(): TerminalController {
+        if (this.#terminalController) return this.#terminalController;
+        const grid = terminalGrid({
+            charWidth: 7.4,
+            lineHeight: 18,
+            gutter: 14,
+            minWidth: 260,
+            maxWidth: 720,
         });
+        const glyphs = terminalGlyphs();
+        const sink: TerminalSink<RenderModel> = {
+            render: (model) => {
+                this.renderer.setModel(model);
+                requestAnimationFrame(() => {
+                    el('canvas')
+                        .querySelectorAll<HTMLElement>('[data-node-id]')
+                        .forEach((node) => {
+                            node.tabIndex = 0;
+                            node.setAttribute('role', 'listitem');
+                        });
+                });
+            },
+            show: () => undefined,
+            select: (target) =>
+                this.renderer.setSelection(
+                    target === null ? [] : typeof target === 'string' ? [target] : [...target],
+                ),
+            onNodeClick: (callback) => this.renderer.on('nodeClick', ({ id }) => callback(id)),
+            onZoomBand: (callback) => this.renderer.on('bandChange', ({ band }) => callback(band)),
+        };
+        this.#terminalController = mountTerminalSink(sink, {
+            grid,
+            windowConfig: { size: 28, margin: 6, hysteresis: 5 },
+            project: ({ visible }) => {
+                const nodes: RenderNode[] = visible.map((entry, index) => {
+                    const [width, height] = terminalLineSize(entry.text, grid, entry.octave ?? 0);
+                    return {
+                        id: entry.id,
+                        kind: entry.kind,
+                        label: entry.label,
+                        html: `<div class="sg-terminal-line">${lineHTML(entry, glyphs)}</div>`,
+                        position: [width / 2, -index * (height + 10), 0],
+                        size: [width, height, 1],
+                        status:
+                            entry.status === 'failed'
+                                ? 'error'
+                                : entry.status === 'pending'
+                                  ? 'warning'
+                                  : 'success',
+                        interactive: true,
+                        data: { terminal: true },
+                    };
+                });
+                const edges: RenderEdge[] = nodes.slice(1).map((node, index) => ({
+                    id: `${nodes[index]!.id}->${node.id}`,
+                    source: nodes[index]!.id,
+                    target: node.id,
+                    kind: 'orders',
+                    style: 'solid' as const,
+                }));
+                return { nodes, edges };
+            },
+            onReveal: (id) => this.reveal(id),
+            onFocus: (id) => {
+                this.renderer.focus(id);
+                requestAnimationFrame(() =>
+                    el('canvas')
+                        .querySelector<HTMLElement>(`[data-node-id="${id}"]`)
+                        ?.focus({ preventScroll: true }),
+                );
+            },
+            announce: (message) => this.announce(message),
+        });
+        el('canvas').addEventListener('keydown', (event) => {
+            const target = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-node-id]');
+            if (!target || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+            event.preventDefault();
+            const nodes = [...el('canvas').querySelectorAll<HTMLElement>('[data-node-id]')];
+            const index = nodes.indexOf(target);
+            const next =
+                event.key === 'Home'
+                    ? 0
+                    : event.key === 'End'
+                      ? nodes.length - 1
+                      : Math.max(0, Math.min(nodes.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1)));
+            const node = nodes[next];
+            if (!node?.dataset['nodeId']) return;
+            node.focus();
+            this.#terminalController?.focusLine(node.dataset['nodeId']);
+            this.announce(`Line ${next + 1} of ${nodes.length}`);
+        });
+        return this.#terminalController;
+    }
+
+    #renderConsole(kernel: Kernel): void {
+        const lines: readonly TerminalLine[] = kernel.nodes
+            .filter((node) => TRANSCRIPT_KINDS.has(node.kind))
+            .map((node) => ({
+                id: node.id,
+                kind: node.kind,
+                status: String(node.data?.['status'] ?? 'complete'),
+                label: labelForNode(node),
+                text: dataText(node),
+                octave: 0,
+            }));
+        this.#terminal().setLines(lines);
     }
 
     private renderLegend(): void {

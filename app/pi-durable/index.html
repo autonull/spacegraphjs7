@@ -82,6 +82,11 @@
             .reading-meta dt { color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
             .reading-meta dd { margin: 0; }
             .reading-backlink { display: inline-block; margin-top: 10px; color: var(--accent); font-size: 11px; }
+            .sg-terminal-line { display: flex; align-items: baseline; gap: 8px; width: 100%; height: 100%;
+                box-sizing: border-box; overflow: hidden; color: var(--text); overflow-wrap: anywhere;
+                font: 13px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+            .sg-terminal-line .tg-gutter { flex: none; color: var(--muted); }
+            .sg-terminal-line .tg-text { min-width: 0; white-space: pre-wrap; }
             #lens-bar { display: flex; align-items: center; gap: 6px; flex: 1 1 240px; max-width: 420px;
                 padding-left: 8px; border-left: 1px solid var(--line); }
             #lens-input::placeholder { color: var(--muted); opacity: .8; }

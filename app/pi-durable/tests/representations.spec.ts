@@ -27,10 +27,10 @@ const cases = [
         await expect(page.locator('#reader')).toContainText('Host todos');
         await expect(page.locator('#reader .reading-backlink').first()).toHaveAttribute('data-node-id', /^d:/);
     } },
-    { id: 'transcript', lanes: ['entries'], assertion: async (page: Page) => {
-        await expect(page.locator('#reader')).toContainText('Compacted.');
-        await expect(page.locator('#reader .reading-section').first()).toBeVisible();
-        await expect(page.locator('#reader .reading-backlink').first()).toHaveAttribute('data-node-id', /^d:/);
+    { id: 'transcript', lanes: ['console'], assertion: async (page: Page) => {
+        await expect(page.locator('#reader')).toBeHidden();
+        await expect(page.locator('#canvas .sg-terminal-line').first()).toBeVisible();
+        await expect(page.locator('#canvas [data-node-id]').first()).toHaveAttribute('data-node-id', /^d:/);
     } },
 ] as const;
 

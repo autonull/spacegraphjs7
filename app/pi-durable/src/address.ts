@@ -12,6 +12,10 @@ export type Address = {
     readonly asOf?: number;
     readonly zoom?: number;
     readonly focus?: string;
+    /** Console selection, encoded as `anchorID:offset~focusID:offset`. */
+    readonly sel?: string;
+    /** Console tail or followed line id. */
+    readonly tail?: string;
 };
 
 /** The compact address is a projection of the shared view state; `rung` stays a legacy alias. */
@@ -25,18 +29,20 @@ const flatten = (address: Address): ViewStateRecord => ({
     asOf: address.asOf,
     s: address.s,
     shot: address.shot,
+    sel: address.sel,
+    tail: address.tail,
 });
 
 const parse = (record: ViewStateRecord): Address | undefined => {
-    const { view, layout, focus, zoom, asOf, s, shot } = record;
+    const { view, layout, focus, zoom, asOf, s, shot, sel, tail } = record;
     const band: unknown = record.band ?? record.rung;
     if (view !== undefined && !VIEW_NAMES.includes(view as ViewName)) return undefined;
     if (band !== undefined && !isRung(band)) return undefined;
     if (layout !== undefined && !LAYOUT_NAMES.includes(layout as LayoutName)) return undefined;
-    for (const value of [s, shot, focus])
+    for (const value of [s, shot, focus, sel, tail])
         if (value !== undefined && typeof value !== 'string') return undefined;
     return Object.fromEntries(
-        Object.entries({ s, shot, view, rung: band, layout, asOf, zoom, focus }).filter(
+        Object.entries({ s, shot, view, rung: band, layout, asOf, zoom, focus, sel, tail }).filter(
             ([, value]) => value !== undefined,
         ),
     ) as Address;
@@ -44,7 +50,10 @@ const parse = (record: ViewStateRecord): Address | undefined => {
 
 const codec = viewStateCodec<Address>({
     format: 'compact',
-    keys: ['s', 'shot', 'view', 'band', 'rung', 'layout', 'asOf', 'zoom', 'focus', 'version'],
+    keys: [
+        's', 'shot', 'view', 'band', 'rung', 'layout', 'asOf', 'zoom', 'focus', 'sel', 'tail',
+        'version',
+    ],
     flatten,
     parse,
 });

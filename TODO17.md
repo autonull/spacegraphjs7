@@ -1,6 +1,6 @@
 # TODO17 — Terminal: a vector console for durable agents
 
-> **Status: Stages 1–2 landed (2026-11-27); Stages 3–4 planned.** Continue from §10. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
+> **Status: Stages 1–3 landed (2026-11-27); Stage 4 planned.** Continue from §10. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
 > Agent REPL that faithfully reads like a styled monospace text console while using vector/ZUI space
 > to add graph, fractal and margin overlays that a DOM console cannot express.
 
@@ -80,11 +80,12 @@ Last two rows are working assumptions from the interview summary; confirm them b
 - **Band ladder.** The plan's `src/octaves.ts` and `dot → chip → card → panel → monument` ladder do
   not exist. The repository's ladder is `DEFAULT_RUNG_IDS = ['dot', 'glyph', 'card', 'widget',
   'detail']` in `src/representations/ladder.ts`. `terminalVisible` defaults to that real ladder and
-  accepts a caller-supplied one. Stage 3 must decide whether Pi's vocabulary overrides it.
+  accepts a caller-supplied one. Stage 3 kept the library default: Pi's `bandChange` event supplies the
+  same band ids, so no second vocabulary was introduced.
 - **Emoji.** Adopted for Stage 1: the default glyph tables use single-width symbols only, and inline
   text is escaped and never emoji-aware. Inline emoji would require a width map, not a special case.
-- **Permalinks.** Deferred to Stage 3. Recommended keys are `sel` (anchor/focus ids and offsets) and
-  `tail` (follow or focus id), encoded by `app/pi-durable/src/address.ts` conventions.
+- **Permalinks.** Stage 3 adopted `sel` (encoded as `anchorID:offset~focusID:offset`) and `tail`
+  (followed line id) in `app/pi-durable/src/address.ts`. Hydration into the console selection is Stage 4.
 - **Window invariant.** Confirmed by Stage 1: `terminalSpec` projects a subset of committed lines as
   nodes; the kernel and every other view still hold all facts.
 
@@ -199,8 +200,7 @@ surface. None needs a second renderer or a second store.
 4. **Stage 4 — extensions.** Land E1–E12 individually, library-first, each with a unit test and one
    E2E or screenshot when the visual shape changes. No bundled mega-change.
 
-**Status:** Stages 1–2 landed 2026-11-27. Stages 3–4 remain; Stage 3 is gated on the confirmations in
-§10.
+**Status:** Stages 1–3 landed 2026-11-27. Stage 4 (E1–E12) remains.
 
 ## 7. Verification ladder
 
@@ -268,19 +268,25 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
 - `test/terminal.test.ts`: 22 tests (five controller tests with a recording graph object). Full suite:
   200 files / 1323 tests passing. `pnpm run typecheck:root`, `pnpm run check`, `pnpm run test:exports`
   pass. `app/demo/tests/transcript.spec.ts`: 3/3 passing.
+- **Stage 3 landed (2026-11-27).** `mountTerminalSink` lets any host model drive the controller; Pi
+  Durable supplies a `RenderModel` sink over `SpaceGraphRenderer.setModel()`. The transcript view is now
+  a vector console: `renderReader` keeps `mountReading` only for `docs`, `VIEW_LABELS.transcript` is
+  `'console'`, and `#renderConsole` projects committed `TRANSCRIPT_KINDS` into line nodes with an
+  `orders` spine. `reveal`/`readInTranscript` route to `focusLine`; the renderer's graph-node click and
+  viewport regrade paths skip the transcript view so they cannot overwrite the console model. Console
+  nodes get roving focus with Arrow/Home/End and announcements. `Address` carries `sel` and `tail`.
+- Console CSS added to `app/pi-durable/index.html`; transcript assertions in `reading.spec.ts` and
+  `representations.spec.ts` now target `#canvas [data-node-id]` and `.sg-terminal-line`.
+- `app/pi-durable`: 20 files / 99 unit tests passing; `verify:fast` 72 E2E passing (5 skipped). Root
+  `pnpm run check`, full suite (1323 tests), `test:exports` and demo `transcript.spec.ts` all pass.
 
 ## 10. Next session entry points
 
-1. **Confirmations before Stage 3.** Permalink key names (`sel`, `tail`) and whether Pi's rung
-   vocabulary overrides `DEFAULT_RUNG_IDS` (§3.1). Both are safe to decide in the app; neither changes
-   the library surface.
-2. **Stage 3 — Pi Durable adoption.** Replace the `mountReading` branch at
-   `app/pi-durable/src/host.ts:2430-2488` with `mountTerminal` and a `TerminalGraph` adapter over the
-   existing `SpaceGraph`. Relabel `VIEW_LABELS.transcript`, add a scene prompt node wired to
-   `mountComposer`, wire camera pan-to-scroll and tail-follow re-engagement (End, minimap, badge), and
-   add `sel`/`tail` fields to `app/pi-durable/src/address.ts`. Keep the DOM row list as the a11y mirror.
-   Update `tests/reading.spec.ts`, `tests/a11y.spec.ts`, `tests/screenshots.spec.ts` only if shape
-   changes.
-3. **Stage 4 — extensions.** Land E1–E12 individually, library-first, each with a unit test and one
-   E2E or screenshot when the visual shape changes. In particular the scene prompt node (E6) and a11y
-   parity (E11) were deferred from Stage 2 and should land before the rest.
+1. **Stage 4 — extensions.** Land E1–E12 individually, library-first, each with a unit test and one
+   E2E or screenshot when the visual shape changes.
+2. **Prompt node (E6) first.** Pi Durable and the demo still own their prompt forms; add an
+   `HtmlNode` tail node wired to `mountComposer` so Enter/Shift+Enter/history work inside the console.
+   Confirm the scene prompt does not steal global shortcuts (invariant 6).
+3. **Remaining deferred work.** Camera pan-to-scroll and explicit tail-follow re-engagement (End,
+   minimap, badge); exported ranges and permalink hydration from `sel`/`tail`; RTL decision (§8);
+   measure window hysteresis before tuning; a11y parity beyond roving focus (E11).
