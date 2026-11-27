@@ -121,6 +121,11 @@
             "import": "./dist/composer.js",
             "default": "./dist/composer.js"
         },
+        "./terminal": {
+            "types": "./dist/terminal.d.ts",
+            "import": "./dist/terminal.js",
+            "default": "./dist/terminal.js"
+        },
         "./documents": {
             "types": "./dist/documents.d.ts",
             "import": "./dist/documents.js",

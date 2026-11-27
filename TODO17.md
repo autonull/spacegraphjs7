@@ -1,7 +1,6 @@
 # TODO17 — Terminal: a vector console for durable agents
 
-> **Status: planned (2026-11-27).** Design interview complete; no code landed. Continue in a fresh
-> session from §10. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
+> **Status: Stage 1 landed (2026-11-27); Stages 2–4 planned.** Continue from §10. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
 > Agent REPL that faithfully reads like a styled monospace text console while using vector/ZUI space
 > to add graph, fractal and margin overlays that a DOM console cannot express.
 
@@ -74,7 +73,20 @@ from the ordered entry sequence.
 | Emoji | Gutters/status columns only — most monospace fonts render emoji double-width and that breaks the character grid. |
 | Permalinks | Add selection range and tail ids beside camera/as-of/focus fields. |
 
-Last two rows are working assumptions from the interview summary; confirm them before stage 3.
+Last two rows are working assumptions from the interview summary; confirm them before Stage 3.
+
+### 3.1 Stage 1 resolutions and findings
+
+- **Band ladder.** The plan's `src/octaves.ts` and `dot → chip → card → panel → monument` ladder do
+  not exist. The repository's ladder is `DEFAULT_RUNG_IDS = ['dot', 'glyph', 'card', 'widget',
+  'detail']` in `src/representations/ladder.ts`. `terminalVisible` defaults to that real ladder and
+  accepts a caller-supplied one. Stage 3 must decide whether Pi's vocabulary overrides it.
+- **Emoji.** Adopted for Stage 1: the default glyph tables use single-width symbols only, and inline
+  text is escaped and never emoji-aware. Inline emoji would require a width map, not a special case.
+- **Permalinks.** Deferred to Stage 3. Recommended keys are `sel` (anchor/focus ids and offsets) and
+  `tail` (follow or focus id), encoded by `app/pi-durable/src/address.ts` conventions.
+- **Window invariant.** Confirmed by Stage 1: `terminalSpec` projects a subset of committed lines as
+  nodes; the kernel and every other view still hold all facts.
 
 ## 4. Architecture
 
@@ -187,6 +199,9 @@ surface. None needs a second renderer or a second store.
 4. **Stage 4 — extensions.** Land E1–E12 individually, library-first, each with a unit test and one
    E2E or screenshot when the visual shape changes. No bundled mega-change.
 
+**Status:** Stage 1 landed 2026-11-27. Stages 2–4 remain; Stage 2 is gated on the `mountTerminal`
+contract (§8).
+
 ## 7. Verification ladder
 
 - **Tier 1 (every change, no browser, ~20 s):** `pnpm run typecheck` from the affected package
@@ -219,19 +234,38 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   mirrors. Preserve logical order for selection either way.
 - **Address compatibility.** New selection/tail fields need codec compatibility with existing
   permalinks; follow `app/pi-durable/src/address.ts` conventions.
-- **Zoom-progressive disclosure.** Reuse the `dot → chip → card → panel → monument` ladder from
-  `src/octaves.ts` rather than inventing a second band vocabulary.
+- **Zoom-progressive disclosure.** Reuse `DEFAULT_RUNG_IDS` from `src/representations/ladder.ts` (§3.1)
+  rather than inventing a second band vocabulary.
+- **`mountTerminal` contract.** §4.1 sketches `mountTerminal(container, spec, hooks)` but does not say
+  who owns the `SpaceGraph` instance or the camera. Stage 2 must fix the signature before migrating
+  the demo; `terminalSpec` is the pure projection it should call.
 
 ## 9. Progress
 
 - Interview completed: view slot, component home, substrate, fidelity, granularity, scroll, buffer,
   overlay disclosure, prompt placement and selection model are decided (§3).
-- No files changed. No tests run. No screenshots captured.
+- **Stage 1 landed (2026-11-27).** `src/terminal.ts` exports the terminal types and pure primitives:
+  grid/wrap/line size, `terminalLayout` (spine plus halving context), `terminalGaps`, `terminalWindow`
+  (hysteresis and prefetch margin), anchored ranges (`terminalOrder`, `terminalCompare`,
+  `terminalRange`, `terminalRangeIDs`, `terminalRangeText`, `terminalMoveLine`), glyph tables, overlay
+  reveal policies, and `terminalSpec` (windowed `GraphSpec` projection with gap offsets, edges and
+  overlay nodes).
+- Published `spacegraphjs/terminal` through `script/library-entries.ts` and regenerated `package.json`;
+  `dist/terminal.js` and declarations build.
+- `test/terminal.test.ts`: 17 focused tests. Full suite: 200 files / 1318 tests passing.
+  `pnpm run typecheck:root`, `pnpm run check`, `pnpm run test:exports` all pass.
+- Stage 2 prerequisite remains: `mountTerminal` (the live controller) is not implemented; only its
+  controller type is declared. No demo, app or screenshot changes yet.
 
 ## 10. Next session entry points
 
-1. Confirm the two working assumptions in §3 (emoji placement, permalink fields) and the window
-   invariant in §8.
-2. Start **Stage 1**: define `src/terminal.ts` types and pure functions, wire the export, write
-   focused unit tests, run Tier 1 checks.
-3. Do not touch `app/pi-durable` until Stage 1 passes; keep the demo as the reference consumer.
+1. **Fix the `mountTerminal` contract (Stage 2 gate).** Decide whether the host passes a `SpaceGraph`
+   instance or the component creates one, and specify how camera, window, selection, composer and
+   teardown are wired. Use `terminalSpec` as the projection and the pure window/range functions as the
+   single source of truth.
+2. **Stage 2 — demo migration.** Replace the host-owned row/scene projection in
+   `app/demo/transcript.ts` with the shared component, keeping its three views, themes and prompt loop
+   as the reference implementation. Update `app/demo/tests/transcript.{test,spec}.ts` and screenshots
+   only if shape changes.
+3. **Confirmations before Stage 3.** Permalink key names (`sel`, `tail`) and whether Pi's rung
+   vocabulary overrides `DEFAULT_RUNG_IDS` (§3.1). Do not touch `app/pi-durable` until Stage 2 passes.

@@ -99,6 +99,7 @@ export const LIBRARY_ENTRIES: LibraryEntry[] = [
         types: 'dist/view-state.d.ts',
     },
     { subpath: './composer', name: 'composer', source: 'src/composer.ts', types: 'dist/composer.d.ts' },
+    { subpath: './terminal', name: 'terminal', source: 'src/terminal.ts', types: 'dist/terminal.d.ts' },
     {
         subpath: './documents',
         name: 'documents',
