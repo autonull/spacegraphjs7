@@ -4,6 +4,12 @@
 import { escapeHtml } from '@spacegraphjs/renderer';
 import { SpaceGraph, type EdgeSpec, type GraphSpec, type NodeSpec } from 'spacegraphjs';
 import { transcriptLane } from 'spacegraphjs/layout';
+import {
+    mountTerminal,
+    type TerminalController,
+    type TerminalGraph,
+    type TerminalLine,
+} from 'spacegraphjs/terminal';
 import { isEditableTarget, requireElement } from 'spacegraphjs/utils';
 export type EventKind = 'user' | 'assistant' | 'file' | 'tool' | 'approval' | 'error' | 'artifact';
 export type EventStatus = 'complete' | 'pending' | 'failed';
@@ -227,6 +233,31 @@ export async function boot(): Promise<void> {
     let filter: Filter = 'all';
     let selected = '';
     let serial = 0;
+    const terminalGraph: TerminalGraph = {
+        addNode: (spec) => graph.addNode(spec),
+        addEdge: (spec) => graph.addEdge(spec),
+        removeNode: (id) => graph.removeNode(id),
+        removeEdge: (id) => graph.removeEdge(id),
+        setPositions: (positions) => graph.setPositions(positions),
+        show: (id, visible) => graph.show(id, visible),
+        select: (target) => graph.select(target),
+        onNodeClick: (callback) =>
+            graph.watch('node:click', (payload) =>
+                callback('id' in payload ? payload.id : payload.node.id),
+            ),
+        onZoomBand: (callback) => graph.watch('zoomband:change', ({ band }) => callback(band)),
+    };
+    const terminalLineOf = (item: TranscriptEvent): TerminalLine => ({
+        id: item.id,
+        kind: item.kind,
+        status: item.status,
+        label: item.label,
+        text: item.text,
+        turn: item.turn,
+        parent: item.parent,
+        octave: item.octave,
+    });
+    let terminal: TerminalController;
     const expanded = new Set<string>();
     const visibleIds = (): string[] =>
         items.filter((item) => matchesFilter(item, filter)).map((item) => item.id);
@@ -336,20 +367,49 @@ export async function boot(): Promise<void> {
         const item = items.find((candidate) => candidate.id === id);
         if (!item) return;
         selected = id;
-        graph.select(id);
+        terminal.focusLine(id);
         canvas.querySelectorAll<HTMLElement>('[data-node-id]').forEach((node) => {
             node.querySelector('.zcard')?.setAttribute(
                 'data-selected',
                 String(node.dataset.nodeId === id),
             );
         });
-        if (root.dataset.view !== 'transcript') graph.inspect(id, { duration: 0.35 });
         renderRows();
         const row = rows.querySelector<HTMLElement>(`[data-node="${id}"]`);
         if (focusRow) row?.focus({ preventScroll: true });
         row?.scrollIntoView({ block: 'nearest' });
         announcer.textContent = `${item.kind}: ${item.label} — ${item.text}`;
     };
+    terminal = mountTerminal(terminalGraph, {
+        project: ({ visible }) => {
+            const seeds = visible.map((entry) => ({
+                id: entry.id,
+                kind: entry.kind as EventKind,
+                label: entry.label,
+                text: entry.text,
+                status: entry.status as EventStatus,
+                turn: entry.turn ?? 1,
+                parent: entry.parent,
+                spine: entry.parent === undefined,
+                octave: 0,
+            }));
+            return buildSpec(layoutEvents(seeds));
+        },
+        filter: (entry) => {
+            const item = items.find((candidate) => candidate.id === entry.id);
+            return item ? matchesFilter(item, filter) : false;
+        },
+        onReveal: (id) => reveal(id),
+        onFocus: (id) => {
+            if (root.dataset.view !== 'transcript') graph.inspect(id, { duration: 0.35 });
+        },
+        onCamera: ({ band }) => {
+            requireElement('stat-band').textContent = band;
+        },
+        announce: (message) => {
+            announcer.textContent = message;
+        },
+    });
     const toggleExpanded = (id: string): void => {
         if (expanded.has(id)) expanded.delete(id);
         else expanded.add(id);
@@ -387,14 +447,7 @@ export async function boot(): Promise<void> {
     };
     const append = (candidate: Omit<TranscriptEvent, 'position'>): void => {
         items = layoutEvents([...items, candidate]);
-        graph.setPositions(Object.fromEntries(items.map((item) => [item.id, [...item.position]])));
-        graph.addNode(nodeFor(items.at(-1)!));
-        const previousSpine = [...items.slice(0, -1)].reverse().find((entry) => entry.spine);
-        const parent = items.at(-1)!.parent ?? previousSpine?.id;
-        if (parent) {
-            graph.addEdge(edgeFor(parent, items.at(-1)!.id, `${parent}->${items.at(-1)!.id}`));
-        }
-        graph.show(items.at(-1)!.id, matchesFilter(items.at(-1)!, filter));
+        terminal.append([terminalLineOf(items.at(-1)!)]);
         renderRows();
         graph.render();
     };
@@ -436,7 +489,7 @@ export async function boot(): Promise<void> {
         document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((button) => {
             button.setAttribute('aria-pressed', String(button.dataset.filter === next));
         });
-        for (const item of items) graph.show(item.id, matchesFilter(item, next));
+        terminal.refresh();
         renderRows();
         frame();
         announcer.textContent = `${next} filter · ${visibleIds().length} events`;
@@ -479,13 +532,6 @@ export async function boot(): Promise<void> {
         if (!id) return;
         key.preventDefault();
         reveal(id, true);
-    });
-    graph.watch('node:click', (payload) => {
-        const id = 'id' in payload ? payload.id : payload.node.id;
-        reveal(id);
-    });
-    graph.watch('zoomband:change', ({ band }) => {
-        requireElement('stat-band').textContent = band;
     });
     requireElement<HTMLFormElement>('prompt-form').addEventListener('submit', (submitEvent) => {
         submitEvent.preventDefault();

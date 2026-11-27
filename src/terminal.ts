@@ -341,6 +341,8 @@ export type TerminalSpecOptions = {
     readonly grid?: TerminalGrid;
     readonly lane?: TranscriptLaneOptions;
     readonly window?: TerminalWindowConfig;
+    /** Explicit bounds; wins over the hysteresis-based window derived from `focusID`. */
+    readonly range?: TerminalWindow;
     readonly gaps?: readonly TerminalGap[];
     readonly overlays?: readonly TerminalOverlay[];
     readonly reveal?: TerminalRevealState;
@@ -361,12 +363,9 @@ export const terminalSpec = (
     const grid = options.grid ?? terminalGrid();
     const layout = terminalLayout(lines, grid, options.lane);
     const ids = lines.map((line) => line.id);
-    const window = terminalWindow(
-        ids,
-        options.focusID ?? ids.at(-1) ?? '',
-        options.window,
-        options.previous,
-    );
+    const window =
+        options.range ??
+        terminalWindow(ids, options.focusID ?? ids.at(-1) ?? '', options.window, options.previous);
     const offsets = terminalGaps(ids, options.gaps ?? [], grid.lineHeight);
     const render = options.render ?? ((line: TerminalLine) => lineHTML(line, options.glyphs));
     const startIndex = ids.indexOf(window.start);
@@ -422,13 +421,203 @@ export const terminalSpec = (
     return { spec: { nodes, edges }, window, layout };
 };
 
+/** The small graph surface the controller needs; a SpaceGraph adapter satisfies it at runtime. */
+export type TerminalGraph = {
+    addNode(spec: NodeSpec): unknown;
+    addEdge(spec: EdgeSpec): unknown;
+    removeNode(id: string): void;
+    removeEdge(id: string): void;
+    setPositions(positions: Record<string, [number, number, number]>): unknown;
+    show(id: string, visible?: boolean): unknown;
+    select(target: string | readonly string[] | null): unknown;
+    onNodeClick(callback: (id: string) => void): () => void;
+    onZoomBand(callback: (band: string) => void): () => void;
+};
+
+export type TerminalProjectionContext = {
+    readonly lines: readonly TerminalLine[];
+    readonly visible: readonly TerminalLine[];
+    readonly order: readonly string[];
+    readonly window: TerminalWindow;
+    readonly gaps: readonly TerminalGap[];
+    readonly overlays: readonly TerminalOverlay[];
+    readonly band: string;
+    readonly layout: TerminalLayout;
+};
+
+export type TerminalHooks = {
+    /** Host projection; defaults to `terminalSpec` driven by the controller's state. */
+    readonly project?: (context: TerminalProjectionContext) => GraphSpec;
+    /** Host visibility predicate, re-evaluated by `refresh()`. */
+    readonly filter?: (line: TerminalLine) => boolean;
+    readonly grid?: TerminalGrid;
+    readonly lane?: TranscriptLaneOptions;
+    readonly windowConfig?: TerminalWindowConfig;
+    readonly gaps?: readonly TerminalGap[];
+    readonly overlays?: readonly TerminalOverlay[];
+    readonly onReveal?: (id: string) => void;
+    readonly onFocus?: (id: string) => void;
+    readonly onCopy?: (text: string) => void;
+    readonly onCamera?: (state: {
+        band: string;
+        window: TerminalWindow;
+        following: boolean;
+    }) => void;
+    readonly announce?: (message: string) => void;
+};
+
 export type TerminalController = {
     append(lines: readonly TerminalLine[]): void;
     setWindow(startID: string, endID: string): void;
     select(range?: TerminalRange): void;
     selection(): TerminalRange | undefined;
+    copy(): string;
     setOverlays(overlays: readonly TerminalOverlay[]): void;
     followTail(enabled: boolean): void;
     focusLine(id: string): void;
+    refresh(): void;
     destroy(): void;
+};
+
+/** Drives a windowed line projection through a host-owned graph adapter. */
+export const mountTerminal = (graph: TerminalGraph, hooks: TerminalHooks = {}): TerminalController => {
+    let lines: TerminalLine[] = [];
+    let windowState: TerminalWindow = { start: '', end: '' };
+    let focusID = '';
+    let range: TerminalRange | undefined;
+    let overlays: readonly TerminalOverlay[] = hooks.overlays ?? [];
+    const gaps = hooks.gaps ?? [];
+    let band = 'dot';
+    let following = true;
+    let nodeIDs: readonly string[] = [];
+    let edgeIDs: readonly string[] = [];
+
+    const order = (): readonly string[] => lines.map((line) => line.id);
+    const layout = (): TerminalLayout => terminalLayout(lines, hooks.grid ?? terminalGrid(), hooks.lane);
+    const windowed = (): readonly TerminalLine[] => {
+        const ids = order();
+        const from = ids.indexOf(windowState.start);
+        const to = ids.indexOf(windowState.end);
+        return lines.filter((_, index) => index >= from && index <= to);
+    };
+    const selectedIDs = (): readonly string[] =>
+        range ? terminalRangeIDs(range, terminalOrder(lines)) : [];
+
+    const project = (): GraphSpec => {
+        const context: TerminalProjectionContext = {
+            lines,
+            visible: windowed(),
+            order: order(),
+            window: windowState,
+            gaps,
+            overlays,
+            band,
+            layout: layout(),
+        };
+        if (hooks.project) return hooks.project(context);
+        return terminalSpec(lines, {
+            grid: hooks.grid,
+            lane: hooks.lane,
+            window: hooks.windowConfig,
+            range: windowState,
+            gaps,
+            overlays: terminalOverlays(overlays, { band, selected: new Set(selectedIDs()) }),
+        }).spec;
+    };
+
+    const apply = (): void => {
+        const spec = project();
+        const nodes = spec.nodes ?? [];
+        const edges = spec.edges ?? [];
+        const nextNodes = nodes.map((node) => node.id);
+        const nextEdges = edges.map((edge) => edge.id);
+        nodeIDs.filter((id) => !nextNodes.includes(id)).forEach((id) => graph.removeNode(id));
+        edgeIDs.filter((id) => !nextEdges.includes(id)).forEach((id) => graph.removeEdge(id));
+        nodes.forEach((node) => graph.addNode(node));
+        edges.forEach((edge) => graph.addEdge(edge));
+        const positions = Object.fromEntries(
+            nodes.filter((node) => node.position).map((node) => [node.id, node.position!]),
+        );
+        if (Object.keys(positions).length) graph.setPositions(positions);
+        const filter = hooks.filter;
+        if (filter) lines.forEach((entry) => graph.show(entry.id, filter(entry)));
+        const selected = selectedIDs();
+        graph.select(selected.length ? selected : focusID || null);
+        nodeIDs = nextNodes;
+        edgeIDs = nextEdges;
+        hooks.onCamera?.({ band, window: windowState, following });
+    };
+
+    const moveWindow = (id: string): void => {
+        windowState = terminalWindow(order(), id, hooks.windowConfig);
+    };
+
+    const unsubscribeNode = graph.onNodeClick((id) => {
+        focusID = id;
+        graph.select(id);
+        hooks.onReveal?.(id);
+    });
+    const unsubscribeBand = graph.onZoomBand((next) => {
+        if (next === band) return;
+        band = next;
+        apply();
+    });
+
+    return {
+        append: (added) => {
+            const incoming = new Map(added.map((entry) => [entry.id, entry] as const));
+            lines = [...lines.filter((entry) => !incoming.has(entry.id)), ...added];
+            focusID = added.at(-1)?.id ?? focusID;
+            if (following) moveWindow(focusID);
+            apply();
+        },
+        setWindow: (startID, endID) => {
+            windowState = { start: startID, end: endID };
+            following = false;
+            apply();
+        },
+        select: (next) => {
+            range = next;
+            apply();
+            const count = selectedIDs().length;
+            if (count) hooks.announce?.(`Selected ${count} lines`);
+        },
+        selection: () => range,
+        copy: () => {
+            const text = range
+                ? terminalRangeText(range, lines)
+                : (lines.find((entry) => entry.id === focusID)?.text ?? '');
+            hooks.onCopy?.(text);
+            return text;
+        },
+        setOverlays: (next) => {
+            overlays = next;
+            apply();
+        },
+        followTail: (enabled) => {
+            following = enabled;
+            if (enabled) {
+                focusID = lines.at(-1)?.id ?? focusID;
+                if (focusID) moveWindow(focusID);
+            }
+            apply();
+        },
+        focusLine: (id) => {
+            if (!lines.some((entry) => entry.id === id)) return;
+            focusID = id;
+            if (following) moveWindow(id);
+            hooks.onFocus?.(id);
+            apply();
+        },
+        refresh: apply,
+        destroy: () => {
+            unsubscribeNode();
+            unsubscribeBand();
+            nodeIDs.forEach((id) => graph.removeNode(id));
+            edgeIDs.forEach((id) => graph.removeEdge(id));
+            lines = [];
+            nodeIDs = [];
+            edgeIDs = [];
+        },
+    };
 };

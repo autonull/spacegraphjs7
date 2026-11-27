@@ -1,6 +1,6 @@
 # TODO17 — Terminal: a vector console for durable agents
 
-> **Status: Stage 1 landed (2026-11-27); Stages 2–4 planned.** Continue from §10. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
+> **Status: Stages 1–2 landed (2026-11-27); Stages 3–4 planned.** Continue from §10. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
 > Agent REPL that faithfully reads like a styled monospace text console while using vector/ZUI space
 > to add graph, fractal and margin overlays that a DOM console cannot express.
 
@@ -199,8 +199,8 @@ surface. None needs a second renderer or a second store.
 4. **Stage 4 — extensions.** Land E1–E12 individually, library-first, each with a unit test and one
    E2E or screenshot when the visual shape changes. No bundled mega-change.
 
-**Status:** Stage 1 landed 2026-11-27. Stages 2–4 remain; Stage 2 is gated on the `mountTerminal`
-contract (§8).
+**Status:** Stages 1–2 landed 2026-11-27. Stages 3–4 remain; Stage 3 is gated on the confirmations in
+§10.
 
 ## 7. Verification ladder
 
@@ -236,9 +236,11 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   permalinks; follow `app/pi-durable/src/address.ts` conventions.
 - **Zoom-progressive disclosure.** Reuse `DEFAULT_RUNG_IDS` from `src/representations/ladder.ts` (§3.1)
   rather than inventing a second band vocabulary.
-- **`mountTerminal` contract.** §4.1 sketches `mountTerminal(container, spec, hooks)` but does not say
-  who owns the `SpaceGraph` instance or the camera. Stage 2 must fix the signature before migrating
-  the demo; `terminalSpec` is the pure projection it should call.
+- **`mountTerminal` contract — resolved in Stage 2.** The host creates and owns `SpaceGraph` and
+  supplies a small `TerminalGraph` adapter; the component owns the window, gaps, overlays, selection
+  and projection sync, and the host owns camera moves through `onFocus`. `mountTerminal(graph, hooks)`
+  therefore never imports the graph runtime. Camera pan-to-scroll and a scene prompt node remain
+  Stage 3 work.
 
 ## 9. Progress
 
@@ -254,18 +256,31 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   `dist/terminal.js` and declarations build.
 - `test/terminal.test.ts`: 17 focused tests. Full suite: 200 files / 1318 tests passing.
   `pnpm run typecheck:root`, `pnpm run check`, `pnpm run test:exports` all pass.
-- Stage 2 prerequisite remains: `mountTerminal` (the live controller) is not implemented; only its
-  controller type is declared. No demo, app or screenshot changes yet.
+- **Stage 2 landed (2026-11-27).** `mountTerminal(graph, hooks)` is implemented in `src/terminal.ts`
+  with a host-owned `TerminalGraph` adapter. It syncs a windowed `GraphSpec` into the graph (diffed
+  nodes and edges), applies gap offsets and visibility, keeps selection and tail-follow state, and
+  re-projects on zoom-band changes. Added `refresh()` and `copy()` to `TerminalController` and an
+  explicit `range` override to `terminalSpec`.
+- `app/demo/transcript.ts` now delegates append, filter refresh, node clicks, zoom-band reporting and
+  focus to the controller. Its exported helpers (`buildSpec`, `cardHtml`, `cardSize`, `layoutEvents`,
+  `matchesFilter`) and the `__transcript` hook are unchanged, so no test or screenshot updates were
+  needed. The demo keeps its three views, themes, row list and prompt form.
+- `test/terminal.test.ts`: 22 tests (five controller tests with a recording graph object). Full suite:
+  200 files / 1323 tests passing. `pnpm run typecheck:root`, `pnpm run check`, `pnpm run test:exports`
+  pass. `app/demo/tests/transcript.spec.ts`: 3/3 passing.
 
 ## 10. Next session entry points
 
-1. **Fix the `mountTerminal` contract (Stage 2 gate).** Decide whether the host passes a `SpaceGraph`
-   instance or the component creates one, and specify how camera, window, selection, composer and
-   teardown are wired. Use `terminalSpec` as the projection and the pure window/range functions as the
-   single source of truth.
-2. **Stage 2 — demo migration.** Replace the host-owned row/scene projection in
-   `app/demo/transcript.ts` with the shared component, keeping its three views, themes and prompt loop
-   as the reference implementation. Update `app/demo/tests/transcript.{test,spec}.ts` and screenshots
-   only if shape changes.
-3. **Confirmations before Stage 3.** Permalink key names (`sel`, `tail`) and whether Pi's rung
-   vocabulary overrides `DEFAULT_RUNG_IDS` (§3.1). Do not touch `app/pi-durable` until Stage 2 passes.
+1. **Confirmations before Stage 3.** Permalink key names (`sel`, `tail`) and whether Pi's rung
+   vocabulary overrides `DEFAULT_RUNG_IDS` (§3.1). Both are safe to decide in the app; neither changes
+   the library surface.
+2. **Stage 3 — Pi Durable adoption.** Replace the `mountReading` branch at
+   `app/pi-durable/src/host.ts:2430-2488` with `mountTerminal` and a `TerminalGraph` adapter over the
+   existing `SpaceGraph`. Relabel `VIEW_LABELS.transcript`, add a scene prompt node wired to
+   `mountComposer`, wire camera pan-to-scroll and tail-follow re-engagement (End, minimap, badge), and
+   add `sel`/`tail` fields to `app/pi-durable/src/address.ts`. Keep the DOM row list as the a11y mirror.
+   Update `tests/reading.spec.ts`, `tests/a11y.spec.ts`, `tests/screenshots.spec.ts` only if shape
+   changes.
+3. **Stage 4 — extensions.** Land E1–E12 individually, library-first, each with a unit test and one
+   E2E or screenshot when the visual shape changes. In particular the scene prompt node (E6) and a11y
+   parity (E11) were deferred from Stage 2 and should land before the rest.

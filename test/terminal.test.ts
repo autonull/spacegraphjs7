@@ -1,9 +1,10 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
     KIND_GLYPHS,
     lineGlyph,
     lineHTML,
+    mountTerminal,
     STATUS_GLYPHS,
     terminalCompare,
     terminalGaps,
@@ -21,9 +22,11 @@ import {
     terminalVisible,
     terminalWindow,
     terminalWrap,
+    type TerminalGraph,
     type TerminalLine,
     type TerminalOverlay,
 } from '../src/terminal';
+import type { EdgeSpec, NodeSpec } from '../src/types';
 
 const line = (id: string, text: string, parent?: string): TerminalLine => ({
     id,
@@ -211,5 +214,145 @@ describe('terminalSpec', () => {
     it('lets the host render a line instead of using the default markup', () => {
         const { spec } = terminalSpec([line('a', 'hello')], { render: (entry) => entry.text });
         expect(spec.nodes?.[0]?.data?.['html']).toBe('hello');
+    });
+});
+
+const graphDouble = (): TerminalGraph & {
+    readonly nodes: Map<string, NodeSpec>;
+    readonly edges: Map<string, EdgeSpec>;
+    readonly shown: readonly (readonly [string, boolean])[];
+    readonly selection: string | readonly string[] | null;
+    readonly clicks: readonly ((id: string) => void)[];
+    readonly bands: readonly ((band: string) => void)[];
+} => {
+    const nodes = new Map<string, NodeSpec>();
+    const edges = new Map<string, EdgeSpec>();
+    const shown: (readonly [string, boolean])[] = [];
+    const clicks: ((id: string) => void)[] = [];
+    const bands: ((band: string) => void)[] = [];
+    let selection: string | readonly string[] | null = null;
+    const drop = (list: ((value: string) => void)[], callback: (value: string) => void) => () => {
+        const index = list.indexOf(callback);
+        if (index >= 0) list.splice(index, 1);
+    };
+    return {
+        nodes,
+        edges,
+        shown,
+        clicks,
+        bands,
+        get selection() {
+            return selection;
+        },
+        addNode: (spec) => {
+            nodes.set(spec.id, spec);
+            return spec;
+        },
+        addEdge: (spec) => {
+            edges.set(spec.id, spec);
+            return spec;
+        },
+        removeNode: (id) => {
+            nodes.delete(id);
+            [...edges.values()]
+                .filter((edge) => edge.source === id || edge.target === id)
+                .forEach((edge) => edges.delete(edge.id));
+        },
+        removeEdge: (id) => {
+            edges.delete(id);
+        },
+        setPositions: () => undefined,
+        show: (id, visible = true) => {
+            shown.push([id, visible]);
+            return undefined;
+        },
+        select: (target) => {
+            selection = target;
+            return undefined;
+        },
+        onNodeClick: (callback) => {
+            clicks.push(callback);
+            return drop(clicks, callback);
+        },
+        onZoomBand: (callback) => {
+            bands.push(callback);
+            return drop(bands, callback);
+        },
+    };
+};
+
+describe('mountTerminal', () => {
+    it('projects lines into the graph and focuses the tail on append', () => {
+        const graph = graphDouble();
+        const terminal = mountTerminal(graph);
+        terminal.append([line('a', 'alpha'), line('b', 'beta')]);
+        expect([...graph.nodes.keys()]).toEqual(['a', 'b']);
+        expect(graph.edges.has('a->b')).toBe(true);
+        expect(graph.selection).toBe('b');
+        terminal.destroy();
+    });
+
+    it('windows nodes, holds an explicit window and re-engages tail follow', () => {
+        const graph = graphDouble();
+        const terminal = mountTerminal(graph, {
+            windowConfig: { size: 1, margin: 0, hysteresis: 0 },
+        });
+        terminal.append([line('a', 'alpha'), line('b', 'beta'), line('c', 'gamma')]);
+        expect([...graph.nodes.keys()]).toEqual(['c']);
+        terminal.setWindow('a', 'b');
+        expect([...graph.nodes.keys()]).toEqual(['a', 'b']);
+        terminal.followTail(true);
+        expect([...graph.nodes.keys()]).toEqual(['c']);
+        terminal.destroy();
+    });
+
+    it('copies a selected range and announces it', () => {
+        const graph = graphDouble();
+        const onCopy = vi.fn();
+        const announce = vi.fn();
+        const terminal = mountTerminal(graph, { onCopy, announce });
+        terminal.append([line('a', 'alpha'), line('b', 'beta'), line('c', 'gamma')]);
+        terminal.select({
+            anchor: { nodeID: 'a', offset: 1 },
+            focus: { nodeID: 'b', offset: 4 },
+        });
+        expect(terminal.copy()).toBe('lpha\nbeta');
+        expect(onCopy).toHaveBeenCalledWith('lpha\nbeta');
+        expect(announce).toHaveBeenCalled();
+        expect(graph.selection).toEqual(['a', 'b']);
+        terminal.destroy();
+    });
+
+    it('reprojects when the band changes and stops listening after destroy', () => {
+        const graph = graphDouble();
+        const bands: string[] = [];
+        const terminal = mountTerminal(graph, {
+            project: ({ band }) => ({ nodes: [{ id: band, type: 'HtmlNode' }], edges: [] }),
+            onCamera: ({ band }) => bands.push(band),
+        });
+        terminal.append([line('a', 'alpha')]);
+        expect([...graph.nodes.keys()]).toEqual(['dot']);
+        graph.bands[0]?.('detail');
+        expect([...graph.nodes.keys()]).toEqual(['detail']);
+        expect(bands).toEqual(['dot', 'detail']);
+        graph.clicks[0]?.('a');
+        terminal.destroy();
+        expect(graph.clicks).toHaveLength(0);
+        expect(graph.bands).toHaveLength(0);
+        expect(graph.nodes.size).toBe(0);
+    });
+
+    it('re-evaluates the host filter on refresh', () => {
+        const graph = graphDouble();
+        let hidden = 'b';
+        const terminal = mountTerminal(graph, { filter: (entry) => entry.id !== hidden });
+        terminal.append([line('a', 'alpha'), line('b', 'beta')]);
+        hidden = 'a';
+        terminal.refresh();
+        expect(graph.shown.slice(-2)).toEqual([
+            ['a', false],
+            ['b', true],
+        ]);
+        terminal.destroy();
     });
 });
