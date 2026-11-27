@@ -16,6 +16,11 @@ export default defineConfig({
                 replacement: resolve(workspace, 'src/core/layout-registry.ts'),
             },
             { find: /^spacegraphjs\/(.+)$/, replacement: resolve(workspace, 'src/$1') },
+            { find: /^pi-kit$/, replacement: resolve(root, '../pi-kit/src/index.ts') },
+            {
+                find: /^pi-kit\/(.+)$/,
+                replacement: resolve(root, '../pi-kit/src/$1.ts'),
+            },
             {
                 find: /^@spacegraphjs\/config\/library$/,
                 replacement: resolve(workspace, 'packages/config/src/library.ts'),

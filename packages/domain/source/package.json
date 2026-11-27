@@ -1,0 +1,39 @@
+{
+    "name": "@spacegraphjs/source",
+    "version": "0.1.0",
+    "description": "Source-code graph semantics for SpaceGraphJS: packages, files, exported symbols and dependency edges",
+    "type": "module",
+    "sideEffects": false,
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run",
+        "build": "vite build"
+    },
+    "dependencies": {
+        "@spacegraphjs/adapter": "workspace:*",
+        "@spacegraphjs/kernel": "workspace:*",
+        "@spacegraphjs/search": "workspace:*",
+        "@spacegraphjs/shared": "workspace:*",
+        "@spacegraphjs/trace": "workspace:*"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.2",
+        "vite": "^8.3.5",
+        "vite-plugin-dts": "^5.1.0"
+    },
+    "license": "MIT"
+}

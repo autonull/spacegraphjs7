@@ -66,7 +66,7 @@ export default defineConfig({
                 find: /^@spacegraphjs\/search$/,
                 replacement: resolve(import.meta.dirname, 'packages/search/src/index.ts'),
             },
-            ...['agent', 'workflow', 'filesystem', 'data'].map((name) => ({
+            ...['agent', 'workflow', 'filesystem', 'data', 'source'].map((name) => ({
                 find: new RegExp(`^@spacegraphjs/${name}$`),
                 replacement: resolve(import.meta.dirname, `packages/domain/${name}/src/index.ts`),
             })),

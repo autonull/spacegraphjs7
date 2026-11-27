@@ -36,6 +36,7 @@
         "@spacegraphjs/renderer": "workspace:*",
         "@spacegraphjs/search": "workspace:*",
         "@spacegraphjs/shared": "workspace:*",
+        "pi-kit": "workspace:*",
         "@spacegraphjs/spacegraph-renderer": "workspace:*",
         "spacegraphjs": "workspace:*"
     },

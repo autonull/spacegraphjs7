@@ -6,7 +6,7 @@
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20.19+ or 22.12+
 - pnpm 10+
 
 ---
@@ -61,7 +61,7 @@ import { SpaceGraph, type GraphSpec } from 'spacegraphjs';
 const container = document.getElementById('container')!;
 
 // SpaceGraph.create is an async factory that initializes the engine and loads the spec.
-const spec: GraphSpec = {
+export const spec: GraphSpec = {
     nodes: [
         {
             id: 'node-a',
@@ -188,14 +188,16 @@ when relevant) to both helpers.
 
 ## Interactive Controls
 
-| Action           | Control              |
-| ---------------- | -------------------- |
-| **Pan**          | Right-click + drag   |
-| **Orbit**        | Middle-click + drag  |
-| **Zoom**         | Scroll wheel         |
-| **Frame a node** | Middle-click on node |
-| **Select Node**  | Click on node        |
-| **Multi-select** | Shift + click        |
+| Gesture                       | Does                   |
+| ----------------------------- | ---------------------- |
+| Right button + drag           | Pan the view           |
+| Left button + drag background | Pan the view           |
+| Wheel                         | Zoom about the pointer |
+| Middle click on a node        | Frame that node        |
+| Middle button + drag          | Orbit (3D only)        |
+| Left click on a node          | Select it              |
+| Left drag on a node           | Move it                |
+| Shift + drag on background    | Box-select             |
 
 ---
 
@@ -267,12 +269,12 @@ test('the graph meets the quality floor', () => {
 
 Runnable examples live in the demo registry:
 
-| Example                                              | Description             |
-| ---------------------------------------------------- | ----------------------- |
+| Example                                                | Description             |
+| ------------------------------------------------------ | ----------------------- |
 | [Quickstart](../app/demo/html/plugins/quickstart.html) | The scaffolded graph    |
-| [Layouts](../app/demo/html/layout/layouts.html)      | Layout strategies       |
-| [HTML nodes](../app/demo/html/rendering/html.html)   | Rich HTML content        |
-| [Large graph](../app/demo/html/rendering/large.html) | 1000+ nodes performance |
+| [Layouts](../app/demo/html/layout/layouts.html)        | Layout strategies       |
+| [HTML nodes](../app/demo/html/rendering/html.html)     | Rich HTML content       |
+| [Large graph](../app/demo/html/rendering/large.html)   | 1000+ nodes performance |
 
 ---
 

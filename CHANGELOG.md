@@ -7,6 +7,8 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Added
 
+- **Source-code domain and API browser:** `@spacegraphjs/source` folds a serializable TypeScript snapshot into packages, files, exported symbols and `contains`/`imports`/`exports`/`references` edges, with trace selectors, facets and an adapter conformance fixture. `pnpm run source:snapshot` scans the repo with the compiler API at build time; the demo's `/html/core/source-graph.html` fetches the JSON snapshot, lays out the graph with `solveErgonomicLayout`, searches with `Navigation.search`, draws an overview with `Navigation.project`, reports `checkQuality`, and exposes `__sourceGraph` hooks. Scope, detail, package and query filters plus the inspector are unit- and browser-tested. No host vocabulary or compiler API enters the library.
+- **Demo host utilities capability:** the gallery now runs `spacegraphjs/utils` (`appendTo`, `isEditableTarget`) as a real capability with evidence, so every library surface used by `app/demo/src` has a runnable example under the existing host-proof gate.
 - **Generated-host benchmark (TODO11 D5):** `create-spacegraph-domain` now emits `host/tests/benchmark.test.ts`, which maps 1,000 generated nodes within budget; `test:extension` runs it beside the conformance suite and the one-way dependency guard. No shared-registry or committed generated output, no library special case.
 - **Vision helpers (TODO11 D4):** `spacegraphVision(spec, options)` returns a non-throwing graded quality report with `passed`, and `visionAssert(spec, options)` exposes test assertions for overlap, labels, edges, DOM budget, accessibility and the score floor. Both ship through `spacegraphjs/quality` and reuse `checkQuality`; no Playwright or build-plugin dependency, no autofix, no default. The stale README/CONTRIBUTING claims about a Vite plugin are corrected.
 - **Chapter packing (general library):** `chapterPacking(ids, { card, gap?, columns?, viewport?, previous? })` packs a small set of host-defined chapter cards, caps columns to the viewport and preserves cells from `previous` when new ids stream in. Pi's chapters view uses it; `app/demo/second-host.ts` proves the same helper with non-agent ids.
@@ -130,6 +132,9 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Changed
 
+- Source graph browser (UI/UX audit): file cards now use measured HTML cards with shortest unique path labels and full-path tooltips; containment edges stay hidden at file overview; the minimap moved into the inspector; text queries surface matching symbols; package chips follow the active scope; input is debounced; counts distinguish shown from total symbols. `/`, `F` and Enter drive search and framing. Rendered nodes and edges are capped at 300/600 by connectivity, with any truncation shown in the evidence strip.
+- Docs (DX audit): corrected the Node prerequisite, the mouse-gesture table and the exported `spec` in the quickstart; replaced the fictional UI appendix and stale capability claims; fixed fixture paths and stale counts.
+- Host architecture (UI/UX follow-up): `app/pi` now imports `pi-kit` through a declared workspace dependency instead of relative `src` paths, with matching Vite, Vitest and TypeScript aliases. `pi-kit` re-exports the published `escapeHtml` as `escapeHTML` instead of keeping a fifth copy of the escape table. The demo gallery delegates `getElementById` to `spacegraphjs/utils.requireElement` and shares `isEditableTarget` for its global shortcut guard; both were already used elsewhere in the same app.
 - `ZoomBands` / `ScaleDomain` replace `FractalZoomPlugin` as the band and scale mechanism.
 - Root docs now reference real paths under `docs/` and `app/demo/`.
 - Pi type hierarchy: the smallest shell tokens lift to 11px/10px, the attention badge and panel headings
@@ -138,6 +143,8 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Fixed
 
+- Tests (DX audit): relaxed recorded-metric precision, headless p95 and timing-based resize assertions; capture-only screenshot suites now require an explicit env flag; the CLI integration test runs from a temp directory with the local `tsx` binary.
+- Pi readable chrome (UI/UX audit): the on-demand rail now sits below the command bar and beside the panel strip, with its width reserved from `#surface`. The transcript keeps a readable lane instead of a clipped sliver, and the strip no longer covers the rail. The `ui-readable` shot was recaptured and browser assertions check all three panes.
 - Pi timeline hull tabs (TODO7): the tab now shows the turn number with a state glyph (`✓`, `▸`, `!`, `✕`) instead of the words `TURN` and `COMPLETE`; status name stays on the node and detail views. Gallery recaptured.
 - Pi reserved child lane (TODO7): the packed unit/delegate frame offset no longer places the first child row on its parent card. All five graph views now report zero parent/child overlaps in `graph-baseline.json`; the other four views keep their solved positions.
 - Pi flight path (TODO6): `advance()` positions-only frames now use a new `ModelRenderer.setPositions()` / `SpaceGraphRenderer.applyPositions()` path instead of rebuilding every node and edge spec through `setModel()`; other renderers keep the full-set fallback. Per-frame JS cost drops from a 2.295 ms full rebuild to 0.368 ms for `advance()`. The 80 ms browser flight target still needs a physical-GPU measurement; evidence is in `docs/performance.md`.

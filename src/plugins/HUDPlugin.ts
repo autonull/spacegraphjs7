@@ -130,9 +130,7 @@ export class HUDPlugin extends BaseSystemPlugin {
             maxHeight: 'calc(100% - 32px)',
             overflow: 'auto',
             padding: '20px',
-            background: HUD_COLORS.surface,
-            border: `1px solid ${HUD_COLORS.border}`,
-            borderRadius: '8px',
+            ...HUD_STYLES.panel,
         });
         const heading = document.createElement('h2');
         heading.id = 'spacegraph-modal-title';
@@ -195,9 +193,7 @@ export class HUDPlugin extends BaseSystemPlugin {
             transform: 'translateX(-50%)',
             maxWidth: 'calc(100% - 32px)',
             padding: '10px 16px',
-            background: HUD_COLORS.surface,
-            border: `1px solid ${HUD_COLORS.border}`,
-            borderRadius: '8px',
+            ...HUD_STYLES.panel,
             zIndex: HUD_ZINDEX.LOADING,
         });
         HUDDOMFactory.appendToRenderer(this.sg, notice);
@@ -252,9 +248,7 @@ export class HUDPlugin extends BaseSystemPlugin {
         menu.setAttribute('role', 'menu');
         Object.assign(menu.style, {
             ...HUD_STYLES.base,
-            background: HUD_COLORS.surface,
-            border: `1px solid ${HUD_COLORS.border}`,
-            borderRadius: '8px',
+            ...HUD_STYLES.panel,
             padding: '4px',
             minWidth: '140px',
             pointerEvents: 'auto',

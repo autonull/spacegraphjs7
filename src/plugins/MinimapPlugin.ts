@@ -139,14 +139,18 @@ export class MinimapPlugin extends BaseSystemPlugin {
         return x >= left && x <= left + size && y >= top && y <= top + size;
     }
 
-    private _onPointerDown = (e: PointerEvent) => {
-        if (!this.settings.enabled || !this._inBounds(e)) return;
-        this.isDragging = true;
+    #navigateTo(e: PointerEvent): void {
         const { x, y } = this.#localPoint(e);
         const pt = this._pointerToWorld(x, y);
         this.sg.cameraControls?.setTarget?.(pt.x, pt.y, 0);
         this._updateOverlay();
         e.stopPropagation();
+    }
+
+    private _onPointerDown = (e: PointerEvent) => {
+        if (!this.settings.enabled || !this._inBounds(e)) return;
+        this.isDragging = true;
+        this.#navigateTo(e);
         e.preventDefault();
     };
 
@@ -158,11 +162,7 @@ export class MinimapPlugin extends BaseSystemPlugin {
 
     private _onPointerMove = (e: PointerEvent) => {
         if (!this.isDragging) return;
-        const { x, y } = this.#localPoint(e);
-        const pt = this._pointerToWorld(x, y);
-        this.sg.cameraControls?.setTarget?.(pt.x, pt.y, 0);
-        this._updateOverlay();
-        e.stopPropagation();
+        this.#navigateTo(e);
     };
 
     // Scene pass: fit the minimap camera to the graph and render one thumbnail frame. Throttled.

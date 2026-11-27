@@ -9,6 +9,7 @@
     "devDependencies": {
         "@spacegraphjs/kernel": "workspace:*",
         "@spacegraphjs/agent": "workspace:*",
+        "@spacegraphjs/renderer": "workspace:*",
         "@types/node": "^26.4.1",
         "typescript": "^5.9.2"
     }

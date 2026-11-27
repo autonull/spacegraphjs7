@@ -363,7 +363,7 @@ export class MermaidPlugin extends BaseSystemPlugin {
     private renderDiagram(): void {
         if (!this.parseResult) return;
 
-        this.clearGraph();
+        this.graph.clear();
 
         const theme = MERMAID_THEMES[this.currentTheme];
 
@@ -411,10 +411,6 @@ export class MermaidPlugin extends BaseSystemPlugin {
                 },
             });
         });
-    }
-
-    private clearGraph(): void {
-        this.graph.clear();
     }
 
     private async applyClusterLayouts(): Promise<void> {

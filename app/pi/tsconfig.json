@@ -13,7 +13,9 @@
         "noEmit": true,
         "types": ["node"],
         "paths": {
-            "@spacegraphjs/navigation/follow": ["../../packages/navigation/src/follow.ts"]
+            "@spacegraphjs/navigation/follow": ["../../packages/navigation/src/follow.ts"],
+            "pi-kit": ["../pi-kit/src/index.ts"],
+            "pi-kit/*": ["../pi-kit/src/*"]
         }
     },
     "include": ["src", "scripts", "tests", "vite.config.ts", "vitest.config.ts"]

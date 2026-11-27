@@ -1,1 +1,1 @@
-export * from '../../pi-kit/src/dom';
+export * from 'pi-kit/dom';

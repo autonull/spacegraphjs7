@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "date": "2026-11-26",
+    "scope": "app/pi flagship cockpit and chrome presets",
+    "method": "Fresh screenshots captured from current source into /tmp/opencode/pi-audit{,2,3}; compared with docs/screenshots/pi and checked against DOM/CSS. No study result is fabricated.",
+    "rule": "New entries only; closed TODO6 findings in audit.json are not edited in place."
+  },
+  "findings": [
+    {
+      "id": "AUDIT-FRESH-01",
+      "area": "interaction affordance / readable chrome",
+      "severity": "medium",
+      "shot": "ui-readable",
+      "observation": "With ?ui=readable, opening the on-demand policy rail overlays the right edge of #surface. The transcript column stays at 320px behind the opaque 300px rail, leaving only a ~20px strip of row dots and clipped letters. Reading the transcript while adjusting live knobs is impossible.",
+      "evidence": "docs/screenshots/pi/pi-agent-ui-readable.png (before, pi/pi-agent-ui-readable.png.prev); app/pi/index.html:136-151",
+      "suggested_change": "Reserve the rail width from #surface when the readable rail is open so the transcript keeps a full lane beside it.",
+      "status": "fixed",
+      "gate": "app/pi/tests/readable.spec.ts",
+      "result": "Transcript right edge <= rail left edge and transcript width >= 240px at 1440x900 and 900x1000; shot recaptured."
+    },
+    {
+      "id": "AUDIT-FRESH-02",
+      "area": "legibility / transcript header",
+      "severity": "none",
+      "shot": "cockpit, node-detail, catalog",
+      "observation": "The transcript title, four-kind legend and collapse control sit on two wrapped rows with no overlap or right-edge clipping in the current build. The stale gallery images show an earlier single-line overflow; current source already wraps it.",
+      "evidence": "/tmp/opencode/pi-audit/pi/pi-agent-in-action.png; app/pi/index.html:1647-1691",
+      "suggested_change": "None.",
+      "status": "no finding"
+    },
+    {
+      "id": "AUDIT-FRESH-03",
+      "area": "overlap / overview cards",
+      "severity": "low",
+      "shot": "cockpit, ui-readable",
+      "observation": "Some card rectangles overlap, but the visible pairs (Turn 3/grep, Turn 5/test failed, Unit/read) are parent/child containment, not unrelated siblings. Feeding rendered card sizes into the force solver separated one true sibling pair (user/Run) but shifted 10.8% of cockpit pixels for little net legibility gain.",
+      "evidence": "/tmp/opencode/pi-audit/pi/pi-agent-in-action.png vs /tmp/opencode/pi-audit2/pi/pi-agent-in-action.png; app/pi/src/scopes.ts:139-143; src/layout/scope-layout.ts:218",
+      "suggested_change": "Defer. A change here forces a full gallery recapture and a human ADR 0008 verdict; the vision gate already passes and containment overlap is intentional.",
+      "status": "deferred"
+    },
+    {
+      "id": "AUDIT-FRESH-04",
+      "area": "status strip / evidence line",
+      "severity": "none",
+      "shot": "cockpit",
+      "observation": "Long proof lines are truncated with an ellipsis in the bottom strip, but each <li> carries the full text in its title attribute, so the information is reachable on hover. The strip is a proof surface, not primary navigation.",
+      "evidence": "app/pi/src/index-views.ts:7-15; app/pi/src/capabilities.ts:91-98",
+      "suggested_change": "None.",
+      "status": "no finding"
+    },
+    {
+      "id": "AUDIT-FRESH-05",
+      "area": "keyboard and target ergonomics",
+      "severity": "none",
+      "shot": "cockpit, catalog, node-detail",
+      "observation": "Catalog rows are 44px squares, the transcript resize and overview are focusable with ARIA state, minimap has keyboard parity, and the focus lens avoids its source card. No new defect found in the focused areas.",
+      "evidence": "app/pi/tests/browser.spec.ts; app/pi/tests/minimap.spec.ts; app/pi/tests/focus-lens.spec.ts; docs/screenshots/reports/audit.json (closed AUDIT-02/04/07)",
+      "suggested_change": "None.",
+      "status": "no finding"
+    }
+  ]
+}

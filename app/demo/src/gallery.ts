@@ -35,6 +35,7 @@ import {
     type SpatialMemoryRecord,
 } from '@spacegraphjs/kernel';
 import type { CodeDiff, GraphFacets } from '@spacegraphjs/shared';
+import { appendTo, isEditableTarget } from 'spacegraphjs/utils';
 import { round } from './dom';
 import { Representations } from 'spacegraphjs/representations';
 import {
@@ -112,6 +113,12 @@ import {
     symbolDependents,
 } from '@spacegraphjs/filesystem';
 import { dataDomain, fixtureOps as dataOps, lineage, regressions } from '@spacegraphjs/data';
+import {
+    apiCensus,
+    buildSourceView,
+    fixtureOps as sourceOpsFixture,
+    foldSourceOps,
+} from '@spacegraphjs/source';
 
 const addNode = (id: string, kind = 'node', label = id): KernelOp => ({
     op: 'add-node',
@@ -237,6 +244,21 @@ function extent(layout: GraphLayout): string {
 }
 
 export const CAPABILITIES: readonly Capability[] = [
+    {
+        id: 'utils',
+        title: 'Host utilities',
+        modules: ['spacegraphjs/utils'],
+        summary: 'One labelled DOM lookup, editable-target guard and collection helper for every host.',
+        run: () => {
+            const buckets = new Map<string, string[]>();
+            appendTo(buckets, 'run', 'stage:build');
+            appendTo(buckets, 'run', 'stage:verify');
+            return [
+                `appendTo groups ${buckets.get('run')?.length ?? 0} ids under one key`,
+                `isEditableTarget(null) = ${isEditableTarget(null)} — shared shortcut guard`,
+            ];
+        },
+    },
     {
         id: 'theme',
         title: 'Theme and contrast',
@@ -1019,6 +1041,21 @@ export const CAPABILITIES: readonly Capability[] = [
                 `data nodes: ${view.nodes.length}`,
                 `auc lineage: ${lineage(view, 'data:p1:auc').answerIds.size} upstream nodes`,
                 `regressions: ${drops.map((metric) => `${metric.label} ${metric.delta.toFixed(3)}`).join(', ')}`,
+            ];
+        },
+    },
+    {
+        id: 'source-domain',
+        title: 'Source-code domain',
+        modules: ['@spacegraphjs/source'],
+        summary: 'A TypeScript API snapshot folds into packages, files, exported symbols and dependency edges.',
+        run: () => {
+            const view = buildSourceView(foldSourceOps(sourceOpsFixture()));
+            const counts = apiCensus(view);
+            const symbols = counts.class + counts.function + counts.interface + counts.type + counts.const;
+            return [
+                `source nodes: ${counts.package} packages · ${counts.file} files · ${symbols} symbols`,
+                `relations: ${view.edges.length} edges · root ${view.root.split(':').at(-1)}`,
             ];
         },
     },

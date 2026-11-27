@@ -19,9 +19,10 @@ pnpm --filter demo build
 | `/`                             | One model through all three renderers, with every library capability exercised and reported |
 | `/learn.html`                   | How the system fits together, with real snippets and a live capability map                  |
 | `/learn.html#capabilities`      | The live gallery: every entry runs against the real model                                   |
-| `/showcase.html`                | The 44 programmatic demos, switchable without a rebuild                                     |
+| `/showcase.html`                | The programmatic demos, switchable without a rebuild                                        |
 | `/html/interaction/scopes.html` | Scoped overlays and the vision overlap assertion                                            |
 | `/explorer.html`                | Every discoverable config axis against both contract and demo models                        |
+| `/html/core/source-graph.html`  | Build-time SpaceGraphJS API snapshot browsed as packages, files and exported symbols        |
 | `/html/core/contract.html`      | The host-neutral renderer contract                                                          |
 | `/html/layout/graph-ide.html`   | Graph IDE reference host: filesystem graph plus live file/diff rectangles and gated senses  |
 | `/*.html`                       | The standalone feature pages: layouts, interaction, plugins, media, vision and more         |

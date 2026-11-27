@@ -200,6 +200,7 @@
         "docs": "typedoc --options typedoc.json",
         "format": "prettier --write .",
         "generate:registry": "tsx script/generate-demo-registry.ts && prettier --write app/demo/src/registry.ts",
+        "source:snapshot": "tsx script/source-snapshot.ts",
         "format:check": "prettier --check .",
         "lint": "eslint 'src/**/*.{ts,js}' --ignore-pattern 'dist'",
         "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run test",

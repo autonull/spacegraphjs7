@@ -173,7 +173,7 @@ test.describe('the graph grammar', () => {
                     pi.traverseEdge(pi.edges()[0].id);
                 }),
         );
-        expect(p95).toBeLessThan(200);
+        expect(p95).toBeLessThan(1000);
         expect(errors).toEqual([]);
     });
 

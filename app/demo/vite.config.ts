@@ -79,6 +79,10 @@ export default defineConfig({
                 find: /^@spacegraphjs\/data$/,
                 replacement: resolve(workspace, 'packages/domain/data/src/index.ts'),
             },
+            {
+                find: /^@spacegraphjs\/source$/,
+                replacement: resolve(workspace, 'packages/domain/source/src/index.ts'),
+            },
         ],
     },
     server: {

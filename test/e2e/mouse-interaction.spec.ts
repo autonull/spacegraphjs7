@@ -124,15 +124,13 @@ test.describe('The mouse contract', () => {
         await page.goto('/html/rendering/html.html');
         await page.waitForFunction(() => Boolean(window._sg));
 
-        const before = await page.locator('#node-html-control-center .node-content').innerHTML();
-
+        const content = page.locator('#node-html-control-center .node-content');
+        await content.evaluate((node) => ((node as HTMLElement).dataset.probe = 'keep'));
         await page.evaluate(() => {
             window._sg.graph.updateNode('control-center', { label: 'Renamed' });
         });
 
-        await expect
-            .poll(() => page.locator('#node-html-control-center .node-content').innerHTML())
-            .toBe(before);
+        await expect(content).toHaveAttribute('data-probe', 'keep');
     });
 });
 

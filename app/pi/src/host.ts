@@ -173,8 +173,8 @@ import {
 } from './shell';
 import { SHORTCUT_HELP } from './help';
 import { ChromeController, installPulldowns } from './chrome';
-import { downloadBlob } from '../../pi-kit/src/download';
-import { createViewportController } from '../../pi-kit/src/viewport';
+import { downloadBlob } from 'pi-kit/download';
+import { createViewportController } from 'pi-kit/viewport';
 import { button, el, ensureChild, pruneChildren } from './dom';
 import { FocusLens } from './focus-lens';
 import {

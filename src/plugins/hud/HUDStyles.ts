@@ -60,6 +60,12 @@ export const HUD_STYLES = {
         borderRadius: '6px',
     },
 
+    panel: {
+        background: HUD_COLORS.surface,
+        border: `1px solid ${HUD_COLORS.border}`,
+        borderRadius: '8px',
+    },
+
     alert: {
         background: HUD_COLORS.surface,
         border: `1px solid ${HUD_COLORS.border}`,

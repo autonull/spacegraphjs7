@@ -5,7 +5,7 @@ importing host packages. Everything here is contract-first: you build a `RenderM
 and the library never learns your host's vocabulary.
 
 The reference host is the sibling OpenCode prototype (`packages/session-graph` there); the
-non-OpenCode fixture is `spacegraphjs/test/fixtures/activity-host.ts`, used by the shared conformance
+non-OpenCode fixture is `app/demo/activity-host.ts`, used by the shared conformance
 suite.
 
 ## 1. The boundary
@@ -187,8 +187,8 @@ The additive capability surface is versioned by `LIBRARY_CONTRACT_VERSION` in
 manifest entries carry `minContractVersion`. Renderer behavior is negotiated with `supports(...)`
 predicates on `capabilities` — never by a version constant or renderer identity. See
 `docs/contract-versioning.md` for the freeze rule and the two deprecation policies. For a non-OpenCode
-page, see the fixture in `demo/activity-host.ts`; the runnable two-adapter library demo is
-`demo/html/core/contract.html`.
+page, see the fixture in `app/demo/activity-host.ts`; the runnable two-adapter library demo is
+`app/demo/html/core/contract.html`.
 
 Fit options are additive: a renderer without `fitInsets` still frames the whole surface. A host
 probes `supports(...)` and degrades to the full path with an explanation; absence is never a runtime

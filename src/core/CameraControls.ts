@@ -142,8 +142,6 @@ export class CameraControls {
         };
         this.target = new Vector3();
         this.spherical = new Spherical();
-        this.sphericalDelta = new Spherical();
-        this.panOffset = new Vector3();
         this.updateSpherical();
         this.onKeyDown = this.onKeyDown.bind(this);
         this.onKeyUp = this.onKeyUp.bind(this);

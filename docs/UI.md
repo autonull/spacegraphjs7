@@ -554,48 +554,7 @@ Join us.
 
 ## Appendix: Getting Started
 
-### Quick Start (5 minutes)
-
-```bash
-# Install
-npm install spacegraph
-
-# Create app
-npx create-liquid-app@latest my-liquid-app
-
-# Run
-cd my-liquid-app
-npm run dev
-```
-
-### Basic Example
-
-```typescript
-import { SpaceGraph, HTMLNode } from 'spacegraph';
-
-const sg = new SpaceGraph('#app');
-await sg.init();
-
-// Add nodes
-sg.addNode(new HTMLNode({ content: '<h1>Hello Liquid</h1>' }));
-sg.addNode(new HTMLNode({ content: '<h1>World</h1>', position: [200, 0, 0] }));
-
-// Connect them
-sg.addEdge({ source: 0, target: 1 });
-
-// Zoom, pan, explore
-```
-
-### Resources
-
-- **Docs**: https://spacegraph.dev/docs
-- **Examples**: https://spacegraph.dev/examples
-- **Discord**: https://discord.gg/spacegraph
-- **GitHub**: https://github.com/spacegraph/spacegraph
-
----
-
-_Version: 2.0 (Vision Complete)_  
-_Date: 2024-04-06_  
-_Status: Ready for Implementation_  
-_Mission: Make solid UI obsolete_
+This document is the visual design manifesto. Its early examples are aspirational, not runnable API.
+For the current, working API use [docs/QUICKSTART.md](./QUICKSTART.md): `pnpm add spacegraphjs three`,
+`pnpm dlx create-spacegraph`, and `SpaceGraph.create(container, spec)` with string node IDs. The mouse
+map lives in [docs/interaction.md](./interaction.md); the live capability gallery is in `app/demo/`.

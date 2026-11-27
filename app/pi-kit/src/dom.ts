@@ -67,16 +67,7 @@ export function pruneChildren<T extends Element>(
         registry.delete(id);
     }
 }
-const HTML_ESCAPES: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-};
-
-export const escapeHTML = (value: string): string =>
-    value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]!);
+export { escapeHtml as escapeHTML } from '@spacegraphjs/renderer';
 export const dataText = (node: {
     readonly data?: Readonly<Record<string, unknown>>;
 }): string => {

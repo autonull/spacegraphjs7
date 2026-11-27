@@ -29,6 +29,11 @@ export function setupInteractionHandlers(app: SpaceGraphApp): () => void {
         event: K,
         handler: (data: SpaceGraphEvents[K]) => void,
     ) => subscriptions.push(app.sg.events.on(event, handler));
+    const selectIfNeeded = (id?: string): void => {
+        if (id && !app.sg.selection.has(id)) app.sg.select(id);
+    };
+    const hideTooltip = (): void => app.hud.hideTooltip();
+
     on('selection:changed', ({ nodes, edges }) => applySelection(app, nodes, edges));
 
     on('interaction:edgecreate', ({ source, target }) => {
@@ -50,14 +55,8 @@ export function setupInteractionHandlers(app: SpaceGraphApp): () => void {
     });
 
     on('background:click', () => app.sg.clearSelection());
-    on('node:click', (data) => {
-        const id = 'node' in data ? data.node.id : data.id;
-        if (id && !app.sg.selection.has(id)) app.sg.select(id);
-    });
-    on('edge:click', (data) => {
-        const id = 'id' in data ? data.id : undefined;
-        if (id && !app.sg.selection.has(id)) app.sg.select(id);
-    });
+    on('node:click', (data) => selectIfNeeded('node' in data ? data.node.id : data.id));
+    on('edge:click', (data) => selectIfNeeded('id' in data ? data.id : undefined));
 
     on('node:dblclick', ({ node }) => {
         if (app.options.onNodeDblClick) {
@@ -99,9 +98,7 @@ export function setupInteractionHandlers(app: SpaceGraphApp): () => void {
         }
     });
 
-    on('node:pointerleave', () => {
-        app.hud.hideTooltip();
-    });
+    on('node:pointerleave', hideTooltip);
 
     on('edge:pointerenter', ({ edge, event }) => {
         if (app.options.edgeTooltip) {
@@ -109,9 +106,7 @@ export function setupInteractionHandlers(app: SpaceGraphApp): () => void {
         }
     });
 
-    on('edge:pointerleave', () => {
-        app.hud.hideTooltip();
-    });
+    on('edge:pointerleave', hideTooltip);
     return () => {
         for (const subscription of subscriptions) subscription.dispose();
     };

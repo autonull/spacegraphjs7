@@ -288,13 +288,3 @@ export class SpaceGraphApp {
         surface.updateSpec({ data: { color: this.originalColors.get(surface) } });
     }
 }
-
-// Re-export helpers
-export {
-    renderButtons,
-    renderTitleCard,
-    renderToolbar,
-    renderToolbarActions,
-    setupSearchHUD,
-    updateStatsHUD,
-};

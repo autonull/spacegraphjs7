@@ -38,7 +38,8 @@
             "@spacegraphjs/window-manager": ["./packages/window-manager/src/index.ts"],
             "@spacegraphjs/inspector": ["./packages/inspector/src/index.ts"],
             "@spacegraphjs/config": ["./packages/config/src/index.ts"],
-            "@spacegraphjs/config/library": ["./packages/config/src/library.ts"]
+            "@spacegraphjs/config/library": ["./packages/config/src/library.ts"],
+            "@spacegraphjs/source": ["./packages/domain/source/src/index.ts"]
         }
     },
     "include": ["src", "test", "app/demo/src", "app/demo/tests", "app/demo/explorer.ts"],

@@ -12,6 +12,7 @@ const shots: readonly Shot[] = requested?.length ? HERO_SHOTS.filter((shot) => r
 
 for (const shot of shots) {
     test(`shot: ${shot.id} — ${shot.title}`, async ({ page }) => {
+        test.skip(!process.env.SG_DURABLE_SHOTS, 'capture-only: use pnpm --filter pi-durable shot');
         const errors: string[] = [];
         page.on('pageerror', (error) => errors.push(error.message));
         await page.setViewportSize(shot.viewport ?? { width: 1600, height: 1000 });

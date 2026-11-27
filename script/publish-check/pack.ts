@@ -44,6 +44,7 @@ const catalog = (root: string) => ({
     filesystem: { name: '@spacegraphjs/filesystem', dir: join(root, 'packages/domain/filesystem') },
     data: { name: '@spacegraphjs/data', dir: join(root, 'packages/domain/data') },
     agent: { name: '@spacegraphjs/agent', dir: join(root, 'packages/domain/agent') },
+    source: { name: '@spacegraphjs/source', dir: join(root, 'packages/domain/source') },
     overlays: { name: '@spacegraphjs/overlays', dir: join(root, 'packages/overlays') },
     search: { name: '@spacegraphjs/search', dir: join(root, 'packages/search') },
     trace: { name: '@spacegraphjs/trace', dir: join(root, 'packages/trace') },

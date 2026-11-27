@@ -31,6 +31,7 @@ const packages = pickPackages(root, [
     'filesystem',
     'data',
     'agent',
+    'source',
 ]);
 
 // The packages' runtime dependencies are not part of the tarball; the consumer resolves them from the

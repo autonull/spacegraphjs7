@@ -135,7 +135,7 @@
             }
             body[data-ui-chrome='readable'] #rail {
                 position: absolute;
-                inset-block: var(--sg-spacing-sm) 76px;
+                inset-block: 52px 76px;
                 inset-inline-end: var(--sg-spacing-sm);
                 z-index: 6;
                 display: none;
@@ -146,6 +146,13 @@
             }
             body[data-ui-chrome='readable'][data-rail='open'] #rail {
                 display: flex;
+            }
+            /* The panel strip owns the right edge; park the rail beside it and reserve both lanes. */
+            body[data-ui-chrome='readable'][data-rail='open'] #rail {
+                inset-inline-end: 52px;
+            }
+            body[data-ui-chrome='readable'][data-rail='open'] #surface {
+                padding-inline-end: 352px;
             }
             #rail-strip {
                 display: none;

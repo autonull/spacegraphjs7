@@ -2,25 +2,25 @@
 
 Generic capabilities provided by the SpaceGraphJS library, used by the demo and the OpenCode integration.
 
-| Capability                               | Module                                          | Description                                                           |
-| ---------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------- |
-| Semantic levels / zoom bands             | `spacegraphjs/levels`, `spacegraphjs/zoom`      | Toolbar level selector, camera bands                                  |
-| Layout strategies + placement engines    | `spacegraphjs/layout` (LaneLayout + strategies) | Lanes, timeline, hierarchy, tree, force                               |
-| Summary representations                  | `spacegraphjs/representations` (ribbon, matrix) | Ribbon/matrix view modes                                              |
-| Navigation (search, minimap, trail)      | `spacegraphjs/navigation`                       | GraphSearch, GraphMinimap, breadcrumbs                                |
-| View controller                          | `spacegraphjs/control` (`GraphController`)      | Selection, focus, trail                                               |
-| Accessibility (roving tabindex, ARIA)    | `spacegraphjs/a11y`                             | Keyboard/screen-reader support                                        |
-| Representation ladder + transitions      | `spacegraphjs/representations`                  | Registered rungs, hysteresis, stable-id playback                      |
-| Edge ladder + cluster collapse           | `spacegraphjs/edges/ladder`                     | Bundle → hair → arrow → ribbon                                        |
-| Host-composed salience                   | `spacegraphjs/salience`                         | Signals, explainable emphasis, channel mapping                        |
-| HTML widget substrate                    | `spacegraphjs/widgets`                          | Registry, slots, measured sizing, fog, security boundary              |
-| Depth spectrum                           | `spacegraphjs/depth` + contract `depths`        | Flat/layered/depth-stack/orbit, blended continuum and host depth axes |
-| Motion direction                         | `spacegraphjs/motion`                           | Named verbs, eased/spring playback, host camera verbs                 |
-| World + sensory seams                    | `spacegraphjs/world`                            | Optional scene features, instancing LOD, sensory descriptors          |
-| Experimentation                          | `spacegraphjs/experiments`                      | Cartesian matrix, neutral metrics, inert templates, honest reports    |
-| Scoped overlay & code diff               | `spacegraphjs/overlays`                         | Turn-map overlay, diff view                                           |
-| Static export (SVG/JSON/standalone HTML) | `@spacegraphjs/svg-renderer`                    | Export button, inline subgraph                                        |
-| Mouse interaction contract               | `spacegraphjs/interaction`                      | Pan, zoom, pick, frame, drag, box-select                              |
+| Capability                            | Module                                          | Description                                                           |
+| ------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------- |
+| Semantic levels / zoom bands          | `spacegraphjs/levels`, `spacegraphjs/zoom`      | Toolbar level selector, camera bands                                  |
+| Layout strategies + placement engines | `spacegraphjs/layout` (LaneLayout + strategies) | Lanes, timeline, hierarchy, tree, force                               |
+| Summary representations               | `spacegraphjs/representations` (ribbon, matrix) | Ribbon/matrix view modes                                              |
+| Navigation (search, minimap, trail)   | `spacegraphjs/navigation`                       | GraphSearch, GraphMinimap, breadcrumbs                                |
+| View controller                       | `spacegraphjs/control` (`GraphController`)      | Selection, focus, trail                                               |
+| Accessibility (roving tabindex, ARIA) | `spacegraphjs/a11y`                             | Keyboard/screen-reader support                                        |
+| Representation ladder + transitions   | `spacegraphjs/representations`                  | Registered rungs, hysteresis, stable-id playback                      |
+| Edge ladder + cluster collapse        | `spacegraphjs/edges/ladder`                     | Bundle → hair → arrow → ribbon                                        |
+| Host-composed salience                | `spacegraphjs/salience`                         | Signals, explainable emphasis, channel mapping                        |
+| HTML widget substrate                 | `spacegraphjs/widgets`                          | Registry, slots, measured sizing, fog, security boundary              |
+| Depth spectrum                        | `spacegraphjs/depth` + contract `depths`        | Flat/layered/depth-stack/orbit, blended continuum and host depth axes |
+| Motion direction                      | `spacegraphjs/motion`                           | Named verbs, eased/spring playback, host camera verbs                 |
+| World + sensory seams                 | `spacegraphjs/world`                            | Optional scene features, instancing LOD, sensory descriptors          |
+| Experimentation                       | `spacegraphjs/experiments`                      | Cartesian matrix, neutral metrics, inert templates, honest reports    |
+| Scoped overlay & code diff            | `spacegraphjs/overlays`                         | Turn-map overlay, diff view                                           |
+| Static export (SVG/JSON)              | `@spacegraphjs/svg-renderer`                    | `renderToSVG`, `serializeRenderModel`, `InlineGraph`                  |
+| Mouse interaction contract            | [Mouse map](./interaction.md) (no import)       | Pan, zoom, pick, frame, drag, box-select                              |
 
 ## Package Set (Published)
 
@@ -40,4 +40,4 @@ Generic capabilities provided by the SpaceGraphJS library, used by the demo and 
 
 ## Breaking-Change Policy
 
-No `CONTRACT_VERSION`, no `negotiateContract`, no aliases, no `@deprecated` shims, no migration paths. The library is alpha; the fork is experimental. Breaking changes are made freely. Capability is probed by **existence** (`typeof renderer.applyPatch === "function"`), never by a constant. Absence degrades to the full path; nothing throws. Library change = **one gitlink bump** in the fork plus the host update in the same PR. The commit message states the break. `graph:setup` and CI read the gitlink — never a hardcoded SHA. Delete, don't deprecate: superseded code and its tests go in the same PR.
+The renderer contract is versioned additively: negotiate with `negotiate(...)`, then check `supports(...)` before offering an affordance. Unsupported actions degrade to a documented full path instead of throwing. Published breaking changes keep deprecated aliases until the next minor and are recorded in `CHANGELOG.md`; see `docs/contract-versioning.md` for the version surface and the host integration guide for the negotiation sequence.

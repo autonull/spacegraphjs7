@@ -52,6 +52,7 @@ const boot = async (page: Page, shot: Shot): Promise<string[]> => {
 
 for (const shot of shots) {
     test(`shot: ${shot.id} — ${shot.title}`, async ({ page }) => {
+        test.skip(!process.env.SG_PI_SHOTS, 'capture-only: use pnpm --filter pi shot');
         const errors = await boot(page, shot);
         const file = resolve(OUT, shot.file);
         mkdirSync(dirname(file), { recursive: true });

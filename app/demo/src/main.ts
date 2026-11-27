@@ -16,6 +16,7 @@ import { AccessibilityLayer } from 'spacegraphjs/a11y';
 import type { DepthMode } from 'spacegraphjs/depth';
 import { Navigation } from 'spacegraphjs/navigation';
 import { ScopedOverlay, extractSubgraph, renderCodeDiff } from 'spacegraphjs/overlays';
+import { isEditableTarget } from 'spacegraphjs/utils';
 import { computeFocusOverlay, getFocusOpacity, type FocusOverlay } from '@spacegraphjs/overlays';
 import { elementGetter, renderTrail as paintTrail, round } from './dom';
 import { CAPABILITIES, type Capability } from './gallery';
@@ -609,10 +610,7 @@ async function main(): Promise<void> {
             else closeDiff();
             return;
         }
-        const typing =
-            event.target instanceof HTMLElement &&
-            !!event.target.closest('input, textarea, select, [contenteditable="true"]');
-        if (event.ctrlKey || event.metaKey || event.altKey || typing) return;
+        if (event.ctrlKey || event.metaKey || event.altKey || isEditableTarget(event.target)) return;
         if (event.key === 'f') {
             event.preventDefault();
             fitCamera();

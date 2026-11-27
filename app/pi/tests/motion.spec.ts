@@ -34,6 +34,10 @@ test.describe('Pi activity pulse', () => {
     });
 
     test('with/without comparison records both variants', async ({ page }) => {
+        test.skip(
+            !process.env.SG_PI_MOTION_SHOTS,
+            'capture-only: set SG_PI_MOTION_SHOTS to regenerate the comparison',
+        );
         const out = resolve('../../docs/screenshots/motion');
         const reports = resolve('../../docs/screenshots/reports');
         mkdirSync(out, { recursive: true });

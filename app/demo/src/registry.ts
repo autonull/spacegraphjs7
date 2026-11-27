@@ -29,6 +29,7 @@ const pages: readonly Omit<DemoEntry, 'kind'>[] = [
     { id: 'contract', category: 'core', path: 'html/core/contract.html' },
     { id: 'scale-lab', category: 'core', path: 'html/core/scale-lab.html' },
     { id: 'scenario', category: 'core', path: 'html/core/scenario.html' },
+    { id: 'source-graph', category: 'core', path: 'html/core/source-graph.html' },
     {
         id: 'complex-navigation',
         category: 'interaction',

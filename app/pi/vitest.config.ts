@@ -14,6 +14,11 @@ export default defineConfig({
                 find: /^@spacegraphjs\/agent$/,
                 replacement: resolve(workspace, 'packages/domain/agent/src/index.ts'),
             },
+            { find: /^pi-kit$/, replacement: resolve(workspace, 'app/pi-kit/src/index.ts') },
+            {
+                find: /^pi-kit\/(.+)$/,
+                replacement: resolve(workspace, 'app/pi-kit/src/$1.ts'),
+            },
         ],
     },
     test: {

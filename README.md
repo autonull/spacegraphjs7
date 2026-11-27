@@ -132,7 +132,7 @@ Install with `pnpm add spacegraphjs three`. Three.js is a required peer. Optiona
 
 ### See it run
 
-Run `pnpm run dev:demo` and open `/` for the complete demo: a capability gallery, 44 programmatic demos at `/showcase.html`, and every standalone feature page. `pnpm run dev` serves the engine demos. In the gallery, `/` focuses search, `↑`/`↓` and `Enter` navigate results, `F` fits the graph, and clicking the minimap navigates the canvas.
+Run `pnpm run dev:demo` and open `/` for the complete demo: a capability gallery, programmatic demos at `/showcase.html`, and every standalone feature page. `pnpm run dev` serves the engine demos. In the gallery, `/` focuses search, `↑`/`↓` and `Enter` navigate results, `F` fits the graph, and clicking the minimap navigates the canvas.
 
 The provider-free Pi flagship runs with `PI_LOCAL_FEED=1 pnpm --filter pi dev`; its shell and study harness are documented in `app/pi/README.md`.
 
@@ -191,7 +191,14 @@ This path keeps your vocabulary, your layout policy, and your persistence out of
 ### The demo
 
 `app/demo/` is the complete library demo app. Its gallery runs every library surface against a
-release-pipeline model; `/showcase.html` switches 44 programmatic demos without a rebuild.
+release-pipeline model; `/showcase.html` switches the programmatic demos without a rebuild. The
+source graph browser at `/html/core/source-graph.html` reads a build-time TypeScript snapshot of the
+SpaceGraphJS API and shows packages, public files and exported symbols with their import, re-export
+and reference edges. `pnpm run source:snapshot` regenerates `public/source-graph/source-api.json`;
+the browser bundle never loads the compiler API. The same facts feed the `@spacegraphjs/source`
+domain, a plain kernel view with selectors, facets and a conformance fixture — the next domain for
+source-code analysis tools. Switch scope, detail, package and search in the page header, then select
+a node to read its path, declaration and relations.
 `/learn.html` explains the model → adapter → renderer path with real snippets and links each
 capability to the live gallery. The other pages cover scopes, the runtime explorer, the renderer
 contract and the standalone features.
@@ -223,7 +230,7 @@ pnpm --filter pi verify                # one-way dependency guard
 ```
 
 The flagship has a **screenshot studio**. A shot is data (`app/pi/src/shots.ts`): scenario, preset,
-policy, surface and camera framing; `?shot=node-detail` launches exactly that view. Twelve shots cover
+policy, surface and camera framing; `?shot=node-detail` launches exactly that view. The named shots cover
 the LOD close-up, a deep focus lens and recursive inner layouts, zoom dynamic range, three surface
 arrangements, view palettes and backdrops, the light theme, and the proof/policy surfaces. Node size
 is never changed by default: `emphasis.focusScale` and its neighbors are opt-in knobs, and the detail
@@ -654,7 +661,7 @@ When adding hot-path code, avoid per-frame allocation, prefer sets for membershi
 | `src/nodes`                         | Node implementations                                                                            |
 | `src/edges`                         | Edge implementations                                                                            |
 | `src/plugins`                       | Layouts, physics, HUD, minimap, Mermaid, LOD, zoom, vision overlay                              |
-| `src/vision`                        | Analyzers, strategies, auto-fix, model loading, Vite plugin, assertions                         |
+| `src/vision`                        | Analyzers, strategies, auto-fix, model loading, assertions                                      |
 | `src/control`                       | `GraphController`, `GraphBinding`                                                               |
 | `src/a11y`                          | `AccessibilityLayer`                                                                            |
 | `src/navigation`                    | `Trail`, typed-edge paths                                                                       |
@@ -688,7 +695,7 @@ When adding hot-path code, avoid per-frame allocation, prefer sets for membershi
 | Changelog and stability policy      | `CHANGELOG.md`, `docs/contract-versioning.md`     |
 | Strategy and phases                 | `docs/PLAN/INDEX.md`                              |
 | Research direction                  | `docs/PLAN/ACADEMIC-RESEARCH.md`                  |
-| Product and design notes            | `docs/PRODUCT.md`, `docs/DESIGN.md`, `docs/UI.md` |
+| Product prompt, design and UI notes | `docs/PRODUCT.md`, `docs/DESIGN.md`, `docs/UI.md` |
 | Contributing                        | `docs/CONTRIBUTING.md`                            |
 | Generated API reference             | `pnpm run docs`                                   |
 

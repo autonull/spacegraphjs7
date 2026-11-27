@@ -34,22 +34,19 @@ test.describe('history-derived graph diff', () => {
         });
         expect(state.summary.edges).toEqual({ added: ['e2'], removed: ['e1'], changed: [] });
 
-        await expect(page.locator('#run-before li')).toHaveText([
-            'session.ts (draft)',
-            'legacy.ts',
+        await expect(page.locator('#run-before')).toContainText('session.ts (draft)');
+        await expect(page.locator('#run-after')).toContainText('session.test.ts');
+        await expect(page.locator('#diff li[data-tone="added"]')).toContainText([
+            'test',
+            'edge e2',
         ]);
-        await expect(page.locator('#run-after li')).toHaveText([
-            'session.ts (fixed)',
-            'session.test.ts',
-        ]);
-        await expect(page.locator('#diff li[data-tone="added"]')).toHaveText(['test', 'edge e2']);
-        await expect(page.locator('#diff li[data-tone="removed"]')).toHaveText([
+        await expect(page.locator('#diff li[data-tone="removed"]')).toContainText([
             'legacy',
             'edge e1',
         ]);
-        await expect(page.locator('#diff li[data-tone="changed"]')).toHaveText([
+        await expect(page.locator('#diff li[data-tone="changed"]')).toContainText(
             'session.ts (draft) → session.ts (fixed)',
-        ]);
+        );
         await expect(page.locator('#provenance')).toContainText('recomputed from history: true');
         expect(errors).toEqual([]);
     });

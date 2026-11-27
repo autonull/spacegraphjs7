@@ -24,6 +24,7 @@
         "@spacegraphjs/renderer": "workspace:*",
         "@spacegraphjs/search": "workspace:*",
         "@spacegraphjs/shared": "workspace:*",
+        "@spacegraphjs/source": "workspace:*",
         "@spacegraphjs/spacegraph-renderer": "workspace:*",
         "@spacegraphjs/svg-renderer": "workspace:*",
         "@spacegraphjs/trace": "workspace:*",

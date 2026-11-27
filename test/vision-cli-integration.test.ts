@@ -1,53 +1,47 @@
 // @vitest-environment node
-import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 describe('Vision-CLI Integration', () => {
-    it('should generate a patch and be readable by the CLI', () => {
-        const patchPath = path.resolve(process.cwd(), 'spacegraph-autofix-patch.json');
-
-        // 1. Mock a patch file
-        const mockPatch = {
-            fixes: [
-                {
-                    type: 'overlap',
-                    message: 'Overlap detected',
-                    targetFile: 'test.html',
-                    patch: { targetNodeId: 'node-1', action: 'update', position: 'auto' },
-                },
-            ],
-            generatedAt: new Date().toISOString(),
-            reportScore: 85,
-        };
-
-        fs.writeFileSync(patchPath, JSON.stringify(mockPatch, null, 2));
-
+    it('reads a generated patch in dry-run mode', () => {
+        const cwd = mkdtempSync(join(tmpdir(), 'sg-vision-'));
         try {
-            // 2. Run CLI in dry-run mode and capture output
-            // We use the built JS file if it exists, otherwise we can try tsx
-            const cliPath = path.resolve(process.cwd(), 'packages/cli/dist/bin/sg.js');
-            const tsxCli = path.resolve(process.cwd(), 'node_modules/tsx/dist/cli.mjs');
-            const cmd = fs.existsSync(cliPath)
-                ? `node ${cliPath} fix --dry-run`
-                : fs.existsSync(tsxCli)
-                  ? `node ${tsxCli} packages/cli/bin/sg.ts fix --dry-run`
-                  : `npx tsx packages/cli/bin/sg.ts fix --dry-run`;
-
-            const output = execSync(cmd).toString();
-
-            // 3. Verify output contains expected data
-            expect(output).toContain('🚨 Found 1 visual regression');
-            expect(output).toContain('[OVERLAP]');
-            expect(output).toContain('Overlap detected');
-            expect(output).toContain('Location: test.html');
-            expect(output).toContain('Dry-run: review only');
-            expect(output).toContain(`Patch preserved at ${patchPath}`);
-            expect(fs.existsSync(patchPath)).toBe(true);
+            writeFileSync(
+                join(cwd, 'spacegraph-autofix-patch.json'),
+                JSON.stringify({
+                    fixes: [
+                        {
+                            type: 'overlap',
+                            message: 'Overlap detected',
+                            targetFile: 'test.html',
+                            patch: { targetNodeId: 'node-1', action: 'update', position: 'auto' },
+                        },
+                    ],
+                    generatedAt: new Date().toISOString(),
+                    reportScore: 85,
+                }),
+            );
+            const built = join(process.cwd(), 'packages/cli/dist/bin/sg.js');
+            const args = existsSync(built)
+                ? [built, 'fix', '--dry-run']
+                : [
+                      join(process.cwd(), 'node_modules/tsx/dist/cli.mjs'),
+                      join(process.cwd(), 'packages/cli/bin/sg.ts'),
+                      'fix',
+                      '--dry-run',
+                  ];
+            const output = execFileSync(process.execPath, args, { cwd }).toString();
+            expect(output).toMatch(/Found 1 visual regression/);
+            expect(output).toMatch(/\[OVERLAP\]/);
+            expect(output).toMatch(/Overlap detected/);
+            expect(output).toMatch(/Location: test\.html/);
+            expect(output).toMatch(/Dry-run: review only/);
+            expect(output).toMatch(/Patch preserved at .*spacegraph-autofix-patch\.json/);
         } finally {
-            // Cleanup
-            if (fs.existsSync(patchPath)) fs.unlinkSync(patchPath);
+            rmSync(cwd, { recursive: true, force: true });
         }
     });
 });

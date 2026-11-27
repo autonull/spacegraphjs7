@@ -1,8 +1,8 @@
-import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { createServer, type ServerResponse } from 'node:http';
 import { AgentEventMapper, type AgentEvent } from '@spacegraphjs/agent';
 import type { KernelOp } from '@spacegraphjs/kernel';
+import { encodeOp, readRawBody, sendJSON } from 'pi-kit';
 import { localOps } from './local-feed';
-import { encodeOp } from './ops';
 import { PiEventTranslator, type PiEvent } from './pi-events';
 
 const PORT = Number(process.env.PI_SERVER_PORT ?? 8787);
@@ -49,16 +49,8 @@ const startSession = async (client: Client): Promise<LiveSession> => {
     return client.session;
 };
 
-const json = (response: ServerResponse, status: number, body: unknown): void => {
-    response.writeHead(status, { 'content-type': 'application/json' });
-    response.end(JSON.stringify(body));
-};
-
-const readBody = async (request: IncomingMessage): Promise<string> => {
-    const chunks: Buffer[] = [];
-    for await (const chunk of request) chunks.push(Buffer.from(chunk));
-    return Buffer.concat(chunks).toString('utf8');
-};
+const json = sendJSON;
+const readBody = readRawBody;
 
 type PromptBody = { client?: string; text?: string; mode?: 'steer' | 'followUp' };
 

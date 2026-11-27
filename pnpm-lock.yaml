@@ -305,6 +305,9 @@ importers:
       '@spacegraphjs/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@spacegraphjs/source':
+        specifier: workspace:*
+        version: link:../../packages/domain/source
       '@spacegraphjs/spacegraph-renderer':
         specifier: workspace:*
         version: link:../../packages/spacegraph-renderer
@@ -359,6 +362,9 @@ importers:
       '@spacegraphjs/spacegraph-renderer':
         specifier: workspace:*
         version: link:../../packages/spacegraph-renderer
+      pi-kit:
+        specifier: workspace:*
+        version: link:../pi-kit
       spacegraphjs:
         specifier: workspace:*
         version: link:../..
@@ -451,6 +457,9 @@ importers:
       '@spacegraphjs/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
+      '@spacegraphjs/renderer':
+        specifier: workspace:*
+        version: link:../../packages/renderer
       '@types/node':
         specifier: ^26.4.1
         version: 26.4.1
@@ -662,6 +671,34 @@ importers:
         version: 5.1.0(esbuild@0.28.2)(rolldown@1.2.14)(rollup@4.60.1)(typescript@5.9.3)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/domain/filesystem:
+    dependencies:
+      '@spacegraphjs/adapter':
+        specifier: workspace:*
+        version: link:../../adapter
+      '@spacegraphjs/kernel':
+        specifier: workspace:*
+        version: link:../../kernel
+      '@spacegraphjs/search':
+        specifier: workspace:*
+        version: link:../../search
+      '@spacegraphjs/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@spacegraphjs/trace':
+        specifier: workspace:*
+        version: link:../../trace
+    devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vite:
+        specifier: ^8.3.5
+        version: 8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)
+      vite-plugin-dts:
+        specifier: ^5.1.0
+        version: 5.1.0(esbuild@0.28.2)(rolldown@1.2.14)(rollup@4.60.1)(typescript@5.9.3)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+
+  packages/domain/source:
     dependencies:
       '@spacegraphjs/adapter':
         specifier: workspace:*
@@ -4034,7 +4071,7 @@ packages:
     peerDependencies:
       '@microsoft/api-extractor': '>=7'
       rollup: '>=3'
-      vite: '>=7.3.5'
+      vite: '>=6.4.3'
     peerDependenciesMeta:
       '@microsoft/api-extractor':
         optional: true

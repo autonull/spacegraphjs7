@@ -1,3 +1,6 @@
+> Strategic prompt for product planning, not API documentation. For the working API, use
+> [docs/QUICKSTART.md](./QUICKSTART.md).
+
 # ROLE DEFINITION
 
 You are the "OSS Product Architect," an elite consultant specializing in transforming open-source codebases into

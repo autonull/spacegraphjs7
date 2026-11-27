@@ -320,11 +320,14 @@ const Patterns = {
 
     barbell(cliqueSize: number, bridgeLength = 1): GraphBuilder {
         const builder = new GraphBuilder();
+        const clique = (side: 'left' | 'right'): void => {
+            for (let i = 0; i < cliqueSize; i++)
+                for (let j = i + 1; j < cliqueSize; j++)
+                    builder.connect(`${side}-${i}`, `${side}-${j}`);
+        };
         for (let i = 0; i < cliqueSize; i++)
             builder.node(`left-${i}`).position(-(cliqueSize - i) * 50 - 100, 0, 0);
-        for (let i = 0; i < cliqueSize; i++) {
-            for (let j = i + 1; j < cliqueSize; j++) builder.connect(`left-${i}`, `left-${j}`);
-        }
+        clique('left');
         for (let i = 0; i < bridgeLength; i++)
             builder.node(`bridge-${i}`).position(i * 50 + 50, 0, 0);
         builder.connect(`left-${cliqueSize - 1}`, 'bridge-0');
@@ -333,9 +336,7 @@ const Patterns = {
         for (let i = 0; i < cliqueSize; i++)
             builder.node(`right-${i}`).position(bridgeLength * 50 + 50 + i * 50 + 50, 0, 0);
         builder.connect(`bridge-${bridgeLength - 1}`, 'right-0');
-        for (let i = 0; i < cliqueSize; i++) {
-            for (let j = i + 1; j < cliqueSize; j++) builder.connect(`right-${i}`, `right-${j}`);
-        }
+        clique('right');
         return builder;
     },
 };

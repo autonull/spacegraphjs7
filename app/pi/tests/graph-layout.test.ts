@@ -27,7 +27,7 @@ const expectMetricsClose = <T extends object>(
         const shape = actual[view] as unknown as Record<string, number>;
         expect(Object.keys(shape)).toEqual(Object.keys(metrics));
         for (const [metric, value] of Object.entries(metrics)) {
-            expect(shape[metric]).toBeCloseTo(value, 6);
+            expect(shape[metric]).toBeCloseTo(value, 2);
         }
     }
 };

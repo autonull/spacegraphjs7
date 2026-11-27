@@ -41,6 +41,7 @@ const EXPECTED_MODULES = [
     '@spacegraphjs/renderer',
     '@spacegraphjs/search',
     '@spacegraphjs/shared',
+    '@spacegraphjs/source',
     '@spacegraphjs/spacegraph-renderer',
     '@spacegraphjs/svg-renderer',
     '@spacegraphjs/trace',
@@ -55,6 +56,7 @@ const EXPECTED_MODULES = [
     'spacegraphjs/navigation',
     'spacegraphjs/overlays',
     'spacegraphjs/representations',
+    'spacegraphjs/utils',
     'spacegraphjs/world',
     'spacegraphjs/zoom',
 ];
