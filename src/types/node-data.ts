@@ -95,7 +95,7 @@ export interface DataNodeData extends CoreNodeData {
 }
 
 export interface VideoNodeData extends CoreNodeData {
-    url?: string;
+    src?: string;
     autoplay?: boolean;
     loop?: boolean;
     muted?: boolean;
@@ -115,7 +115,7 @@ export interface ChartNodeData extends CoreNodeData {
 
 export interface MarkdownNodeData extends CoreNodeData {
     theme?: 'light' | 'dark';
-    content?: string;
+    markdown?: string;
     fontSize?: number;
 }
 

@@ -104,10 +104,12 @@ export function renderToSVG(model: RenderModel, options: SvgOptions = {}): strin
     const size = options.responsive ? '' : `width="${width}" height="${height}" `;
     const boxWidth = options.responsive ? bounds.width : width;
     const boxHeight = options.responsive ? bounds.height : height;
-    const index = new Map(model.nodes.map((node) => [node.id, node]));
+    const index = new Map(visible.map((node) => [node.id, node]));
 
     const edges = model.edges
-        .filter((edge) => index.has(edge.source) && index.has(edge.target))
+        .filter(
+            (edge) => edge.visible !== false && index.has(edge.source) && index.has(edge.target),
+        )
         .map((edge) =>
             edgeSVG(edge, index.get(edge.source)!, index.get(edge.target)!, theme, bounds),
         )

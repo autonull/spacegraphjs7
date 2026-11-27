@@ -2,7 +2,7 @@
  * Build-time scan of the SpaceGraphJS API. The TypeScript compiler API stays in Node; the browser
  * receives only a small serializable snapshot consumed by `@spacegraphjs/source`.
  */
-import { mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import ts from 'typescript';
 import type {
@@ -26,7 +26,7 @@ const walk = (dir: string): string[] =>
         if (SKIP_DIRS.has(entry.name)) return [];
         const full = join(dir, entry.name);
         if (entry.isDirectory()) return walk(full);
-        return entry.name.endsWith('.ts') &&
+        return (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx')) &&
             !entry.name.endsWith('.d.ts') &&
             !entry.name.endsWith('.test.ts') &&
             !entry.name.endsWith('.spec.ts')
@@ -34,17 +34,28 @@ const walk = (dir: string): string[] =>
             : [];
     });
 
+const packageNames = new Map(
+    readdirSync(resolve(workspace, 'packages'), { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .flatMap((entry) => {
+            const manifest = resolve(workspace, 'packages', entry.name, 'package.json');
+            if (!existsSync(manifest)) return [];
+            const { name } = JSON.parse(readFileSync(manifest, 'utf8')) as { name?: string };
+            return name ? ([[entry.name, name]] as const) : [];
+        }),
+);
+
 const packageOf = (rel: string): string | undefined => {
     const path = rel.split(sep).join('/');
     if (path.startsWith('src/')) return 'spacegraphjs';
     const domain = /^packages\/domain\/([^/]+)\/src\//.exec(path);
     if (domain) return `@spacegraphjs/${domain[1]}`;
     const pkg = /^packages\/([^/]+)\/src\//.exec(path);
-    return pkg ? `@spacegraphjs/${pkg[1]}` : undefined;
+    return pkg ? packageNames.get(pkg[1]) : undefined;
 };
 
 const fileID = (rel: string): string =>
-    relative(workspace, rel).split(sep).join('/').replace(/\.ts$/, '');
+    relative(workspace, rel).split(sep).join('/').replace(/\.tsx?$/, '');
 
 const sourceFiles = [...walk(resolve(workspace, 'src')), ...walk(resolve(workspace, 'packages'))]
     .filter((abs) => Boolean(packageOf(relative(workspace, abs))))
@@ -64,8 +75,8 @@ const resolveSpecifier = (fromID: string, specifier: string): string | undefined
     if (specifier.startsWith('.')) {
         const base = resolve(workspace, dirname(fromID), specifier);
         const rel = relative(workspace, base).split(sep).join('/');
-        return [rel, `${rel}.ts`, `${rel}/index.ts`]
-            .map((candidate) => candidate.replace(/\.ts$/, ''))
+        return [rel, `${rel}.ts`, `${rel}/index.ts`, `${rel}.tsx`, `${rel}/index.tsx`]
+            .map((candidate) => candidate.replace(/\.tsx?$/, ''))
             .find((candidate) => ids.has(candidate));
     }
     if (specifier === 'spacegraphjs' || specifier.startsWith('spacegraphjs/')) {

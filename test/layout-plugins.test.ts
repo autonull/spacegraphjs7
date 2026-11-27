@@ -26,10 +26,10 @@ const positions = (graph: Graph) =>
 describe('layout plugins', () => {
     it('places the nodes it owns', async () => {
         const { sg, graph, pluginManager } = makeHost(['a', 'b', 'c']);
-        pluginManager.register('GridLayout', new GridLayout());
+        pluginManager.register('grid-layout', new GridLayout());
         await pluginManager.initAll();
 
-        await Layout.apply(sg, 'GridLayout', { columns: 2, spacingX: 100, spacingY: 50 });
+        await Layout.apply(sg, 'grid-layout', { columns: 2, spacingX: 100, spacingY: 50 });
 
         expect(positions(graph)).toEqual([
             [0, 0],
@@ -38,18 +38,30 @@ describe('layout plugins', () => {
         ]);
     });
 
-    it('answers to both apply and applyLayout', async () => {
+    it('resolves the layout helpers through registered plugin ids', async () => {
         const { sg, graph, pluginManager } = makeHost(['a', 'b']);
-        pluginManager.register('GridLayout', new GridLayout());
+        pluginManager.register('grid-layout', new GridLayout());
         await pluginManager.initAll();
 
-        await Layout.apply(sg, 'GridLayout', { columns: 1, spacingX: 100, spacingY: 100 });
+        await Layout.grid(sg, { columns: 1, spacingX: 100, spacingY: 100 });
+        expect(positions(graph)).toEqual([
+            [0, 0],
+            [0, -100],
+        ]);
+    });
+
+    it('answers to both apply and applyLayout', async () => {
+        const { sg, graph, pluginManager } = makeHost(['a', 'b']);
+        pluginManager.register('grid-layout', new GridLayout());
+        await pluginManager.initAll();
+
+        await Layout.apply(sg, 'grid-layout', { columns: 1, spacingX: 100, spacingY: 100 });
         expect(positions(graph)).toEqual([
             [0, 0],
             [0, -100],
         ]);
 
-        const layout = pluginManager.get<GridLayout>('GridLayout')!;
+        const layout = pluginManager.get<GridLayout>('grid-layout')!;
         await layout.apply({ columns: 1, spacingX: 100, spacingY: 100 });
         expect(positions(graph)).toEqual([
             [0, 0],
@@ -63,10 +75,10 @@ describe('layout plugins', () => {
         pinned.setPinned(true);
         pinned.updatePosition(50, 50, 0);
 
-        pluginManager.register('GridLayout', new GridLayout());
+        pluginManager.register('grid-layout', new GridLayout());
         await pluginManager.initAll();
 
-        await Layout.apply(sg, 'GridLayout', { columns: 2, spacingX: 100 });
+        await Layout.apply(sg, 'grid-layout', { columns: 2, spacingX: 100 });
 
         expect(positions(graph)).toEqual([
             [0, 0],
@@ -79,10 +91,10 @@ describe('layout plugins', () => {
         const applied: unknown[] = [];
         events.on('layout:applied', (payload) => applied.push(payload));
 
-        pluginManager.register('GridLayout', new GridLayout());
+        pluginManager.register('grid-layout', new GridLayout());
         await pluginManager.initAll();
 
-        await Layout.apply(sg, 'GridLayout', {});
+        await Layout.apply(sg, 'grid-layout', {});
 
         expect(applied).toHaveLength(1);
         expect(applied[0]).toMatchObject({ layout: 'grid-layout' });

@@ -72,9 +72,21 @@ export class DataNode extends BaseContentNode {
                 this.updateBackingGeometry(w, h);
             }
 
-            if (updates.data.data !== undefined || updates.data.fields !== undefined) {
-                const payload = updates.data.data ?? updates.data.fields;
-                this._renderData(payload, updates.data.expanded !== false, theme);
+            if (
+                updates.data.data !== undefined ||
+                updates.data.fields !== undefined ||
+                updates.data.theme !== undefined
+            ) {
+                const payload =
+                    updates.data.data ?? updates.data.fields ?? this.data?.data ?? this.data?.fields;
+                this.domElement.classList.toggle('theme-light', theme === 'light');
+                this.domElement.classList.toggle('theme-dark', theme !== 'light');
+                this.contentContainer.style.scrollbarColor = paletteOf(theme).scrollbar;
+                this._renderData(
+                    payload,
+                    (updates.data.expanded ?? this.data?.expanded) !== false,
+                    theme,
+                );
             }
         }
 

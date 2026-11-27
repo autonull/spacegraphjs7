@@ -197,14 +197,14 @@ export const Layout = Object.freeze({
                 plugin as { applyLayout: (opts?: Record<string, unknown>) => Promise<void> }
             ).applyLayout(options);
     },
-    force: applyLayout('ForceLayout'),
-    circular: applyLayout('CircularLayout'),
-    grid: applyLayout('GridLayout'),
-    hierarchy: applyLayout('HierarchicalLayout'),
-    radial: applyLayout('RadialLayout'),
-    tree: applyLayout('TreeLayout'),
-    spectral: applyLayout('SpectralLayout'),
-    cluster: applyLayout('ClusterLayout'),
+    force: applyLayout('force-layout'),
+    circular: applyLayout('circular-layout'),
+    grid: applyLayout('grid-layout'),
+    hierarchy: applyLayout('hierarchical-layout'),
+    radial: applyLayout('radial-layout'),
+    tree: applyLayout('tree-layout'),
+    spectral: applyLayout('spectral-layout'),
+    cluster: applyLayout('cluster-layout'),
 });
 
 // Preset configurations - quick starting points for common node types

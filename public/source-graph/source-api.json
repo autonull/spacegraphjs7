@@ -38,6 +38,46 @@
       ]
     },
     {
+      "id": "packages/a11y/src/GraphA11y",
+      "path": "packages/a11y/src/GraphA11y.tsx",
+      "packageId": "@spacegraphjs/a11y",
+      "symbols": [
+        {
+          "name": "GraphA11yProps",
+          "kind": "type",
+          "fileId": "packages/a11y/src/GraphA11y",
+          "line": 6,
+          "signature": "export type GraphA11yProps = {"
+        },
+        {
+          "name": "GraphA11y",
+          "kind": "const",
+          "fileId": "packages/a11y/src/GraphA11y",
+          "line": 25,
+          "signature": "GraphA11y = (props: GraphA11yProps) => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./AccessibilityLayer",
+          "fileId": "packages/a11y/src/AccessibilityLayer",
+          "names": [
+            "AccessibleItem",
+            "AccessibleEdge"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "spacegraphjs/a11y",
+          "fileId": "src/a11y/index",
+          "names": [
+            "AccessibilityLayer"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
       "id": "packages/a11y/src/index",
       "path": "packages/a11y/src/index.ts",
       "packageId": "@spacegraphjs/a11y",
@@ -58,6 +98,15 @@
           "names": [
             "AccessibleItem",
             "AccessibleEdge"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphA11y",
+          "fileId": "packages/a11y/src/GraphA11y",
+          "names": [
+            "GraphA11y",
+            "GraphA11yProps"
           ],
           "kind": "export"
         }
@@ -545,11 +594,91 @@
       ]
     },
     {
+      "id": "packages/compare/src/GraphCompare",
+      "path": "packages/compare/src/GraphCompare.tsx",
+      "packageId": "@spacegraphjs/compare",
+      "symbols": [
+        {
+          "name": "GraphCompareChanges",
+          "kind": "type",
+          "fileId": "packages/compare/src/GraphCompare",
+          "line": 5,
+          "signature": "export type GraphCompareChanges = {"
+        },
+        {
+          "name": "GraphCompareProps",
+          "kind": "type",
+          "fileId": "packages/compare/src/GraphCompare",
+          "line": 12,
+          "signature": "export type GraphCompareProps = {"
+        },
+        {
+          "name": "GraphCompare",
+          "kind": "const",
+          "fileId": "packages/compare/src/GraphCompare",
+          "line": 25,
+          "signature": "GraphCompare = (props: GraphCompareProps): JSX.Element => {"
+        }
+      ],
+      "imports": []
+    },
+    {
+      "id": "packages/compare/src/GraphCompareBar",
+      "path": "packages/compare/src/GraphCompareBar.tsx",
+      "packageId": "@spacegraphjs/compare",
+      "symbols": [
+        {
+          "name": "GraphCompareBarProps",
+          "kind": "type",
+          "fileId": "packages/compare/src/GraphCompareBar",
+          "line": 6,
+          "signature": "export type GraphCompareBarProps = {"
+        },
+        {
+          "name": "GraphCompareBar",
+          "kind": "const",
+          "fileId": "packages/compare/src/GraphCompareBar",
+          "line": 22,
+          "signature": "GraphCompareBar = (props: GraphCompareBarProps): JSX.Element => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./GraphCompare",
+          "fileId": "packages/compare/src/GraphCompare",
+          "names": [
+            "GraphCompareChanges"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
       "id": "packages/compare/src/index",
       "path": "packages/compare/src/index.ts",
       "packageId": "@spacegraphjs/compare",
       "symbols": [],
-      "imports": []
+      "imports": [
+        {
+          "specifier": "./GraphCompare",
+          "fileId": "packages/compare/src/GraphCompare",
+          "names": [
+            "GraphCompare",
+            "GraphCompareProps",
+            "GraphCompareChanges"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphCompareBar",
+          "fileId": "packages/compare/src/GraphCompareBar",
+          "names": [
+            "GraphCompareBar",
+            "GraphCompareBarProps"
+          ],
+          "kind": "export"
+        }
+      ]
     },
     {
       "id": "packages/config/src/explorer",
@@ -1090,11 +1219,188 @@
       ]
     },
     {
+      "id": "packages/controls/src/GraphDrawControl",
+      "path": "packages/controls/src/GraphDrawControl.tsx",
+      "packageId": "@spacegraphjs/controls",
+      "symbols": [
+        {
+          "name": "GraphDrawControlProps",
+          "kind": "type",
+          "fileId": "packages/controls/src/GraphDrawControl",
+          "line": 6,
+          "signature": "export type GraphDrawControlProps = Omit<"
+        },
+        {
+          "name": "GraphDrawControl",
+          "kind": "const",
+          "fileId": "packages/controls/src/GraphDrawControl",
+          "line": 13,
+          "signature": "GraphDrawControl = (props: GraphDrawControlProps): JSX.Element => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./legacy-i18n",
+          "fileId": "packages/controls/src/legacy-i18n",
+          "names": [
+            "legacyI18n"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/controls/src/GraphQuestionsControl",
+      "path": "packages/controls/src/GraphQuestionsControl.tsx",
+      "packageId": "@spacegraphjs/controls",
+      "symbols": [
+        {
+          "name": "GraphQuestionsControlProps",
+          "kind": "type",
+          "fileId": "packages/controls/src/GraphQuestionsControl",
+          "line": 7,
+          "signature": "export type GraphQuestionsControlProps = Omit<"
+        },
+        {
+          "name": "GraphQuestionsControl",
+          "kind": "const",
+          "fileId": "packages/controls/src/GraphQuestionsControl",
+          "line": 18,
+          "signature": "GraphQuestionsControl = (props: GraphQuestionsControlProps): JSX.Element => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./legacy-i18n",
+          "fileId": "packages/controls/src/legacy-i18n",
+          "names": [
+            "legacyI18n"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/controls/src/GraphShowControl",
+      "path": "packages/controls/src/GraphShowControl.tsx",
+      "packageId": "@spacegraphjs/controls",
+      "symbols": [
+        {
+          "name": "GraphShowControlProps",
+          "kind": "type",
+          "fileId": "packages/controls/src/GraphShowControl",
+          "line": 6,
+          "signature": "export type GraphShowControlProps = Omit<"
+        },
+        {
+          "name": "GraphShowControl",
+          "kind": "const",
+          "fileId": "packages/controls/src/GraphShowControl",
+          "line": 14,
+          "signature": "GraphShowControl = (props: GraphShowControlProps): JSX.Element => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./legacy-i18n",
+          "fileId": "packages/controls/src/legacy-i18n",
+          "names": [
+            "legacyI18n"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/controls/src/GraphStatusBar",
+      "path": "packages/controls/src/GraphStatusBar.tsx",
+      "packageId": "@spacegraphjs/controls",
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "id": "packages/controls/src/GraphZoomControl",
+      "path": "packages/controls/src/GraphZoomControl.tsx",
+      "packageId": "@spacegraphjs/controls",
+      "symbols": [
+        {
+          "name": "GraphZoomControlProps",
+          "kind": "type",
+          "fileId": "packages/controls/src/GraphZoomControl",
+          "line": 6,
+          "signature": "export type GraphZoomControlProps = Omit<ComponentProps<typeof ToolbarZoomControl>, 'i18n'> & {"
+        },
+        {
+          "name": "GraphZoomControl",
+          "kind": "const",
+          "fileId": "packages/controls/src/GraphZoomControl",
+          "line": 9,
+          "signature": "GraphZoomControl = (props: GraphZoomControlProps): JSX.Element => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./legacy-i18n",
+          "fileId": "packages/controls/src/legacy-i18n",
+          "names": [
+            "legacyI18n"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
       "id": "packages/controls/src/index",
       "path": "packages/controls/src/index.ts",
       "packageId": "@spacegraphjs/controls",
       "symbols": [],
-      "imports": []
+      "imports": [
+        {
+          "specifier": "./GraphDrawControl",
+          "fileId": "packages/controls/src/GraphDrawControl",
+          "names": [
+            "GraphDrawControl",
+            "GraphDrawControlProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphQuestionsControl",
+          "fileId": "packages/controls/src/GraphQuestionsControl",
+          "names": [
+            "GraphQuestionsControl",
+            "GraphQuestionsControlProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphShowControl",
+          "fileId": "packages/controls/src/GraphShowControl",
+          "names": [
+            "GraphShowControl",
+            "GraphShowControlProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphStatusBar",
+          "fileId": "packages/controls/src/GraphStatusBar",
+          "names": [
+            "GraphStatusBar",
+            "GraphStatusBarProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphZoomControl",
+          "fileId": "packages/controls/src/GraphZoomControl",
+          "names": [
+            "GraphZoomControl",
+            "GraphZoomControlProps"
+          ],
+          "kind": "export"
+        }
+      ]
     },
     {
       "id": "packages/controls/src/legacy-i18n",
@@ -1284,6 +1590,39 @@
       ]
     },
     {
+      "id": "packages/diff/src/GraphDiffView",
+      "path": "packages/diff/src/GraphDiffView.tsx",
+      "packageId": "@spacegraphjs/diff",
+      "symbols": [
+        {
+          "name": "GraphDiffViewProps",
+          "kind": "type",
+          "fileId": "packages/diff/src/GraphDiffView",
+          "line": 5,
+          "signature": "export type GraphDiffViewProps = {"
+        },
+        {
+          "name": "GraphDiffView",
+          "kind": "const",
+          "fileId": "packages/diff/src/GraphDiffView",
+          "line": 17,
+          "signature": "GraphDiffView = (props: GraphDiffViewProps) => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./diff",
+          "fileId": "packages/diff/src/diff",
+          "names": [
+            "diffTone",
+            "DiffTone",
+            "TONE_CLASS"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
       "id": "packages/diff/src/diff",
       "path": "packages/diff/src/diff.ts",
       "packageId": "@spacegraphjs/diff",
@@ -1329,6 +1668,15 @@
             "TONE_CLASS",
             "GraphDiff",
             "GraphDiffSource"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphDiffView",
+          "fileId": "packages/diff/src/GraphDiffView",
+          "names": [
+            "GraphDiffView",
+            "GraphDiffViewProps"
           ],
           "kind": "export"
         }
@@ -3225,6 +3573,28 @@
       "imports": []
     },
     {
+      "id": "packages/export/src/GraphExportControl",
+      "path": "packages/export/src/GraphExportControl.tsx",
+      "packageId": "@spacegraphjs/export",
+      "symbols": [
+        {
+          "name": "GraphExportControlProps",
+          "kind": "interface",
+          "fileId": "packages/export/src/GraphExportControl",
+          "line": 9,
+          "signature": "export interface GraphExportControlProps {"
+        },
+        {
+          "name": "GraphExportControl",
+          "kind": "const",
+          "fileId": "packages/export/src/GraphExportControl",
+          "line": 19,
+          "signature": "GraphExportControl = (props: GraphExportControlProps): JSX.Element => {"
+        }
+      ],
+      "imports": []
+    },
+    {
       "id": "packages/export/src/export",
       "path": "packages/export/src/export.ts",
       "packageId": "@spacegraphjs/export",
@@ -3264,6 +3634,104 @@
             "ExportOptions"
           ],
           "kind": "export"
+        },
+        {
+          "specifier": "./GraphExportControl",
+          "fileId": "packages/export/src/GraphExportControl",
+          "names": [
+            "GraphExportControl",
+            "GraphExportControlProps"
+          ],
+          "kind": "export"
+        }
+      ]
+    },
+    {
+      "id": "packages/inspector/src/Inspector",
+      "path": "packages/inspector/src/Inspector.tsx",
+      "packageId": "@spacegraphjs/inspector",
+      "symbols": [
+        {
+          "name": "Inspector",
+          "kind": "const",
+          "fileId": "packages/inspector/src/Inspector",
+          "line": 6,
+          "signature": "Inspector = (props: InspectorProps) => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./OutputDisplay",
+          "fileId": "packages/inspector/src/OutputDisplay",
+          "names": [
+            "OutputDisplay"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./ProvenanceDisplay",
+          "fileId": "packages/inspector/src/ProvenanceDisplay",
+          "names": [
+            "ProvenanceDisplay"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./types",
+          "fileId": "packages/inspector/src/types",
+          "names": [
+            "InspectorProps"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/inspector/src/OutputDisplay",
+      "path": "packages/inspector/src/OutputDisplay.tsx",
+      "packageId": "@spacegraphjs/inspector",
+      "symbols": [
+        {
+          "name": "OutputDisplay",
+          "kind": "const",
+          "fileId": "packages/inspector/src/OutputDisplay",
+          "line": 7,
+          "signature": "OutputDisplay = (props: OutputDisplayProps) => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./types",
+          "fileId": "packages/inspector/src/types",
+          "names": [
+            "OutputDisplayProps"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/inspector/src/ProvenanceDisplay",
+      "path": "packages/inspector/src/ProvenanceDisplay.tsx",
+      "packageId": "@spacegraphjs/inspector",
+      "symbols": [
+        {
+          "name": "ProvenanceDisplay",
+          "kind": "const",
+          "fileId": "packages/inspector/src/ProvenanceDisplay",
+          "line": 35,
+          "signature": "ProvenanceDisplay = (props: ProvenanceDisplayProps) => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./types",
+          "fileId": "packages/inspector/src/types",
+          "names": [
+            "Provenance",
+            "ProvenanceDisplayProps"
+          ],
+          "kind": "import"
         }
       ]
     },
@@ -3273,6 +3741,48 @@
       "packageId": "@spacegraphjs/inspector",
       "symbols": [],
       "imports": [
+        {
+          "specifier": "./Inspector",
+          "fileId": "packages/inspector/src/Inspector",
+          "names": [
+            "Inspector"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./OutputDisplay",
+          "fileId": "packages/inspector/src/OutputDisplay",
+          "names": [
+            "OutputDisplay"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./OutputDisplay",
+          "fileId": "packages/inspector/src/OutputDisplay",
+          "names": [
+            "defaultFormatOutput"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./ProvenanceDisplay",
+          "fileId": "packages/inspector/src/ProvenanceDisplay",
+          "names": [
+            "ProvenanceDisplay"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./ProvenanceDisplay",
+          "fileId": "packages/inspector/src/ProvenanceDisplay",
+          "names": [
+            "sourceLabel",
+            "formatAge",
+            "defaultFormatProvenance"
+          ],
+          "kind": "export"
+        },
         {
           "specifier": "./types",
           "fileId": "packages/inspector/src/types",
@@ -5138,6 +5648,163 @@
       ]
     },
     {
+      "id": "packages/navigation/src/GraphBreadcrumbs",
+      "path": "packages/navigation/src/GraphBreadcrumbs.tsx",
+      "packageId": "@spacegraphjs/navigation",
+      "symbols": [
+        {
+          "name": "GraphBreadcrumb",
+          "kind": "type",
+          "fileId": "packages/navigation/src/GraphBreadcrumbs",
+          "line": 4,
+          "signature": "export type GraphBreadcrumb = { id: string; label: string };"
+        },
+        {
+          "name": "GraphBreadcrumbsProps",
+          "kind": "type",
+          "fileId": "packages/navigation/src/GraphBreadcrumbs",
+          "line": 6,
+          "signature": "export type GraphBreadcrumbsProps = {"
+        },
+        {
+          "name": "GraphBreadcrumbs",
+          "kind": "const",
+          "fileId": "packages/navigation/src/GraphBreadcrumbs",
+          "line": 19,
+          "signature": "GraphBreadcrumbs = (props: GraphBreadcrumbsProps) => {"
+        }
+      ],
+      "imports": []
+    },
+    {
+      "id": "packages/navigation/src/GraphIconButton",
+      "path": "packages/navigation/src/GraphIconButton.tsx",
+      "packageId": "@spacegraphjs/navigation",
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "id": "packages/navigation/src/GraphLegend",
+      "path": "packages/navigation/src/GraphLegend.tsx",
+      "packageId": "@spacegraphjs/navigation",
+      "symbols": [
+        {
+          "name": "GraphLegendProps",
+          "kind": "type",
+          "fileId": "packages/navigation/src/GraphLegend",
+          "line": 7,
+          "signature": "export type GraphLegendProps = GraphLegendBodyProps & { onClose: () => void };"
+        },
+        {
+          "name": "GraphLegend",
+          "kind": "const",
+          "fileId": "packages/navigation/src/GraphLegend",
+          "line": 15,
+          "signature": "GraphLegend = (props: GraphLegendProps) => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./GraphIconButton",
+          "fileId": "packages/navigation/src/GraphIconButton",
+          "names": [
+            "GraphIconButton"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./GraphLegendBody",
+          "fileId": "packages/navigation/src/GraphLegendBody",
+          "names": [
+            "GraphLegendBody",
+            "GraphLegendBodyProps"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/navigation/src/GraphLegendBody",
+      "path": "packages/navigation/src/GraphLegendBody.tsx",
+      "packageId": "@spacegraphjs/navigation",
+      "symbols": [
+        {
+          "name": "GraphLegendBodyProps",
+          "kind": "type",
+          "fileId": "packages/navigation/src/GraphLegendBody",
+          "line": 25,
+          "signature": "export type GraphLegendBodyProps = {"
+        },
+        {
+          "name": "GraphLegendBody",
+          "kind": "const",
+          "fileId": "packages/navigation/src/GraphLegendBody",
+          "line": 47,
+          "signature": "GraphLegendBody = (props: GraphLegendBodyProps) => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./legendUtils",
+          "fileId": "packages/navigation/src/legendUtils",
+          "names": [
+            "kindAccent",
+            "categoryAccent",
+            "statusAccent",
+            "formatAge",
+            "sourceLabel",
+            "CONFIDENCE_STYLE"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/navigation/src/GraphMinimap",
+      "path": "packages/navigation/src/GraphMinimap.tsx",
+      "packageId": "@spacegraphjs/navigation",
+      "symbols": [
+        {
+          "name": "MINIMAP_SIZE",
+          "kind": "const",
+          "fileId": "packages/navigation/src/GraphMinimap",
+          "line": 19,
+          "signature": "MINIMAP_SIZE = { width: BOX_W, height: BOX_H } as const"
+        },
+        {
+          "name": "MINIMAP_GAP",
+          "kind": "const",
+          "fileId": "packages/navigation/src/GraphMinimap",
+          "line": 21,
+          "signature": "MINIMAP_GAP = 8"
+        },
+        {
+          "name": "GraphMinimapProps",
+          "kind": "type",
+          "fileId": "packages/navigation/src/GraphMinimap",
+          "line": 23,
+          "signature": "export type GraphMinimapProps = {"
+        },
+        {
+          "name": "GraphMinimap",
+          "kind": "const",
+          "fileId": "packages/navigation/src/GraphMinimap",
+          "line": 45,
+          "signature": "GraphMinimap = (props: GraphMinimapProps) => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./legendUtils",
+          "fileId": "packages/navigation/src/legendUtils",
+          "names": [
+            "statusAccent"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
       "id": "packages/navigation/src/deep-link",
       "path": "packages/navigation/src/deep-link.ts",
       "packageId": "@spacegraphjs/navigation",
@@ -5296,6 +5963,54 @@
           "kind": "export"
         },
         {
+          "specifier": "./GraphBreadcrumbs",
+          "fileId": "packages/navigation/src/GraphBreadcrumbs",
+          "names": [
+            "GraphBreadcrumbs",
+            "GraphBreadcrumb",
+            "GraphBreadcrumbsProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphIconButton",
+          "fileId": "packages/navigation/src/GraphIconButton",
+          "names": [
+            "GraphIconButton",
+            "GraphIconButtonProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphLegend",
+          "fileId": "packages/navigation/src/GraphLegend",
+          "names": [
+            "GraphLegend",
+            "GraphLegendProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphLegendBody",
+          "fileId": "packages/navigation/src/GraphLegendBody",
+          "names": [
+            "GraphLegendBody",
+            "GraphLegendBodyProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphMinimap",
+          "fileId": "packages/navigation/src/GraphMinimap",
+          "names": [
+            "GraphMinimap",
+            "GraphMinimapProps",
+            "MINIMAP_SIZE",
+            "MINIMAP_GAP"
+          ],
+          "kind": "export"
+        },
+        {
           "specifier": "./legendUtils",
           "fileId": "packages/navigation/src/legendUtils",
           "names": [
@@ -5384,6 +6099,152 @@
         }
       ],
       "imports": []
+    },
+    {
+      "id": "packages/overlays/src/GraphOverlayManager",
+      "path": "packages/overlays/src/GraphOverlayManager.tsx",
+      "packageId": "@spacegraphjs/overlays",
+      "symbols": [
+        {
+          "name": "GraphOverlayManagerProps",
+          "kind": "type",
+          "fileId": "packages/overlays/src/GraphOverlayManager",
+          "line": 27,
+          "signature": "export type GraphOverlayManagerProps = {"
+        },
+        {
+          "name": "GraphOverlayManager",
+          "kind": "const",
+          "fileId": "packages/overlays/src/GraphOverlayManager",
+          "line": 192,
+          "signature": "GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Element => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./GraphPeek",
+          "fileId": "packages/overlays/src/GraphPeek",
+          "names": [
+            "GraphPeek"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./GraphPopover",
+          "fileId": "packages/overlays/src/GraphPopover",
+          "names": [
+            "GraphPopover"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/overlays/src/GraphPeek",
+      "path": "packages/overlays/src/GraphPeek.tsx",
+      "packageId": "@spacegraphjs/overlays",
+      "symbols": [
+        {
+          "name": "GraphPeekProps",
+          "kind": "type",
+          "fileId": "packages/overlays/src/GraphPeek",
+          "line": 6,
+          "signature": "export type GraphPeekProps = {"
+        },
+        {
+          "name": "GraphPeek",
+          "kind": "const",
+          "fileId": "packages/overlays/src/GraphPeek",
+          "line": 27,
+          "signature": "GraphPeek = (props: GraphPeekProps) => {"
+        }
+      ],
+      "imports": []
+    },
+    {
+      "id": "packages/overlays/src/GraphPopover",
+      "path": "packages/overlays/src/GraphPopover.tsx",
+      "packageId": "@spacegraphjs/overlays",
+      "symbols": [
+        {
+          "name": "POPOVER_WIDTH",
+          "kind": "const",
+          "fileId": "packages/overlays/src/GraphPopover",
+          "line": 8,
+          "signature": "POPOVER_WIDTH = 340"
+        },
+        {
+          "name": "POPOVER_MAX_HEIGHT",
+          "kind": "const",
+          "fileId": "packages/overlays/src/GraphPopover",
+          "line": 9,
+          "signature": "POPOVER_MAX_HEIGHT = 420"
+        },
+        {
+          "name": "POPOVER_GAP",
+          "kind": "const",
+          "fileId": "packages/overlays/src/GraphPopover",
+          "line": 10,
+          "signature": "POPOVER_GAP = 16"
+        },
+        {
+          "name": "GraphPopoverProps",
+          "kind": "type",
+          "fileId": "packages/overlays/src/GraphPopover",
+          "line": 12,
+          "signature": "export type GraphPopoverProps = Omit<GraphDetailProps, 'node'> & {"
+        },
+        {
+          "name": "GraphPopover",
+          "kind": "const",
+          "fileId": "packages/overlays/src/GraphPopover",
+          "line": 45,
+          "signature": "GraphPopover = (props: GraphPopoverProps) => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./GraphDetail",
+          "fileId": "packages/overlays/src/GraphDetail",
+          "names": [
+            "GraphDetailProps"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/overlays/src/ScopedOverlay",
+      "path": "packages/overlays/src/ScopedOverlay.tsx",
+      "packageId": "@spacegraphjs/overlays",
+      "symbols": [],
+      "imports": [
+        {
+          "specifier": "./GraphOverlayManager",
+          "fileId": "packages/overlays/src/GraphOverlayManager",
+          "names": [
+            "GraphOverlayManager",
+            "GraphOverlayManagerProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "spacegraphjs/overlays",
+          "fileId": "src/overlays/index",
+          "names": [
+            "ScopedOverlay"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "spacegraphjs/overlays",
+          "fileId": "src/overlays/index",
+          "names": [
+            "ScopedOverlayOptions"
+          ],
+          "kind": "export"
+        }
+      ]
     },
     {
       "id": "packages/overlays/src/annotations",
@@ -5577,6 +6438,36 @@
           "kind": "export"
         },
         {
+          "specifier": "./GraphOverlayManager",
+          "fileId": "packages/overlays/src/GraphOverlayManager",
+          "names": [
+            "GraphOverlayManager",
+            "GraphOverlayManagerProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphPeek",
+          "fileId": "packages/overlays/src/GraphPeek",
+          "names": [
+            "GraphPeek",
+            "GraphPeekProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphPopover",
+          "fileId": "packages/overlays/src/GraphPopover",
+          "names": [
+            "GraphPopover",
+            "GraphPopoverProps",
+            "POPOVER_WIDTH",
+            "POPOVER_MAX_HEIGHT",
+            "POPOVER_GAP"
+          ],
+          "kind": "export"
+        },
+        {
           "specifier": "./manual-positions",
           "fileId": "packages/overlays/src/manual-positions",
           "names": [
@@ -5586,6 +6477,15 @@
             "ManualPositionsState",
             "ManualPositionsConfig",
             "ManualPositionsManager"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./ScopedOverlay",
+          "fileId": "packages/overlays/src/ScopedOverlay",
+          "names": [
+            "ScopedOverlay",
+            "ScopedOverlayOptions"
           ],
           "kind": "export"
         },
@@ -5838,6 +6738,39 @@
             "ManualPositions",
             "ManualPositionsConfig",
             "ManualPositionsManager"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/react-spacegraph/src/index",
+      "path": "packages/react-spacegraph/src/index.tsx",
+      "packageId": "react-spacegraph",
+      "symbols": [
+        {
+          "name": "GraphViewProps",
+          "kind": "interface",
+          "fileId": "packages/react-spacegraph/src/index",
+          "line": 9,
+          "signature": "export interface GraphViewProps extends GraphViewPropsBase<"
+        },
+        {
+          "name": "GraphView",
+          "kind": "const",
+          "fileId": "packages/react-spacegraph/src/index",
+          "line": 18,
+          "signature": "GraphView = (props: GraphViewProps): ReactElement => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "spacegraphjs/control",
+          "fileId": "src/control/index",
+          "names": [
+            "bindingOptionsFrom",
+            "GraphBinding",
+            "GraphViewPropsBase"
           ],
           "kind": "import"
         }
@@ -6606,6 +7539,95 @@
       ]
     },
     {
+      "id": "packages/search/src/GraphFind",
+      "path": "packages/search/src/GraphFind.tsx",
+      "packageId": "@spacegraphjs/search",
+      "symbols": [
+        {
+          "name": "GraphFindProps",
+          "kind": "type",
+          "fileId": "packages/search/src/GraphFind",
+          "line": 15,
+          "signature": "export type GraphFindProps = {"
+        },
+        {
+          "name": "GraphFind",
+          "kind": "const",
+          "fileId": "packages/search/src/GraphFind",
+          "line": 41,
+          "signature": "GraphFind = (props: GraphFindProps) => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./keyboard",
+          "fileId": "packages/search/src/keyboard",
+          "names": [
+            "navigateResults"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./search",
+          "fileId": "packages/search/src/search",
+          "names": [
+            "rankedSearch",
+            "sessionOutline",
+            "facetCounts"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/search/src/GraphSearch",
+      "path": "packages/search/src/GraphSearch.tsx",
+      "packageId": "@spacegraphjs/search",
+      "symbols": [
+        {
+          "name": "GraphSearchProps",
+          "kind": "type",
+          "fileId": "packages/search/src/GraphSearch",
+          "line": 11,
+          "signature": "export type GraphSearchProps = {"
+        },
+        {
+          "name": "GraphSearch",
+          "kind": "const",
+          "fileId": "packages/search/src/GraphSearch",
+          "line": 21,
+          "signature": "GraphSearch = (props: GraphSearchProps) => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./keyboard",
+          "fileId": "packages/search/src/keyboard",
+          "names": [
+            "navigateResults"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./navigation",
+          "fileId": "packages/search/src/navigation",
+          "names": [
+            "navigationHelp",
+            "navigationResults"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./search",
+          "fileId": "packages/search/src/search",
+          "names": [
+            "rankedSearch"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
       "id": "packages/search/src/facets",
       "path": "packages/search/src/facets.ts",
       "packageId": "@spacegraphjs/search",
@@ -6812,6 +7834,24 @@
             "ApplyFacetsOptions",
             "KeepOnlyOptions",
             "ComposeScopesOptions"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphFind",
+          "fileId": "packages/search/src/GraphFind",
+          "names": [
+            "GraphFind",
+            "GraphFindProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphSearch",
+          "fileId": "packages/search/src/GraphSearch",
+          "names": [
+            "GraphSearch",
+            "GraphSearchProps"
           ],
           "kind": "export"
         },
@@ -7732,6 +8772,60 @@
       "imports": []
     },
     {
+      "id": "packages/shared/src/icons",
+      "path": "packages/shared/src/icons.tsx",
+      "packageId": "@spacegraphjs/shared",
+      "symbols": [
+        {
+          "name": "IconProps",
+          "kind": "type",
+          "fileId": "packages/shared/src/icons",
+          "line": 9,
+          "signature": "export type IconProps = {",
+          "doc": "Props for an icon component."
+        },
+        {
+          "name": "IconComponent",
+          "kind": "type",
+          "fileId": "packages/shared/src/icons",
+          "line": 21,
+          "signature": "export type IconComponent = (props: IconProps) => JSX.Element;",
+          "doc": "Icon component type - a function that renders an icon."
+        },
+        {
+          "name": "defaultIconSVGs",
+          "kind": "const",
+          "fileId": "packages/shared/src/icons",
+          "line": 24,
+          "signature": "defaultIconSVGs: Record<string, string> = {"
+        },
+        {
+          "name": "createIconRenderer",
+          "kind": "function",
+          "fileId": "packages/shared/src/icons",
+          "line": 56,
+          "signature": "export function createIconRenderer(hostIcon?: IconComponent): IconComponent {",
+          "doc": "Creates an icon renderer that uses the host's Icon component or falls back to inline SVGs."
+        },
+        {
+          "name": "GraphIconButtonProps",
+          "kind": "interface",
+          "fileId": "packages/shared/src/icons",
+          "line": 90,
+          "signature": "export interface GraphIconButtonProps {"
+        },
+        {
+          "name": "GraphIconButton",
+          "kind": "function",
+          "fileId": "packages/shared/src/icons",
+          "line": 106,
+          "signature": "export function GraphIconButton(props: GraphIconButtonProps): JSX.Element {",
+          "doc": "A ghost icon button: the icon is the affordance, the label names it."
+        }
+      ],
+      "imports": []
+    },
+    {
       "id": "packages/shared/src/index",
       "path": "packages/shared/src/index.ts",
       "packageId": "@spacegraphjs/shared",
@@ -7813,6 +8907,26 @@
           "kind": "export"
         },
         {
+          "specifier": "./icons",
+          "fileId": "packages/shared/src/icons",
+          "names": [
+            "IconProps",
+            "IconComponent",
+            "GraphIconButtonProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./icons",
+          "fileId": "packages/shared/src/icons",
+          "names": [
+            "defaultIconSVGs",
+            "createIconRenderer",
+            "GraphIconButton"
+          ],
+          "kind": "export"
+        },
+        {
           "specifier": "./keyboard",
           "fileId": "packages/shared/src/keyboard",
           "names": [
@@ -7847,6 +8961,25 @@
             "MinimapProjection",
             "MinimapViewRect",
             "MinimapViewport"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./popover",
+          "fileId": "packages/shared/src/popover",
+          "names": [
+            "PopoverProps",
+            "PopoverComponent"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./popover",
+          "fileId": "packages/shared/src/popover",
+          "names": [
+            "DefaultPopover",
+            "createIconPopover",
+            "createPopoverRenderer"
           ],
           "kind": "export"
         },
@@ -8008,6 +9141,36 @@
       "imports": []
     },
     {
+      "id": "packages/shared/src/menu",
+      "path": "packages/shared/src/menu.tsx",
+      "packageId": "@spacegraphjs/shared",
+      "symbols": [
+        {
+          "name": "MenuOptionProps",
+          "kind": "interface",
+          "fileId": "packages/shared/src/menu",
+          "line": 3,
+          "signature": "export interface MenuOptionProps {"
+        },
+        {
+          "name": "MenuOption",
+          "kind": "function",
+          "fileId": "packages/shared/src/menu",
+          "line": 20,
+          "signature": "export function MenuOption(props: MenuOptionProps): JSX.Element {",
+          "doc": "A toolbar menu row. Closes the containing details menu unless it must stay open."
+        },
+        {
+          "name": "menuOption",
+          "kind": "const",
+          "fileId": "packages/shared/src/menu",
+          "line": 45,
+          "signature": "menuOption = (input: MenuOptionProps, className?: string): JSX.Element =>"
+        }
+      ],
+      "imports": []
+    },
+    {
       "id": "packages/shared/src/navigation",
       "path": "packages/shared/src/navigation.ts",
       "packageId": "@spacegraphjs/shared",
@@ -8072,6 +9235,53 @@
           "references": [
             "src/navigation/index:Navigation"
           ]
+        }
+      ],
+      "imports": []
+    },
+    {
+      "id": "packages/shared/src/popover",
+      "path": "packages/shared/src/popover.tsx",
+      "packageId": "@spacegraphjs/shared",
+      "symbols": [
+        {
+          "name": "PopoverProps",
+          "kind": "type",
+          "fileId": "packages/shared/src/popover",
+          "line": 9,
+          "signature": "export type PopoverProps = {",
+          "doc": "Props for a popover component."
+        },
+        {
+          "name": "PopoverComponent",
+          "kind": "type",
+          "fileId": "packages/shared/src/popover",
+          "line": 31,
+          "signature": "export type PopoverComponent = (props: PopoverProps) => JSX.Element;",
+          "doc": "Popover component type."
+        },
+        {
+          "name": "createIconPopover",
+          "kind": "function",
+          "fileId": "packages/shared/src/popover",
+          "line": 34,
+          "signature": "export function createIconPopover(renderIcon: (name: string) => JSX.Element): PopoverComponent {",
+          "doc": "Popover shell with a host-supplied icon renderer."
+        },
+        {
+          "name": "DefaultPopover",
+          "kind": "const",
+          "fileId": "packages/shared/src/popover",
+          "line": 62,
+          "signature": "DefaultPopover: PopoverComponent = createIconPopover((name) =>"
+        },
+        {
+          "name": "createPopoverRenderer",
+          "kind": "function",
+          "fileId": "packages/shared/src/popover",
+          "line": 75,
+          "signature": "export function createPopoverRenderer(hostPopover?: PopoverComponent): PopoverComponent {",
+          "doc": "Creates a popover renderer that uses the host's Popover component or falls back to the default."
         }
       ],
       "imports": []
@@ -8669,6 +9879,39 @@
       ]
     },
     {
+      "id": "packages/solid-spacegraph/src/index",
+      "path": "packages/solid-spacegraph/src/index.tsx",
+      "packageId": "solid-spacegraph",
+      "symbols": [
+        {
+          "name": "GraphViewProps",
+          "kind": "interface",
+          "fileId": "packages/solid-spacegraph/src/index",
+          "line": 9,
+          "signature": "export interface GraphViewProps extends GraphViewPropsBase<"
+        },
+        {
+          "name": "GraphView",
+          "kind": "const",
+          "fileId": "packages/solid-spacegraph/src/index",
+          "line": 18,
+          "signature": "GraphView = (props: GraphViewProps) => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "spacegraphjs/control",
+          "fileId": "src/control/index",
+          "names": [
+            "bindingOptionsFrom",
+            "GraphBinding",
+            "GraphViewPropsBase"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
       "id": "packages/spacegraph-renderer/src/index",
       "path": "packages/spacegraph-renderer/src/index.ts",
       "packageId": "@spacegraphjs/spacegraph-renderer",
@@ -8850,7 +10093,7 @@
           "name": "serializeRenderModel",
           "kind": "function",
           "fileId": "packages/svg-renderer/src/index",
-          "line": 131,
+          "line": 133,
           "signature": "export function serializeRenderModel(model: RenderModel): string {",
           "doc": "P8.3: a serializable snapshot of a `RenderModel` for shareable artifacts and static previews."
         },
@@ -8858,7 +10101,7 @@
           "name": "parseRenderModel",
           "kind": "function",
           "fileId": "packages/svg-renderer/src/index",
-          "line": 139,
+          "line": 141,
           "signature": "export function parseRenderModel(json: string): RenderModel | undefined {",
           "doc": "P8.3: parses a serialized model, returning `undefined` rather than throwing on malformed input, so a"
         },
@@ -8866,14 +10109,14 @@
           "name": "InlineGraph",
           "kind": "class",
           "fileId": "packages/svg-renderer/src/index",
-          "line": 177,
+          "line": 179,
           "signature": "export class InlineGraph {"
         },
         {
           "name": "SvgRenderer",
           "kind": "class",
           "fileId": "packages/svg-renderer/src/index",
-          "line": 212,
+          "line": 214,
           "signature": "export class SvgRenderer extends ModelRenderer implements GraphRenderer {",
           "doc": "The static SVG backend behind the shared renderer contract. Camera and selection calls no-op."
         },
@@ -8881,9 +10124,369 @@
           "name": "nodeExtent",
           "kind": "function",
           "fileId": "packages/svg-renderer/src/index",
-          "line": 243,
+          "line": 245,
           "signature": "export function nodeExtent(node: RenderNode): readonly [number, number] {",
           "doc": "One size authority for drawing and framing, so no card is clipped by its own bounds."
+        }
+      ],
+      "imports": []
+    },
+    {
+      "id": "packages/toolbar/src/GraphDrawControl",
+      "path": "packages/toolbar/src/GraphDrawControl.tsx",
+      "packageId": "@spacegraphjs/toolbar",
+      "symbols": [
+        {
+          "name": "GraphDrawControlProps",
+          "kind": "interface",
+          "fileId": "packages/toolbar/src/GraphDrawControl",
+          "line": 14,
+          "signature": "export interface GraphDrawControlProps {"
+        },
+        {
+          "name": "GraphDrawControl",
+          "kind": "function",
+          "fileId": "packages/toolbar/src/GraphDrawControl",
+          "line": 32,
+          "signature": "export function GraphDrawControl(props: GraphDrawControlProps): JSX.Element {"
+        }
+      ],
+      "imports": []
+    },
+    {
+      "id": "packages/toolbar/src/GraphIconButton",
+      "path": "packages/toolbar/src/GraphIconButton.tsx",
+      "packageId": "@spacegraphjs/toolbar",
+      "symbols": [],
+      "imports": []
+    },
+    {
+      "id": "packages/toolbar/src/GraphLayersControl",
+      "path": "packages/toolbar/src/GraphLayersControl.tsx",
+      "packageId": "@spacegraphjs/toolbar",
+      "symbols": [
+        {
+          "name": "GraphLayersControlProps",
+          "kind": "interface",
+          "fileId": "packages/toolbar/src/GraphLayersControl",
+          "line": 35,
+          "signature": "export interface GraphLayersControlProps {"
+        },
+        {
+          "name": "GraphLayersControl",
+          "kind": "function",
+          "fileId": "packages/toolbar/src/GraphLayersControl",
+          "line": 62,
+          "signature": "export function GraphLayersControl(props: GraphLayersControlProps): JSX.Element {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./ToolbarMenu",
+          "fileId": "packages/toolbar/src/ToolbarMenu",
+          "names": [
+            "ToolbarMenu"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/toolbar/src/GraphLayoutControl",
+      "path": "packages/toolbar/src/GraphLayoutControl.tsx",
+      "packageId": "@spacegraphjs/toolbar",
+      "symbols": [
+        {
+          "name": "GraphLayoutControlProps",
+          "kind": "interface",
+          "fileId": "packages/toolbar/src/GraphLayoutControl",
+          "line": 15,
+          "signature": "export interface GraphLayoutControlProps {"
+        },
+        {
+          "name": "GraphLayoutControl",
+          "kind": "function",
+          "fileId": "packages/toolbar/src/GraphLayoutControl",
+          "line": 23,
+          "signature": "export function GraphLayoutControl(props: GraphLayoutControlProps): JSX.Element {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./ToolbarMenu",
+          "fileId": "packages/toolbar/src/ToolbarMenu",
+          "names": [
+            "ToolbarMenu"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/toolbar/src/GraphQuestionsControl",
+      "path": "packages/toolbar/src/GraphQuestionsControl.tsx",
+      "packageId": "@spacegraphjs/toolbar",
+      "symbols": [
+        {
+          "name": "GraphQuestionsControlProps",
+          "kind": "interface",
+          "fileId": "packages/toolbar/src/GraphQuestionsControl",
+          "line": 33,
+          "signature": "export interface GraphQuestionsControlProps {"
+        },
+        {
+          "name": "GraphQuestionsControl",
+          "kind": "function",
+          "fileId": "packages/toolbar/src/GraphQuestionsControl",
+          "line": 40,
+          "signature": "export function GraphQuestionsControl(props: GraphQuestionsControlProps): JSX.Element {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./ToolbarMenu",
+          "fileId": "packages/toolbar/src/ToolbarMenu",
+          "names": [
+            "ToolbarMenu"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/toolbar/src/GraphShowControl",
+      "path": "packages/toolbar/src/GraphShowControl.tsx",
+      "packageId": "@spacegraphjs/toolbar",
+      "symbols": [
+        {
+          "name": "GraphShowControlProps",
+          "kind": "interface",
+          "fileId": "packages/toolbar/src/GraphShowControl",
+          "line": 15,
+          "signature": "export interface GraphShowControlProps {"
+        },
+        {
+          "name": "GraphShowControl",
+          "kind": "function",
+          "fileId": "packages/toolbar/src/GraphShowControl",
+          "line": 41,
+          "signature": "export function GraphShowControl(props: GraphShowControlProps): JSX.Element {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./GraphIconButton",
+          "fileId": "packages/toolbar/src/GraphIconButton",
+          "names": [
+            "GraphIconButton"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/toolbar/src/GraphStatusBar",
+      "path": "packages/toolbar/src/GraphStatusBar.tsx",
+      "packageId": "@spacegraphjs/toolbar",
+      "symbols": [
+        {
+          "name": "GraphStatusBarProps",
+          "kind": "type",
+          "fileId": "packages/toolbar/src/GraphStatusBar",
+          "line": 6,
+          "signature": "export type GraphStatusBarProps = {"
+        },
+        {
+          "name": "GraphStatusBar",
+          "kind": "const",
+          "fileId": "packages/toolbar/src/GraphStatusBar",
+          "line": 50,
+          "signature": "GraphStatusBar = (props: GraphStatusBarProps): JSX.Element => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./GraphIconButton",
+          "fileId": "packages/toolbar/src/GraphIconButton",
+          "names": [
+            "GraphIconButton"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/toolbar/src/GraphTimeControl",
+      "path": "packages/toolbar/src/GraphTimeControl.tsx",
+      "packageId": "@spacegraphjs/toolbar",
+      "symbols": [
+        {
+          "name": "GraphTimeControlProps",
+          "kind": "interface",
+          "fileId": "packages/toolbar/src/GraphTimeControl",
+          "line": 13,
+          "signature": "export interface GraphTimeControlProps {"
+        },
+        {
+          "name": "GraphTimeControl",
+          "kind": "function",
+          "fileId": "packages/toolbar/src/GraphTimeControl",
+          "line": 23,
+          "signature": "export function GraphTimeControl(props: GraphTimeControlProps): JSX.Element {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./GraphIconButton",
+          "fileId": "packages/toolbar/src/GraphIconButton",
+          "names": [
+            "GraphIconButton"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/toolbar/src/GraphToolbar",
+      "path": "packages/toolbar/src/GraphToolbar.tsx",
+      "packageId": "@spacegraphjs/toolbar",
+      "symbols": [
+        {
+          "name": "GraphToolbarProps",
+          "kind": "interface",
+          "fileId": "packages/toolbar/src/GraphToolbar",
+          "line": 32,
+          "signature": "export interface GraphToolbarProps"
+        },
+        {
+          "name": "GraphToolbar",
+          "kind": "function",
+          "fileId": "packages/toolbar/src/GraphToolbar",
+          "line": 163,
+          "signature": "export function GraphToolbar(props: GraphToolbarProps): JSX.Element {",
+          "doc": "Graph toolbar (U3.9). It owns no graph state; it renders the semantic level, projection, and the"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./GraphDrawControl",
+          "fileId": "packages/toolbar/src/GraphDrawControl",
+          "names": [
+            "GraphDrawControl",
+            "GraphDrawControlProps"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./GraphLayersControl",
+          "fileId": "packages/toolbar/src/GraphLayersControl",
+          "names": [
+            "GraphLayersControl",
+            "GraphLayersControlProps"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./GraphLayoutControl",
+          "fileId": "packages/toolbar/src/GraphLayoutControl",
+          "names": [
+            "GraphLayoutControl"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./GraphQuestionsControl",
+          "fileId": "packages/toolbar/src/GraphQuestionsControl",
+          "names": [
+            "GraphQuestionsControl"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./GraphShowControl",
+          "fileId": "packages/toolbar/src/GraphShowControl",
+          "names": [
+            "GraphShowControl",
+            "GraphShowControlProps"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./GraphTimeControl",
+          "fileId": "packages/toolbar/src/GraphTimeControl",
+          "names": [
+            "GraphTimeControl"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./GraphZoomControl",
+          "fileId": "packages/toolbar/src/GraphZoomControl",
+          "names": [
+            "GraphZoomControl"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./ToolbarMenu",
+          "fileId": "packages/toolbar/src/ToolbarMenu",
+          "names": [
+            "ToolbarMenu"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/toolbar/src/GraphZoomControl",
+      "path": "packages/toolbar/src/GraphZoomControl.tsx",
+      "packageId": "@spacegraphjs/toolbar",
+      "symbols": [
+        {
+          "name": "GraphZoomControlProps",
+          "kind": "interface",
+          "fileId": "packages/toolbar/src/GraphZoomControl",
+          "line": 10,
+          "signature": "export interface GraphZoomControlProps {"
+        },
+        {
+          "name": "GraphZoomControl",
+          "kind": "function",
+          "fileId": "packages/toolbar/src/GraphZoomControl",
+          "line": 21,
+          "signature": "export function GraphZoomControl(props: GraphZoomControlProps): JSX.Element {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./GraphIconButton",
+          "fileId": "packages/toolbar/src/GraphIconButton",
+          "names": [
+            "GraphIconButton"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/toolbar/src/ToolbarMenu",
+      "path": "packages/toolbar/src/ToolbarMenu.tsx",
+      "packageId": "@spacegraphjs/toolbar",
+      "symbols": [
+        {
+          "name": "ToolbarMenuProps",
+          "kind": "interface",
+          "fileId": "packages/toolbar/src/ToolbarMenu",
+          "line": 13,
+          "signature": "export interface ToolbarMenuProps extends Omit<PopoverProps, 'open' | 'onOpenChange'> {"
+        },
+        {
+          "name": "ToolbarMenu",
+          "kind": "function",
+          "fileId": "packages/toolbar/src/ToolbarMenu",
+          "line": 22,
+          "signature": "export function ToolbarMenu(props: ToolbarMenuProps): JSX.Element {",
+          "doc": "Default toolbar menu using native details/summary."
         }
       ],
       "imports": []
@@ -8925,10 +10528,100 @@
       "symbols": [],
       "imports": [
         {
+          "specifier": "./GraphDrawControl",
+          "fileId": "packages/toolbar/src/GraphDrawControl",
+          "names": [
+            "GraphDrawControl",
+            "GraphDrawControlProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphLayersControl",
+          "fileId": "packages/toolbar/src/GraphLayersControl",
+          "names": [
+            "GraphLayersControl",
+            "GraphLayersControlProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphLayoutControl",
+          "fileId": "packages/toolbar/src/GraphLayoutControl",
+          "names": [
+            "GraphLayoutControl",
+            "GraphLayoutControlProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphQuestionsControl",
+          "fileId": "packages/toolbar/src/GraphQuestionsControl",
+          "names": [
+            "GraphQuestionsControl",
+            "GraphQuestionsControlProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphShowControl",
+          "fileId": "packages/toolbar/src/GraphShowControl",
+          "names": [
+            "GraphShowControl",
+            "GraphShowControlProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphStatusBar",
+          "fileId": "packages/toolbar/src/GraphStatusBar",
+          "names": [
+            "GraphStatusBar",
+            "GraphStatusBarProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphTimeControl",
+          "fileId": "packages/toolbar/src/GraphTimeControl",
+          "names": [
+            "GraphTimeControl",
+            "GraphTimeControlProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphToolbar",
+          "fileId": "packages/toolbar/src/GraphToolbar",
+          "names": [
+            "GraphToolbar",
+            "GraphToolbarProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./GraphZoomControl",
+          "fileId": "packages/toolbar/src/GraphZoomControl",
+          "names": [
+            "GraphZoomControl",
+            "GraphZoomControlProps"
+          ],
+          "kind": "export"
+        },
+        {
           "specifier": "./hooks",
           "fileId": "packages/toolbar/src/hooks",
           "names": [
             "useToolbarState"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./ToolbarMenu",
+          "fileId": "packages/toolbar/src/ToolbarMenu",
+          "names": [
+            "ToolbarMenu",
+            "ToolbarMenuProps"
           ],
           "kind": "export"
         }
@@ -9143,6 +10836,68 @@
       "imports": []
     },
     {
+      "id": "packages/turn-map/src/TurnMapInlineGraph",
+      "path": "packages/turn-map/src/TurnMapInlineGraph.tsx",
+      "packageId": "@spacegraphjs/turn-map",
+      "symbols": [
+        {
+          "name": "TurnMapInlineGraphProps",
+          "kind": "type",
+          "fileId": "packages/turn-map/src/TurnMapInlineGraph",
+          "line": 8,
+          "signature": "export type TurnMapInlineGraphProps = {"
+        },
+        {
+          "name": "TurnMapInlineGraph",
+          "kind": "const",
+          "fileId": "packages/turn-map/src/TurnMapInlineGraph",
+          "line": 34,
+          "signature": "TurnMapInlineGraph = (props: TurnMapInlineGraphProps): JSX.Element => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./turnMap",
+          "fileId": "packages/turn-map/src/turnMap",
+          "names": [
+            "buildTurnRenderModel"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/turn-map/src/TurnMapOverlay",
+      "path": "packages/turn-map/src/TurnMapOverlay.tsx",
+      "packageId": "@spacegraphjs/turn-map",
+      "symbols": [
+        {
+          "name": "TurnMapOverlayProps",
+          "kind": "type",
+          "fileId": "packages/turn-map/src/TurnMapOverlay",
+          "line": 16,
+          "signature": "export type TurnMapOverlayProps = {"
+        },
+        {
+          "name": "TurnMapOverlay",
+          "kind": "const",
+          "fileId": "packages/turn-map/src/TurnMapOverlay",
+          "line": 79,
+          "signature": "TurnMapOverlay = (props: TurnMapOverlayProps): JSX.Element => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./turnMap",
+          "fileId": "packages/turn-map/src/turnMap",
+          "names": [
+            "buildTurnRenderModel"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
       "id": "packages/turn-map/src/index",
       "path": "packages/turn-map/src/index.ts",
       "packageId": "@spacegraphjs/turn-map",
@@ -9154,6 +10909,24 @@
           "names": [
             "buildTurnRenderModel",
             "turnGraphModel"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./TurnMapInlineGraph",
+          "fileId": "packages/turn-map/src/TurnMapInlineGraph",
+          "names": [
+            "TurnMapInlineGraph",
+            "TurnMapInlineGraphProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./TurnMapOverlay",
+          "fileId": "packages/turn-map/src/TurnMapOverlay",
+          "names": [
+            "TurnMapOverlay",
+            "TurnMapOverlayProps"
           ],
           "kind": "export"
         }
@@ -9182,6 +10955,91 @@
         }
       ],
       "imports": []
+    },
+    {
+      "id": "packages/window-manager/src/WindowItem",
+      "path": "packages/window-manager/src/WindowItem.tsx",
+      "packageId": "@spacegraphjs/window-manager",
+      "symbols": [
+        {
+          "name": "WindowItem",
+          "kind": "const",
+          "fileId": "packages/window-manager/src/WindowItem",
+          "line": 8,
+          "signature": "WindowItem = (props: WindowItemProps) => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./focus-trap",
+          "fileId": "packages/window-manager/src/focus-trap",
+          "names": [
+            "setupFocusTrap"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./types",
+          "fileId": "packages/window-manager/src/types",
+          "names": [
+            "WindowItemProps"
+          ],
+          "kind": "import"
+        }
+      ]
+    },
+    {
+      "id": "packages/window-manager/src/Windows",
+      "path": "packages/window-manager/src/Windows.tsx",
+      "packageId": "@spacegraphjs/window-manager",
+      "symbols": [
+        {
+          "name": "Windows",
+          "kind": "const",
+          "fileId": "packages/window-manager/src/Windows",
+          "line": 5,
+          "signature": "Windows = (props: WindowsProps) => {"
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./types",
+          "fileId": "packages/window-manager/src/types",
+          "names": [
+            "WindowsProps",
+            "WindowState"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./types",
+          "fileId": "packages/window-manager/src/types",
+          "names": [
+            "WindowState",
+            "WindowsProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./WindowItem",
+          "fileId": "packages/window-manager/src/WindowItem",
+          "names": [
+            "WindowItem",
+            "WINDOW_MIN_WIDTH",
+            "WINDOW_MIN_HEIGHT"
+          ],
+          "kind": "import"
+        },
+        {
+          "specifier": "./WindowItem",
+          "fileId": "packages/window-manager/src/WindowItem",
+          "names": [
+            "WINDOW_MIN_WIDTH",
+            "WINDOW_MIN_HEIGHT"
+          ],
+          "kind": "export"
+        }
+      ]
     },
     {
       "id": "packages/window-manager/src/focus-trap",
@@ -9219,6 +11077,24 @@
             "WindowState",
             "WindowsProps",
             "WindowItemProps"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./WindowItem",
+          "fileId": "packages/window-manager/src/WindowItem",
+          "names": [
+            "WindowItem"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./Windows",
+          "fileId": "packages/window-manager/src/Windows",
+          "names": [
+            "Windows",
+            "WINDOW_MIN_WIDTH",
+            "WINDOW_MIN_HEIGHT"
           ],
           "kind": "export"
         }

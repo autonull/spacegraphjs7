@@ -50,17 +50,17 @@ export function useGroupCollapse(options: UseGroupCollapseOptions): UseGroupColl
     const [localExplicitlyCollapsed, setLocalExplicitlyCollapsed] = createSignal<ReadonlySet<string>>(new Set());
     const [pointerDownOnGroup, setPointerDownOnGroup] = createSignal(false);
 
-    // Internal setter that resolves functional updates before calling the callback
+    // Use controlled explicitlyCollapsedGroups when provided, otherwise local state
+    const explicitlyCollapsed = options.explicitlyCollapsedGroups ?? localExplicitlyCollapsed;
+
+    // Resolve functional updates against whichever accessor owns the visible state
     const setExplicitlyCollapsed = (
         updater: ReadonlySet<string> | ((prev: ReadonlySet<string>) => ReadonlySet<string>),
     ) => {
-        const newGroups = typeof updater === 'function' ? updater(localExplicitlyCollapsed()) : updater;
+        const newGroups = typeof updater === 'function' ? updater(explicitlyCollapsed()) : updater;
         setLocalExplicitlyCollapsed(newGroups);
         options.onExplicitlyCollapsedGroupsChange?.(newGroups);
     };
-
-    // Use controlled explicitlyCollapsedGroups when provided, otherwise local state
-    const explicitlyCollapsed = options.explicitlyCollapsedGroups ?? localExplicitlyCollapsed;
 
     const selectedGroup = createMemo(() => {
         const id = options.selection()[0];

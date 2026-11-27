@@ -612,6 +612,19 @@ describe('DataNode', () => {
         const n = new DataNode(sg, { id: 'dn', type: 'DataNode' });
         expect(n.domElement.textContent).toContain('null');
     });
+
+    it('re-renders with the payload when only the theme changes', () => {
+        const n = new DataNode(sg, {
+            id: 'dn',
+            type: 'DataNode',
+            data: { data: { foo: 'bar' } },
+        });
+        expect(n.domElement.classList.contains('theme-dark')).toBe(true);
+
+        n.updateSpec({ data: { theme: 'light' } });
+        expect(n.domElement.classList.contains('theme-light')).toBe(true);
+        expect(n.domElement.textContent).toContain('"bar"');
+    });
 });
 
 describe('VideoNode', () => {
