@@ -1,6 +1,6 @@
 # TODO17 — Terminal: a vector console for durable agents
 
-> **Status: Stages 1–4 landed (2026-11-27); only deferred polish remains (§10).** Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
+> **Status: complete (2026-11-27).** Stages 1–4 and all E1–E12 landed in the demo and Pi Durable. See §11 for the opportunity backlog. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
 > Agent REPL that faithfully reads like a styled monospace text console while using vector/ZUI space
 > to add graph, fractal and margin overlays that a DOM console cannot express.
 
@@ -395,13 +395,44 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   imports, and deduped the screenshot line-id lookup. Low-effort fixes: unknown statuses map to
   `neutral`, and the controller's initial band comes from `DEFAULT_RUNG_IDS` instead of a literal.
 
-## 10. Next session entry points
+## 10. Handoff and final verification
 
-1. **Deferred polish, not new capability.** RTL decision (§8); measure window hysteresis before
-   tuning; minimap-click re-engagement (End and the badge are wired); surface two-tail diff and chapter
-   scrubbing in the console UI rather than only through hooks.
-2. **Verification for future console changes.** Tier 1: package `typecheck`, `pi-durable check:fast`,
-   `test:exports`. Tier 2: root `pnpm run check`. Tier 3: `pi-durable verify:fast` and demo
-   `transcript.spec.ts`. Regenerate `shots:console` when console shape, palette, selection or camera
-   behaviour changes; regenerate story screenshots only when their shape changes. Review the studio at
-   `docs/screenshots/pi-durable-index.html`.
+- **Final state.** `spacegraphjs/terminal` publishes the projection, controller, a11y, camera, prompt,
+  detail and time-axis primitives. The demo and Pi Durable both consume them; Pi Durable's `transcript`
+  view is a vector console with per-kind accents, elastic gaps, gutter markers, anchored selection,
+  three detail modalities, tail-follow and permalink hydration.
+- **Final checks (2026-11-27).** Root `pnpm run check`, 201 unit-test files / 1347 tests, 6 export
+  tests, Pi Durable `verify:fast` (80 E2E passing, 16 capture-only skipped), demo
+  `transcript.spec.ts` (4 passing), and `shots:console` (11 captures) all pass.
+- **Verification ladder for future changes.** Tier 1: package `typecheck`, `pi-durable check:fast`,
+  `test:exports`. Tier 2: root `pnpm run check`. Tier 3: `pi-durable verify:fast` and demo
+  `transcript.spec.ts`. Regenerate `shots:console` when console shape, palette, selection, detail or
+  camera behaviour changes; regenerate story screenshots only when their shape changes. Review the
+  studio at `docs/screenshots/pi-durable-index.html`.
+- **Definition of done for a new capability.** Library-first primitive with unit test, host hook or
+  projection wired through `consoleModel`, E2E assertion in `reading.spec.ts`, and a console shot when
+  the visual shape changes.
+
+## 11. Opportunity backlog
+
+Ordered by value per unit of effort. Items marked **low** are small, isolated changes; **medium** and
+**large** touch multiple layers and should land separately.
+
+| Priority | Opportunity | Effort | Why |
+| -------- | ----------- | ------ | --- |
+| 1 | **Keyboard range selection.** Wire Shift+Arrow to `terminalMoveLine` + `terminalRange` and announce the selected span; plain arrows already move focus. | low | Completes parity of interaction (§2.6) and makes copy/permalink usable without a mouse. |
+| 2 | **Persist palette and detail state.** Add `pal` and `det` keys to `Address` alongside `sel`/`tail`, hydrate them in `applyAddress`. | low | Console appearance becomes shareable; codec already supports extra string keys. |
+| 3 | **Minimap-click tail-follow.** Call `controller.followTail(true)` on `#survey` click; End and the badge are wired. | low | Closes the last open question in §8. |
+| 4 | **Chapter scrubbing UI.** Use `terminalChapters` to render a chapter rail in the stage; `consoleChapters` already exists as a hook. | medium | Makes the E8 primitive visible instead of hook-only. |
+| 5 | **Two-tail diff view.** Render `terminalDiff` between two tabs as a side-by-side console using `terminalLink`; `consoleCompare` already computes the diff. | medium | Demonstrates E9 without a second renderer. |
+| 6 | **Replay-as-typing.** Animate `terminalReplaySteps` prefixes on chapter load, honouring reduced motion. | medium | Turns the time-axis primitives into a visible narrative. |
+| 7 | **Cache hot-path indices.** Keep `terminalOrder` and `terminalFlatten` results in the controller, invalidated by `setLines`/`append`. | low | `apply()` currently rebuilds both on every selection or overlay change. |
+| 8 | **Unify projection contracts.** Share the node/overlay placement between `terminalSpec` and `consoleModel` instead of maintaining two builders. | large | Removes the last real duplication; needs care because the demo and Pi Durable style nodes differently. |
+| 9 | **RTL decision (§8).** Decide whether spine and gutter mirror or only text mirrors; preserve logical selection order. | medium | Existing app supports `dir="rtl"`; the console currently assumes LTR. |
+| 10 | **Hysteresis telemetry.** Measure window mount/unmount churn during fast pans before tuning `terminalWindow` defaults. | medium | Replaces guessed constants with evidence. |
+| 11 | **Emoji/wide-glyph width map.** Extend `terminalWrap` beyond fixed character counts for hosts that need inline emoji. | medium | Keeps the character grid honest without a special case. |
+| 12 | **Demo detail modalities.** Bring `terminalDetailHTML` and click-to-toggle to `app/demo/transcript.ts`. | low | Makes the demo a full reference consumer, not just the library smoke test. |
+| 13 | **Range export.** Emit Markdown and JSON excerpts from `terminalRangeText` plus `sel` for copy/quote/cite. | low | Completes E12's sharing story. |
+| 14 | **Visual regression gate.** Compare `shots:console` output against committed baselines in CI. | medium | Protects the carefully tuned console aesthetic from silent drift. |
+
+Out of scope unless a host needs them: ANSI/SGR parsing, PTY and cursor-control emulation (§3 fidelity decision), and a second console store.
