@@ -1,6 +1,6 @@
 # TODO17 — Terminal: a vector console for durable agents
 
-> **Status: Stages 1–3 landed; Stage 4 begun with E6 (2026-11-27).** Continue from §10. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
+> **Status: Stages 1–3 landed; Stage 4 has E6 and E12 (2026-11-27).** Continue from §10. Goal: make Pi Durable useful as a lowest-common-denominator console/terminal
 > Agent REPL that faithfully reads like a styled monospace text console while using vector/ZUI space
 > to add graph, fractal and margin overlays that a DOM console cannot express.
 
@@ -200,7 +200,7 @@ surface. None needs a second renderer or a second store.
 4. **Stage 4 — extensions.** Land E1–E12 individually, library-first, each with a unit test and one
    E2E or screenshot when the visual shape changes. No bundled mega-change.
 
-**Status:** Stages 1–3 landed, E6 landed 2026-11-27. Remaining Stage 4 extensions are listed in §10.
+**Status:** Stages 1–3 landed, E6 and E12 landed 2026-11-27. Remaining Stage 4 extensions are listed in §10.
 
 ## 7. Verification ladder
 
@@ -288,12 +288,21 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
 - `test/terminal.test.ts`: 25 tests (three new prompt tests). Full suite: 200 files / 1326 tests.
   `app/demo/tests/transcript.spec.ts`: 4/4 including scene-prompt submit. Pi Durable `verify:fast`:
   73 E2E passing (5 skipped), including scene-prompt submit. Root `check` and `test:exports` pass.
+- **Stage 4 / E12 landed (2026-11-27).** `terminalRangeKey` and `terminalRangeFromKey` encode and
+  hydrate anchored ranges with ids that contain `:`; `TerminalController.tail()` exposes the followed
+  line. Pi Durable's `permalink()` and `address()` carry `sel`/`tail`, and `applyAddress()` restores
+  the console selection and tail after the view refresh. `copyConsole` and `consoleRange` hooks expose
+  the controller's copy and selection to tests and hosts.
+- `test/terminal.test.ts`: 26 tests. Full suite: 200 files / 1327 tests. Pi Durable `verify:fast`:
+  74 E2E passing (5 skipped), including compact-permalink hydration. Root `check` and `test:exports`
+  pass.
 
 ## 10. Next session entry points
 
-1. **Stage 4 — extensions.** Land the remaining E1–E5 and E7–E12 individually, library-first, each
+1. **Stage 4 — extensions.** Land the remaining E1–E5 and E7–E11 individually, library-first, each
    with a unit test and one E2E or screenshot when the visual shape changes.
 2. **Remaining deferred work.** Camera pan-to-scroll and explicit tail-follow re-engagement (End,
-   minimap, badge); elastic gaps and gutter/margin slots (E1/E2) in the Pi Durable console; exported
-   ranges and permalink hydration from `sel`/`tail` (E12); RTL decision (§8); measure window hysteresis
-   before tuning; a11y parity beyond roving focus (E11).
+   minimap, badge); elastic gaps and gutter/margin slots (E1/E2) in the Pi Durable console;
+   character-span to entry-id mapping (E7); time-axis integration (E8); multiple consoles (E9); theme
+   palettes (E10); RTL decision (§8); measure window hysteresis before tuning; a11y parity beyond
+   roving focus (E11).

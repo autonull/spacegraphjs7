@@ -41,6 +41,23 @@ test('scene prompt submits inside the console without stealing shortcuts', async
     expect(errors).toEqual([]);
 });
 
+test('console selection and tail survive a compact permalink', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    const ids = await page.locator('#canvas [data-node-id]').evaluateAll((nodes) =>
+        nodes.map((node) => node.getAttribute('data-node-id') ?? ''),
+    );
+    const sel = `${ids[0]}:0~${ids[1]}:3`;
+    const value = btoa(`view=transcript&sel=${sel}&tail=${ids[1]}&version=1`)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    await call(page, 'applyAddress', value);
+    expect(await call<string | undefined>(page, 'consoleRange')).toBe(sel);
+    await expect(page.locator(`#canvas [data-node-id="${ids[1]}"]`)).toBeFocused();
+    expect(errors).toEqual([]);
+});
+
 test('documents render as a readable document with graph backlinks', async ({ page }) => {
     const errors = await boot(page, '?shot=docs');
     await expect(page.locator('#reader')).toBeVisible();

@@ -19,7 +19,9 @@ import {
     terminalOrder,
     terminalOverlays,
     terminalRange,
+    terminalRangeFromKey,
     terminalRangeIDs,
+    terminalRangeKey,
     terminalRangeText,
     terminalSpec,
     terminalVisible,
@@ -138,6 +140,18 @@ describe('anchored ranges', () => {
             ),
         ).toEqual([]);
         expect(terminalCompare(order, { nodeID: 'b', offset: 0 }, { nodeID: 'a', offset: 99 })).toBeGreaterThan(0);
+    });
+
+    it('round-trips a range key whose ids contain separators', () => {
+        const range = terminalRange(
+            { nodeID: 'd:1:message:2', offset: 4 },
+            { nodeID: 'd:1:message:3', offset: 9 },
+            order,
+        );
+        expect(terminalRangeKey(range)).toBe('d:1:message:2:4~d:1:message:3:9');
+        expect(terminalRangeFromKey(terminalRangeKey(range))).toEqual(range);
+        expect(terminalRangeFromKey('bad')).toBeUndefined();
+        expect(terminalRangeFromKey('a:x~b:1')).toBeUndefined();
     });
 
     it('moves a caret by line and resets its offset on arrival', () => {

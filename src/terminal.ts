@@ -37,6 +37,25 @@ export type TerminalPoint = { readonly nodeID: string; readonly offset: number }
 export type TerminalRange = { readonly anchor: TerminalPoint; readonly focus: TerminalPoint };
 export type TerminalWindow = { readonly start: string; readonly end: string };
 
+/** URL-safe range key; ids may contain `:`, so the offset is read after the last separator. */
+export const terminalRangeKey = (range: TerminalRange): string =>
+    `${range.anchor.nodeID}:${range.anchor.offset}~${range.focus.nodeID}:${range.focus.offset}`;
+
+export const terminalRangeFromKey = (key: string | undefined): TerminalRange | undefined => {
+    if (!key) return undefined;
+    const [anchor, focus] = key.split('~');
+    const point = (value: string | undefined): TerminalPoint | undefined => {
+        if (!value) return undefined;
+        const separator = value.lastIndexOf(':');
+        const offset = Number(value.slice(separator + 1));
+        if (separator < 1 || !Number.isFinite(offset) || offset < 0) return undefined;
+        return { nodeID: value.slice(0, separator), offset };
+    };
+    const a = point(anchor);
+    const b = point(focus);
+    return a && b ? { anchor: a, focus: b } : undefined;
+};
+
 export type TerminalGrid = {
     readonly charWidth: number;
     readonly lineHeight: number;
@@ -557,6 +576,8 @@ export type TerminalController = {
     setWindow(startID: string, endID: string): void;
     select(range?: TerminalRange): void;
     selection(): TerminalRange | undefined;
+    /** Currently focused or followed line id. */
+    tail(): string | undefined;
     copy(): string;
     setOverlays(overlays: readonly TerminalOverlay[]): void;
     followTail(enabled: boolean): void;
@@ -663,6 +684,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
             if (count) hooks.announce?.(`Selected ${count} lines`);
         },
         selection: () => range,
+        tail: () => focusID || undefined,
         copy: () => {
             const text = range
                 ? terminalRangeText(range, lines)

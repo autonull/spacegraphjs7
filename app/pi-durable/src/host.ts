@@ -46,6 +46,8 @@ import {
     terminalGrid,
     terminalLineSize,
     terminalPromptHTML,
+    terminalRangeFromKey,
+    terminalRangeKey,
     type TerminalController,
     type TerminalLine,
     type TerminalPromptController,
@@ -1634,6 +1636,10 @@ export class DurableHost {
         if (this.#asOf !== undefined) params.set('asOf', String(this.#asOf));
         if (this.#seed !== 'fixed') params.set('seed', this.#seed);
         if (tab?.view.focus) params.set('focus', tab.view.focus);
+        const selection = this.#terminalController?.selection();
+        if (selection) params.set('sel', terminalRangeKey(selection));
+        const tail = this.#terminalController?.tail();
+        if (tail) params.set('tail', tail);
         const viewport = this.renderer.getViewport?.();
         if (viewport) params.set('zoom', viewport.zoom.toFixed(3));
         return `${location.pathname}?${params.toString()}`;
@@ -1658,11 +1664,16 @@ export class DurableHost {
             asOf: params.has('asOf') && Number.isFinite(asOf) ? asOf : undefined,
             zoom: params.has('zoom') && Number.isFinite(zoom) ? zoom : undefined,
             focus: params.get('focus') ?? undefined,
+            sel: params.get('sel') ?? undefined,
+            tail: params.get('tail') ?? undefined,
         });
     }
 
     address(): Address {
         const viewport = this.renderer.getViewport?.();
+        const inConsole = this.#viewName === 'transcript';
+        const selection = inConsole ? this.#terminalController?.selection() : undefined;
+        const tail = inConsole ? this.#terminalController?.tail() : undefined;
         return {
             s: this.registry.activeID() || undefined,
             shot: this.#shot,
@@ -1672,6 +1683,8 @@ export class DurableHost {
             asOf: this.#asOf,
             zoom: viewport?.zoom,
             focus: this.registry.active()?.view.focus,
+            sel: selection ? terminalRangeKey(selection) : undefined,
+            tail: tail || undefined,
         };
     }
 
@@ -1695,6 +1708,11 @@ export class DurableHost {
             this.patchView({ focus: undefined, selection: undefined });
             this.renderer.setSelection([]);
         }
+        if (this.#viewName === 'transcript') {
+            if (address.tail) this.#terminalController?.focusLine(address.tail);
+            const range = terminalRangeFromKey(address.sel);
+            this.#terminalController?.select(range);
+        }
         this.#history.suppress(false);
         return tabApplied || Boolean(address.focus);
     }
@@ -1712,6 +1730,11 @@ export class DurableHost {
             setTab: (id: string) => this.setTab(id),
             reveal: (id: string) => this.reveal(id),
             readInTranscript: (id?: string) => this.readInTranscript(id),
+            consoleRange: () => {
+                const range = this.#terminalController?.selection();
+                return range ? terminalRangeKey(range) : undefined;
+            },
+            copyConsole: () => this.#terminalController?.copy(),
             focus: (id: string) => this.focus(id),
             applyShot: (id: string) => this.applyShot(id),
             setAsOf: (seq?: number) => this.setAsOf(seq),
