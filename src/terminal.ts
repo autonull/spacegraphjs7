@@ -437,22 +437,10 @@ export const terminalRangeText = (
     order: ReadonlyMap<string, number> = terminalOrder(lines),
 ): string => {
     const normalized = terminalRange(range.anchor, range.focus, order);
-    const byID = new Map(lines.map((line) => [line.id, line.text] as const));
-    return terminalRangeIDs(normalized, order)
-        .map((id) => {
-            const text = byID.get(id) ?? '';
-            const from =
-                id === normalized.anchor.nodeID
-                    ? clamp(normalized.anchor.offset, 0, text.length)
-                    : 0;
-            const to =
-                id === normalized.focus.nodeID
-                    ? clamp(normalized.focus.offset, 0, text.length)
-                    : text.length;
-            return text.slice(from, Math.max(from, to));
-        })
-        .filter(Boolean)
-        .join('\n');
+    const flat = terminalFlatten(lines);
+    const from = terminalIndexOfPoint(flat, normalized.anchor);
+    const to = terminalIndexOfPoint(flat, normalized.focus);
+    return from === undefined || to === undefined ? '' : flat.text.slice(from, Math.max(from, to));
 };
 
 export const terminalMoveLine = (
@@ -975,7 +963,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
     let range: TerminalRange | undefined;
     let overlays: readonly TerminalOverlay[] = hooks.overlays ?? [];
     const gaps = hooks.gaps ?? [];
-    let band = 'dot';
+    let band: string = DEFAULT_RUNG_IDS[0]!;
     let following = true;
     let palette: TerminalPalette =
         typeof hooks.palette === 'string'
@@ -1028,6 +1016,12 @@ export const mountTerminalSink = <Model = GraphSpec>(
     const moveWindow = (id: string): void => {
         windowState = terminalWindow(order(), id, hooks.windowConfig);
     };
+    const commit = (next: readonly TerminalLine[], focus?: string): void => {
+        lines = [...next];
+        focusID = focus ?? lines.at(-1)?.id ?? '';
+        if (following) moveWindow(focusID);
+        apply();
+    };
 
     const unsubscribeNode = sink.onNodeClick((id) => {
         focusID = id;
@@ -1042,18 +1036,15 @@ export const mountTerminalSink = <Model = GraphSpec>(
 
     return {
         setLines: (next) => {
-            lines = [...next];
-            focusID = lines.at(-1)?.id ?? '';
             range = undefined;
-            if (following) moveWindow(focusID);
-            apply();
+            commit(next);
         },
         append: (added) => {
-            const incoming = new Map(added.map((entry) => [entry.id, entry] as const));
-            lines = [...lines.filter((entry) => !incoming.has(entry.id)), ...added];
-            focusID = added.at(-1)?.id ?? focusID;
-            if (following) moveWindow(focusID);
-            apply();
+            const incoming = new Set(added.map((entry) => entry.id));
+            commit(
+                [...lines.filter((entry) => !incoming.has(entry.id)), ...added],
+                added.at(-1)?.id ?? focusID,
+            );
         },
         setWindow: (startID, endID) => {
             windowState = { start: startID, end: endID };
@@ -1089,11 +1080,8 @@ export const mountTerminalSink = <Model = GraphSpec>(
         },
         followTail: (enabled) => {
             following = enabled;
-            if (enabled) {
-                focusID = lines.at(-1)?.id ?? focusID;
-                if (focusID) moveWindow(focusID);
-            }
-            apply();
+            if (enabled) commit(lines);
+            else apply();
         },
         focusLine: (id) => {
             if (!lines.some((entry) => entry.id === id)) return;
@@ -1123,18 +1111,18 @@ export const mountTerminal = (
         render: (spec) => {
             const nodes = spec.nodes ?? [];
             const edges = spec.edges ?? [];
-            const nextNodes = nodes.map((node) => node.id);
-            const nextEdges = edges.map((edge) => edge.id);
-            nodeIDs.filter((id) => !nextNodes.includes(id)).forEach((id) => graph.removeNode(id));
-            edgeIDs.filter((id) => !nextEdges.includes(id)).forEach((id) => graph.removeEdge(id));
+            const nextNodes = new Set(nodes.map((node) => node.id));
+            const nextEdges = new Set(edges.map((edge) => edge.id));
+            nodeIDs.filter((id) => !nextNodes.has(id)).forEach((id) => graph.removeNode(id));
+            edgeIDs.filter((id) => !nextEdges.has(id)).forEach((id) => graph.removeEdge(id));
             nodes.forEach((node) => graph.addNode(node));
             edges.forEach((edge) => graph.addEdge(edge));
             const positions = Object.fromEntries(
                 nodes.filter((node) => node.position).map((node) => [node.id, node.position!]),
             );
             if (Object.keys(positions).length) graph.setPositions(positions);
-            nodeIDs = nextNodes;
-            edgeIDs = nextEdges;
+            nodeIDs = [...nextNodes];
+            edgeIDs = [...nextEdges];
         },
         show: (id, visible) => {
             graph.show(id, visible);

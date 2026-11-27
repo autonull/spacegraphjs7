@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { CONSOLE_SHOTS, type ConsoleShot } from '../src/shots';
@@ -16,6 +16,13 @@ const shots: readonly ConsoleShot[] = requested?.length
 
 const compact = (value: string): string =>
     btoa(value).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+const lineIDs = (page: Page): Promise<string[]> =>
+    page
+        .locator('#canvas .sg-terminal-line')
+        .evaluateAll((nodes) =>
+            nodes.map((node) => node.closest<HTMLElement>('[data-node-id]')?.dataset['nodeId'] ?? ''),
+        );
 
 for (const shot of shots) {
     test(`console shot: ${shot.id} — ${shot.title}`, async ({ page }) => {
@@ -43,27 +50,14 @@ for (const shot of shots) {
         }
         if (shot.detailMode) {
             await call(page, 'setConsoleDetailMode', shot.detailMode);
-            const ids = await page
-                .locator('#canvas .sg-terminal-line')
-                .evaluateAll((nodes) =>
-                    nodes.map(
-                        (node) => (node.closest<HTMLElement>('[data-node-id]')?.dataset['nodeId'] ?? ''),
-                    ),
-                );
-            const target = ids[shot.detailLine ?? 1];
+            const target = (await lineIDs(page))[shot.detailLine ?? 1];
             if (target) {
                 await call(page, 'toggleConsoleDetail', target);
                 await settle(page);
             }
         }
         if (shot.selection) {
-            const ids = await page
-                .locator('#canvas .sg-terminal-line')
-                .evaluateAll((nodes) =>
-                    nodes.map(
-                        (node) => (node.closest<HTMLElement>('[data-node-id]')?.dataset['nodeId'] ?? ''),
-                    ),
-                );
+            const ids = await lineIDs(page);
             const first = ids[shot.selection[0]];
             const last = ids[shot.selection[1]];
             if (first && last) {

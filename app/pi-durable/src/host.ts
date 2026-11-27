@@ -40,7 +40,6 @@ import {
 import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import {
-    lineHTML,
     mountTerminalA11y,
     mountTerminalCamera,
     mountTerminalPrompt,
@@ -49,19 +48,11 @@ import {
     terminalChapters,
     terminalDetailHTML,
     terminalDiff,
-    terminalGaps,
     terminalGrid,
-    terminalLineSize,
     terminalPalette,
-    terminalReplaySteps,
-    terminalOrder,
-    terminalOverlayGaps,
-    terminalOverlays,
-    terminalPromptHTML,
     terminalRangeFromKey,
-    terminalRangeIDs,
     terminalRangeKey,
-    terminalSlots,
+    terminalReplaySteps,
     terminalVisibleAt,
     type TerminalController,
     type TerminalDetail,
@@ -72,6 +63,7 @@ import {
 } from 'spacegraphjs/terminal';
 import { type ScaleSample } from 'spacegraphjs/zoom';
 import { decodeAddress, encodeAddress, type Address } from './address';
+import { consoleModel } from './console-model';
 import { exportURL } from './api';
 import { edgeStyleForKind } from './edge-style';
 import { attentionWeights, createScaleDomain, sampleForRung } from './attention';
@@ -1768,6 +1760,7 @@ export class DurableHost {
     }
 
     hooks(): Record<string, unknown> {
+        const lines = (): readonly TerminalLine[] => this.#terminalController?.lines() ?? [];
         return {
             ready: () => this.#ready,
             ops: () => this.opsCount,
@@ -1782,9 +1775,8 @@ export class DurableHost {
             },
             copyConsole: () => this.#terminalController?.copy(),
             consoleText: () => this.#terminalController?.text(),
-            consoleChapters: () => terminalChapters(this.#terminalController?.lines() ?? []),
-            consoleReplaySteps: () =>
-                terminalReplaySteps(this.#terminalController?.lines() ?? []).length,
+            consoleChapters: () => terminalChapters(lines()),
+            consoleReplaySteps: () => terminalReplaySteps(lines()).length,
             consoleDetailMode: () => this.#detailMode,
             consoleExpanded: () => this.#expandedLine,
             setConsoleDetailMode: (mode: string) => {
@@ -1805,10 +1797,7 @@ export class DurableHost {
             consoleCompare: (peerID: string) => {
                 const peer = this.registry.get(peerID);
                 if (!peer) return undefined;
-                return terminalDiff(
-                    this.#terminalController?.lines() ?? [],
-                    this.#consoleLines(tabKernel(peer)),
-                );
+                return terminalDiff(lines(), this.#consoleLines(tabKernel(peer)));
             },
             consolePalettes: () => TERMINAL_PALETTES.map(({ id, label }) => ({ id, label })),
             setConsolePalette: (id: string) => this.#terminal()?.setPalette(id),
@@ -2595,121 +2584,14 @@ export class DurableHost {
         this.#terminalController = mountTerminalSink(sink, {
             grid,
             windowConfig: { size: 28, margin: 6, hysteresis: 5 },
-            project: ({ visible, order, overlays, band }) => {
-                const range = this.#terminalController?.selection();
-                const selected = range
-                    ? new Set(terminalRangeIDs(range, terminalOrder(this.#terminalController?.lines() ?? [])))
-                    : new Set<string>();
-                const revealed = terminalOverlays(overlays, { band });
-                const offsets = terminalGaps(
-                    order,
-                    terminalOverlayGaps(revealed, this.#detailMode === 'inline' ? 3 : 2),
-                    grid.lineHeight,
-                );
-                const lineWidth = grid.maxWidth;
-                const lineNodes: RenderNode[] = visible.map((entry, index) => {
-                    const [, measured] = terminalLineSize(entry.text, grid, entry.octave ?? 0);
-                    const height = Math.max(grid.lineHeight, measured - grid.gutter);
-                    return {
-                        id: entry.id,
-                        kind: entry.kind,
-                        label: entry.label,
-                        html: `<div class="sg-terminal-line" data-selected="${selected.has(
-                            entry.id,
-                        )}" data-kind="${escapeHTML(entry.kind)}" data-status="${escapeHTML(
-                            entry.status,
-                        )}" data-role="${escapeHTML(entry.role ?? '')}">${lineHTML(
-                            entry,
-                            terminalPalette(this.#terminalController?.palette() ?? 'classic').glyphs,
-                        )}</div>`,
-                        position: [
-                            lineWidth / 2,
-                            -index * (height + 4) + (offsets.get(entry.id) ?? 0),
-                            0,
-                        ],
-                        size: [lineWidth, height, 1],
-                        status:
-                            entry.status === 'failed'
-                                ? 'error'
-                                : entry.status === 'pending'
-                                  ? 'warning'
-                                  : 'success',
-                        interactive: true,
-                        data: { terminal: true, useRawHtml: true },
-                    };
-                });
-                const nodes: RenderNode[] = [...lineNodes];
-                terminalSlots(revealed, 'gutter').forEach((entries, lineID) => {
-                    const line = lineNodes.find((node) => node.id === lineID);
-                    if (!line) return;
-                    entries.forEach((entry, index) => {
-                        nodes.push({
-                            id: entry.id,
-                            kind: 'terminal-gutter',
-                            label: 'attention',
-                            html: '<span class="sg-terminal-gutter">!</span>',
-                            position: [
-                                line.position[0] - (line.size?.[0] ?? 220) / 2 - 14,
-                                line.position[1] + index * 10,
-                                0,
-                            ],
-                            size: [12, 12, 1],
-                            status: 'warning',
-                            interactive: false,
-                            data: { terminalGutter: true, useRawHtml: true },
-                        });
-                    });
-                });
-                revealed
-                    .filter((entry) => entry.node)
-                    .forEach((entry) => {
-                        const anchor = lineNodes.find((node) => node.id === entry.lineID);
-                        const spec = entry.node!;
-                        if (!anchor || !spec.data?.['html']) return;
-                        const width = (spec.data['width'] as number) ?? 320;
-                        const height = (spec.data['height'] as number) ?? 60;
-                        const right = anchor.position[0] + (anchor.size?.[0] ?? lineWidth) / 2;
-                        const x =
-                            entry.mode === 'inline'
-                                ? anchor.position[0]
-                                : right + (entry.mode === 'rail' ? 48 : 24) + width / 2;
-                        const y =
-                            entry.mode === 'inline'
-                                ? anchor.position[1] - (anchor.size?.[1] ?? 18) / 2 - height / 2 - 6
-                                : entry.mode === 'rail'
-                                  ? anchor.position[1] - 40
-                                  : anchor.position[1];
-                        nodes.push({
-                            id: spec.id,
-                            kind: 'terminal-detail',
-                            label: 'detail',
-                            html: String(spec.data['html']),
-                            position: [x, y, 0],
-                            size: [width, height, 1],
-                            status: 'neutral',
-                            interactive: true,
-                            data: {
-                                terminalDetail: true,
-                                useRawHtml: true,
-                                className: `terminal-detail-${entry.mode ?? 'inline'}`,
-                            },
-                        });
-                    });
-                const last = lineNodes.at(-1);
-                if (last)
-                    nodes.push({
-                        id: 'terminal-prompt',
-                        kind: 'prompt',
-                        label: 'Prompt',
-                        html: terminalPromptHTML('Send a message'),
-                        position: [last.position[0], last.position[1] - 24, 0],
-                        size: [lineWidth, 22, 1],
-                        status: 'neutral',
-                        interactive: true,
-                        data: { terminal: true },
-                    });
-                return { nodes, edges: [] };
-            },
+            project: (context) =>
+                consoleModel(context, {
+                    grid,
+                    glyphs: terminalPalette(this.#terminalController?.palette() ?? 'classic').glyphs,
+                    lines: this.#terminalController?.lines() ?? [],
+                    selection: this.#terminalController?.selection(),
+                    detailMode: this.#detailMode,
+                }),
             onReveal: (id) => {
                 this.#expandedLine = this.#expandedLine === id ? undefined : id;
                 this.announce(
@@ -2778,56 +2660,46 @@ export class DurableHost {
         return { title: line.label, fields, text: line.text };
     }
 
+    #consoleOverlays(kernel: Kernel, lines: readonly TerminalLine[]): readonly TerminalOverlay[] {
+        const gap = (line: TerminalLine): TerminalOverlay[] => [
+            { id: `gap-${line.id}`, lineID: line.id, slot: 'gap', reveal: 'always' },
+        ];
+        const gutter = (line: TerminalLine): TerminalOverlay[] => [
+            { id: `gutter-${line.id}`, lineID: line.id, slot: 'gutter', reveal: 'always' },
+        ];
+        const detail = (line: TerminalLine): TerminalOverlay[] => {
+            const mode = this.#detailMode;
+            return [
+                {
+                    id: `detail-${line.id}`,
+                    lineID: line.id,
+                    slot: mode === 'inline' ? 'gap' : 'margin',
+                    reveal: 'always',
+                    mode,
+                    node: {
+                        id: `detail-${line.id}`,
+                        type: 'HtmlNode',
+                        label: 'detail',
+                        data: {
+                            html: terminalDetailHTML(this.#consoleDetail(kernel, line)),
+                            width: mode === 'inline' ? CONSOLE_GRID.maxWidth : 360,
+                            height: mode === 'inline' ? 30 : 84,
+                        },
+                    } as NodeSpec,
+                },
+            ];
+        };
+        return lines.flatMap((line, index) => [
+            ...(index % 4 === 0 ? gap(line) : []),
+            ...(index % 3 === 0 ? gutter(line) : []),
+            ...(this.#expandedLine === line.id ? detail(line) : []),
+        ]);
+    }
+
     #renderConsole(kernel: Kernel): void {
         const lines = this.#consoleLines(kernel);
-        const overlays: readonly TerminalOverlay[] = lines.flatMap((line, index) => [
-            ...(index % 4 === 0
-                ? [
-                      {
-                          id: `gap-${line.id}`,
-                          lineID: line.id,
-                          slot: 'gap' as const,
-                          reveal: 'always' as const,
-                      },
-                  ]
-                : []),
-            ...(index % 3 === 0
-                ? [
-                      {
-                          id: `gutter-${line.id}`,
-                          lineID: line.id,
-                          slot: 'gutter' as const,
-                          reveal: 'always' as const,
-                      },
-                  ]
-                : []),
-            ...(this.#expandedLine === line.id
-                ? [
-                      {
-                          id: `detail-${line.id}`,
-                          lineID: line.id,
-                          slot: (this.#detailMode === 'inline' ? 'gap' : 'margin') as
-                              | 'gap'
-                              | 'margin',
-                          reveal: 'always' as const,
-                          mode: this.#detailMode,
-                          node: {
-                              id: `detail-${line.id}`,
-                              type: 'HtmlNode',
-                              label: 'detail',
-                              data: {
-                                  html: terminalDetailHTML(this.#consoleDetail(kernel, line)),
-                                  width:
-                                      this.#detailMode === 'inline' ? CONSOLE_GRID.maxWidth : 360,
-                                  height: this.#detailMode === 'inline' ? 30 : 84,
-                              },
-                          } as NodeSpec,
-                      },
-                  ]
-                : []),
-        ]);
         const terminal = this.#terminal();
-        terminal.setOverlays(overlays);
+        terminal.setOverlays(this.#consoleOverlays(kernel, lines));
         terminal.setLines(lines);
         if (!this.#consoleFramed) this.#frameConsole();
     }

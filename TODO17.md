@@ -387,6 +387,13 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   line) and `rail` (card further out in a context column). Hooks expose mode, expanded id and toggling;
   three new shots capture each modality. The row step gained 4 world units so adjacent nodes do not
   intercept clicks.
+- **Refactor pass (2026-11-27).** Extracted the 115-line console projection from `host.ts` into
+  `app/pi-durable/src/console-model.ts` with direct unit coverage; `host.ts` shrank by ~130 lines.
+  Collapsed nested overlay ternaries into `gap`/`gutter`/`detail` helpers, shared the controller's
+  line-commit path across `setLines`/`append`/`followTail`, deduped range-text slicing through
+  `terminalFlatten`/`terminalIndexOfPoint`, replaced array-membership scans with Sets, removed unused
+  imports, and deduped the screenshot line-id lookup. Low-effort fixes: unknown statuses map to
+  `neutral`, and the controller's initial band comes from `DEFAULT_RUNG_IDS` instead of a literal.
 
 ## 10. Next session entry points
 
