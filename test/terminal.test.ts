@@ -18,6 +18,7 @@ import {
     terminalPromptHTML,
     terminalPromptNode,
     terminalCompare,
+    terminalDetailHTML,
     terminalFlatten,
     terminalGaps,
     terminalIndexOfPoint,
@@ -152,6 +153,20 @@ describe('multiple consoles', () => {
         expect(second.tail()).toBe(first.tail());
         first.destroy();
         second.destroy();
+    });
+});
+
+describe('detail cards', () => {
+    it('escapes detail fields and renders them for any overlay slot', () => {
+        const html = terminalDetailHTML({
+            title: '<tool>',
+            fields: [['kind', 'pi.tool-result'], ['status', 'complete']],
+            text: 'lookup() & more',
+        });
+        expect(html).toContain('&lt;tool&gt;');
+        expect(html).toContain('&amp; more');
+        expect(html).toContain('tg-detail-field');
+        expect(html).not.toContain('<tool>');
     });
 });
 

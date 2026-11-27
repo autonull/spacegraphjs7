@@ -381,6 +381,12 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
   `minScale: 1`, so the line column fills the stage and stays anchored top-left. The dotted `orders`
   edges were removed from the console projection; they added noise without helping readability. Gaps,
   gutter markers, selection bars and zoom still expose the underlying vector surface.
+- **Detail modalities (2026-11-27).** `TerminalDetail` / `terminalDetailHTML` produce escaped detail
+  cards, and `TerminalOverlay.mode` marks how a detail is placed in vector space. Clicking a console line
+  toggles its detail; Pi Durable offers `inline` (accordion in an opened gap), `popup` (card beside the
+  line) and `rail` (card further out in a context column). Hooks expose mode, expanded id and toggling;
+  three new shots capture each modality. The row step gained 4 world units so adjacent nodes do not
+  intercept clicks.
 
 ## 10. Next session entry points
 

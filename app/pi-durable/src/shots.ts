@@ -41,6 +41,9 @@ export type ConsoleShot = Shot & {
     readonly selection?: readonly [number, number];
     /** Zoom factor applied after boot; below 1 reveals the graph structure behind the text. */
     readonly zoomOut?: number;
+    /** Detail modality revealed before capture. */
+    readonly detailMode?: 'inline' | 'popup' | 'rail';
+    readonly detailLine?: number;
     /** Extra query parameters, e.g. `asOf=2`. */
     readonly query?: string;
 };
@@ -74,6 +77,9 @@ export const CONSOLE_SHOTS: readonly ConsoleShot[] = [
         selection: [0, 2],
     }),
     consoleShot('console-zoom', 'basic-turn', { zoomOut: 0.38 }),
+    consoleShot('console-detail-inline', 'basic-turn', { detailMode: 'inline', detailLine: 1 }),
+    consoleShot('console-detail-popup', 'basic-turn', { detailMode: 'popup', detailLine: 1 }),
+    consoleShot('console-detail-rail', 'basic-turn', { detailMode: 'rail', detailLine: 1 }),
 ];
 
 const HERO_IDS = new Set(['basic-turn', 'sleeping-approval', 'fork-tabs', 'resumed']);

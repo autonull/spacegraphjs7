@@ -42,6 +42,22 @@ test('scene prompt submits inside the console without stealing shortcuts', async
     expect(errors).toEqual([]);
 });
 
+test('clicking a line toggles detail in inline, popup and rail modes', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    const line = page.locator('#canvas [data-node-id]').nth(1);
+    await line.click();
+    await expect(page.locator('#canvas [data-node-id^="detail-"]').first()).toBeVisible();
+    expect(await call<string | undefined>(page, 'consoleExpanded')).toBeTruthy();
+    await call(page, 'setConsoleDetailMode', 'popup');
+    await expect(page.locator('.terminal-detail-popup').first()).toBeVisible();
+    await call(page, 'setConsoleDetailMode', 'rail');
+    await expect(page.locator('.terminal-detail-rail').first()).toBeVisible();
+    await page.locator('#canvas [data-node-id]').nth(1).click();
+    await expect(page.locator('#canvas [data-node-id^="detail-"]')).toHaveCount(0);
+    expect(errors).toEqual([]);
+});
+
 test('console compares two tabs over one kernel', async ({ page }) => {
     const errors = await boot(page, '?shot=fork-tabs');
     await call(page, 'setView', 'transcript');

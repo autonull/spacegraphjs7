@@ -41,6 +41,21 @@ for (const shot of shots) {
             await call(page, 'zoomBy', shot.zoomOut);
             await settle(page);
         }
+        if (shot.detailMode) {
+            await call(page, 'setConsoleDetailMode', shot.detailMode);
+            const ids = await page
+                .locator('#canvas .sg-terminal-line')
+                .evaluateAll((nodes) =>
+                    nodes.map(
+                        (node) => (node.closest<HTMLElement>('[data-node-id]')?.dataset['nodeId'] ?? ''),
+                    ),
+                );
+            const target = ids[shot.detailLine ?? 1];
+            if (target) {
+                await call(page, 'toggleConsoleDetail', target);
+                await settle(page);
+            }
+        }
         if (shot.selection) {
             const ids = await page
                 .locator('#canvas .sg-terminal-line')

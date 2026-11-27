@@ -34,6 +34,8 @@ export type TerminalOverlay = {
     readonly slot: TerminalSlot;
     readonly reveal: TerminalReveal;
     readonly band?: string;
+    /** Presentation hint for hosts that place detail cards in vector space. */
+    readonly mode?: 'inline' | 'popup' | 'rail';
     readonly size?: readonly [number, number];
     readonly node?: NodeSpec;
     readonly edge?: EdgeSpec;
@@ -565,6 +567,23 @@ export const statusGlyph = (line: TerminalLine, glyphs: TerminalGlyphs = termina
 
 export const lineHTML = (line: TerminalLine, glyphs: TerminalGlyphs = terminalGlyphs()): string =>
     `<span class="tg-gutter">${escapeHtml(lineGlyph(line, glyphs))} ${escapeHtml(statusGlyph(line, glyphs))}</span><span class="tg-text">${escapeHtml(line.text)}</span>`;
+
+export type TerminalDetail = {
+    readonly title: string;
+    readonly fields: readonly (readonly [string, string])[];
+    readonly text?: string;
+};
+
+/** Safe, escaped markup for an expandable detail card in any of the overlay slots. */
+export const terminalDetailHTML = (detail: TerminalDetail): string => {
+    const rows = detail.fields
+        .map(
+            ([key, value]) =>
+                `<span class="tg-detail-field"><b>${escapeHtml(key)}</b> ${escapeHtml(value)}</span>`,
+        )
+        .join('');
+    return `<div class="tg-detail"><strong>${escapeHtml(detail.title)}</strong>${detail.text ? `<p>${escapeHtml(detail.text)}</p>` : ''}<div class="tg-detail-fields">${rows}</div></div>`;
+};
 
 /** Caret and textarea markup for an `HtmlNode` tail node; the host owns the CSS. */
 export const terminalPromptHTML = (placeholder = 'Send a message'): string =>

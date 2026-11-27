@@ -29,6 +29,7 @@ import { defaultTokens, themeFromDesignTokens, type DesignTokens } from '@spaceg
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { ScopeSimulation, solveNodeAreaDensity, type ScopeSpec } from 'spacegraphjs/layout';
 import { Navigation, type MinimapProjection } from 'spacegraphjs/navigation';
+import type { NodeSpec } from 'spacegraphjs';
 import { ScopedOverlay } from 'spacegraphjs/overlays';
 import {
     mountReading,
@@ -46,6 +47,7 @@ import {
     mountTerminalSink,
     TERMINAL_PALETTES,
     terminalChapters,
+    terminalDetailHTML,
     terminalDiff,
     terminalGaps,
     terminalGrid,
@@ -62,6 +64,7 @@ import {
     terminalSlots,
     terminalVisibleAt,
     type TerminalController,
+    type TerminalDetail,
     type TerminalLine,
     type TerminalOverlay,
     type TerminalPromptController,
@@ -663,6 +666,8 @@ export class DurableHost {
     #readerController: ReadingController | undefined;
     #terminalController: TerminalController | undefined;
     #consoleFramed = false;
+    #detailMode: 'inline' | 'popup' | 'rail' = 'inline';
+    #expandedLine: string | undefined;
     #helpScope: ScopedOverlay | undefined;
     #mutedEdges = 0;
     #activeGroups = new Set<string>();
@@ -1007,7 +1012,12 @@ export class DurableHost {
         this.renderer.fit(undefined, {
             padding: 12,
             minScale: 1,
-            insets: { left: 0, top: 0, right: 48, bottom: 48 },
+            insets: {
+                left: 0,
+                top: 0,
+                right: this.#detailMode === 'inline' || !this.#expandedLine ? 48 : 24,
+                bottom: 48,
+            },
         });
         this.#consoleFramed = true;
     }
@@ -1775,6 +1785,23 @@ export class DurableHost {
             consoleChapters: () => terminalChapters(this.#terminalController?.lines() ?? []),
             consoleReplaySteps: () =>
                 terminalReplaySteps(this.#terminalController?.lines() ?? []).length,
+            consoleDetailMode: () => this.#detailMode,
+            consoleExpanded: () => this.#expandedLine,
+            setConsoleDetailMode: (mode: string) => {
+                if (!['inline', 'popup', 'rail'].includes(mode)) return false;
+                this.#detailMode = mode as 'inline' | 'popup' | 'rail';
+                this.#consoleFramed = false;
+                this.refresh();
+                return true;
+            },
+            toggleConsoleDetail: (id?: string) => {
+                const target = id ?? this.#terminalController?.tail();
+                if (!target) return false;
+                this.#expandedLine = this.#expandedLine === target ? undefined : target;
+                this.#consoleFramed = false;
+                this.refresh();
+                return true;
+            },
             consoleCompare: (peerID: string) => {
                 const peer = this.registry.get(peerID);
                 if (!peer) return undefined;
@@ -2576,7 +2603,7 @@ export class DurableHost {
                 const revealed = terminalOverlays(overlays, { band });
                 const offsets = terminalGaps(
                     order,
-                    terminalOverlayGaps(revealed, 2),
+                    terminalOverlayGaps(revealed, this.#detailMode === 'inline' ? 3 : 2),
                     grid.lineHeight,
                 );
                 const lineWidth = grid.maxWidth;
@@ -2595,7 +2622,11 @@ export class DurableHost {
                             entry,
                             terminalPalette(this.#terminalController?.palette() ?? 'classic').glyphs,
                         )}</div>`,
-                        position: [lineWidth / 2, -index * height + (offsets.get(entry.id) ?? 0), 0],
+                        position: [
+                            lineWidth / 2,
+                            -index * (height + 4) + (offsets.get(entry.id) ?? 0),
+                            0,
+                        ],
                         size: [lineWidth, height, 1],
                         status:
                             entry.status === 'failed'
@@ -2629,6 +2660,41 @@ export class DurableHost {
                         });
                     });
                 });
+                revealed
+                    .filter((entry) => entry.node)
+                    .forEach((entry) => {
+                        const anchor = lineNodes.find((node) => node.id === entry.lineID);
+                        const spec = entry.node!;
+                        if (!anchor || !spec.data?.['html']) return;
+                        const width = (spec.data['width'] as number) ?? 320;
+                        const height = (spec.data['height'] as number) ?? 60;
+                        const right = anchor.position[0] + (anchor.size?.[0] ?? lineWidth) / 2;
+                        const x =
+                            entry.mode === 'inline'
+                                ? anchor.position[0]
+                                : right + (entry.mode === 'rail' ? 48 : 24) + width / 2;
+                        const y =
+                            entry.mode === 'inline'
+                                ? anchor.position[1] - (anchor.size?.[1] ?? 18) / 2 - height / 2 - 6
+                                : entry.mode === 'rail'
+                                  ? anchor.position[1] - 40
+                                  : anchor.position[1];
+                        nodes.push({
+                            id: spec.id,
+                            kind: 'terminal-detail',
+                            label: 'detail',
+                            html: String(spec.data['html']),
+                            position: [x, y, 0],
+                            size: [width, height, 1],
+                            status: 'neutral',
+                            interactive: true,
+                            data: {
+                                terminalDetail: true,
+                                useRawHtml: true,
+                                className: `terminal-detail-${entry.mode ?? 'inline'}`,
+                            },
+                        });
+                    });
                 const last = lineNodes.at(-1);
                 if (last)
                     nodes.push({
@@ -2644,7 +2710,13 @@ export class DurableHost {
                     });
                 return { nodes, edges: [] };
             },
-            onReveal: (id) => this.reveal(id),
+            onReveal: (id) => {
+                this.#expandedLine = this.#expandedLine === id ? undefined : id;
+                this.announce(
+                    this.#expandedLine ? `Expanded ${this.#expandedLine}` : 'Collapsed detail',
+                );
+                this.reveal(id);
+            },
             onFocus: (id) =>
                 requestAnimationFrame(() =>
                     el('canvas')
@@ -2692,6 +2764,20 @@ export class DurableHost {
         );
     }
 
+    #consoleDetail(kernel: Kernel, line: TerminalLine): TerminalDetail {
+        const node = kernel.nodes.find((entry) => entry.id === line.id);
+        const fields: (readonly [string, string])[] = [];
+        const add = (key: string, value: unknown): void => {
+            if (value !== undefined && value !== '') fields.push([key, String(value)]);
+        };
+        add('kind', node?.kind);
+        add('status', node?.data?.['status']);
+        add('role', node?.data?.['role']);
+        add('turn', node?.data?.['turn']);
+        add('at', typeof node?.data?.['at'] === 'number' ? new Date(node.data['at']).toISOString() : '');
+        return { title: line.label, fields, text: line.text };
+    }
+
     #renderConsole(kernel: Kernel): void {
         const lines = this.#consoleLines(kernel);
         const overlays: readonly TerminalOverlay[] = lines.flatMap((line, index) => [
@@ -2712,6 +2798,30 @@ export class DurableHost {
                           lineID: line.id,
                           slot: 'gutter' as const,
                           reveal: 'always' as const,
+                      },
+                  ]
+                : []),
+            ...(this.#expandedLine === line.id
+                ? [
+                      {
+                          id: `detail-${line.id}`,
+                          lineID: line.id,
+                          slot: (this.#detailMode === 'inline' ? 'gap' : 'margin') as
+                              | 'gap'
+                              | 'margin',
+                          reveal: 'always' as const,
+                          mode: this.#detailMode,
+                          node: {
+                              id: `detail-${line.id}`,
+                              type: 'HtmlNode',
+                              label: 'detail',
+                              data: {
+                                  html: terminalDetailHTML(this.#consoleDetail(kernel, line)),
+                                  width:
+                                      this.#detailMode === 'inline' ? CONSOLE_GRID.maxWidth : 360,
+                                  height: this.#detailMode === 'inline' ? 30 : 84,
+                              },
+                          } as NodeSpec,
                       },
                   ]
                 : []),
