@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { HERO_SHOTS } from '../src/shots';
+import { CONSOLE_SHOTS, HERO_SHOTS } from '../src/shots';
 import { STORIES } from '../src/stories';
 import {
     backupFiles,
@@ -19,13 +19,27 @@ const requested = (args.find((arg) => !arg.startsWith('-')) ?? 'all').split(',')
 const out = process.env.SG_DURABLE_SHOTS ?? resolve(root, '../../docs/screenshots');
 mkdirSync(out, { recursive: true });
 const heroIDs = HERO_SHOTS.map((shot) => shot.id);
+const consoleIDs = CONSOLE_SHOTS.map((shot) => shot.id);
 const storyIDs = STORIES.map((story) => story.id);
-const known = new Set([...heroIDs, ...storyIDs]);
-if (requested[0] !== 'all' && requested[0] !== 'stories' && requested.some((id) => !known.has(id))) {
+const known = new Set([...heroIDs, ...consoleIDs, ...storyIDs]);
+const consolesOnly = requested[0] === 'console';
+if (
+    requested[0] !== 'all' &&
+    requested[0] !== 'stories' &&
+    !consolesOnly &&
+    requested.some((id) => !known.has(id))
+) {
     console.error(`Unknown shot: ${requested.join(',')}`);
     process.exit(1);
 }
-const heroes = requested[0] === 'all' ? heroIDs : storiesOnly ? [] : requested.filter((id) => heroIDs.includes(id));
+const heroes =
+    requested[0] === 'all' ? heroIDs : storiesOnly || consolesOnly ? [] : requested.filter((id) => heroIDs.includes(id));
+const consoles =
+    requested[0] === 'all' || consolesOnly
+        ? consoleIDs
+        : storiesOnly
+          ? []
+          : requested.filter((id) => consoleIDs.includes(id));
 const stories = requested[0] === 'all' || storiesOnly
     ? requested[0] === 'stories' && requested.length > 1 ? requested.slice(1) : storyIDs
     : requested.filter((id) => storyIDs.includes(id));
@@ -42,6 +56,11 @@ const capture = (): boolean => {
         backupFiles(heroes.map((id) => resolve(out, `pi-durable/${id}.png`)));
         if (!play('tests/screenshots.spec.ts', { ...env, SG_DURABLE_SHOT: heroes.join(',') })) return false;
     }
+    if (consoles.length) {
+        backupFiles(consoles.map((id) => resolve(out, `pi-durable/console/${id}.png`)));
+        if (!play('tests/console-screenshots.spec.ts', { ...env, SG_DURABLE_CONSOLE_SHOT: consoles.join(',') }))
+            return false;
+    }
     if (stories.length) {
         backupFiles(stories.map((id) => resolve(out, `pi-durable/stories/${id}.png`)));
         if (!play('tests/stories.spec.ts', { ...env, SG_DURABLE_STORY: stories.join(',') })) return false;
@@ -50,6 +69,7 @@ const capture = (): boolean => {
 };
 const cards: readonly StudioCard[] = [
     ...HERO_SHOTS.map((shot) => ({ id: shot.id, title: shot.title, question: shot.question, file: shot.file })),
+    ...CONSOLE_SHOTS.map((shot) => ({ id: shot.id, title: shot.title, question: shot.question, file: shot.file })),
     ...STORIES.map((story) => ({ id: story.id, title: story.title, question: story.question, file: story.file })),
 ];
 const sheet = (): void =>

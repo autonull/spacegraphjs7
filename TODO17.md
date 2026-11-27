@@ -346,6 +346,15 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
 - `test/terminal.test.ts`: 42 tests. Full suite: 200 files / 1343 tests. Pi Durable `verify:fast`:
   79 E2E passing (5 skipped), including cross-tab console comparison. Root `check` and `test:exports`
   pass.
+- **Console screenshots (2026-11-27).** `CONSOLE_SHOTS` in `app/pi-durable/src/shots.ts` defines seven
+  capture states: `console-turn`, `console-selection`, `console-retro`, `console-history`,
+  `console-approval`, `console-fork`, `console-narrow`. `tests/console-screenshots.spec.ts` boots the
+  underlying scenario, switches to the transcript view, then applies palette/selection/`asOf` state
+  before capture. `pnpm --filter pi-durable shots:console` regenerates them into
+  `docs/screenshots/pi-durable/console/` and rebuilds the screenshot studio. `shot.ts` accepts
+  `console` as a group selector and individual console shot ids.
+- Console lines now fall back to node label/kind when a fact has no `text`, so tool and boundary rows
+  stay readable; gutter markers use raw HTML to avoid heavy node frames.
 
 ## 10. Next session entry points
 
@@ -354,4 +363,6 @@ directories. Read the matching skill in `.opencode/skills` before writing tests 
    scrubbing in the console UI rather than only through hooks.
 2. **Verification for future console changes.** Tier 1: package `typecheck`, `pi-durable check:fast`,
    `test:exports`. Tier 2: root `pnpm run check`. Tier 3: `pi-durable verify:fast` and demo
-   `transcript.spec.ts`; regenerate story screenshots only when shape changes.
+   `transcript.spec.ts`. Regenerate `shots:console` when console shape, palette, selection or camera
+   behaviour changes; regenerate story screenshots only when their shape changes. Review the studio at
+   `docs/screenshots/pi-durable-index.html`.

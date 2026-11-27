@@ -32,5 +32,46 @@ export const SHOTS: readonly Shot[] = SCENARIOS.map((entry) => ({
 
 export const shotById = (id: string | null | undefined): Shot | undefined => findShotByID(SHOTS, id);
 
+/** A console shot boots a normal scenario, then drives the console into a showcase state. */
+export type ConsoleShot = Shot & {
+    /** Scenario id passed to `?shot=`; the shot id itself is only a capture label. */
+    readonly source: string;
+    readonly palette?: string;
+    /** Indices of the first and last line to select, resolved from the rendered console. */
+    readonly selection?: readonly [number, number];
+    /** Extra query parameters, e.g. `asOf=2`. */
+    readonly query?: string;
+};
+
+const consoleShot = (
+    id: string,
+    source: string,
+    overrides: Partial<ConsoleShot> = {},
+): ConsoleShot => {
+    const base = shotById(source)!;
+    return {
+        ...base,
+        id,
+        source,
+        file: `pi-durable/console/${id}.png`,
+        title: `${base.title} — console`,
+        rail: 'transcript',
+        ...overrides,
+    };
+};
+
+export const CONSOLE_SHOTS: readonly ConsoleShot[] = [
+    consoleShot('console-turn', 'basic-turn'),
+    consoleShot('console-selection', 'basic-turn', { selection: [0, 3] }),
+    consoleShot('console-retro', 'basic-turn', { palette: 'retro', selection: [1, 4] }),
+    consoleShot('console-history', 'basic-turn', { query: 'asOf=2' }),
+    consoleShot('console-approval', 'sleeping-approval', { palette: 'amber' }),
+    consoleShot('console-fork', 'fork-tabs', { selection: [0, 2] }),
+    consoleShot('console-narrow', 'basic-turn', {
+        viewport: { width: 1000, height: 700 },
+        selection: [0, 2],
+    }),
+];
+
 const HERO_IDS = new Set(['basic-turn', 'sleeping-approval', 'fork-tabs', 'resumed']);
 export const HERO_SHOTS = SHOTS.filter((shot) => HERO_IDS.has(shot.id));

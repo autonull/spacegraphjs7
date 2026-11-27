@@ -2602,7 +2602,7 @@ export class DurableHost {
                             size: [12, 12, 1],
                             status: 'warning',
                             interactive: false,
-                            data: { terminalGutter: true },
+                            data: { terminalGutter: true, useRawHtml: true },
                         });
                     });
                 });
@@ -2661,7 +2661,7 @@ export class DurableHost {
                     kind: node.kind,
                     status: String(node.data?.['status'] ?? 'complete'),
                     label: labelForNode(node),
-                    text: dataText(node),
+                    text: dataText(node) || labelForNode(node) || node.kind,
                     turn: typeof node.data?.['turn'] === 'number' ? node.data['turn'] : undefined,
                     at: typeof node.data?.['at'] === 'number' ? node.data['at'] : undefined,
                     octave: 0,

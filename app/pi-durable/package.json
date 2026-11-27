@@ -16,6 +16,7 @@
         "verify:visual": "playwright test --config playwright.config.ts tests/screenshots.spec.ts tests/vision.spec.ts",
         "shot": "tsx scripts/shot.ts",
         "shots:all": "tsx scripts/shot.ts all",
+        "shots:console": "tsx scripts/shot.ts console",
         "shots:focus": "tsx scripts/shot.ts basic-turn,sleeping-approval,fork-tabs,resumed",
         "shots:stories": "tsx scripts/shot.ts stories",
         "shots:watch": "tsx scripts/shot.ts --watch"
