@@ -1155,7 +1155,7 @@ describe('console command catalog', () => {
         expect(commands.list().map((command) => command.id)).toEqual([
             'copy', 'export', 'search', 'filter', 'read', 'zoom',
             'pin.live', 'pin.snapshot',
-            'pin.matches', 'profile', 'asOf', 'fork', 'why', 'monitor', 'lod', 'grow', 'embed',
+            'pin.matches', 'profile', 'asOf', 'fork', 'why', 'monitor', 'lod', 'graph', 'grow', 'embed',
             'autoZoom', 'regions',
             'read.lens',
             'lens.focus', 'bookmark', 'help',

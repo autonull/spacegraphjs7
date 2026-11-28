@@ -51,7 +51,6 @@ import {
 } from 'spacegraphjs/widgets';
 import {
     mountReading,
-    readingHTML,
     readingOrder,
     type ReadingController,
     type ReadingNode,
@@ -746,6 +745,7 @@ export class DurableHost {
         target: NODES_AREA_DENSITY,
     };
     #readerController: ReadingController | undefined;
+    #consoleReadingController: ReadingController | undefined;
     #terminalController: TerminalController | undefined;
     #terminalCamera: TerminalCameraController | undefined;
     #replay: TerminalReplayHandle | undefined;
@@ -2307,11 +2307,11 @@ export class DurableHost {
     }
 
     consoleHelp(): string {
-        return this.#commands()
+        const commands = this.#commands()
             .list()
             .filter((command) => command.group === 'console' || command.group === 'grammar')
-            .map((command) => `${command.hint ?? `/${command.label}`} — ${command.label}`)
-            .join('\n');
+            .map((command) => `${command.hint ?? `/${command.label}`} — ${command.label}`);
+        return [...commands, 'x — grow a graph from the focused line', 'Escape — collapse graph, detail or reading'].join('\n');
     }
 
     #completeConsole(prefix: string, matches: readonly Command[]): void {
@@ -2663,9 +2663,19 @@ export class DurableHost {
             scope,
         );
         const sections = readingOrder(nodes, []);
-        el('console-reading-body').innerHTML = readingHTML(sections, {
-            title: `Console — ${scope}`,
-        });
+        this.#consoleReadingController?.destroy();
+        this.#consoleReadingController = mountReading(
+            el('console-reading-body'),
+            sections,
+            {
+                title: `Console — ${scope}`,
+                announce: (message) => this.announce(message),
+                onReveal: (id) => {
+                    this.closeConsoleReading();
+                    this.consoleFocus(`line:${id}`);
+                },
+            },
+        );
         el('console-reading').hidden = false;
         this.#openOverlay('reading', el('console-reading'), el<HTMLButtonElement>('console-reading-close'), () =>
             this.closeConsoleReading(),
@@ -2675,6 +2685,8 @@ export class DurableHost {
     }
 
     closeConsoleReading(): void {
+        this.#consoleReadingController?.destroy();
+        this.#consoleReadingController = undefined;
         this.#closeOverlay('reading', el('console-reading'));
     }
 
