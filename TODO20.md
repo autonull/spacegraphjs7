@@ -1,9 +1,10 @@
 # TODO20 — From experiments to agentic development surfaces
 
-> **Status: O1 landed (2026-11-28).** Extends `TODO19.md` (complete). This plan records the
+> **Status: O1 + O2 landed (2026-11-28).** Extends `TODO19.md` (complete). This plan records the
 > experiment methodology developed across seventeen demos and turns the strongest results into a
-> promotion queue. O1 (promotion template + generated labs index) and the cheap process upgrades in
-> §12 are in place; no promotion in §5–§6 has landed as library code yet. Continue from §11.
+> promotion queue. O1 (promotion template + generated labs index) and O2 (`GraphWindow` with a Pi
+> Durable labs-mode consumer) are in place, along with the cheap process upgrades in §12. O3–O8 have
+> not landed. Continue from §11.
 
 ## 0. Outcome
 
@@ -222,8 +223,13 @@ and agent state kept only in DOM. The kernel remains the durable store; layouts 
 All seventeen demos are in `app/demo/html/**`; the shared experiment style is
 `app/demo/html/interaction/lab.css`; the catalogue and lift lines are in
 `docs/console-experiments.md`. The generated registry lists 59 HTML demos (58 experiments/hosts plus
-the labs index). Promotion work lands in small commits; no library or Pi Durable code has changed.
+the labs index). Promotion work lands in small commits; O2 is the first library/package change.
 
+- **O2 (2026-11-28):** `packages/window-manager/src/graph-window.ts` is the pure shell and reducer;
+  `graph-window.css` carries container-query type, square corners and reduced-motion snapping. Demo 14
+  and Pi Durable labs mode (`?labs=1`) are the two consumers. Pi Durable derives window tabs from committed
+  kernel facts and keeps drag/resize in `HtmlNode`; its E2E drives tab switch, taskbar focus, resize
+  scaling and compact band. Pattern card: `packages/window-manager/GRAPH-WINDOW.md`.
 - **O1 (2026-11-28):** `docs/promotion-template.md` defines the handoff; `app/demo/src/lab-catalogue.ts`
   is the single experiment catalogue; `app/demo/html/labs.html` groups all seventeen demos by
   application and links each to its Lift line through the generated registry. Every demo source has
@@ -252,7 +258,7 @@ the labs index). Promotion work lands in small commits; no library or Pi Durable
 | # | Outcome | Status | First consumer |
 | - | ------- | ------ | -------------- |
 | 1 | Promotion template + labs index | done (O1) | `docs/promotion-template.md` + labs index |
-| 2 | `GraphWindow` | open | Pi Durable view, demo 14 |
+| 2 | `GraphWindow` | done (O2) | Pi Durable `?labs=1`, demo 14 |
 | 3 | `AgentTeamView`, `SteerEdge`, `TeamScope` | open | Pi Durable team view, demo 16 |
 | 4 | `SessionAtlas`, `ReplayScrubber` | open | Pi Durable session view, demo 17 |
 | 5 | `InnerWidget`, `FoldableNode` | open | Pi Durable agent card, demos 10/15 |
@@ -260,9 +266,10 @@ the labs index). Promotion work lands in small commits; no library or Pi Durable
 | 7 | Multi-agent tabs, fork and diff | open | Pi Durable tabs, demo 16 |
 | 8 | Ergonomics and a11y parity | open | every promoted component |
 
-Gate status: `JOB:` lines, Lift links and path resolution are enforced by `check:labs`. Keyboard and
-reduced-motion coverage is **not** universal across the seventeen demos; §12 tracks it as a per-component
-promotion gate, not an O1 condition. §10 is the authoritative queue status.
+Gate status: `JOB:` lines, Lift links and path resolution are enforced by `check:labs`. The promoted
+`GraphWindow` has keyboard buttons, a reduced-motion CSS snap and E2E coverage in both consumers.
+Keyboard and reduced-motion coverage is **not** universal across the other sixteen demos; §12 tracks
+it as a per-component promotion gate. §10 is the authoritative queue status.
 
 ## 11. Fresh-session handoff
 
@@ -276,7 +283,7 @@ Read these first, in order:
    primitives.
 5. `AGENTS.md` at both repo roots for the repository rules.
 
-Suggested first move: **O2** (O1 is done). Do not start by rewriting Pi Durable's host; extract a
+Suggested first move: **O3** (O1 and O2 are done). Do not start by rewriting Pi Durable's host; extract a
 small pure model from demo 14, give it a unit test and a typed component, then wire one Pi Durable
 view. Keep every experiment runnable until its second consumer passes E2E.
 
@@ -309,8 +316,9 @@ Landed with O1: **job statement** (`JOB:` in all seventeen demo headers), **API 
 **rejected-ideas log** (`docs/console-experiments.md`), and **executable docs** (`pnpm run check:labs`).
 Remaining priorities: **keyboard/reduced-motion gate** — needs a real keyboard path and a reduced-motion
 snap per demo, not a source-text assertion, so enforce it when each component is promoted — and **labs
-mode in Pi Durable** — needs two promoted components plus a host decision on which committed kernel
-facts they read. The latter is the only upgrade that tests patterns against real data.
+mode in Pi Durable** — O2 mounted the first pattern (`GraphWindow`) behind `?labs=1` against committed
+kernel facts; a second promoted pattern is still needed before the experiment is retired. The keyboard
+gate must also be extended to the remaining demos rather than inferred from a source-text check.
 
 ## 13. Closure
 

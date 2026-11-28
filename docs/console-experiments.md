@@ -211,6 +211,11 @@ Pi Durable session view where the transcript, graph and time travel share one pr
 | `GraphLens` | 9 | Second-camera magnifier for dense team or session graphs |
 | `EdgeTravel` | 13, 17 | Causal edges are navigable paths, not decoration |
 
+`GraphWindow` is promoted: its pure shell and pattern card live in
+`packages/window-manager/src/graph-window.ts` and
+[`GRAPH-WINDOW.md`](../packages/window-manager/GRAPH-WINDOW.md). Demo 14 and Pi Durable labs mode
+(`?labs=1`) are its two consumers.
+
 Suggested adoption order for Pi Durable: (1) per-agent graph windows and a team toggle, (2) steer and
 approve edges, (3) the session atlas with replay, (4) team scope and lens as density grows. Each step
 reuses the terminal projection and kernel facts; none introduces a second store.

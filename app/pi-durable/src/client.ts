@@ -1,3 +1,4 @@
+import '../../../packages/window-manager/src/graph-window.css';
 import { addEdge, addNode } from '@spacegraphjs/kernel';
 import { mountComposer, type ComposerController } from 'spacegraphjs/composer';
 import {
@@ -41,7 +42,8 @@ const initialRung = isRung(rung) ? rung : undefined;
 const offline = Boolean(shot) || Boolean(scenario) || Boolean(replayID)
     || asOf !== undefined || params.get('offline') === '1';
 const registry = new TabRegistry();
-const host = new DurableHost(registry, offline, shot, seed, initialRung);
+const labs = params.get('labs') === '1';
+const host = new DurableHost(registry, offline, shot, seed, initialRung, labs);
 const readOnly = (action: string): boolean => {
     if (!observer && asOf === undefined) return false;
     host.announce(`read-only — ${action} through the owner server`);

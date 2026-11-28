@@ -12,10 +12,12 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js",
             "default": "./dist/index.js"
-        }
+        },
+        "./graph-window.css": "./src/graph-window.css"
     },
     "files": [
         "dist",
+        "src/graph-window.css",
         "README.md"
     ],
     "scripts": {

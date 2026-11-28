@@ -43,6 +43,14 @@ import {
 import { EventEmitter, type NodeSpec, type SpaceGraphEvents } from 'spacegraphjs';
 import { HtmlNode } from 'spacegraphjs/nodes';
 import { ScopedOverlay } from 'spacegraphjs/overlays';
+import {
+    graphWindowAction,
+    graphWindowHTML,
+    graphWindowTaskbarHTML,
+    reduceGraphWindow,
+    type GraphWindowBand,
+    type GraphWindowState,
+} from '../../../packages/window-manager/src/graph-window';
 import { isEditableTarget } from 'spacegraphjs/utils';
 import {
     createInstrumentKit,
@@ -771,6 +779,9 @@ export class DurableHost {
     #lodOverride: string | undefined;
     #growth: TerminalGrowth | undefined;
     #consoleEmbedded = false;
+    readonly #labs: boolean;
+    #windowState = new Map<string, GraphWindowState>();
+    #windowMax = false;
     #hoveredLine: string | undefined;
     #consoleModel: RenderModel = { nodes: [], edges: [] };
     #a11yLayer: AccessibilityLayer | undefined;
@@ -800,12 +811,14 @@ export class DurableHost {
         shot?: string,
         seed = 'fixed',
         rung?: Rung,
+        labs = false,
     ) {
         this.registry = registry;
         this.#offline = offline;
         this.#shot = shot;
         this.#seed = seed;
         this.#rung = rung && isRung(rung) ? rung : this.#rung;
+        this.#labs = labs;
     }
 
     async mount(container: HTMLElement): Promise<void> {
@@ -826,6 +839,7 @@ export class DurableHost {
             if (changed) {
                 this.#consoleLOD = lod;
                 if (this.#viewName === 'transcript') this.#terminalController?.refresh();
+                if (this.#labs) requestAnimationFrame(() => this.refresh());
             }
             if (this.#viewName === 'transcript') {
                 if (changed) this.#playConsoleFidelity(previous, lod);
@@ -850,6 +864,12 @@ export class DurableHost {
         });
         el('canvas').addEventListener('pointerdown', (event) => {
             const target = event.target as HTMLElement;
+            const action = target.closest<HTMLElement>('[data-gw-action]');
+            if (action?.dataset['gwAction']) {
+                event.stopPropagation();
+                this.#windowAction(action.dataset['gwAction'], action.dataset['gwWindow'] ?? '');
+                return;
+            }
             const chip = target.closest<HTMLElement>('[data-grow-id]');
             if (chip?.dataset['growId']) {
                 event.stopPropagation();
@@ -862,6 +882,7 @@ export class DurableHost {
                 this.consoleGrow();
             }
         });
+        if (this.#labs) this.#mountLabTaskbar();
         this.renderGlossary();
         this.renderLegend();
         this.renderRungs();
@@ -1125,10 +1146,11 @@ export class DurableHost {
             },
         );
         const embedded = this.#embedConsole(model);
-        this.#baseModel = embedded;
+        const labModel = this.#labs ? this.#embedLabWindow(embedded, kernel, tab.id) : embedded;
+        this.#baseModel = labModel;
         const consoleDiff = this.#viewName === 'diff' && this.#consoleCompare;
         if (this.#viewName !== 'transcript' && !consoleDiff)
-            this.#setModel(this.#emphasised(embedded));
+            this.#setModel(this.#emphasised(labModel));
         this.#edgeLabels = model.edges.flatMap((edge) => (edge.label ? [edge.label] : []));
         if (!this.#fitted && presented.nodes.length) {
             this.#fitted = true;
@@ -1141,6 +1163,7 @@ export class DurableHost {
         this.renderTimeline(kernel.nodes, kernel.edges);
         this.renderView();
         this.renderReader(full);
+        if (this.#labs) this.#renderLabTaskbar(tab.id);
         if (consoleDiff) this.#renderConsoleDiff(full);
         this.opsCount = kernel.nodes.length + kernel.edges.length;
     }
@@ -2047,6 +2070,149 @@ export class DurableHost {
               ]
             : model.edges;
         return { ...model, nodes: [...model.nodes, node], edges };
+    }
+
+    #windowBand(): GraphWindowBand {
+        const band = this.#consoleLOD;
+        return band === 'dot' || band === 'glyph' || band === 'card' || band === 'detail'
+            ? band
+            : 'detail';
+    }
+
+    #windowBody(tab: string, kernel: Kernel, title: string, windowID: string): string {
+        const rows = (items: readonly string[]) =>
+            items.map((item) => `<div class="gw-row">· ${escapeHTML(item)}</div>`).join('');
+        if (tab === 'facts')
+            return rows(kernel.nodes.slice(0, 6).map((node) => `${node.kind} · ${node.label}`));
+        if (tab === 'edges') {
+            const counts = new Map<string, number>();
+            for (const edge of kernel.edges)
+                counts.set(edge.kind, (counts.get(edge.kind) ?? 0) + 1);
+            return rows([...counts].map(([kind, count]) => `${kind} · ${count}`));
+        }
+        if (tab === 'actions')
+            return `<div class="gw-actions">${[
+                ['center', 'CENTER'],
+                ['lens', 'LENS'],
+                ['max', 'MAX'],
+                ['close', 'CLOSE'],
+            ]
+                .map(([action, label]) => graphWindowAction(action, windowID, label))
+                .join('')}</div>`;
+        return `<div class="gw-row"><b>${escapeHTML(title)}</b><span class="gw-pill">${kernel.nodes.length} facts</span></div>${rows(
+            kernel.nodes.slice(0, 3).map((node) => `${node.kind} · ${node.label}`),
+        )}`;
+    }
+
+    #embedLabWindow(model: RenderModel, kernel: Kernel, tabID: string): RenderModel {
+        const parent = model.nodes.find((node) => node.kind === 'conversation');
+        if (!parent) return model;
+        const id = `lab-window:${tabID}`;
+        const state = this.#windowState.get(id) ?? {
+            tab: 'detail',
+            focused: false,
+            hidden: false,
+        };
+        this.#windowState.set(id, state);
+        if (state.hidden) return model;
+        const node: RenderNode = {
+            id,
+            kind: 'lab-window',
+            label: `Session — ${parent.label}`,
+            shape: 'card',
+            html: graphWindowHTML({
+                id,
+                title: parent.label,
+                status: `${kernel.nodes.length} facts`,
+                tabs: ['detail', 'facts', 'edges', 'actions'],
+                activeTab: state.tab,
+                focused: state.focused,
+                band: this.#windowBand(),
+                body: (tab) => this.#windowBody(tab, kernel, parent.label, id),
+            }),
+            position: [parent.position[0] + 380, parent.position[1], parent.position[2]],
+            size: this.#windowMax ? [520, 340, 1] : [340, 240, 1],
+            status: 'neutral',
+            interactive: true,
+            data: { labWindow: true, useRawHtml: true },
+        };
+        return {
+            ...model,
+            nodes: [...model.nodes, node],
+            edges: [
+                ...model.edges,
+                {
+                    id: `${parent.id}->${id}`,
+                    source: parent.id,
+                    target: id,
+                    kind: 'contains',
+                    confidence: 'structural',
+                    data: { arrowhead: 'target' },
+                },
+            ],
+        };
+    }
+
+    #mountLabTaskbar(): void {
+        const bar = document.createElement('div');
+        bar.id = 'lab-taskbar';
+        bar.className = 'gw-taskbar';
+        el('stage').append(bar);
+        bar.addEventListener('pointerdown', (event) => {
+            const button = (event.target as HTMLElement).closest<HTMLElement>('[data-gw-focus]');
+            if (!button?.dataset['gwFocus']) return;
+            event.stopPropagation();
+            this.#windowAction('focus', button.dataset['gwFocus']);
+        });
+    }
+
+    #renderLabTaskbar(tabID: string): void {
+        const bar = document.getElementById('lab-taskbar');
+        if (!bar) return;
+        const id = `lab-window:${tabID}`;
+        const state = this.#windowState.get(id);
+        const title = this.#presented.nodes.find((node) => node.kind === 'conversation')?.label;
+        bar.innerHTML = graphWindowTaskbarHTML([
+            {
+                id,
+                title: `Session — ${title ?? tabID}`,
+                focused: state?.focused ?? false,
+                hidden: state?.hidden ?? false,
+            },
+        ]);
+    }
+
+    #windowAction(action: string, windowID: string): void {
+        const id = windowID.startsWith('lab-window:') ? windowID : `lab-window:${windowID}`;
+        const state = this.#windowState.get(id) ?? {
+            tab: 'detail',
+            focused: false,
+            hidden: false,
+        };
+        const parentID = id.slice('lab-window:'.length);
+        if (action.startsWith('tab:')) {
+            const tab = action.slice(4);
+            this.#windowState.set(id, reduceGraphWindow(state, { type: 'tab', tab }));
+            this.announce(`Session window tab: ${tab}`);
+        } else if (action === 'focus') {
+            this.#windowState.set(id, reduceGraphWindow(state, { type: 'focus' }));
+            this.focus(parentID);
+            this.announce('Session window focused');
+            return;
+        } else if (action === 'max') {
+            this.#windowMax = !this.#windowMax;
+            this.announce(this.#windowMax ? 'Session window maximized' : 'Session window restored');
+        } else if (action === 'close') {
+            this.#windowState.set(id, reduceGraphWindow(state, { type: 'hide' }));
+            this.announce('Session window closed');
+        } else if (action === 'lens') {
+            this.toggleFocusLens(parentID);
+            return;
+        } else {
+            this.focus(parentID);
+            return;
+        }
+        this.refresh();
     }
 
     #syncConsoleOverlays(): void {

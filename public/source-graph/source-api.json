@@ -11057,6 +11057,84 @@
       "imports": []
     },
     {
+      "id": "packages/window-manager/src/graph-window",
+      "path": "packages/window-manager/src/graph-window.ts",
+      "packageId": "@spacegraphjs/window-manager",
+      "symbols": [
+        {
+          "name": "GraphWindowBand",
+          "kind": "type",
+          "fileId": "packages/window-manager/src/graph-window",
+          "line": 1,
+          "signature": "export type GraphWindowBand = 'dot' | 'glyph' | 'card' | 'detail';"
+        },
+        {
+          "name": "WINDOW_BANDS",
+          "kind": "const",
+          "fileId": "packages/window-manager/src/graph-window",
+          "line": 3,
+          "signature": "WINDOW_BANDS: readonly GraphWindowBand[] = ['dot', 'glyph', 'card', 'detail']"
+        },
+        {
+          "name": "GraphWindowProps",
+          "kind": "interface",
+          "fileId": "packages/window-manager/src/graph-window",
+          "line": 5,
+          "signature": "export interface GraphWindowProps {"
+        },
+        {
+          "name": "WindowCard",
+          "kind": "interface",
+          "fileId": "packages/window-manager/src/graph-window",
+          "line": 18,
+          "signature": "export interface WindowCard {"
+        },
+        {
+          "name": "GraphWindowState",
+          "kind": "interface",
+          "fileId": "packages/window-manager/src/graph-window",
+          "line": 25,
+          "signature": "export interface GraphWindowState {"
+        },
+        {
+          "name": "GraphWindowEvent",
+          "kind": "type",
+          "fileId": "packages/window-manager/src/graph-window",
+          "line": 31,
+          "signature": "export type GraphWindowEvent ="
+        },
+        {
+          "name": "reduceGraphWindow",
+          "kind": "const",
+          "fileId": "packages/window-manager/src/graph-window",
+          "line": 36,
+          "signature": "reduceGraphWindow = ("
+        },
+        {
+          "name": "graphWindowAction",
+          "kind": "const",
+          "fileId": "packages/window-manager/src/graph-window",
+          "line": 57,
+          "signature": "graphWindowAction = (action: string, windowID: string, label: string) =>"
+        },
+        {
+          "name": "graphWindowHTML",
+          "kind": "const",
+          "fileId": "packages/window-manager/src/graph-window",
+          "line": 60,
+          "signature": "graphWindowHTML = (props: GraphWindowProps): string => {"
+        },
+        {
+          "name": "graphWindowTaskbarHTML",
+          "kind": "const",
+          "fileId": "packages/window-manager/src/graph-window",
+          "line": 77,
+          "signature": "graphWindowTaskbarHTML = (cards: readonly WindowCard[]): string =>"
+        }
+      ],
+      "imports": []
+    },
+    {
       "id": "packages/window-manager/src/index",
       "path": "packages/window-manager/src/index.ts",
       "packageId": "@spacegraphjs/window-manager",
@@ -11067,6 +11145,30 @@
           "fileId": "packages/window-manager/src/focus-trap",
           "names": [
             "setupFocusTrap"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./graph-window",
+          "fileId": "packages/window-manager/src/graph-window",
+          "names": [
+            "graphWindowAction",
+            "graphWindowHTML",
+            "graphWindowTaskbarHTML",
+            "reduceGraphWindow",
+            "WINDOW_BANDS"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./graph-window",
+          "fileId": "packages/window-manager/src/graph-window",
+          "names": [
+            "GraphWindowBand",
+            "GraphWindowEvent",
+            "GraphWindowProps",
+            "GraphWindowState",
+            "WindowCard"
           ],
           "kind": "export"
         },
