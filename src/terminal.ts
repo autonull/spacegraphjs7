@@ -18,7 +18,11 @@ import {
 } from './inspect/inner-topology';
 import { parseDocument, safeDocumentHTML } from './documents';
 import { escapeHtml, SAFE_HREF } from './markup';
-import { DEFAULT_RUNG_IDS } from './representations/ladder';
+import { DEFAULT_RUNG_IDS, type RungChange } from './representations/ladder';
+import {
+    playRepresentationChanges,
+    type RepresentationPlayback,
+} from './representations/playback';
 import type { ReadingNode } from './reading';
 import type { EdgeSpec, GraphSpec, NodeSpec } from './types';
 import { isEditableTarget } from './utils/DOMUtils';
@@ -733,6 +737,7 @@ export type TerminalPresentation = {
     readonly markdownDetail?: boolean;
     /** Project structural edges and a group frame over the visible console window. */
     readonly graphEdges?: boolean;
+    readonly continuousFidelity?: boolean;
 };
 
 const PRESENTATION_FLAGS = [
@@ -746,6 +751,7 @@ const PRESENTATION_FLAGS = [
     ['focusDimming', 'f'],
     ['markdownDetail', 'm'],
     ['graphEdges', 'g'],
+    ['continuousFidelity', 'v'],
 ] as const satisfies readonly (readonly [keyof TerminalPresentation, string])[];
 
 /** Canonical compact key for addressable presentation flags, e.g. `nsw`. */
@@ -1663,6 +1669,42 @@ export const terminalLODFor = (
                 : ladder.length - 1;
     return ladder[index]!;
 };
+
+/** Continuous fidelity from a scale-domain importance sample; never scales node geometry. */
+export type TerminalFidelity = {
+    readonly opacity: number;
+    readonly stagger: number;
+};
+
+export const terminalFidelity = (
+    importance: number,
+    band: string = 'card',
+): TerminalFidelity => {
+    const value = clamp(importance, 0, 1);
+    const floors: Readonly<Record<string, number>> = { dot: 0.45, glyph: 0.55, card: 0.7, detail: 1 };
+    const floor = floors[band] ?? 0.7;
+    return {
+        opacity: clamp(floor + value * (1 - floor), 0, 1),
+        stagger: band === 'detail' ? 0 : Math.round((1 - value) * 3) * 16,
+    };
+};
+
+/** A stable-id fidelity swap played through the shared representation clock. */
+export const terminalFidelityChange = (
+    from: string,
+    to: string,
+    duration = 0.18,
+): RungChange | undefined =>
+    from === to ? undefined : { id: `fidelity:${to}`, from, to, duration };
+
+export const playTerminalFidelity = (
+    change: RungChange | undefined,
+    interpolate: (value: number) => void,
+    options: { readonly reducedMotion?: boolean } = {},
+): RepresentationPlayback | undefined =>
+    change
+        ? playRepresentationChanges([change], (_, value) => interpolate(value), options)
+        : undefined;
 
 export type TerminalLineHTMLOptions = {
     readonly direction?: 'ltr' | 'rtl';

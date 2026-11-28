@@ -72,6 +72,9 @@ import {
     terminalChapters,
     terminalDetailHTML,
     terminalDetailSize,
+    terminalFidelity,
+    terminalFidelityChange,
+    playTerminalFidelity,
     terminalDiff,
     terminalExport,
     terminalGrid,
@@ -700,6 +703,7 @@ export class DurableHost {
     #layoutName: LayoutName = 'grid';
     #asOf: number | undefined;
     readonly #scale = createScaleDomain();
+    readonly #consoleScale = createScaleDomain();
     get #sample(): ScaleSample {
         return sampleForRung(this.#scale, this.#rung);
     }
@@ -816,13 +820,16 @@ export class DurableHost {
         this.renderer.on('nodeDoubleClick', ({ id }) => this.toggleFocusLens(id));
         this.renderer.on('viewportChange', ({ zoom, center }) => {
             this.patchView({ camera: { zoom, center } });
-            const lod = terminalLODFor(this.#scale.normalizedAt(zoom));
-            if (!this.#lodOverride && lod !== this.#consoleLOD) {
+            const lod = terminalLODFor(this.#consoleScale.normalizedAt(zoom));
+            const previous = this.#consoleLOD;
+            const changed = !this.#lodOverride && lod !== previous;
+            if (changed) {
                 this.#consoleLOD = lod;
-                if (this.#viewName === 'transcript') {
-                    this.#terminalController?.refresh();
-                    requestAnimationFrame(() => this.#fadeConsoleLines());
-                }
+                if (this.#viewName === 'transcript') this.#terminalController?.refresh();
+            }
+            if (this.#viewName === 'transcript') {
+                if (changed) this.#playConsoleFidelity(previous, lod);
+                else this.#applyConsoleFidelity();
             }
             this.regrade();
             this.renderOverview();
@@ -1962,6 +1969,7 @@ export class DurableHost {
     consolePresentation(presentation: TerminalPresentation): TerminalPresentation {
         Object.assign(this.#consolePresentation, presentation);
         this.refresh();
+        if (this.#viewName === 'transcript') this.#applyConsoleFidelity();
         return this.#consolePresentation;
     }
 
@@ -1976,6 +1984,7 @@ export class DurableHost {
     /** Pin a fidelity band, or `auto` to follow camera zoom again. */
     consoleLOD(band?: string): string {
         if (band === undefined) return this.#lodOverride ?? this.#consoleLOD;
+        const previous = this.#lodOverride ?? this.#consoleLOD;
         if (band === 'auto') {
             this.#lodOverride = undefined;
             this.#consoleLOD = terminalLODFor(
@@ -1990,7 +1999,7 @@ export class DurableHost {
         }
         Object.assign(this.#consolePresentation, { zoomLOD: true });
         this.#terminalController?.refresh();
-        requestAnimationFrame(() => this.#fadeConsoleLines());
+        this.#playConsoleFidelity(previous, this.#consoleLOD);
         this.announce(`Console fidelity: ${this.#consoleLOD}`);
         return this.#consoleLOD;
     }
@@ -2105,6 +2114,45 @@ export class DurableHost {
             )
             .join('');
         return `<div class="sg-grow" data-seed="${escapeHTML(growth.seed)}"><div class="sg-grow-head"><strong>${escapeHTML(growth.seed)}</strong><span class="sg-grow-count">${growth.chips.length} links</span><button type="button" class="sg-grow-close" aria-label="Collapse graph">×</button></div><div class="sg-grow-canvas"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${spokes}</svg>${chips}</div></div>`;
+    }
+
+    /** Continuous scale-domain opacity; the camera already owns geometry, so sizes stay fixed. */
+    #applyConsoleFidelity(): void {
+        const canvas = el('canvas');
+        if (!this.#consolePresentation.continuousFidelity) {
+            canvas.style.removeProperty('--tg-fidelity-opacity');
+            return;
+        }
+        const sample = this.#consoleScale.sample(
+            this.#consoleScale.normalizedAt(this.renderer.getViewport().zoom),
+        );
+        canvas.style.setProperty(
+            '--tg-fidelity-opacity',
+            String(terminalFidelity(sample.importance, this.#consoleLOD).opacity),
+        );
+    }
+
+    /** Stable-id band swaps use the shared playback clock; reduced motion snaps to the final frame. */
+    #playConsoleFidelity(from: string, to: string): void {
+        if (!this.#consolePresentation.continuousFidelity) {
+            requestAnimationFrame(() => this.#fadeConsoleLines());
+            return;
+        }
+        const sample = this.#consoleScale.sample(
+            this.#consoleScale.normalizedAt(this.renderer.getViewport().zoom),
+        );
+        const before = terminalFidelity(sample.importance, from).opacity;
+        const after = terminalFidelity(sample.importance, to).opacity;
+        const canvas = el('canvas');
+        playTerminalFidelity(
+            terminalFidelityChange(from, to),
+            (value) =>
+                canvas.style.setProperty(
+                    '--tg-fidelity-opacity',
+                    String(before + (after - before) * value),
+                ),
+            { reducedMotion: reducedMotion() },
+        );
     }
 
     #fadeConsoleLines(): void {

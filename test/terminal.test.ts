@@ -9,6 +9,9 @@ import {
     terminalFocusWeights,
     terminalDetailSize,
     terminalEdges,
+    terminalFidelity,
+    terminalFidelityChange,
+    playTerminalFidelity,
     terminalGroup,
     terminalColumns,
     terminalLODFor,
@@ -1360,6 +1363,30 @@ describe('reading lens and profiles', () => {
         ]);
         expect(terminalProfile('big-text').presentation.wrap).toBe(true);
         expect(terminalProfile('missing').id).toBe('logs');
+    });
+});
+
+describe('continuous fidelity', () => {
+    it('derives opacity and rhythm from scale importance without changing geometry', () => {
+        expect(terminalFidelity(0, 'dot').opacity).toBeLessThan(terminalFidelity(1, 'detail').opacity);
+        expect(terminalFidelity(1, 'detail').opacity).toBe(1);
+        expect(terminalFidelity(1, 'detail').stagger).toBe(0);
+        expect(terminalFidelity(0.5, 'card').stagger).toBeGreaterThan(0);
+    });
+
+    it('plays stable-id band swaps and snaps under reduced motion', () => {
+        expect(terminalFidelityChange('card', 'card')).toBeUndefined();
+        const change = terminalFidelityChange('dot', 'card', 0.2);
+        expect(change).toEqual({ id: 'fidelity:card', from: 'dot', to: 'card', duration: 0.2 });
+        const values: number[] = [];
+        const playback = playTerminalFidelity(change, (value) => values.push(value));
+        playback?.advance(0.1);
+        expect(values.length).toBe(1);
+        playback?.finish();
+        expect(values.at(-1)).toBe(1);
+        const snapped: number[] = [];
+        expect(playTerminalFidelity(change, (value) => snapped.push(value), { reducedMotion: true })?.done).toBe(true);
+        expect(snapped).toEqual([1]);
     });
 });
 

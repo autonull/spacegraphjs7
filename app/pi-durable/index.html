@@ -97,7 +97,8 @@
             .sg-terminal-line { --line-accent: var(--muted); display: flex; align-items: baseline; gap: 8px;
                 width: 100%; height: 100%; box-sizing: border-box; overflow: hidden; color: var(--text);
                 overflow-wrap: anywhere; padding: 0 8px; border: 1px solid transparent; border-radius: 0;
-                font: 13px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+                font: 13px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                opacity: var(--tg-fidelity-opacity, 1); }
             .sg-terminal-line { transition: border-color .14s ease-out, background-color .14s ease-out; }
             .sg-terminal-line:hover, .sg-terminal-line:focus-visible {
                 border-color: var(--line); background: color-mix(in srgb, var(--panel) 70%, transparent); }
