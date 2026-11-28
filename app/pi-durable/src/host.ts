@@ -299,6 +299,9 @@ const THEME: RenderTheme = themeFromDesignTokens(DURABLE_TOKENS, {
     defaults: { ...DEFAULT_THEME, fontSize: 15 },
 });
 
+/** Derived monitors follow failed committed lines, not a literal word in their text. */
+const CONSOLE_MONITOR_FACET = 'status:failed';
+
 const CONSOLE_GRID = terminalGrid({
     charWidth: 7.4,
     lineHeight: 18,
@@ -2157,11 +2160,9 @@ export class DurableHost {
         });
         action('filter', (rest) => {
             this.setView('transcript');
-            this.consoleSelect({
-                ...this.#consoleSelector,
-                filter: rest ? (line) => line.kind === rest : undefined,
-            });
-            this.announce(rest ? `Filtering console by ${rest}` : 'Console filter cleared');
+            const facet = rest.trim() || undefined;
+            this.consoleSelect({ ...this.#consoleSelector, filter: undefined, facet });
+            this.announce(facet ? `Filtering console by ${facet}` : 'Console filter cleared');
         });
         action('read', (rest) => this.readInTranscript(rest || this.#terminalController?.tail()));
         action('zoom', (rest) => {
@@ -2414,9 +2415,13 @@ export class DurableHost {
     #refreshConsoleSidecar(): void {
         const container = el('console-sidecar');
         const lines = this.#terminalController?.lines() ?? [];
-        const source = this.#consoleSelector.search
+        const source: readonly TerminalSpan[] = this.#consoleSelector.search
             ? this.#searchMatches()
-            : terminalDerived(lines, { search: 'error' }).matches;
+            : terminalDerived(lines, { facet: CONSOLE_MONITOR_FACET }).lines.map((line) => ({
+                  lineID: line.id,
+                  start: 0,
+                  end: line.text.length,
+              }));
         if (!this.#monitorEnabled && !this.#consoleSelector.search) {
             container.hidden = true;
             this.#consoleKit?.refresh([]);

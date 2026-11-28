@@ -647,11 +647,67 @@ export type TerminalSelector = {
     readonly rows?: TerminalWindow;
     readonly columns?: number;
     readonly filter?: (line: TerminalLine) => boolean;
+    /** Committed-field facets applied before search and windowing. */
+    readonly facet?: string | readonly string[];
     readonly search?: string;
     readonly searchOptions?: TerminalSearchOptions;
     readonly maxLines?: number;
     readonly follow?: boolean;
     readonly mode?: TerminalMode;
+};
+
+export const TERMINAL_FACET_KEYS = ['kind', 'status', 'role', 'turn', 'at'] as const;
+export type TerminalFacetKey = (typeof TERMINAL_FACET_KEYS)[number];
+export type TerminalFacetExpr = readonly [TerminalFacetKey, string];
+
+const facetValue = (line: TerminalLine, key: TerminalFacetKey): string | undefined => {
+    const value = line[key];
+    return value === undefined || value === '' ? undefined : String(value);
+};
+
+/** Committed-field counts such as `kind:tool` or `status:failed`, over the supplied lines. */
+export const terminalFacets = (
+    lines: readonly TerminalLine[],
+): ReadonlyMap<string, number> => {
+    const counts = new Map<string, number>();
+    lines.forEach((line) =>
+        TERMINAL_FACET_KEYS.forEach((key) => {
+            const value = facetValue(line, key);
+            if (value === undefined) return;
+            const token = `${key}:${value}`;
+            counts.set(token, (counts.get(token) ?? 0) + 1);
+        }),
+    );
+    return counts;
+};
+
+/** Parse `kind:tool status:failed`; a bare token defaults to the `kind` facet. */
+export const terminalFacetExprs = (
+    facet: string | readonly string[],
+): readonly TerminalFacetExpr[] =>
+    (typeof facet === 'string' ? facet.split(/\s+/) : facet)
+        .map((token) => token.trim())
+        .filter(Boolean)
+        .map((token) => {
+            const separator = token.indexOf(':');
+            return separator < 0
+                ? (['kind', token] as const)
+                : ([token.slice(0, separator), token.slice(separator + 1)] as const);
+        })
+        .filter(
+            (entry): entry is TerminalFacetExpr =>
+                TERMINAL_FACET_KEYS.includes(entry[0] as TerminalFacetKey) && Boolean(entry[1]),
+        );
+
+/** OR within one facet key, AND across keys. */
+export const terminalFacetMatch = (
+    line: TerminalLine,
+    exprs: readonly TerminalFacetExpr[],
+): boolean => {
+    if (!exprs.length) return true;
+    return [...groupBy(exprs, ([key]) => key)].every(([key, values]) =>
+        values.some(([, value]) => facetValue(line, key) === value),
+    );
 };
 
 export type TerminalPresentation = {
@@ -706,9 +762,15 @@ export const terminalSelect = (
     selector: TerminalSelector = {},
 ): TerminalSelection => {
     const filter = selector.filter;
-    const allowed = filter ? lines.filter((line) => filter(line)) : lines;
+    const exprs = selector.facet ? terminalFacetExprs(selector.facet) : [];
+    const allowed = (filter ? lines.filter((line) => filter(line)) : lines).filter((line) =>
+        terminalFacetMatch(line, exprs),
+    );
     const query = selector.search?.trim() ?? '';
-    const matches = terminalSearch(allowed, query, selector.searchOptions);
+    const allowedIDs = new Set(allowed.map((line) => line.id));
+    const matches = terminalSearch(lines, query, selector.searchOptions).filter((match) =>
+        allowedIDs.has(match.lineID),
+    );
     const matched = new Set(matches.map((match) => match.lineID));
     let selected =
         query && selector.mode === 'derived'

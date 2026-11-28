@@ -39,6 +39,9 @@ import {
     terminalCompare,
     terminalDetailHTML,
     terminalExport,
+    terminalFacets,
+    terminalFacetExprs,
+    terminalFacetMatch,
     terminalExcerpt,
     terminalMovePoint,
     terminalFlatten,
@@ -1351,6 +1354,59 @@ describe('reading lens and profiles', () => {
     });
 });
 
+describe('facets', () => {
+    const entries: readonly TerminalLine[] = [
+        { ...line('a', 'alpha'), kind: 'tool', status: 'failed', role: 'assistant', turn: 1, at: 1000 },
+        { ...line('b', 'beta'), kind: 'tool', status: 'complete', role: 'assistant', turn: 1, at: 2000 },
+        { ...line('c', 'gamma'), kind: 'user', status: 'complete', role: 'user', turn: 2 },
+    ];
+
+    it('counts committed fields as addressable tokens', () => {
+        const counts = terminalFacets(entries);
+        expect(counts.get('kind:tool')).toBe(2);
+        expect(counts.get('status:failed')).toBe(1);
+        expect(counts.get('role:assistant')).toBe(2);
+        expect(counts.get('turn:1')).toBe(2);
+        expect(counts.get('at:1000')).toBe(1);
+        expect(counts.has('at:undefined')).toBe(false);
+    });
+
+    it('composes facets with OR in a key and AND across keys before search', () => {
+        const exprs = terminalFacetExprs('kind:tool status:failed');
+        expect(exprs).toEqual([
+            ['kind', 'tool'],
+            ['status', 'failed'],
+        ]);
+        expect(terminalFacetMatch(entries[0]!, exprs)).toBe(true);
+        expect(terminalFacetMatch(entries[1]!, exprs)).toBe(false);
+        expect(
+            terminalSelect(entries, { facet: 'kind:tool status:failed' }).lines.map((entry) => entry.id),
+        ).toEqual(['a']);
+        expect(
+            terminalSelect(entries, { facet: ['kind:tool', 'kind:user'] }).lines,
+        ).toHaveLength(3);
+        expect(
+            terminalSelect(entries, { facet: 'kind:tool', search: 'beta', mode: 'derived' }).lines.map(
+                (entry) => entry.id,
+            ),
+        ).toEqual(['b']);
+        expect(terminalSelect(entries, { facet: 'unknown:x' }).lines).toHaveLength(3);
+    });
+
+    it('keeps search spans global when a facet or filter narrows the lines', () => {
+        const all = [line('skip', 'ignore'), ...entries];
+        const selection = terminalSelect(all, { facet: 'kind:tool', search: 'beta' });
+        expect(selection.matches).toHaveLength(1);
+        expect(selection.matches[0]?.lineID).toBe('b');
+        expect(terminalMatchFlags(all, selection.matches).get('b')).toEqual([[0, 4]]);
+        const filtered = terminalSelect(all, {
+            filter: (entry) => entry.id !== 'skip',
+            search: 'beta',
+        });
+        expect(terminalMatchFlags(all, filtered.matches).get('b')).toEqual([[0, 4]]);
+    });
+});
+
 describe('addressable presentation', () => {
     it('round-trips canonical flags and rejects unknown keys', () => {
         expect(terminalPresentationKey({ lineNumbers: true, wrap: true })).toBe('wn');
@@ -1509,6 +1565,7 @@ describe('selector invariants (fixed seed)', () => {
             );
             const selector: TerminalSelector = {
                 filter: next() > 0.5 ? (entry) => entry.id !== 'l0' : undefined,
+                facet: next() > 0.5 ? (next() > 0.5 ? 'kind:user' : 'status:complete') : undefined,
                 search: next() > 0.5 ? 'error' : undefined,
                 maxLines: 1 + Math.floor(next() * count),
                 follow: next() > 0.5,
@@ -1519,6 +1576,12 @@ describe('selector invariants (fixed seed)', () => {
             expect(selection.hidden.every((entry) => ids.has(entry.id))).toBe(true);
             expect(new Set([...selection.lines, ...selection.hidden]).size).toBe(count);
             expect(selection.matches.every((match) => ids.has(match.lineID))).toBe(true);
+            if (selector.facet)
+                expect(
+                    selection.lines.every((entry) =>
+                        terminalFacetMatch(entry, terminalFacetExprs(selector.facet!)),
+                    ),
+                ).toBe(true);
         }
     });
 });
