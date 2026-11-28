@@ -12,6 +12,13 @@ export const boot = async (page: Page, query = ''): Promise<string[]> => {
     return errors;
 };
 
+/** Boots directly into the transcript console used by the console specs. */
+export const bootConsole = async (page: Page, query = '?shot=basic-turn'): Promise<string[]> => {
+    const errors = await boot(page, query);
+    await call(page, 'setView', 'transcript');
+    return errors;
+};
+
 /** The canvas and the reader are alternate projections of the same fold. */
 export const expectSurface = async (page: Page): Promise<void> => {
     const surface = await page.locator('#reader').isVisible()

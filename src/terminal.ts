@@ -48,22 +48,36 @@ export type TerminalPoint = { readonly nodeID: string; readonly offset: number }
 export type TerminalRange = { readonly anchor: TerminalPoint; readonly focus: TerminalPoint };
 export type TerminalWindow = { readonly start: string; readonly end: string };
 
+const groupBy = <T, K>(values: readonly T[], keyOf: (value: T) => K): Map<K, T[]> => {
+    const grouped = new Map<K, T[]>();
+    values.forEach((value) => {
+        const key = keyOf(value);
+        const list = grouped.get(key) ?? [];
+        list.push(value);
+        grouped.set(key, list);
+    });
+    return grouped;
+};
+
+const pointKey = ({ nodeID, offset }: TerminalPoint): string => `${nodeID}:${offset}`;
+
+const pointFromKey = (value: string | undefined): TerminalPoint | undefined => {
+    if (!value) return undefined;
+    const separator = value.lastIndexOf(':');
+    const offset = Number(value.slice(separator + 1));
+    if (separator < 1 || !Number.isFinite(offset) || offset < 0) return undefined;
+    return { nodeID: value.slice(0, separator), offset };
+};
+
 /** URL-safe range key; ids may contain `:`, so the offset is read after the last separator. */
 export const terminalRangeKey = (range: TerminalRange): string =>
-    `${range.anchor.nodeID}:${range.anchor.offset}~${range.focus.nodeID}:${range.focus.offset}`;
+    `${pointKey(range.anchor)}~${pointKey(range.focus)}`;
 
 export const terminalRangeFromKey = (key: string | undefined): TerminalRange | undefined => {
     if (!key) return undefined;
     const [anchor, focus] = key.split('~');
-    const point = (value: string | undefined): TerminalPoint | undefined => {
-        if (!value) return undefined;
-        const separator = value.lastIndexOf(':');
-        const offset = Number(value.slice(separator + 1));
-        if (separator < 1 || !Number.isFinite(offset) || offset < 0) return undefined;
-        return { nodeID: value.slice(0, separator), offset };
-    };
-    const a = point(anchor);
-    const b = point(focus);
+    const a = pointFromKey(anchor);
+    const b = pointFromKey(focus);
     return a && b ? { anchor: a, focus: b } : undefined;
 };
 
@@ -251,31 +265,23 @@ export type TerminalGap = { readonly after: string; readonly lines: number };
 export const terminalOverlayGaps = (
     overlays: readonly TerminalOverlay[],
     lineUnits = 2,
-): readonly TerminalGap[] => {
-    const counts = new Map<string, number>();
-    overlays
-        .filter((overlay) => overlay.slot === 'gap')
-        .forEach((overlay) =>
-            counts.set(overlay.lineID, (counts.get(overlay.lineID) ?? 0) + 1),
-        );
-    return [...counts].map(([after, count]) => ({ after, lines: count * lineUnits }));
-};
+): readonly TerminalGap[] =>
+    [
+        ...groupBy(
+            overlays.filter((overlay) => overlay.slot === 'gap'),
+            (overlay) => overlay.lineID,
+        ),
+    ].map(([after, entries]) => ({ after, lines: entries.length * lineUnits }));
 
 /** Gutter and margin overlays grouped by the line they annotate, in declaration order. */
 export const terminalSlots = (
     overlays: readonly TerminalOverlay[],
     slot: Exclude<TerminalSlot, 'gap'>,
-): ReadonlyMap<string, readonly TerminalOverlay[]> => {
-    const byLine = new Map<string, TerminalOverlay[]>();
-    overlays
-        .filter((overlay) => overlay.slot === slot)
-        .forEach((overlay) => {
-            const list = byLine.get(overlay.lineID) ?? [];
-            list.push(overlay);
-            byLine.set(overlay.lineID, list);
-        });
-    return byLine;
-};
+): ReadonlyMap<string, readonly TerminalOverlay[]> =>
+    groupBy(
+        overlays.filter((overlay) => overlay.slot === slot),
+        (overlay) => overlay.lineID,
+    );
 
 /** Cumulative world-y shift per id: a gap opens after its anchor and moves only later lines. */
 export const terminalGaps = (
@@ -346,7 +352,7 @@ export const terminalDiff = (
         added: right.filter((line) => !byID.has(line.id)).map((line) => line.id),
         removed: left.filter((line) => !nextIDs.has(line.id)).map((line) => line.id),
         changed: right
-            .filter((line) => byID.get(line.id)?.text !== line.text && byID.has(line.id))
+            .filter((line) => byID.has(line.id) && byID.get(line.id)!.text !== line.text)
             .map((line) => line.id),
     };
 };
@@ -499,7 +505,7 @@ export const terminalPointAtIndex = (
     index: number,
 ): TerminalPoint | undefined => {
     if (!flat.spans.length) return undefined;
-    const at = Math.max(0, Math.min(flat.text.length, Math.floor(index)));
+    const at = clamp(Math.floor(index), 0, flat.text.length);
     const span =
         flat.spans.find((entry) => at >= entry.start && at < entry.end) ??
         flat.spans.find((entry) => at === entry.end) ??
@@ -513,7 +519,7 @@ export const terminalIndexOfPoint = (
 ): number | undefined => {
     const span = flat.spans.find((entry) => entry.lineID === point.nodeID);
     if (!span) return undefined;
-    return span.start + Math.max(0, Math.min(span.end - span.start, Math.floor(point.offset)));
+    return span.start + clamp(Math.floor(point.offset), 0, span.end - span.start);
 };
 
 export const terminalRangeFromIndices = (
@@ -681,32 +687,15 @@ export const terminalConsoleCommands = (
     });
     return new CommandRegistry([
         entry('copy', 'copy', '/copy', ['clipboard'], gate(gates.selection, 'Select lines first')),
-        entry(
-            'export',
-            'export',
-            '/export [markdown|json]',
-            ['save'],
-            gate(gates.lines, 'No console lines'),
-        ),
+        entry('export', 'export', '/export [markdown|json]', ['save'], gate(gates.lines, 'No console lines')),
         entry('search', 'search', '/search <text>', ['find']),
         entry('filter', 'filter', '/filter <kind>', ['scope']),
-        entry(
-            'read',
-            'read',
-            '/read [line]',
-            ['document'],
-            gate(gates.lines, 'No console lines'),
-        ),
+        entry('read', 'read', '/read [line]', ['document'], gate(gates.lines, 'No console lines')),
         entry('zoom', 'zoom', '/zoom <landmark>', ['scale']),
         entry('pin.live', 'pin live', '/pin live', ['follow']),
         entry('pin.snapshot', 'pin snapshot', '/pin snapshot', ['freeze']),
         entry('pin.matches', 'pin matches', '/pin matches', ['snapshot', 'find']),
-        entry(
-            'profile',
-            'profile',
-            '/profile <logs|presentation|high-contrast|big-text>',
-            ['theme'],
-        ),
+        entry('profile', 'profile', '/profile <logs|presentation|high-contrast|big-text>', ['theme']),
         entry('asOf', 'as of', '/as of <seq>', ['asof', 'history']),
         entry('fork', 'fork', '/fork [line]', ['branch'], gate(gates.fork, 'Nothing to fork')),
         entry('why', 'why', '/why', ['provenance']),
@@ -782,24 +771,23 @@ export const terminalSearch = (
         if (!allowed.has(line.id)) return;
         const span = flat.spans[index]!;
         const text = options.caseSensitive ? line.text : line.text.toLowerCase();
+        const hits: (readonly [number, number])[] = [];
         if (pattern) {
             pattern.lastIndex = 0;
             for (let found = pattern.exec(text); found; found = pattern.exec(text)) {
-                matches.push({
-                    lineID: line.id,
-                    start: span.start + found.index,
-                    end: span.start + found.index + found[0].length,
-                });
+                hits.push([found.index, found[0].length]);
                 if (!found[0].length) pattern.lastIndex++;
             }
-            return;
-        }
-        for (let at = text.indexOf(needle); at >= 0; at = text.indexOf(needle, at + needle.length))
+        } else
+            for (let at = text.indexOf(needle); at >= 0; at = text.indexOf(needle, at + needle.length))
+                hits.push([at, needle.length]);
+        hits.forEach(([start, length]) =>
             matches.push({
                 lineID: line.id,
-                start: span.start + at,
-                end: span.start + at + needle.length,
-            });
+                start: span.start + start,
+                end: span.start + start + length,
+            }),
+        );
     });
     return matches;
 };
@@ -847,7 +835,7 @@ export const terminalLensKey = (target: TerminalLensTarget): string => {
         case 'line':
             return `line:${target.id}`;
         case 'column':
-            return `column:${target.id}:${target.offset}`;
+            return `column:${pointKey({ nodeID: target.id, offset: target.offset })}`;
         case 'range':
             return `range:${terminalRangeKey(target.range)}`;
         case 'window':
@@ -865,10 +853,8 @@ export const terminalLensFromKey = (key: string | undefined): TerminalLensTarget
     const value = key.slice(separator + 1);
     if (kind === 'line' && value) return { kind, id: value };
     if (kind === 'column') {
-        const offsetAt = value.lastIndexOf(':');
-        const id = value.slice(0, offsetAt);
-        const offset = Number(value.slice(offsetAt + 1));
-        return id && Number.isFinite(offset) && offset >= 0 ? { kind, id, offset } : undefined;
+        const point = pointFromKey(value);
+        return point ? { kind, id: point.nodeID, offset: point.offset } : undefined;
     }
     if (kind === 'range') {
         const range = terminalRangeFromKey(value);
@@ -883,6 +869,31 @@ export const terminalLensFromKey = (key: string | undefined): TerminalLensTarget
     return undefined;
 };
 
+/** Line ids addressed by a lens target, in console order. */
+export const terminalLensIDs = (
+    target: TerminalLensTarget,
+    ids: readonly string[],
+): readonly string[] => {
+    switch (target.kind) {
+        case 'line':
+        case 'column':
+            return [target.id];
+        case 'range':
+            return terminalRangeIDs(
+                target.range,
+                new Map(ids.map((id, index) => [id, index] as const)),
+            );
+        case 'window':
+            return ids.slice(
+                Math.max(0, ids.indexOf(target.window.start)),
+                target.window.end ? ids.indexOf(target.window.end) + 1 : ids.length,
+            );
+        case 'selection':
+        case 'region':
+            return target.ids;
+    }
+};
+
 /** Bounding rectangle of a lens target in the shared placement space; ids never become coordinates. */
 export const terminalLensRect = (
     layout: TerminalLayout,
@@ -891,20 +902,7 @@ export const terminalLensRect = (
     grid: TerminalGrid = terminalGrid(),
 ): TerminalLensRect | undefined => {
     const ids = lines?.map((line) => line.id) ?? [...layout.placements.keys()];
-    const chosen =
-        target.kind === 'line' || target.kind === 'column'
-            ? [target.id]
-            : target.kind === 'range'
-              ? terminalRangeIDs(
-                    target.range,
-                    new Map(ids.map((id, index) => [id, index] as const)),
-                )
-              : target.kind === 'window'
-                ? ids.slice(
-                      Math.max(0, ids.indexOf(target.window.start)),
-                      target.window.end ? ids.indexOf(target.window.end) + 1 : ids.length,
-                  )
-                : target.ids;
+    const chosen = terminalLensIDs(target, ids);
     const rects = chosen.flatMap((id) => {
         const placement = layout.placements.get(id);
         return placement
@@ -921,7 +919,7 @@ export const terminalLensRect = (
     if (!rects.length) return undefined;
     if (target.kind === 'column') {
         const rect = rects[0]!;
-        const x = rect.x + Math.min(target.offset, rect.width) * grid.charWidth;
+        const x = rect.x + clamp(target.offset, 0, rect.width / grid.charWidth) * grid.charWidth;
         return { x, y: rect.y, width: grid.charWidth, height: rect.height };
     }
     const x = Math.min(...rects.map((rect) => rect.x));
@@ -952,9 +950,9 @@ const bookmarkCodec = viewStateCodec<TerminalBookmark>({
 
 /** Thin bookmark codec over view-state; no second URI format. */
 export const terminalBookmark = {
-    key: (index: number): string => `bm${clamp(Math.floor(index), 0, 9)}`,
-    encode: (bookmark: TerminalBookmark): string => bookmarkCodec.encode(bookmark),
-    decode: (value: string | undefined): TerminalBookmark | undefined => bookmarkCodec.decode(value),
+    ...bookmarkCodec,
+    key: (index: number): string =>
+        `bm${Number.isFinite(index) ? clamp(Math.floor(index), 0, 9) : 0}`,
 };
 
 export type TerminalReadingScope = 'all' | 'selection' | 'current' | 'last' | 'filtered';
@@ -1066,12 +1064,13 @@ export const terminalRegions = (
         const afterPlacement = layout.placements.get(line.id);
         const distant =
             before && afterPlacement
-                ? afterPlacement.position[1] - before.position[1] >
-                  (before.size[1] + afterPlacement.size[1]) / 2
+                ? Math.abs(afterPlacement.position[1] - before.position[1]) >
+                  before.size[1] + afterPlacement.size[1]
                 : false;
         const boundary =
             previous &&
             (previous.kind !== line.kind ||
+                previous.role !== line.role ||
                 (line.turn !== undefined && previous.turn !== line.turn) ||
                 after.has(previous.id) ||
                 gutters.has(previous.id) ||
@@ -1104,7 +1103,6 @@ export type TerminalAutoZoomOptions = {
 /** Rank regions by size near the tail and keep context lines around the chosen window. */
 export const terminalAutoZoom = (
     lines: readonly TerminalLine[],
-    layout: TerminalLayout,
     regions: readonly TerminalRegion[],
     options: TerminalAutoZoomOptions = {},
 ): { readonly region: TerminalRegion; readonly target: TerminalLensTarget } | undefined => {
@@ -1112,11 +1110,13 @@ export const terminalAutoZoom = (
     if (!candidates.length || !lines.length) return undefined;
     const tail = lines.length - 1;
     const ranked = candidates
-        .map((region) => {
+        .flatMap((region) => {
             const start = lines.findIndex((line) => line.id === region.startID);
-            return { region, start, score: region.lines.length - Math.abs(start - tail) * 0.5 };
+            if (start < 0) return [];
+            return [{ region, start, score: region.lines.length - Math.abs(start - tail) * 0.5 }];
         })
-        .sort((a, b) => b.score - a.score)[0]!;
+        .sort((a, b) => b.score - a.score)[0];
+    if (!ranked) return undefined;
     const context = Math.max(0, options.context ?? 1);
     const start = Math.max(0, ranked.start - context);
     const end = Math.min(
@@ -1215,55 +1215,19 @@ const retroGlyphs = terminalGlyphs({
     status: { complete: 'v', pending: '.', failed: 'x' },
 });
 
+const paletteTokens = (text: string, accent = text) => ({
+    background: '--surface',
+    text,
+    accent,
+    muted: '--muted',
+    attention: '--warn',
+});
+
 export const TERMINAL_PALETTES: readonly TerminalPalette[] = [
-    {
-        id: 'classic',
-        label: 'Classic',
-        glyphs: terminalGlyphs(),
-        tokens: {
-            background: '--surface',
-            text: '--text',
-            accent: '--accent',
-            muted: '--muted',
-            attention: '--warn',
-        },
-    },
-    {
-        id: 'amber',
-        label: 'Amber',
-        glyphs: terminalGlyphs(),
-        tokens: {
-            background: '--surface',
-            text: '--accent',
-            accent: '--accent',
-            muted: '--muted',
-            attention: '--warn',
-        },
-    },
-    {
-        id: 'green',
-        label: 'Phosphor',
-        glyphs: terminalGlyphs(),
-        tokens: {
-            background: '--surface',
-            text: '--success',
-            accent: '--success',
-            muted: '--muted',
-            attention: '--warn',
-        },
-    },
-    {
-        id: 'retro',
-        label: 'Retro',
-        glyphs: retroGlyphs,
-        tokens: {
-            background: '--surface',
-            text: '--text',
-            accent: '--text',
-            muted: '--muted',
-            attention: '--warn',
-        },
-    },
+    { id: 'classic', label: 'Classic', glyphs: terminalGlyphs(), tokens: paletteTokens('--text', '--accent') },
+    { id: 'amber', label: 'Amber', glyphs: terminalGlyphs(), tokens: paletteTokens('--accent') },
+    { id: 'green', label: 'Phosphor', glyphs: terminalGlyphs(), tokens: paletteTokens('--success') },
+    { id: 'retro', label: 'Retro', glyphs: retroGlyphs, tokens: paletteTokens('--text') },
 ];
 
 export const terminalPalette = (id: string): TerminalPalette =>

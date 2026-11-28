@@ -1,12 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
-import { boot, call } from './boot';
+import { bootConsole, call } from './boot';
 
 const lineID = async (page: Page, index: number): Promise<string> =>
     (await page.locator('#canvas [data-node-id]').nth(index).getAttribute('data-node-id')) ?? '';
 
 test('lens targets, trail and bookmarks survive a permalink', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const first = await lineID(page, 0);
     expect(await call<boolean>(page, 'consoleFocus', `line:${first}`)).toBe(true);
     expect(await call<string[]>(page, 'consoleTrail')).toContain(`line:${first}`);
@@ -26,8 +25,7 @@ test('lens targets, trail and bookmarks survive a permalink', async ({ page }) =
 
 test('reduced motion snaps a lens fly-to without animating', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const before = await call<{ center: readonly number[] }>(page, 'viewport');
     const target = await lineID(page, 2);
     expect(await call<boolean>(page, 'consoleFocus', `line:${target}`)).toBe(true);

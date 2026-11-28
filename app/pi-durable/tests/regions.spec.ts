@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { boot, call } from './boot';
+import { bootConsole, call } from './boot';
 
 test('auto zoom focuses a ranked region and records the lens move', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const before = await call<readonly string[]>(page, 'consoleTrail');
     expect(await call<boolean>(page, 'consoleAutoZoom')).toBe(true);
     expect((await call<readonly string[]>(page, 'consoleTrail')).length).toBe(before.length + 1);
@@ -13,8 +12,7 @@ test('auto zoom focuses a ranked region and records the lens move', async ({ pag
 });
 
 test('region overlays round-trip through a permalink', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     await call(page, 'consoleRegions', true);
     const link = await call<string>(page, 'permalink');
     expect(link).toContain('regions=on');
@@ -25,8 +23,7 @@ test('region overlays round-trip through a permalink', async ({ page }) => {
 });
 
 test('the quality report covers the projected console', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const report = await call<{
         score: number;
         budgets: { readonly domNodes: number; readonly maxDomNodes: number };

@@ -1,11 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
-import { boot, call } from './boot';
+import { bootConsole, call } from './boot';
 
 const scene = (page: Page) => page.locator('#canvas [data-terminal-prompt]');
 
 test('slash commands in the scene prompt share one catalog', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const field = scene(page);
     await field.fill('/se');
     await expect(page.locator('#console-completions')).toBeVisible();
@@ -21,8 +20,7 @@ test('slash commands in the scene prompt share one catalog', async ({ page }) =>
 });
 
 test('the catalog generates help and dispatches historical commands', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const help = await call<string>(page, 'consoleHelp');
     expect(help).toContain('/search <text>');
     expect(help).toContain('/pin snapshot');
@@ -33,8 +31,7 @@ test('the catalog generates help and dispatches historical commands', async ({ p
 });
 
 test('the context menu exposes the same console commands', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     await page.locator('#canvas [data-node-id]').first().click({ button: 'right' });
     await expect(page.locator('#console-menu')).toBeVisible();
     await expect(page.locator('#console-menu-items')).toContainText('/copy');

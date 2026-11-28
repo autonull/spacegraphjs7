@@ -17,6 +17,7 @@ import {
     terminalChapters,
     terminalConsoleCommands,
     terminalLensFromKey,
+    terminalLensIDs,
     terminalLensKey,
     terminalLensRect,
     terminalContextMenu,
@@ -43,6 +44,7 @@ import {
     terminalOrder,
     TERMINAL_PROFILES,
     terminalPlace,
+    type TerminalGrid,
     terminalProfile,
     terminalRegions,
     terminalReadingLens,
@@ -1098,6 +1100,32 @@ describe('lens targets and bookmarks', () => {
         expect(terminalLensFromKey('unknown:x')).toBeUndefined();
     });
 
+    it('resolves every target kind to its addressed line ids', () => {
+        const ids = sample.map((line) => line.id);
+        expect(terminalLensIDs({ kind: 'line', id: 'b' }, ids)).toEqual(['b']);
+        expect(
+            terminalLensIDs(
+                { kind: 'window', window: { start: 'a', end: 'b' } },
+                ids,
+            ),
+        ).toEqual(['a', 'b']);
+        expect(
+            terminalLensIDs(
+                {
+                    kind: 'range',
+                    range: {
+                        anchor: { nodeID: 'a', offset: 0 },
+                        focus: { nodeID: 'b', offset: 0 },
+                    },
+                },
+                ids,
+            ),
+        ).toEqual(['a', 'b']);
+        expect(terminalLensIDs({ kind: 'selection', ids: ['a', 'c'] }, ids)).toEqual([
+            'a', 'c',
+        ]);
+    });
+
     it('maps targets to bounding rectangles in placement space', () => {
         const rect = terminalLensRect(layout, { kind: 'line', id: 'b' }, sample);
         const placement = layout.placements.get('b')!;
@@ -1110,10 +1138,26 @@ describe('lens targets and bookmarks', () => {
         expect(windowRect?.height).toBeGreaterThan(rect!.height);
     });
 
+    it('clamps column offsets to the available columns', () => {
+        const grid = terminalGrid();
+        const placement = layout.placements.get('b')!;
+        const left = rectFor('b', -4, grid)!;
+        expect(left.x).toBe(placement.position[0] - placement.size[0] / 2);
+        const right = rectFor('b', 999, grid)!;
+        expect(right.x).toBeLessThanOrEqual(
+            placement.position[0] - placement.size[0] / 2 + placement.size[0],
+        );
+    });
+
+    function rectFor(id: string, offset: number, grid: TerminalGrid) {
+        return terminalLensRect(layout, { kind: 'column', id, offset }, sample, grid);
+    }
+
     it('round-trips a bookmark through the view-state codec', () => {
         const bookmark = { key: terminalBookmark.key(3), target: { kind: 'line' as const, id: 'c' } };
         expect(terminalBookmark.decode(terminalBookmark.encode(bookmark))).toEqual(bookmark);
         expect(terminalBookmark.key(12)).toBe('bm9');
+        expect(terminalBookmark.key(Number.NaN)).toBe('bm0');
         expect(terminalBookmark.decode('not-a-bookmark')).toBeUndefined();
     });
 });
@@ -1162,12 +1206,44 @@ describe('regions and dirty projection', () => {
         ]);
     });
 
+    it('splits regions on role changes and layout distance', () => {
+        const same = ['a', 'b', 'c'].map((id, index) => ({
+            ...line(id, ['alpha', 'beta', 'gamma'][index]!),
+            kind: 'tool',
+            turn: 1,
+            role: 'assistant',
+        }));
+        expect(terminalRegions(same, terminalLayout(same)).map((region) => region.lines)).toEqual([
+            ['a', 'b', 'c'],
+        ]);
+        const sparse = terminalPlace(same, terminalGrid(), {
+            width: terminalGrid().maxWidth,
+            rowGap: 200,
+        });
+        expect(terminalRegions(same, sparse).map((region) => region.lines)).toEqual([
+            ['a'], ['b'], ['c'],
+        ]);
+        const roles = same.map((entry, index) =>
+            index === 2 ? { ...entry, role: 'user' } : entry,
+        );
+        expect(terminalRegions(roles, terminalLayout(roles)).map((region) => region.lines)).toEqual([
+            ['a', 'b'], ['c'],
+        ]);
+    });
+
     it('ranks an auto-zoom window near the tail and keeps context', () => {
-        const zoom = terminalAutoZoom(regional, layout, terminalRegions(regional, layout), {
+        const zoom = terminalAutoZoom(regional, terminalRegions(regional, layout), {
             context: 1,
         });
         expect(zoom?.region.lines).toEqual(['c', 'd']);
         expect(zoom?.target.kind).toBe('window');
+    });
+
+    it('ignores auto-zoom regions whose ids are no longer in the window', () => {
+        const stale = {
+            id: 'stale', label: 'stale', kind: 'tool', startID: 'gone', endID: 'gone', lines: ['gone'],
+        };
+        expect(terminalAutoZoom(regional, [stale])).toBeUndefined();
     });
 
     it('skips sink.render when controller state has not changed', () => {

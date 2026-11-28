@@ -43,6 +43,7 @@ import {
 import { EventEmitter, type NodeSpec, type SpaceGraphEvents } from 'spacegraphjs';
 import { HtmlNode } from 'spacegraphjs/nodes';
 import { ScopedOverlay } from 'spacegraphjs/overlays';
+import { isEditableTarget } from 'spacegraphjs/utils';
 import {
     createInstrumentKit,
     type InstrumentData,
@@ -55,7 +56,6 @@ import {
     type ReadingController,
     type ReadingNode,
 } from 'spacegraphjs/reading';
-import { playMotion } from 'spacegraphjs/motion';
 import { checkQuality, type QualityReport } from 'spacegraphjs/quality';
 import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
@@ -84,6 +84,7 @@ import {
     terminalDerived,
     terminalRegions,
     terminalLensFromKey,
+    terminalLensIDs,
     terminalLensKey,
     terminalLensRect,
     terminalOrder,
@@ -92,7 +93,6 @@ import {
     terminalProfile,
     terminalReadingLens,
     terminalReplaySteps,
-    terminalSearch,
     terminalVisibleAt,
     type TerminalBookmark,
     type TerminalLensRect,
@@ -299,6 +299,9 @@ const CONSOLE_GRID = terminalGrid({
     minWidth: 260,
     maxWidth: 720,
 });
+
+const reducedMotion = (): boolean =>
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
 type Importance = 'hero' | 'medium' | 'compact';
 
@@ -733,12 +736,9 @@ export class DurableHost {
     #consoleSelector: TerminalSelector = {};
     #consolePresentation: TerminalPresentation = {};
     #expandedLine: string | undefined;
-    #helpScope: ScopedOverlay | undefined;
-    #menuScope: ScopedOverlay | undefined;
+    readonly #overlays = new Map<'menu' | 'reading' | 'help', ScopedOverlay>();
     #commandValue = '';
     #terminalPrompt: TerminalPromptController | undefined;
-    #searchCase = false;
-    #searchRegex = false;
     #matchIndex = 0;
     #monitorEnabled = false;
     #consoleKit: InstrumentKit | undefined;
@@ -750,7 +750,6 @@ export class DurableHost {
     #a11yLayer: AccessibilityLayer | undefined;
     #a11yEvents = new EventEmitter<SpaceGraphEvents>();
     #unbindA11yFocus: (() => void) | undefined;
-    #readingScope: ScopedOverlay | undefined;
     #mutedEdges = 0;
     #activeGroups = new Set<string>();
     #scopeKey = '';
@@ -1562,7 +1561,7 @@ export class DurableHost {
         const previous = this.#model;
         const token = ++this.#motionToken;
         this.#model = model;
-        const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        const reduced = reducedMotion();
         const previousByID = new Map(previous?.nodes.map((node) => [node.id, node]) ?? []);
         const modelByID = new Map(model.nodes.map((node) => [node.id, node]));
         const moves =
@@ -1872,7 +1871,9 @@ export class DurableHost {
 
     consoleSelect(selector: TerminalSelector = {}): TerminalSelector {
         this.#consoleSelector = selector;
+        Object.assign(this.#consolePresentation, { highlightMatches: Boolean(selector.search) });
         this.#terminalController?.setSelector(selector);
+        this.#refreshConsoleSidecar();
         this.refresh();
         return selector;
     }
@@ -1887,6 +1888,14 @@ export class DurableHost {
         Object.assign(this.#consolePresentation, presentation);
         this.refresh();
         return this.#consolePresentation;
+    }
+
+    #consoleLayout(lines = this.#terminalController?.lines() ?? []) {
+        return terminalPlace(lines, this.#consoleGrid, {
+            width: this.#consoleGrid.maxWidth,
+            rowGap: 4,
+            trimGutter: true,
+        });
     }
 
     #consoleTarget(): TerminalRange | undefined {
@@ -2034,13 +2043,29 @@ export class DurableHost {
                 item.addEventListener('click', () => {
                     const field = this.#terminalPrompt?.composer()?.element;
                     if (!field) return;
-                    field.value = `${command.hint ?? `/${command.label}`} `;
+                    field.value = `${command.hint?.split(' ')[0] ?? `/${command.label}`} `;
                     this.#completeConsole('', []);
                     field.focus();
                 });
                 return item;
             }),
         );
+    }
+
+    #openOverlay(
+        key: 'menu' | 'reading' | 'help',
+        container: HTMLElement,
+        initialFocus: HTMLElement,
+        onClose: () => void,
+    ): void {
+        this.#overlays.get(key)?.dispose();
+        this.#overlays.set(key, new ScopedOverlay({ container, initialFocus, onClose }));
+    }
+
+    #closeOverlay(key: 'menu' | 'reading' | 'help', container: HTMLElement): void {
+        container.hidden = true;
+        this.#overlays.get(key)?.dispose();
+        this.#overlays.delete(key);
     }
 
     openConsoleMenu(x?: number, y?: number): boolean {
@@ -2069,49 +2094,35 @@ export class DurableHost {
         menu.hidden = false;
         menu.style.left = `${x ?? 120}px`;
         menu.style.top = `${y ?? 120}px`;
-        this.#menuScope?.dispose();
-        this.#menuScope = new ScopedOverlay({
-            container: menu,
-            initialFocus: host.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? menu,
-            onClose: () => this.closeConsoleMenu(),
-        });
+        this.#openOverlay(
+            'menu',
+            menu,
+            host.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? menu,
+            () => this.closeConsoleMenu(),
+        );
         return true;
     }
 
     closeConsoleMenu(): void {
-        el('console-menu').hidden = true;
-        this.#menuScope?.dispose();
-        this.#menuScope = undefined;
+        this.#closeOverlay('menu', el('console-menu'));
     }
 
     #searchMatches(): readonly TerminalSpan[] {
-        const query = this.#consoleSelector.search;
-        return query
-            ? terminalSearch(this.#terminalController?.lines() ?? [], query, {
-                  caseSensitive: this.#searchCase,
-                  regex: this.#searchRegex,
-              })
-            : [];
+        return this.#terminalController?.view()?.matches ?? [];
     }
 
     consoleSearch(
         query: string,
         options: { readonly caseSensitive?: boolean; readonly regex?: boolean } = {},
     ): number {
-        this.#searchCase = options.caseSensitive ?? this.#searchCase;
-        this.#searchRegex = options.regex ?? this.#searchRegex;
         this.#matchIndex = 0;
-        Object.assign(this.#consolePresentation, { highlightMatches: Boolean(query) });
+        const previous = this.#consoleSelector.searchOptions ?? {};
+        const searchOptions = {
+            caseSensitive: options.caseSensitive ?? previous.caseSensitive ?? false,
+            regex: options.regex ?? previous.regex ?? false,
+        };
         this.setView('transcript');
-        this.consoleSelect({
-            ...this.#consoleSelector,
-            search: query,
-            searchOptions: {
-                caseSensitive: this.#searchCase,
-                regex: this.#searchRegex,
-            },
-        });
-        this.#refreshConsoleSidecar();
+        this.consoleSelect({ ...this.#consoleSelector, search: query, searchOptions });
         return this.#searchMatches().length;
     }
 
@@ -2135,10 +2146,13 @@ export class DurableHost {
     }
 
     consoleToggleSearchOption(option: 'case' | 'regex'): boolean {
-        if (option === 'case') this.#searchCase = !this.#searchCase;
-        else this.#searchRegex = !this.#searchRegex;
-        this.consoleSearch(this.#consoleSelector.search ?? '');
-        return option === 'case' ? this.#searchCase : this.#searchRegex;
+        const current = this.#consoleSelector.searchOptions ?? {};
+        const next = {
+            caseSensitive: option === 'case' ? !current.caseSensitive : (current.caseSensitive ?? false),
+            regex: option === 'regex' ? !current.regex : (current.regex ?? false),
+        };
+        this.consoleSearch(this.#consoleSelector.search ?? '', next);
+        return option === 'case' ? next.caseSensitive : next.regex;
     }
 
     consolePinMatches(): boolean {
@@ -2151,7 +2165,6 @@ export class DurableHost {
         const ids = new Set(matches.map((match) => match.lineID));
         const derived = terminalDerived(lines, { filter: (line) => ids.has(line.id) });
         const kept = new Set(derived.lines.map((entry) => entry.id));
-        Object.assign(this.#consolePresentation, { highlightMatches: false });
         this.consoleSelect({
             ...this.#consoleSelector,
             search: undefined,
@@ -2218,12 +2231,7 @@ export class DurableHost {
 
     #focusTarget(target: TerminalLensTarget, record: boolean): boolean {
         const lines = this.#terminalController?.lines() ?? [];
-        const layout = terminalPlace(lines, CONSOLE_GRID, {
-            width: CONSOLE_GRID.maxWidth,
-            rowGap: 4,
-            trimGutter: true,
-        });
-        const rect = terminalLensRect(layout, target, lines, CONSOLE_GRID);
+        const rect = terminalLensRect(this.#consoleLayout(lines), target, lines, this.#consoleGrid);
         if (!rect) {
             this.announce('Lens target is outside the console');
             return false;
@@ -2232,36 +2240,10 @@ export class DurableHost {
             const key = terminalLensKey(target);
             this.#lensTrail.push({ id: key, label: key, kind: target.kind });
         }
-        const viewport = this.renderer.getViewport?.();
-        if (viewport) {
-            const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-            playMotion(
-                [
-                    {
-                        id: 'lens.flyTo',
-                        verb: 'flyTo',
-                        target: 'camera',
-                        from: viewport.zoom,
-                        to: viewport.zoom,
-                        duration: 0.25,
-                    },
-                ],
-                (frame) =>
-                    this.renderer.setViewport({
-                        zoom: frame.value,
-                        center: [rect.x + rect.width / 2, rect.y + rect.height / 2, viewport.center[2]],
-                    }),
-                { reducedMotion: reduced },
-            );
-        }
+        this.#moveCamera({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
+        const addressed = terminalLensIDs(target, lines.map((line) => line.id));
         const lineID =
-            target.kind === 'line' || target.kind === 'column'
-                ? target.id
-                : target.kind === 'range'
-                  ? target.range.anchor.nodeID
-                  : target.kind === 'window'
-                    ? target.window.end || target.window.start
-                    : target.ids[0] ?? lines.at(-1)?.id;
+            (target.kind === 'window' ? addressed.at(-1) : addressed[0]) ?? lines.at(-1)?.id;
         if (lineID) this.#terminalController?.focusLine(lineID);
         this.announce(`Focused ${target.kind}`);
         return true;
@@ -2349,25 +2331,26 @@ export class DurableHost {
     }
 
     #reconcileLensTrail(): void {
-        const ids = new Set((this.#terminalController?.lines() ?? []).map((line) => line.id));
+        const lineIDs = (this.#terminalController?.lines() ?? []).map((line) => line.id);
+        const known = new Set(lineIDs);
         const kept = new Map(
             this.#lensTrail.entries.flatMap((entry) => {
                 const target = terminalLensFromKey(entry.id);
-                const targets =
-                    target && 'ids' in target
-                        ? target.ids
-                        : target && 'id' in target
-                          ? [target.id]
-                          : [];
-                return targets.some((id) => ids.has(id)) ? ([[entry.id, entry]] as const) : [];
+                return target && terminalLensIDs(target, lineIDs).some((id) => known.has(id))
+                    ? ([[entry.id, entry]] as const)
+                    : [];
             }),
         );
         this.#lensTrail.reconcile(kept);
     }
 
     setConsoleProfile(id: string): string {
+        if (!TERMINAL_PROFILES.some((entry) => entry.id === id)) {
+            this.announce(`Unknown console profile: ${id}`);
+            return terminalProfile('logs').id;
+        }
         const profile = terminalProfile(id);
-        this.#consoleGrid = { ...CONSOLE_GRID, ...profile.grid };
+        Object.assign(this.#consoleGrid, CONSOLE_GRID, profile.grid);
         Object.assign(this.#consolePresentation, profile.presentation);
         this.#terminal()?.setPalette(profile.palette);
         this.refresh();
@@ -2388,20 +2371,15 @@ export class DurableHost {
             title: `Console — ${scope}`,
         });
         el('console-reading').hidden = false;
-        this.#readingScope?.dispose();
-        this.#readingScope = new ScopedOverlay({
-            container: el('console-reading'),
-            initialFocus: el<HTMLButtonElement>('console-reading-close'),
-            onClose: () => this.closeConsoleReading(),
-        });
+        this.#openOverlay('reading', el('console-reading'), el<HTMLButtonElement>('console-reading-close'), () =>
+            this.closeConsoleReading(),
+        );
         this.announce(`Reading ${sections.length} console lines`);
         return sections.length;
     }
 
     closeConsoleReading(): void {
-        el('console-reading').hidden = true;
-        this.#readingScope?.dispose();
-        this.#readingScope = undefined;
+        this.#closeOverlay('reading', el('console-reading'));
     }
 
     setConsoleRegions(enabled: boolean): boolean {
@@ -2414,13 +2392,8 @@ export class DurableHost {
     consoleAutoZoom(): boolean {
         const lines = this.#terminalController?.lines() ?? [];
         if (!lines.length) return false;
-        const layout = terminalPlace(lines, this.#consoleGrid, {
-            width: this.#consoleGrid.maxWidth,
-            rowGap: 4,
-            trimGutter: true,
-        });
         const churn = this.#terminal()?.churn();
-        const zoom = terminalAutoZoom(lines, layout, terminalRegions(lines, layout), {
+        const zoom = terminalAutoZoom(lines, terminalRegions(lines, this.#consoleLayout(lines)), {
             minLines: churn && churn.slides > 20 ? 3 : 2,
             context: 1,
         });
@@ -2452,8 +2425,7 @@ export class DurableHost {
             {
                 dom: el('canvas'),
                 direction: document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr',
-                reducedMotion:
-                    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
+                reducedMotion: reducedMotion(),
             },
         );
     }
@@ -2478,11 +2450,7 @@ export class DurableHost {
         const active = document.activeElement;
         if (!active) return 'camera';
         const element = active as HTMLElement;
-        if (
-            element.isContentEditable ||
-            ['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName)
-        )
-            return 'input';
+        if (isEditableTarget(active)) return 'input';
         if (element.closest('#chapter-rail, #trail, [role="menuitem"]')) return 'view';
         if (element.closest('[data-node-id]')) return 'node';
         return 'camera';
@@ -3566,7 +3534,7 @@ export class DurableHost {
                         label: 'detail',
                         data: {
                             html: terminalDetailHTML(this.#consoleDetail(kernel, line)),
-                            width: mode === 'inline' ? CONSOLE_GRID.maxWidth : 360,
+                            width: mode === 'inline' ? this.#consoleGrid.maxWidth : 360,
                             height: mode === 'inline' ? 30 : 84,
                         },
                     } as NodeSpec,
@@ -3579,14 +3547,9 @@ export class DurableHost {
             ...(this.#expandedLine === line.id ? detail(line) : []),
         ]);
         if (!this.#regionsEnabled) return base;
-        const layout = terminalPlace(lines, this.#consoleGrid, {
-            width: this.#consoleGrid.maxWidth,
-            rowGap: 4,
-            trimGutter: true,
-        });
         return [
             ...base,
-            ...terminalRegions(lines, layout)
+            ...terminalRegions(lines, this.#consoleLayout(lines))
                 .slice(1)
                 .map((region) => ({
                     id: `region-${region.startID}`,
@@ -3632,10 +3595,10 @@ export class DurableHost {
                 onZoomBand: () => () => undefined,
             };
             const controller = mountTerminalSink(sink, {
-                grid: CONSOLE_GRID,
+                grid: this.#consoleGrid,
                 project: (context) =>
                     consoleModel(context, {
-                        grid: CONSOLE_GRID,
+                        grid: this.#consoleGrid,
                         glyphs: terminalPalette(this.#terminalController?.palette() ?? 'classic')
                             .glyphs,
                         lines,
@@ -3649,7 +3612,7 @@ export class DurableHost {
         });
         this.#diffControllers = columns.map((column) => column.controller);
         terminalLink(this.#diffControllers).sync();
-        const offset = CONSOLE_GRID.maxWidth + 60;
+        const offset = this.#consoleGrid.maxWidth + 60;
         const nodes = columns.flatMap(({ model, tag }, index) =>
             model().nodes.map((node) => ({
                 ...node,
@@ -3695,7 +3658,7 @@ export class DurableHost {
         const total = terminal.lines().length;
         if (!total) return false;
         this.#replay?.cancel();
-        const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+        const reduced = reducedMotion();
         this.#replay = playTerminalReplay(
             terminalReplaySteps(terminal.lines()),
             (prefix) => terminal.setLines(prefix),
@@ -3743,7 +3706,7 @@ export class DurableHost {
             if (!projection) return;
             if (this.#viewName === 'transcript') this.#terminalCamera?.follow(true);
             const rect = el('survey').getBoundingClientRect();
-            this.#panOverviewTo(
+            this.#moveCamera(
                 projection.unproject({
                     x: ((event.clientX - rect.left) / rect.width) * 160,
                     y: ((event.clientY - rect.top) / rect.height) * 100,
@@ -3759,12 +3722,12 @@ export class DurableHost {
             if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
                 const rect = projection.viewRect;
-                this.#panOverviewTo(projection.unproject({ x: rect?.x ?? 80, y: rect?.y ?? 50 }));
+                this.#moveCamera(projection.unproject({ x: rect?.x ?? 80, y: rect?.y ?? 50 }));
                 return;
             }
             if (!dx && !dy) return;
             event.preventDefault();
-            this.#panOverviewTo(
+            this.#moveCamera(
                 projection.unproject({
                     x: (rect?.x ?? 80) + (rect?.width ?? 0) / 2 + dx,
                     y: (rect?.y ?? 50) + (rect?.height ?? 0) / 2 + dy,
@@ -3773,7 +3736,7 @@ export class DurableHost {
         });
     }
 
-    #panOverviewTo(point: { x: number; y: number }): void {
+    #moveCamera(point: { x: number; y: number }): void {
         const viewport = this.renderer.getViewport?.();
         if (!viewport) return;
         this.renderer.setViewport({
@@ -3788,13 +3751,11 @@ export class DurableHost {
         if (next === !help.hidden) return;
         help.hidden = !next;
         if (next) el('console-help').textContent = this.consoleHelp();
-        this.#helpScope?.dispose();
-        this.#helpScope = next
-            ? new ScopedOverlay({
-                  container: help,
-                  initialFocus: el<HTMLButtonElement>('help-close'),
-                  onClose: () => this.toggleHelp(false),
-              })
-            : undefined;
+        this.#overlays.get('help')?.dispose();
+        this.#overlays.delete('help');
+        if (next)
+            this.#openOverlay('help', help, el<HTMLButtonElement>('help-close'), () =>
+                this.toggleHelp(false),
+            );
     }
 }

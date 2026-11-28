@@ -1,9 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { boot, call, openPanel } from './boot';
+import { boot, bootConsole, call, openPanel } from './boot';
 
 test('transcript is a vector console over the same committed facts', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     await expect(page.locator('#reader')).toBeHidden();
     await expect(page.locator('#canvas')).toBeVisible();
 
@@ -20,8 +19,7 @@ test('transcript is a vector console over the same committed facts', async ({ pa
 });
 
 test('console lines are keyboard navigable', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const lines = page.locator('#canvas [data-node-id]');
     await lines.first().focus();
     await page.keyboard.press('ArrowDown');
@@ -31,8 +29,7 @@ test('console lines are keyboard navigable', async ({ page }) => {
 });
 
 test('scene prompt submits inside the console without stealing shortcuts', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const field = page.locator('#canvas [data-terminal-prompt]');
     await expect(field).toBeVisible();
     await field.fill('hello from the console');
@@ -43,8 +40,7 @@ test('scene prompt submits inside the console without stealing shortcuts', async
 });
 
 test('one selector drives search, highlight, derived view and permalink', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     await call(page, 'consoleSelect', { search: 'France' });
     await call(page, 'consolePresentation', { highlightMatches: true });
     await expect(page.locator('#canvas mark').first()).toBeVisible();
@@ -60,8 +56,7 @@ test('one selector drives search, highlight, derived view and permalink', async 
     expect(errors).toEqual([]);
 });
 test('clicking a line toggles detail in inline, popup and rail modes', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const line = page.locator('#canvas [data-node-id]').nth(1);
     await line.click();
     await expect(page.locator('#canvas [data-node-id^="detail-"]').first()).toBeVisible();
@@ -76,8 +71,7 @@ test('clicking a line toggles detail in inline, popup and rail modes', async ({ 
 });
 
 test('console compares two tabs over one kernel', async ({ page }) => {
-    const errors = await boot(page, '?shot=fork-tabs');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page, '?shot=fork-tabs');
     const active = await call<string>(page, 'activeTab');
     const peer = (await call<string[]>(page, 'sessions')).find((id) => id !== active);
     expect(peer).toBeTruthy();
@@ -92,8 +86,7 @@ test('console compares two tabs over one kernel', async ({ page }) => {
 });
 
 test('console exposes chapters and replay steps over committed lines', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const chapters = await call<{ id: string; startID: string }[]>(page, 'consoleChapters');
     expect(chapters.length).toBeGreaterThan(0);
     expect(chapters[0]?.id).toBe('chapter-1');
@@ -103,8 +96,7 @@ test('console exposes chapters and replay steps over committed lines', async ({ 
 });
 
 test('wheel pan releases tail follow and the badge restores it', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const badge = page.locator('#follow-badge');
     await expect(badge).toBeVisible();
     await expect(badge).toHaveText('tail: follow');
@@ -117,8 +109,7 @@ test('wheel pan releases tail follow and the badge restores it', async ({ page }
 });
 
 test('palette selection changes console glyphs', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     expect((await call<{ id: string }[]>(page, 'consolePalettes')).map((entry) => entry.id)).toContain(
         'retro',
     );
@@ -128,15 +119,13 @@ test('palette selection changes console glyphs', async ({ page }) => {
 });
 
 test('gutter slots mark boundaries without changing committed lines', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     await expect(page.locator('#canvas [data-node-id^="gutter-"]').first()).toBeVisible();
     expect(errors).toEqual([]);
 });
 
 test('console selection and tail survive a compact permalink', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const ids = await page.locator('#canvas [data-node-id]').evaluateAll((nodes) =>
         nodes.map((node) => node.getAttribute('data-node-id') ?? ''),
     );
@@ -152,8 +141,7 @@ test('console selection and tail survive a compact permalink', async ({ page }) 
 });
 
 test('Shift+Arrow extends a console range and announces the span', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const lines = page.locator('#canvas [data-node-id]');
     await lines.first().focus();
     await page.keyboard.press('Shift+ArrowDown');
@@ -164,8 +152,7 @@ test('Shift+Arrow extends a console range and announces the span', async ({ page
 });
 
 test('minimap click re-engages tail follow', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const badge = page.locator('#follow-badge');
     await page.locator('#canvas').hover();
     await page.mouse.wheel(0, 200);
@@ -176,8 +163,7 @@ test('minimap click re-engages tail follow', async ({ page }) => {
 });
 
 test('palette and detail state survive a compact permalink', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const id = await page.locator('#canvas [data-node-id]').first().getAttribute('data-node-id');
     await call(page, 'setConsolePalette', 'retro');
     await call(page, 'setConsoleDetailMode', 'popup');
@@ -209,8 +195,7 @@ test('two consoles share one scene and link their selections', async ({ page }) 
 });
 
 test('RTL mirrors line text while keeping the gutter in logical order', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     expect(await call<string>(page, 'setDirection', 'rtl')).toBe('rtl');
     const line = page.locator('#canvas .sg-terminal-line').first();
     await expect(line.locator('.tg-text')).toHaveAttribute('dir', 'rtl');
@@ -220,8 +205,7 @@ test('RTL mirrors line text while keeping the gutter in logical order', async ({
 });
 
 test('the chapter rail jumps between console turns', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const rail = page.locator('#chapter-rail');
     await expect(rail).toBeVisible();
     const labels = await call<string[]>(page, 'consoleChapterRail');
@@ -232,8 +216,7 @@ test('the chapter rail jumps between console turns', async ({ page }) => {
 });
 
 test('replay animation reveals committed prefixes', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const total = await call<number>(page, 'consoleReplaySteps');
     await call(page, 'replayConsole');
     await expect.poll(() => page.locator('#canvas .sg-terminal-line').count()).toBe(total);
@@ -243,8 +226,7 @@ test('replay animation reveals committed prefixes', async ({ page }) => {
 
 test('reduced motion skips replay animation steps', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const total = await call<number>(page, 'consoleReplaySteps');
     await call(page, 'replayConsole');
     expect(await page.locator('#canvas .sg-terminal-line').count()).toBe(total);
@@ -253,8 +235,7 @@ test('reduced motion skips replay animation steps', async ({ page }) => {
 });
 
 test('exports a selected console range as Markdown and JSON', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const ids = await page.locator('#canvas [data-node-id]').evaluateAll((nodes) =>
         nodes.map((node) => node.getAttribute('data-node-id') ?? ''),
     );
@@ -284,8 +265,7 @@ test('documents render as a readable document with graph backlinks', async ({ pa
 });
 
 test('reveal focuses a line in the console instead of the hidden reader', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const line = page.locator('#canvas [data-node-id]').nth(2);
     const id = await line.getAttribute('data-node-id');
     await call(page, 'reveal', id);
@@ -294,8 +274,7 @@ test('reveal focuses a line in the console instead of the hidden reader', async 
 });
 
 test('the inspector links a graph fact back to its console line', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const id = await page.locator('#canvas [data-node-id]').first().getAttribute('data-node-id');
     await call(page, 'setView', 'graph');
     await call(page, 'reveal', id);

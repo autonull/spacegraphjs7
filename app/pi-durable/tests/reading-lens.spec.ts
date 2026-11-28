@@ -1,9 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { boot, call } from './boot';
+import { bootConsole, call } from './boot';
 
 test('the reading lens opens a safe reading view from the console', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     expect(await call<number>(page, 'consoleRead', 'current')).toBe(1);
     await expect(page.locator('#console-reading')).toBeVisible();
     await expect(page.locator('#console-reading-body .reading-section')).toHaveCount(1);
@@ -13,8 +12,7 @@ test('the reading lens opens a safe reading view from the console', async ({ pag
 });
 
 test('profiles replace scattered presentation flags', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     const profiles = await call<readonly { id: string }[]>(page, 'consoleProfiles');
     expect(profiles.map((profile) => profile.id)).toEqual([
         'logs', 'presentation', 'high-contrast', 'big-text',
@@ -27,8 +25,7 @@ test('profiles replace scattered presentation flags', async ({ page }) => {
 });
 
 test('the assistive mirror follows console focus roles', async ({ page }) => {
-    const errors = await boot(page, '?shot=basic-turn');
-    await call(page, 'setView', 'transcript');
+    const errors = await bootConsole(page);
     expect(await page.locator('#console-a11y [role="listbox"] li').count()).toBeGreaterThan(0);
     expect(['camera', 'view', 'node', 'input']).toContain(
         await call<string>(page, 'consoleFocusRole'),
