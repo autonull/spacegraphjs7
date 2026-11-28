@@ -1,8 +1,9 @@
 # TODO19 — Terminal 3: zoom-progressive text, graphs within graphs
 
-> **Status: in progress (2026-11-28).** Extends `TODO18.md` (complete) with the work that landed
-> after its close-out and the remaining queue. The console is now a fidelity ladder and a graph seed;
-> this plan makes that surface legible, precise, and structurally connected. Ideas come from
+> **Status: complete (2026-11-28).** Extends `TODO18.md` (complete). All eight outcomes landed; §7
+> records each commit and its verification, §8 separates done work from the optional follow-ups that
+> were deliberately left out of scope. The console is a fidelity ladder and a graph seed whose text,
+> chrome, ranges, facets, edges, chapters and a11y all use the one projection. Ideas came from
 > [autonull/fracterm](https://github.com/autonull/fracterm), TODO17 §3, TODO4 K1–K4 and TODO5 Phase 4.
 > The fidelity decision in TODO17 §3 still stands: no PTY, VT/ANSI/SGR or second console store.
 
@@ -36,8 +37,10 @@
 | `@spacegraphjs/kernel`: `query().traverse`, `diffKernels`, `GraphHistory` | graph growth and provenance | a second store |
 
 `terminalEdges`, `terminalGroup`, `terminalWrapRows`, `terminalTokens`, `terminalFacets`,
-`terminalFocusWeights`, `terminalMovePoint` and `terminalDetailSize` are **substrate to add**, not
-existing exports. Keep each as a pure primitive in `src/terminal.ts` with a unit test before host use.
+`terminalFocusWeights`, `terminalMovePoint`, `terminalDetailSize` and the `terminalFidelity*` helpers
+were added as pure primitives in `src/terminal.ts`, each with a unit test before host use. This
+inventory is the leverage check: a future capability should still need no new renderer, view slot,
+text index, command registry or codec.
 
 ## 2. Invariants
 
@@ -218,41 +221,147 @@ console store. The kernel remains the durable store; layouts stay arrangement-on
   (15), Pi Durable `verify:fast` (108 unit / 110 E2E, 20 capture-only skipped). `grow.spec.ts`
   covers both directions and the keyboard path.
 
-## 8. Remaining queue
+### O1 — Reading chrome and stable wrap rows — landed 2026-11-28
 
-| # | Outcome | Anchor | Effort / risk |
-| - | ------- | ------ | ------------- |
-| 1 | O1 CSS for `data-line-no`/`data-source`/wrap flags | `app/pi-durable/index.html:97` | S / low |
-| 2 | O1 `terminalWrapRows` shared with `terminalLineSize` | `src/terminal.ts:~135` | M / low |
-| 3 | O1 presentation flags in `Address` | `app/pi-durable/src/address.ts:7` | S / low |
-| 4 | O2 `terminalTokens` + match-boundary composition | `src/terminal.ts:1242` | M / medium |
-| 5 | O2 `terminalFocusWeights` + `focusDimming` | `app/pi-durable/src/console-model.ts:190` | S / low |
-| 6 | O2 safe markdown detail + `terminalDetailSize` | `app/pi-durable/src/host.ts:~3700` | M / medium |
-| 7 | O3 `terminalMovePoint` + character Shift+Arrow | `src/terminal.ts:~520`, `mountTerminalA11y` | M / low-med |
-| 8 | O3 exact excerpt/export with offsets, role, at | `src/terminal.ts:1150` | M / low |
-| 9 | O4 `terminalFacets` + `selector.facet` + `/filter` facets | `src/terminal.ts:596`, `host.ts:~1940` | M / low |
-| 10 | O4 sidecar facet instead of literal `"error"` | `app/pi-durable/src/host.ts:~2187` | S / low |
-| 11 | O5 `terminalEdges` + `terminalGroup`, opt-in graph projection | `src/terminal.ts:1665`, `console-model.ts:201` | M / low |
-| 12 | O5 `reveal:'select'` parity in `consoleModel` | `app/pi-durable/src/console-model.ts:78` | S / low |
-| 13 | O6 chapter groups → `buildScopeForest` portals | `app/pi-durable/src/host.ts:~2948` | L / medium |
-| 14 | O6 fixed-width octave inheritance bug | `src/terminal.ts:246` | S / low |
-| 15 | O7 continuous `ScaleDomain` sample + `playRepresentationChanges` | `src/zoom/ScaleDomain.ts:98`, `host.ts:2092` | M / medium |
-| 16 | O8 `mountReading` for the console reading dialog | `app/pi-durable/src/host.ts:2590` | S / low |
-| 17 | O8 a11y mirror and help parity at every fidelity band | `host.ts:2433`, `client.ts:420` | S / low |
+- `bc27e4e` — `terminalWrapRows` keeps UTF-16 offsets and display widths and is the single source for
+  wrapping and `terminalLineSize` geometry. Full-text lines render escaped `tg-line-no`, `tg-source`
+  and `tg-row` spans; `Address.pres` makes presentation flags bookmarkable in both codecs. Added CSS
+  for the chrome classes, `console-chrome` capture and a `?pal=`-free permalink E2E.
+- **Verification:** root `check`, `pnpm test`, `test:exports`, `check:generated`,
+  `check:console-shots` (16), Pi Durable `verify:fast` (109 unit / 111 E2E, 20 capture-only skipped).
 
-### Additional useful work, not yet scoped
+### O2 — Structured text, focus dimming and safe details — landed 2026-11-28
 
-- Surface dirty-projection/churn telemetry (`TerminalChurn`) in `consoleQuality()` or `/why` so LOD
-  and region thresholds can be tuned from data instead of guesses.
-- Add a story or `console-chrome` capture once O1 lands, so reading chrome is visually asserted.
-- Document the console fidelity and graph-growth vocabulary in `README.md` and `docs/glossary.md`
-  (band / level / rung / scope already share one glossary).
-- Recheck DOM budget after O5/O6: group frames add nodes; `checkQuality` must stay green.
-- Keep `logLayout`, `chapterPacking`, `LaneLayout` and `diffPositions` unused until a real need appears.
+- `4f10d7f` — `terminalTokens` emits `code|link|strong|em` with source offsets; token and search
+  boundaries are composed before escaping, with `javascript:`/`onerror` hrefs rejected.
+  `terminalFocusWeights` feeds `applyModelEmphasis`; `terminalDetailHTML` and `terminalDetailSize`
+  parse markdown blocks behind the opt-in `documents` profile, replacing hardcoded card sizes.
+- **Verification:** root `check`, `pnpm test`, `check:generated`, `check:console-shots` (16),
+  Pi Durable `verify:fast` (110 unit / 112 E2E, 20 capture-only skipped). `structured-text.spec.ts`
+  covers the safe detail path and shareable flags.
 
-## 9. First change
+### O3 — Character-precise ranges — landed 2026-11-28
 
-Start with queue item 1 + 2: make the existing presentation flags visible and give wrapped rows
-stable character offsets. It is the highest visible payoff, has no host-state risk, and prepares the
-selector identity that O2–O4 reuse. Keep all flags off by default and add one capture only if the
-visual shape changes.
+- `71d529c` — `terminalMovePoint` walks flat character indices across line boundaries;
+  `Shift+ArrowLeft/Right` extends a selection one character at a time. `terminalExcerpt(...,
+  { exact: true })` trims boundary lines, JSON export carries `role`, `at` and global offsets, and
+  `/bookmark` stores the current selection as a `range` lens target.
+- **Verification:** root `check`, `pnpm test`, `check:generated`, `check:console-shots` (16),
+  Pi Durable `verify:fast` (110 unit / 112 E2E, 20 capture-only skipped).
+  `character-selection.spec.ts` covers select → export → bookmark.
+
+### O4 — Faceted search and derived monitors — landed 2026-11-28
+
+- `3b6b3cd` — `terminalFacets` counts `kind/status/role/turn/at`; `TerminalSelector.facet` applies
+  before search and windowing (OR within a key, AND across keys). `/filter` composes facets and the
+  `logtail` sidecar follows `status:failed` instead of a literal `"error"`. Fixed a real defect:
+  search spans now stay global when a selector narrows the lines, so marks map onto committed lines
+  instead of the filtered subset.
+- **Verification:** root `check`, `pnpm test`, `check:generated`, `check:console-shots` (16),
+  Pi Durable `verify:fast` (110 unit / 112 E2E, 20 capture-only skipped). Seeded selector invariants
+  and `facets.spec.ts` cover the composition.
+
+### O5 — Real console graph edges and group frames — landed 2026-11-28
+
+- `4032cd7` — `terminalEdges` was extracted from `terminalSpec` with deduped ids and visible-only
+  endpoints; `terminalGroup` boxes lens-addressed line nodes. Opt-in `graphEdges` projects a group
+  frame with `data.members`, child `parent` links and structural edges. `reveal: 'select'` overlays
+  now receive the selected set, and `consoleQuality()` covers the projected window.
+- **Verification:** root `check`, `pnpm test`, `check:generated`, `check:console-shots` (16),
+  Pi Durable `verify:fast` (112 unit / 114 E2E, 20 capture-only skipped). `console-graph.spec.ts`
+  covers frames, edges and DOM budget.
+
+### O6 — Chapter scopes as framed portals — landed 2026-11-28
+
+- `b5d3e1b` — `terminalChapterTargets` maps chapters to `window` lens targets; opt-in chapter group
+  frames share the O5 group path. A frame carries its `lens` key so activation descends with
+  `consoleFocus(window)` and `consoleTrailBack()` returns. Fixed the fixed-width placement bug:
+  inherited octaves now drive placement instead of a hardcoded `0`. Added the `console-chapters`
+  capture; `detail.spec.ts` band counts remain unchanged because chapter frames are transcript-only.
+- **Verification:** root `check`, `pnpm test`, `check:generated`, `check:console-shots` (17),
+  Pi Durable `verify:fast` (112 unit / 116 E2E, 20 capture-only skipped).
+
+### O7 — Continuous fidelity and motion — landed 2026-11-28
+
+- `1847452` — `terminalFidelity` derives opacity and stagger from a `ScaleDomain` importance sample;
+  `terminalFidelityChange` and `playTerminalFidelity` route band swaps through the shared playback
+  clock with reduced-motion snapping. The host feeds console zoom into a dedicated scale sample,
+  replaces the one-shot fade when `continuousFidelity` is on, and never rescales node geometry.
+- **Verification:** root `check`, `pnpm test`, `check:generated`, `check:console-shots` (17),
+  Pi Durable `verify:fast` (112 unit / 118 E2E, 20 capture-only skipped).
+  `fidelity-continuous.spec.ts` covers zoom opacity, reduced motion and DOM budget.
+
+### O8 — Ergonomics and accessibility parity — landed 2026-11-28
+
+- `6e590de` — the console reading dialog uses `mountReading` with arrow navigation and backlink
+  reveal; the assistive mirror already carries full text at every band and is asserted there.
+  Fidelity and graph growth are announced through existing paths; help lists `/grow`, `/embed`,
+  `/lod`, `/graph`, `x` and Escape. Command hints now describe faceted filtering and profiles.
+- **Verification (final):** root `check`, `pnpm test` (201 files / 1417 tests), `test:exports`,
+  `check:generated`, `check:console-shots` (17 captures), Pi Durable `verify:fast` (112 unit /
+  120 E2E, 22 capture-only skipped). `reading-lens.spec.ts` and `prompt.spec.ts` cover the path.
+
+## 8. Queue status — all 17 items landed
+
+| # | Outcome | Where it landed | Status |
+| - | ------- | --------------- | ------ |
+| 1 | O1 CSS for chrome flags | `app/pi-durable/index.html`, `console-chrome` capture | done in `bc27e4e` |
+| 2 | O1 `terminalWrapRows` shared with geometry | `src/terminal.ts` | done in `bc27e4e` |
+| 3 | O1 presentation flags in `Address` | `address.ts`, `host.ts`, `terminalPresentationKey` | done in `bc27e4e` |
+| 4 | O2 `terminalTokens` + boundary composition | `src/terminal.ts`, `console-model.ts` | done in `4f10d7f` |
+| 5 | O2 `terminalFocusWeights` + `focusDimming` | `src/terminal.ts`, `console-model.ts` | done in `4f10d7f` |
+| 6 | O2 safe markdown detail + sizing | `terminalDetailHTML`, `terminalDetailSize`, `documents` profile | done in `4f10d7f` |
+| 7 | O3 `terminalMovePoint` + character Shift+Arrow | `src/terminal.ts`, `mountTerminalA11y` | done in `71d529c` |
+| 8 | O3 exact excerpt/export with metadata | `terminalExcerpt`, `terminalExport` | done in `71d529c` |
+| 9 | O4 facets in one selector + `/filter` | `src/terminal.ts`, `host.ts`, `facets.spec.ts` | done in `3b6b3cd` |
+| 10 | O4 sidecar uses a status facet | `CONSOLE_MONITOR_FACET` in `host.ts` | done in `3b6b3cd` |
+| 11 | O5 `terminalEdges` + `terminalGroup` projection | `src/terminal.ts`, `console-model.ts` | done in `4032cd7` |
+| 12 | O5 `reveal: 'select'` parity | `terminalOverlays(..., { selected })` | done in `4032cd7` |
+| 13 | O6 chapter frames as portals | `terminalChapterTargets`, `console-model.ts`, `host.ts` | done in `b5d3e1b` |
+| 14 | O6 fixed-width octave inheritance | `terminalPlace` | done in `b5d3e1b` |
+| 15 | O7 continuous sample + shared playback | `terminalFidelity*`, `playTerminalFidelity`, host CSS var | done in `1847452` |
+| 16 | O8 `mountReading` for console reading | `readConsole`, `closeConsoleReading` | done in `6e590de` |
+| 17 | O8 a11y and help parity at every band | `#syncConsoleA11y`, `consoleHelp`, command hints | done in `6e590de` |
+
+### Deliberately left for a later plan
+
+These are useful but were not needed to meet TODO19's definition of done. Start a new TODO with one
+of them only when a concrete consumer exists.
+
+- **Churn telemetry:** surface `TerminalChurn` (already returned by the controller) in
+  `consoleQuality()` or `/why` so LOD and region thresholds can be tuned from data. Needs a host
+  decision on which channel an operator reads; the pure data is already available.
+- **Vocabulary docs:** write the fidelity/graph-growth terms into `README.md` and `docs/glossary.md`
+  (band / level / rung / scope already share one glossary). Needs docs ownership and a docs E2E only
+  if the entries are tested.
+- **Editor layout primitives:** keep `logLayout`, `chapterPacking`, `LaneLayout` and `diffPositions`
+  unused; nothing in O1–O8 needed a new band vocabulary.
+- **Full portal click coverage:** O6 handles activation in the host `onReveal` path and the E2E drives
+  the same window lens via `consoleFocus`. A pixel-level click test is only worth adding if the group
+  frame becomes independently hit-testable above line nodes.
+
+### Resolved from the old "additional work" list
+
+- Chrome capture and story assertion — `console-chrome` and `console-chapters` captures landed; both
+  are guarded by `check:console-shots`.
+- DOM budget after O5/O6 — `console-graph.spec.ts` asserts `consoleQuality()` on the projected
+  window; the 17 committed captures still satisfy the studio check.
+
+## 9. Closure and verification entry points
+
+No first change remains. To re-verify the plan after a future edit, run these from the repository
+root in order:
+
+```sh
+pnpm run build:lib                                   # app packages consume dist types
+pnpm run check                                       # root + every package typecheck
+pnpm test                                            # library unit tests
+pnpm run test:exports
+pnpm run source:snapshot && pnpm run check:generated # committed source-graph snapshot
+pnpm run check:console-shots
+pnpm --filter pi-durable verify:fast                 # unit + full E2E suite
+```
+
+Regenerate captures only when visual shape changes:
+`pnpm --filter pi-durable shots:console <shot-id>`, then commit the new PNG and re-run
+`check:console-shots`.
