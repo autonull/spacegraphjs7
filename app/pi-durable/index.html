@@ -107,6 +107,16 @@
             .sg-terminal-line .tg-glyph-only { color: var(--line-accent); font-size: 16px; line-height: 1; }
             .sg-terminal-line .tg-glyph-label { color: var(--text); opacity: .85; font-size: 12px;
                 letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .sg-grow { font: 11px/1.4 ui-monospace, monospace; color: var(--text); }
+            .sg-grow-head { display: flex; justify-content: space-between; align-items: center;
+                padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+            .sg-grow-close { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 16px; }
+            .sg-grow-canvas { position: relative; height: 210px; margin-top: 6px; }
+            .sg-grow-canvas svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+            .sg-grow-canvas svg line { stroke: var(--line); stroke-width: .7; }
+            .sg-grow-chip { position: absolute; overflow: hidden; padding: 2px 4px; font: 10px/1.2 monospace;
+                color: var(--text); background: var(--panel-2); border: 1px solid var(--line);
+                border-radius: 3px; cursor: pointer; text-overflow: ellipsis; white-space: nowrap; }
             .sg-terminal-line[data-role='user'] { --line-accent: #7aa2f7; font-weight: 600;
                 background: color-mix(in srgb, #7aa2f7 5%, transparent); }
             .sg-terminal-line[data-role='assistant'] { --line-accent: #7ec87e; }

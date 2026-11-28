@@ -6,6 +6,7 @@ import {
     lineHTML,
     terminalLineHTML,
     terminalLODFor,
+    terminalGrow,
     mountTerminal,
     mountTerminalA11y,
     mountTerminalCamera,
@@ -1046,7 +1047,8 @@ describe('console command catalog', () => {
         expect(commands.list().map((command) => command.id)).toEqual([
             'copy', 'export', 'search', 'filter', 'read', 'zoom',
             'pin.live', 'pin.snapshot',
-            'pin.matches', 'profile', 'asOf', 'fork', 'why', 'monitor', 'lod', 'autoZoom', 'regions',
+            'pin.matches', 'profile', 'asOf', 'fork', 'why', 'monitor', 'lod', 'grow', 'embed',
+            'autoZoom', 'regions',
             'read.lens',
             'lens.focus', 'bookmark', 'help',
         ]);
@@ -1195,6 +1197,36 @@ describe('lens targets and bookmarks', () => {
         expect(terminalBookmark.key(12)).toBe('bm9');
         expect(terminalBookmark.key(Number.NaN)).toBe('bm0');
         expect(terminalBookmark.decode('not-a-bookmark')).toBeUndefined();
+    });
+});
+
+describe('graphs grown from a line', () => {
+    const nodes = [
+        { id: 'a', label: 'Alpha', kind: 'message' },
+        { id: 'b', label: 'Beta', kind: 'action' },
+        { id: 'c', label: 'Gamma', kind: 'tool' },
+        { id: 'd', label: 'Delta', kind: 'artifact' },
+    ];
+    const edges = [
+        { source: 'a', target: 'b', kind: 'contains' },
+        { source: 'b', target: 'c', kind: 'orders' },
+        { source: 'c', target: 'd', kind: 'contains' },
+    ];
+
+    it('grows a bounded neighbourhood with placements and connectors', () => {
+        const growth = terminalGrow('a', nodes, edges, { depth: 2, limit: 3 });
+        expect(growth?.chips.map((chip) => chip.id)).toEqual(['b']);
+        expect(growth?.chips[0]?.children.map((chip) => chip.id)).toEqual(['c']);
+        expect(growth?.placements).toHaveLength(1);
+        expect(growth?.connectors).toHaveLength(1);
+        expect(growth?.connectors.every(({ x1, y1, x2, y2 }) =>
+            [x1, y1, x2, y2].every((value) => value >= 0 && value <= 100),
+        )).toBe(true);
+    });
+
+    it('returns nothing when no graph grows from the seed', () => {
+        expect(terminalGrow('missing', nodes, edges)).toBeUndefined();
+        expect(terminalGrow('e', [...nodes, { id: 'e', label: 'Empty', kind: 'state' }], edges)).toBeUndefined();
     });
 });
 

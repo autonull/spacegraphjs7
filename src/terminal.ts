@@ -5,6 +5,17 @@ import { createAnnouncer } from './a11y/announcer';
 import { CommandRegistry, type Command } from './commands';
 import { mountComposer, type ComposerController, type ComposerOptions } from './composer';
 import { transcriptLane, type TranscriptLaneOptions } from './layout/transcript';
+import {
+    innerConnectors,
+    innerPlacements,
+    innerTree,
+    type InnerChip,
+    type InnerConnector,
+    type InnerLayout,
+    type InnerPlacement,
+    type InnerSourceEdge,
+    type InnerSourceNode,
+} from './inspect/inner-topology';
 import { escapeHtml } from './markup';
 import { DEFAULT_RUNG_IDS } from './representations/ladder';
 import type { ReadingNode } from './reading';
@@ -708,6 +719,8 @@ export const terminalConsoleCommands = (
         entry('why', 'why', '/why', ['provenance']),
         entry('monitor', 'monitor', '/monitor', ['sidecar', 'logtail']),
         entry('lod', 'lod', '/lod <dot|glyph|card|detail|auto>', ['fidelity', 'density']),
+        entry('grow', 'grow', '/grow [line]', ['graph', 'subgraph', 'expand']),
+        entry('embed', 'embed', '/embed [on|off]', ['node', 'graph', 'console']),
         entry('autoZoom', 'auto zoom', '/auto zoom', ['regions', 'flyTo']),
         entry('regions', 'regions', '/regions [on|off]', ['bands']),
         entry('read.lens', 'read lens', '/read lens [scope]', ['document', 'reading']),
@@ -1145,6 +1158,30 @@ export const terminalAutoZoom = (
             window: { start: lines[start]!.id, end: lines[end]!.id },
         },
     };
+};
+
+export type TerminalGrowth = {
+    readonly seed: string;
+    readonly chips: readonly InnerChip[];
+    readonly placements: readonly InnerPlacement[];
+    readonly connectors: readonly InnerConnector[];
+};
+
+/** A bounded graph growing out of one terminal line; the host owns the markup and navigation. */
+export const terminalGrow = (
+    seed: string,
+    nodes: readonly InnerSourceNode[],
+    edges: readonly InnerSourceEdge[],
+    options: {
+        readonly depth?: number;
+        readonly limit?: number;
+        readonly layout?: InnerLayout;
+    } = {},
+): TerminalGrowth | undefined => {
+    const chips = innerTree(seed, nodes, edges, options.depth ?? 2, options.limit ?? 6);
+    if (!chips.length) return undefined;
+    const placements = innerPlacements(chips, options.layout ?? 'radial');
+    return { seed, chips, placements, connectors: innerConnectors(placements) };
 };
 
 export type TerminalExportFormat = 'markdown' | 'json';

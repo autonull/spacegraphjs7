@@ -88,6 +88,8 @@ import {
     terminalLensIDs,
     terminalLensKey,
     terminalLODFor,
+    terminalGrow,
+    type TerminalGrowth,
     terminalLensRect,
     terminalOrder,
     terminalPlace,
@@ -757,6 +759,8 @@ export class DurableHost {
     #regionsEnabled = false;
     #consoleLOD = 'card';
     #lodOverride: string | undefined;
+    #growth: TerminalGrowth | undefined;
+    #consoleEmbedded = false;
     #hoveredLine: string | undefined;
     #consoleModel: RenderModel = { nodes: [], edges: [] };
     #a11yLayer: AccessibilityLayer | undefined;
@@ -800,6 +804,7 @@ export class DurableHost {
             this.#scale.normalizedAt(this.renderer.getViewport().zoom),
         );
         this.renderer.on('nodeClick', ({ id }) => {
+            if (id.startsWith('grow-')) return;
             if (this.#viewName !== 'transcript') this.focus(id);
         });
         this.renderer.on('nodeDoubleClick', ({ id }) => this.toggleFocusLens(id));
@@ -815,8 +820,9 @@ export class DurableHost {
         });
         this.renderer.on('bandChange', ({ band }) => this.patchView({ band }));
         el('canvas').addEventListener('pointerover', (event) => {
-            const id = (event.target as HTMLElement).closest<HTMLElement>('[data-node-id]')
-                ?.dataset['nodeId'];
+            const target = event.target as HTMLElement;
+            const id = target.closest<HTMLElement>('.sg-terminal-line')
+                ?.closest<HTMLElement>('[data-node-id]')?.dataset['nodeId'];
             if (!id || id === this.#hoveredLine) return;
             this.#hoveredLine = id;
             if (this.#viewName === 'transcript') this.#terminalController?.refresh();
@@ -825,6 +831,20 @@ export class DurableHost {
             if ((event.target as HTMLElement).closest('[data-node-id]')) return;
             this.#hoveredLine = undefined;
             if (this.#viewName === 'transcript') this.#terminalController?.refresh();
+        });
+        el('canvas').addEventListener('pointerdown', (event) => {
+            const target = event.target as HTMLElement;
+            const chip = target.closest<HTMLElement>('[data-grow-id]');
+            if (chip?.dataset['growId']) {
+                event.stopPropagation();
+                this.setView('graph');
+                this.reveal(chip.dataset['growId']);
+                return;
+            }
+            if (target.closest('.sg-grow-close')) {
+                event.stopPropagation();
+                this.consoleGrow();
+            }
         });
         this.renderGlossary();
         this.renderLegend();
@@ -924,6 +944,10 @@ export class DurableHost {
     }
 
     reveal(id: string): void {
+        if (id.startsWith('console:')) {
+            this.setView('transcript');
+            return;
+        }
         this.select(id);
         this.refresh();
         if (this.#viewName === 'docs') this.#readerController?.reveal(id);
@@ -1084,10 +1108,11 @@ export class DurableHost {
                 ...labels,
             },
         );
-        this.#baseModel = model;
+        const embedded = this.#embedConsole(model);
+        this.#baseModel = embedded;
         const consoleDiff = this.#viewName === 'diff' && this.#consoleCompare;
         if (this.#viewName !== 'transcript' && !consoleDiff)
-            this.#setModel(this.#emphasised(model));
+            this.#setModel(this.#emphasised(embedded));
         this.#edgeLabels = model.edges.flatMap((edge) => (edge.label ? [edge.label] : []));
         if (!this.#fitted && presented.nodes.length) {
             this.#fitted = true;
@@ -1948,6 +1973,114 @@ export class DurableHost {
         return this.#consoleLOD;
     }
 
+    /** Toggle the console as a node inside the larger graph. */
+    consoleEmbed(enabled?: boolean): boolean {
+        this.#consoleEmbedded = enabled ?? !this.#consoleEmbedded;
+        this.refresh();
+        this.announce(this.#consoleEmbedded ? 'Console embedded in graph' : 'Console embedding off');
+        return this.#consoleEmbedded;
+    }
+
+    #embedConsole(model: RenderModel): RenderModel {
+        if (!this.#consoleEmbedded || this.#viewName !== 'graph') return model;
+        const id = `console:${this.registry.activeID()}`;
+        const parent = model.nodes.find((node) => node.kind === 'conversation');
+        const lines = this.#terminalController?.lines().length ?? 0;
+        const at = parent?.position ?? [0, 0, 0];
+        const node: RenderNode = {
+            id,
+            kind: 'console',
+            label: `Console — ${lines} lines`,
+            shape: 'card',
+            html: terminalDetailHTML({
+                title: 'Console',
+                fields: [['lines', String(lines)], ['view', 'transcript']],
+            }),
+            position: [at[0] + 360, at[1], at[2]],
+            size: [260, 80, 1],
+            status: 'neutral',
+            interactive: true,
+            data: { terminal: true, consoleNode: true, useRawHtml: true },
+        };
+        const edges = parent
+            ? [
+                  ...model.edges,
+                  {
+                      id: `${parent.id}->${id}`,
+                      source: parent.id,
+                      target: id,
+                      kind: 'contains' as const,
+                      confidence: 'structural' as const,
+                      data: { arrowhead: 'target' },
+                  },
+              ]
+            : model.edges;
+        return { ...model, nodes: [...model.nodes, node], edges };
+    }
+
+    #syncConsoleOverlays(): void {
+        const tab = this.registry.active();
+        if (!tab) return;
+        this.#terminalController?.setOverlays(
+            this.#consoleOverlays(tabKernel(tab), this.#terminalController?.lines() ?? []),
+        );
+    }
+
+    /** Grow a bounded graph from a terminal line; calling again with the same seed closes it. */
+    consoleGrow(id?: string): boolean {
+        const seed = id ?? this.#terminalController?.tail();
+        if (!seed) return false;
+        if (this.#growth?.seed === seed) {
+            this.#growth = undefined;
+            this.#syncConsoleOverlays();
+            this.announce('Graph collapsed back into the console');
+            return false;
+        }
+        const tab = this.registry.active();
+        if (!tab) return false;
+        const kernel = tabKernel(tab);
+        const growth = terminalGrow(
+            seed,
+            kernel.nodes.map((node) => ({
+                id: node.id,
+                label: node.label,
+                kind: node.kind,
+                status: typeof node.data?.['status'] === 'string' ? node.data['status'] : undefined,
+                data: node.data,
+            })),
+            kernel.edges.map((edge) => ({
+                source: edge.source,
+                target: edge.target,
+                kind: edge.kind,
+            })),
+        );
+        if (!growth) {
+            this.announce(`No graph grows from ${seed}`);
+            return false;
+        }
+        this.#growth = growth;
+        this.consoleFocus({ kind: 'line', id: seed });
+        this.#syncConsoleOverlays();
+        this.announce(`Graph grown from ${seed}: ${growth.chips.length} neighbours`);
+        return true;
+    }
+
+    #growHTML(growth: TerminalGrowth): string {
+        const spokes = growth.connectors
+            .map(
+                ({ x1, y1, x2, y2, kind }) =>
+                    `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" data-kind="${escapeHTML(kind)}" />`,
+            )
+            .join('');
+        const chips = growth.placements
+            .map(
+                ({ chip, left, top, width, height }) =>
+                    `<button type="button" class="sg-grow-chip" data-grow-id="${escapeHTML(chip.id)}" title="${escapeHTML(chip.label)}" style="left:${left}%;top:${top}%;width:${width}%;height:${height}%">${escapeHTML(chip.label)}</button>`,
+            )
+            .join('');
+        return `<div class="sg-grow" data-seed="${escapeHTML(growth.seed)}"><div class="sg-grow-head"><strong>${escapeHTML(growth.seed)}</strong><button type="button" class="sg-grow-close" aria-label="Collapse graph">×</button></div><div class="sg-grow-canvas"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${spokes}</svg>${chips}</div></div>`;
+    }
+
     #consoleLayout(lines = this.#terminalController?.lines() ?? []) {
         return terminalPlace(lines, this.#consoleGrid, {
             width: this.#consoleGrid.maxWidth,
@@ -2032,6 +2165,12 @@ export class DurableHost {
         });
         action('lod', (rest) => {
             this.consoleLOD(rest.trim() || 'auto');
+        });
+        action('grow', (rest) => {
+            this.consoleGrow(rest.trim() || undefined);
+        });
+        action('embed', (rest) => {
+            this.consoleEmbed(rest === 'on' ? true : rest === 'off' ? false : undefined);
         });
         action('lens.focus', (rest) => {
             this.consoleFocus(rest);
@@ -2622,6 +2761,8 @@ export class DurableHost {
             },
             consoleBand: () => this.#terminalController?.band() ?? DEFAULT_RUNG_IDS[0],
             consoleLOD: (band?: string) => this.consoleLOD(band),
+            consoleGrow: (id?: string) => this.consoleGrow(id),
+            consoleEmbed: (enabled?: boolean) => this.consoleEmbed(enabled),
             consoleChapters: () => terminalChapters(lines()),
             consoleReplaySteps: () => terminalReplaySteps(lines()).length,
             consoleChapterRail: () =>
@@ -3480,6 +3621,7 @@ export class DurableHost {
                     hovered: this.#hoveredLine,
                 }),
             onReveal: (id) => {
+                if (id.startsWith('grow-')) return;
                 this.#expandedLine = this.#expandedLine === id ? undefined : id;
                 this.announce(
                     this.#expandedLine ? `Expanded ${this.#expandedLine}` : 'Collapsed detail',
@@ -3661,7 +3803,28 @@ export class DurableHost {
             ...(index % 3 === 0 ? gutter(line) : []),
             ...(this.#expandedLine === line.id ? detail(line) : []),
         ]);
-        const all = [...base, ...chapterLabels()];
+        const grown = this.#growth && lines.some((line) => line.id === this.#growth?.seed)
+            ? [
+                  {
+                      id: `grow-${this.#growth.seed}`,
+                      lineID: this.#growth.seed,
+                      slot: 'margin' as const,
+                      reveal: 'always' as const,
+                      mode: 'popup' as const,
+                      node: {
+                          id: `grow-${this.#growth.seed}`,
+                          type: 'HtmlNode',
+                          label: 'grown graph',
+                          data: {
+                              html: this.#growHTML(this.#growth),
+                              width: 360,
+                              height: 260,
+                          },
+                      } as NodeSpec,
+                  },
+              ]
+            : [];
+        const all = [...base, ...chapterLabels(), ...grown];
         if (!this.#regionsEnabled) return all;
         return [
             ...all,
