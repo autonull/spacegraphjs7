@@ -45,6 +45,7 @@ import {
     mountTerminalPrompt,
     mountTerminalSink,
     playTerminalReplay,
+    TERMINAL_MODES,
     TERMINAL_PALETTES,
     terminalChapters,
     terminalDetailHTML,
@@ -62,8 +63,11 @@ import {
     type TerminalController,
     type TerminalDetail,
     type TerminalLine,
+    type TerminalMode,
     type TerminalOverlay,
+    type TerminalPresentation,
     type TerminalPromptController,
+    type TerminalSelector,
     type TerminalSink,
 } from 'spacegraphjs/terminal';
 import { type ScaleSample } from 'spacegraphjs/zoom';
@@ -676,6 +680,8 @@ export class DurableHost {
     #diffControllers: readonly TerminalController[] | undefined;
     #consoleFramed = false;
     #detailMode: 'inline' | 'popup' | 'rail' = 'inline';
+    #consoleSelector: TerminalSelector = {};
+    #consolePresentation: TerminalPresentation = {};
     #expandedLine: string | undefined;
     #helpScope: ScopedOverlay | undefined;
     #mutedEdges = 0;
@@ -1709,6 +1715,9 @@ export class DurableHost {
         if (palette && palette !== 'classic') params.set('pal', palette);
         const detail = this.#consoleDetailKey();
         if (detail) params.set('det', detail);
+        if (this.#consoleSelector.search) params.set('q', this.#consoleSelector.search);
+        const mode = this.#consoleSelector.mode;
+        if (mode && mode !== 'live') params.set('mode', mode);
         const viewport = this.renderer.getViewport?.();
         if (viewport) params.set('zoom', viewport.zoom.toFixed(3));
         return `${location.pathname}?${params.toString()}`;
@@ -1721,6 +1730,7 @@ export class DurableHost {
         const layout = params.get('layout');
         const asOf = Number(params.get('asOf'));
         const zoom = Number(params.get('zoom'));
+        const mode = params.get('mode');
         return this.applyAddress({
             s: params.get('s') ?? undefined,
             shot: params.get('shot') ?? undefined,
@@ -1737,6 +1747,8 @@ export class DurableHost {
             tail: params.get('tail') ?? undefined,
             pal: params.get('pal') ?? undefined,
             det: params.get('det') ?? undefined,
+            q: params.get('q') ?? undefined,
+            mode: mode && TERMINAL_MODES.includes(mode as TerminalMode) ? (mode as TerminalMode) : undefined,
         });
     }
 
@@ -1760,6 +1772,8 @@ export class DurableHost {
                 ? this.#terminalController?.palette()
                 : undefined,
             det: this.#consoleDetailKey(),
+            q: inConsole ? this.#consoleSelector.search : undefined,
+            mode: inConsole ? this.#consoleSelector.mode : undefined,
         };
     }
 
@@ -1775,6 +1789,25 @@ export class DurableHost {
         this.#expandedLine = expanded;
         this.#consoleFramed = false;
         this.refresh();
+    }
+
+    consoleSelect(selector: TerminalSelector = {}): TerminalSelector {
+        this.#consoleSelector = selector;
+        this.#terminalController?.setSelector(selector);
+        this.refresh();
+        return selector;
+    }
+
+    consoleMode(mode?: TerminalMode): TerminalMode {
+        const next = mode ?? this.#consoleSelector.mode ?? 'live';
+        this.consoleSelect({ ...this.#consoleSelector, mode: next });
+        return next;
+    }
+
+    consolePresentation(presentation: TerminalPresentation): TerminalPresentation {
+        Object.assign(this.#consolePresentation, presentation);
+        this.refresh();
+        return this.#consolePresentation;
     }
 
     applyAddress(address: Address): boolean {
@@ -1802,6 +1835,12 @@ export class DurableHost {
             const range = terminalRangeFromKey(address.sel);
             this.#terminalController?.select(range);
             if (address.pal) this.#terminal()?.setPalette(address.pal);
+            if (address.q !== undefined || address.mode !== undefined)
+                this.consoleSelect({
+                    ...this.#consoleSelector,
+                    ...(address.q !== undefined ? { search: address.q } : {}),
+                    ...(address.mode !== undefined ? { mode: address.mode } : {}),
+                });
             const detail = parseDetailKey(address.det);
             if (detail) this.#setConsoleDetail(detail.mode, detail.id);
         }
@@ -1830,6 +1869,12 @@ export class DurableHost {
             copyConsole: () => this.#terminalController?.copy(),
             consoleText: () => this.#terminalController?.text(),
             consoleChurn: () => this.#terminal()?.churn(),
+            consoleSelect: (selector: TerminalSelector) => this.consoleSelect(selector),
+            consoleMode: (mode: TerminalMode) => this.consoleMode(mode),
+            consoleSelector: () => this.#consoleSelector,
+            consoleView: () => this.#terminal()?.view(),
+            consolePresentation: (presentation: TerminalPresentation) =>
+                this.consolePresentation(presentation),
             exportConsole: (format: 'markdown' | 'json') => {
                 const terminal = this.#terminal();
                 return terminalExport(terminal.lines(), terminal.selection(), format);
@@ -2672,6 +2717,8 @@ export class DurableHost {
         this.#terminalController = mountTerminalSink(sink, {
             grid,
             windowConfig: { size: 28, margin: 6, hysteresis: 5 },
+            selector: this.#consoleSelector,
+            presentation: this.#consolePresentation,
             project: (context) =>
                 consoleModel(context, {
                     grid,

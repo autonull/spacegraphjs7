@@ -42,6 +42,23 @@ test('scene prompt submits inside the console without stealing shortcuts', async
     expect(errors).toEqual([]);
 });
 
+test('one selector drives search, highlight, derived view and permalink', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    await call(page, 'consoleSelect', { search: 'France' });
+    await call(page, 'consolePresentation', { highlightMatches: true });
+    await expect(page.locator('#canvas mark').first()).toBeVisible();
+    const live = await call<{ lines: readonly unknown[] }>(page, 'consoleView');
+    expect(live.lines.length).toBeGreaterThan(0);
+    await call(page, 'consoleMode', 'derived');
+    expect(await call<string>(page, 'consoleMode')).toBe('derived');
+    const derived = await call<{ lines: readonly unknown[] }>(page, 'consoleView');
+    expect(derived.lines.length).toBeLessThanOrEqual(live.lines.length);
+    const link = await call<string>(page, 'permalink');
+    expect(link).toContain('q=France');
+    expect(link).toContain('mode=derived');
+    expect(errors).toEqual([]);
+});
 test('clicking a line toggles detail in inline, popup and rail modes', async ({ page }) => {
     const errors = await boot(page, '?shot=basic-turn');
     await call(page, 'setView', 'transcript');

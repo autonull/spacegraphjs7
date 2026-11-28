@@ -569,6 +569,101 @@ export const terminalRangeText = (
     return from === undefined || to === undefined ? '' : flat.text.slice(from, Math.max(from, to));
 };
 
+export const TERMINAL_MODES = ['live', 'follow', 'snapshot', 'derived'] as const;
+export type TerminalMode = (typeof TERMINAL_MODES)[number];
+
+/** One declarative read model: window, filter, search, budget and view mode. */
+export type TerminalSelector = {
+    readonly rows?: TerminalWindow;
+    readonly columns?: number;
+    readonly filter?: (line: TerminalLine) => boolean;
+    readonly search?: string;
+    readonly maxLines?: number;
+    readonly follow?: boolean;
+    readonly mode?: TerminalMode;
+};
+
+export type TerminalPresentation = {
+    readonly wrap?: boolean;
+    readonly reflow?: boolean;
+    readonly lineNumbers?: boolean;
+    readonly sourceStamp?: boolean;
+    readonly highlightMatches?: boolean;
+};
+
+export type TerminalSelection = {
+    readonly lines: readonly TerminalLine[];
+    readonly matches: readonly TerminalSpan[];
+    readonly hidden: readonly TerminalLine[];
+};
+
+/** Resolve a selector against committed lines; match spans use flattened global indices. */
+export const terminalSelect = (
+    lines: readonly TerminalLine[],
+    selector: TerminalSelector = {},
+): TerminalSelection => {
+    const filter = selector.filter;
+    const allowed = filter ? lines.filter((line) => filter(line)) : lines;
+    const query = selector.search?.trim().toLowerCase() ?? '';
+    const flat = terminalFlatten(allowed);
+    const matches: TerminalSpan[] = [];
+    const matched = new Set<string>();
+    if (query) {
+        allowed.forEach((line, index) => {
+            const span = flat.spans[index]!;
+            const text = line.text.toLowerCase();
+            for (let at = text.indexOf(query); at >= 0; at = text.indexOf(query, at + query.length)) {
+                matches.push({
+                    lineID: line.id,
+                    start: span.start + at,
+                    end: span.start + at + query.length,
+                });
+                matched.add(line.id);
+            }
+        });
+    }
+    let selected =
+        query && selector.mode === 'derived'
+            ? allowed.filter((line) => matched.has(line.id))
+            : allowed;
+    const { start, end } = selector.rows ?? {};
+    if (start || end) {
+        const from = start ? selected.findIndex((line) => line.id === start) : 0;
+        const to = end ? selected.findIndex((line) => line.id === end) : selected.length - 1;
+        if (from >= 0 || to >= 0) {
+            const lo = from < 0 ? 0 : from;
+            const hi = to < 0 ? selected.length - 1 : Math.max(lo, to);
+            selected = selected.slice(lo, hi + 1);
+        }
+    }
+    const budget = selector.maxLines;
+    if (budget !== undefined && budget >= 0 && selected.length > budget)
+        selected = selector.follow === false
+            ? selected.slice(0, budget)
+            : selected.slice(selected.length - budget);
+    const kept = new Set(selected.map((line) => line.id));
+    return {
+        lines: selected,
+        matches: matches.filter((match) => kept.has(match.lineID)),
+        hidden: lines.filter((line) => !kept.has(line.id)),
+    };
+};
+
+/** Materialize a selector result that stays fixed as committed lines grow. */
+export const terminalSnapshot = (
+    lines: readonly TerminalLine[],
+    selector?: TerminalSelector,
+): TerminalSelection => {
+    const selection = terminalSelect(lines, selector);
+    const freezeLines = (values: readonly TerminalLine[]): readonly TerminalLine[] =>
+        Object.freeze(values.map((value) => Object.freeze({ ...value })));
+    return Object.freeze({
+        lines: freezeLines(selection.lines),
+        matches: Object.freeze(selection.matches.map((match) => Object.freeze({ ...match }))),
+        hidden: freezeLines(selection.hidden),
+    });
+};
+
 export type TerminalExportFormat = 'markdown' | 'json';
 
 /** Lines addressed by a range, in linear order; an absent range exports the whole console. */
@@ -716,8 +811,20 @@ export const lineHTML = (
     line: TerminalLine,
     glyphs: TerminalGlyphs = terminalGlyphs(),
     direction?: 'ltr' | 'rtl',
-): string =>
-    `<span class="tg-gutter">${escapeHtml(lineGlyph(line, glyphs))} ${escapeHtml(statusGlyph(line, glyphs))}</span><span class="tg-text"${direction ? ` dir="${direction}"` : ''}>${escapeHtml(line.text)}</span>`;
+    matches: readonly (readonly [number, number])[] = [],
+): string => {
+    let text = '';
+    let at = 0;
+    matches.forEach(([start, end]) => {
+        if (start < at || start < 0 || end > line.text.length) return;
+        text +=
+            escapeHtml(line.text.slice(at, start)) +
+            `<mark>${escapeHtml(line.text.slice(start, end))}</mark>`;
+        at = end;
+    });
+    text += escapeHtml(line.text.slice(at));
+    return `<span class="tg-gutter">${escapeHtml(lineGlyph(line, glyphs))} ${escapeHtml(statusGlyph(line, glyphs))}</span><span class="tg-text"${direction ? ` dir="${direction}"` : ''}>${text}</span>`;
+};
 
 export type TerminalDetail = {
     readonly title: string;
@@ -986,6 +1093,8 @@ export type TerminalSpecOptions = {
     readonly previous?: TerminalWindow;
     readonly glyphs?: TerminalGlyphs;
     readonly render?: (line: TerminalLine) => string;
+    /** Explicit selector result; wins over the window slice when provided. */
+    readonly selection?: TerminalSelection;
 };
 
 export const terminalSpec = (
@@ -1004,9 +1113,13 @@ export const terminalSpec = (
         terminalWindow(ids, options.focusID ?? ids.at(-1) ?? '', options.window, options.previous);
     const offsets = terminalGaps(ids, options.gaps ?? [], grid.lineHeight);
     const render = options.render ?? ((line: TerminalLine) => lineHTML(line, options.glyphs));
+    const selected = options.selection?.lines;
+    const selectedIDs = selected ? new Set(selected.map((line) => line.id)) : undefined;
     const startIndex = ids.indexOf(window.start);
     const endIndex = ids.indexOf(window.end);
-    const visible = lines.filter((_, index) => index >= startIndex && index <= endIndex);
+    const visible = selectedIDs
+        ? lines.filter((line) => selectedIDs.has(line.id))
+        : lines.filter((_, index) => index >= startIndex && index <= endIndex);
     const visibleIDs = new Set(visible.map((line) => line.id));
     const nodes: NodeSpec[] = visible.map((line) => {
         const placement = layout.placements.get(line.id)!;
@@ -1102,6 +1215,10 @@ export type TerminalProjectionContext = {
     readonly overlays: readonly TerminalOverlay[];
     readonly band: string;
     readonly layout: TerminalLayout;
+    readonly selector?: TerminalSelector;
+    readonly selection?: TerminalSelection;
+    readonly matches?: readonly TerminalSpan[];
+    readonly presentation?: TerminalPresentation;
 };
 
 export type TerminalHooks<Model = GraphSpec> = {
@@ -1114,6 +1231,9 @@ export type TerminalHooks<Model = GraphSpec> = {
     readonly windowConfig?: TerminalWindowConfig;
     readonly gaps?: readonly TerminalGap[];
     readonly overlays?: readonly TerminalOverlay[];
+    /** Initial declarative read model; live/follow/snapshot/derived are its modes. */
+    readonly selector?: TerminalSelector;
+    readonly presentation?: TerminalPresentation;
     /** Initial palette id or explicit palette; supplies glyphs for the default line markup. */
     readonly palette?: string | TerminalPalette;
     readonly onReveal?: (id: string) => void;
@@ -1150,6 +1270,11 @@ export type TerminalController = {
     setOverlays(overlays: readonly TerminalOverlay[]): void;
     followTail(enabled: boolean): void;
     focusLine(id: string): void;
+    setSelector(selector: TerminalSelector): void;
+    selector(): TerminalSelector;
+    setMode(mode: TerminalMode): void;
+    /** Resolved selector result for the current committed lines and window. */
+    view(): TerminalSelection;
     refresh(): void;
     destroy(): void;
 };
@@ -1164,6 +1289,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
     let focusID = '';
     let range: TerminalRange | undefined;
     let overlays: readonly TerminalOverlay[] = hooks.overlays ?? [];
+    let selector: TerminalSelector = hooks.selector ?? {};
     const gaps = hooks.gaps ?? [];
     let band: string = DEFAULT_RUNG_IDS[0]!;
     let following = true;
@@ -1187,18 +1313,28 @@ export const mountTerminalSink = <Model = GraphSpec>(
         index = terminalOrder(lines);
         flat = terminalFlatten(lines);
     };
-    const layout = (): TerminalLayout => terminalLayout(lines, hooks.grid ?? terminalGrid(), hooks.lane);
-    const windowed = (): readonly TerminalLine[] => {
-        const from = ids.indexOf(windowState.start);
-        const to = ids.indexOf(windowState.end);
-        return lines.filter((_, position) => position >= from && position <= to);
+    const grid = (): TerminalGrid => {
+        const base = hooks.grid ?? terminalGrid();
+        return selector.columns
+            ? {
+                  ...base,
+                  maxWidth: Math.max(
+                      base.minWidth,
+                      Math.floor(selector.columns * base.charWidth + base.gutter),
+                  ),
+              }
+            : base;
     };
+    const layout = (): TerminalLayout => terminalLayout(lines, grid(), hooks.lane);
+    const view = (): TerminalSelection =>
+        terminalSelect(lines, { ...selector, rows: selector.rows ?? windowState });
     const selectedIDs = (): readonly string[] => (range ? terminalRangeIDs(range, index) : []);
 
     const project = (): Model => {
+        const selection = view();
         const context: TerminalProjectionContext = {
             lines,
-            visible: windowed(),
+            visible: selection.lines,
             order: ids,
             index,
             window: windowState,
@@ -1206,16 +1342,21 @@ export const mountTerminalSink = <Model = GraphSpec>(
             overlays,
             band,
             layout: layout(),
+            selector,
+            selection,
+            matches: selection.matches,
+            presentation: hooks.presentation,
         };
         if (hooks.project) return hooks.project(context);
         return terminalSpec(lines, {
-            grid: hooks.grid,
+            grid: grid(),
             lane: hooks.lane,
             window: hooks.windowConfig,
             range: windowState,
             gaps,
             overlays: terminalOverlays(overlays, { band, selected: new Set(selectedIDs()) }),
             glyphs: palette.glyphs,
+            selection,
         }).spec as Model;
     };
 
@@ -1312,6 +1453,16 @@ export const mountTerminalSink = <Model = GraphSpec>(
             hooks.onFocus?.(id);
             apply();
         },
+        setSelector: (next) => {
+            selector = next;
+            apply();
+        },
+        selector: () => selector,
+        setMode: (mode) => {
+            selector = { ...selector, mode };
+            apply();
+        },
+        view,
         refresh: apply,
         destroy: () => {
             unsubscribeNode();

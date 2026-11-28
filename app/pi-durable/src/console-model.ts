@@ -5,6 +5,7 @@ import {
 } from '@spacegraphjs/renderer';
 import {
     lineHTML,
+    terminalFlatten,
     terminalGaps,
     terminalOrder,
     terminalPlace,
@@ -16,6 +17,7 @@ import {
     type TerminalGlyphs,
     type TerminalGrid,
     type TerminalLine,
+    type TerminalPresentation,
     type TerminalProjectionContext,
     type TerminalRange,
 } from 'spacegraphjs/terminal';
@@ -31,6 +33,7 @@ export type ConsoleModelState = {
     /** Distinct prompt node id when multiple consoles share one scene. */
     readonly promptID?: string;
     readonly detailMode: 'inline' | 'popup' | 'rail';
+    readonly presentation?: TerminalPresentation;
 };
 
 const lineStatus = (status: string): RenderNode['status'] =>
@@ -44,12 +47,25 @@ const lineStatus = (status: string): RenderNode['status'] =>
 
 /** Project a terminal window into the renderer model without touching host kernel state. */
 export const consoleModel = (
-    { visible, order, overlays, band }: TerminalProjectionContext,
+    {
+        visible,
+        order,
+        overlays,
+        band,
+        lines: committed,
+        matches,
+        presentation,
+        selection,
+    }: TerminalProjectionContext,
     state: ConsoleModelState,
 ): RenderModel => {
     const { grid, glyphs, lines, detailMode } = state;
+    const flags = presentation ?? state.presentation;
+    const projected = selection?.lines ?? visible;
+    const spans = new Map(terminalFlatten(committed).spans.map((span) => [span.lineID, span] as const));
+    const index = state.index ?? terminalOrder(lines);
     const selected = state.selection
-        ? new Set(terminalRangeIDs(state.selection, state.index ?? terminalOrder(lines)))
+        ? new Set(terminalRangeIDs(state.selection, index))
         : new Set<string>();
     const revealed = terminalOverlays(overlays, { band });
     const offsets = terminalGaps(
@@ -63,17 +79,34 @@ export const consoleModel = (
         rowGap: 4,
         trimGutter: true,
     });
-    const lineNodes: RenderNode[] = visible.map((entry) => {
+    const lineNodes: RenderNode[] = projected.map((entry) => {
         const placement = layout.placements.get(entry.id)!;
         const [width, height] = placement.size;
+        const ranges = flags?.highlightMatches
+            ? (matches ?? []).flatMap((match) => {
+                  const span = spans.get(match.lineID);
+                  return match.lineID === entry.id && span
+                      ? ([[match.start - span.start, match.end - span.start]] as const)
+                      : [];
+              })
+            : [];
         const attrs = `data-selected="${selected.has(entry.id)}" data-kind="${escapeHtml(
             entry.kind,
-        )}" data-status="${escapeHtml(entry.status)}" data-role="${escapeHtml(entry.role ?? '')}"`;
+        )}" data-status="${escapeHtml(entry.status)}" data-role="${escapeHtml(entry.role ?? '')}"${
+            flags?.lineNumbers ? ` data-line-no="${(index.get(entry.id) ?? 0) + 1}"` : ''
+        }${
+            flags?.sourceStamp && entry.at !== undefined
+                ? ` data-source="${new Date(entry.at).toISOString()}"`
+                : ''
+        }`;
+        const className = `sg-terminal-line${flags?.wrap ? ' sg-terminal-wrap' : ''}${
+            flags?.reflow ? ' sg-terminal-reflow' : ''
+        }`;
         return {
             id: entry.id,
             kind: entry.kind,
             label: entry.label,
-            html: `<div class="sg-terminal-line" ${attrs}>${lineHTML(entry, glyphs, state.direction)}</div>`,
+            html: `<div class="${className}" ${attrs}>${lineHTML(entry, glyphs, state.direction, ranges)}</div>`,
             position: [
                 placement.position[0],
                 placement.position[1] + (offsets.get(entry.id) ?? 0),

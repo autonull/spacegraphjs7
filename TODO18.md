@@ -1,9 +1,10 @@
 # TODO18 — Terminal 2: one projection, one command surface, many lenses
 
-> **Status: revised design draft v2 (2026-11-27).** Supersedes the first 12-item draft. No code has
-> landed. Ideas are harvested from [autonull/fracterm](https://github.com/autonull/fracterm)
+> **Status: implementing (2026-11-27).** Supersedes the first 12-item draft. **O1 has landed**;
+> O2–O6 remain `spec`. Ideas are harvested from [autonull/fracterm](https://github.com/autonull/fracterm)
 > (`README.md`, `README3.md`, `TODO.md`) and adapted to the vector console delivered by `TODO17.md`.
 > The fidelity decision in TODO17 §3 still stands: no PTY, VT/ANSI/SGR or second console store.
+> §8 records delivered work; §9 turns the remaining outcomes into an executable queue.
 
 ## 0. Outcome
 
@@ -63,9 +64,9 @@ the published `spacegraphjs/*` subpaths are the SDK.
 
 ## 3. Consolidated outcomes
 
-All are `spec` — no implementation. `E#` = TODO17 enhancement. Effort is relative.
+O1 has landed; O2–O6 are `spec`. `E#` = TODO17 enhancement. Effort is relative.
 
-### O1 — One projection contract (foundation)
+### O1 — One projection contract (foundation) — **Done, see §8**
 
 **Outcome:** window, filter, search, `maxLines`, follow and presentation flags live in one declarative
 selector; live/follow/snapshot/derived are view modes of that selector.
@@ -200,9 +201,69 @@ cursor-control emulation, OSC 8/52, mouse-mode forwarding, kitty keyboard protoc
 permission systems, OpenGL/render-graph work, XDG/Linux desktop integration, multi-monitor layouts,
 and terminal-state save/restore. The kernel remains the durable store; layouts stay arrangement-only.
 
-## 7. First change
+## 7. First change — **Done**
 
-Implement O1: add `TerminalSelector`, `terminalSelect`, `TerminalPresentation` and `terminalSnapshot`
-to `src/terminal.ts`, with unit tests for window+filter+search+`maxLines`, extract-vs-highlight, and
-snapshot immutability. Port `consoleModel` to consume the selector output and verify all twelve
-`shots:console` captures are unchanged. Then open O2's catalog with the existing lens commands.
+Implemented O1: added `TerminalSelector`, `terminalSelect`, `TerminalPresentation`,
+`TerminalSelection`, `TERMINAL_MODES` and `terminalSnapshot` to `src/terminal.ts`; ported
+`consoleModel` to consume selector output; verified the twelve `shots:console` captures. O2's catalog
+is the next change; see §9.
+
+## 8. Progress
+
+### O1 — landed (2026-11-27)
+
+- **Library.** `src/terminal.ts` exports `TERMINAL_MODES`, `TerminalMode`, `TerminalSelector`
+  (`rows`, `columns`, `filter`, `search`, `maxLines`, `follow`, `mode`), `TerminalPresentation`
+  (`wrap`, `reflow`, `lineNumbers`, `sourceStamp`, `highlightMatches`), `TerminalSelection` and
+  `terminalSelect(lines, selector)`. Search returns exact flattened global spans; `derived` mode
+  extracts matched lines, other modes highlight in place; `maxLines` slices the tail by default and
+  the head when `follow: false`. `terminalSnapshot` deep-freezes a resolved result.
+- **Rendering.** `lineHTML` takes optional line-relative match ranges and emits `<mark>` only when
+  given; `terminalSpec` accepts a `selection` that wins over its window slice.
+- **Controller.** `TerminalProjectionContext` carries `selector`, `selection`, `matches` and
+  `presentation`; `TerminalHooks` accepts `selector`/`presentation`; `TerminalController` gains
+  `setSelector`, `selector`, `setMode` and `view`. `columns` widens the effective grid.
+- **Host.** `consoleModel` projects `selection.lines`, highlights matches and emits
+  `data-line-no`/`data-source`/wrap classes behind presentation flags. `Address` gains `q`
+  (selector search) and `mode` (view mode), validated by the compact codec. `DurableHost` exposes
+  `consoleSelect`, `consoleMode`, `consolePresentation` and matching hooks
+  (`consoleSelector`, `consoleView`), and round-trips `q`/`mode` through permalinks.
+- **Proof.** Five `terminalSelect`/snapshot unit tests, two `consoleModel` tests, address codec
+  coverage for `q`/`mode`, and one `reading.spec.ts` E2E for search → highlight → derived →
+  permalink. No default presentation flag is set, so no visual shape changed.
+- **Verification.** Root `pnpm run check`, `pnpm test` (201 files / 1367 tests), `test:exports`
+  (6), `check:console-shots` (12); Pi Durable `tsc --noEmit`, 21 files / 105 unit tests, all 23
+  `reading.spec.ts` E2E tests, and 12 regenerated `shots:console`. Nine captures are byte-identical;
+  the three detail captures differ across identical runs (animation timing), as TODO17 §10 notes.
+
+## 9. Remaining work — executable queue
+
+Each outcome follows §5: pure primitive + unit test in `test/terminal.test.ts`, host wiring through
+`consoleModel`/`lens.ts`/`host.ts`, E2E assertion, console shot only on a visual shape change.
+
+- **O2 — command-driven REPL prompt (next).** Land the catalog *before* wiring actions. Add
+  `terminalConsoleCommands()` to `spacegraphjs/terminal` with the ids `copy`, `export`, `search`,
+  `filter`, `read`, `zoom`, `pin.live`, `pin.snapshot`, `profile`, `asOf`, `fork`, `why`, `help`
+  and `disabledReason` gates; reuse `CommandRegistry`/`filterCommands`. Extend `mountComposer`
+  with optional `commands`, `onCommand`, `onComplete` while keeping the default path unchanged.
+  Add `terminalContextMenu(range, commands)` as menu data with a `ScopedOverlay` focus trap in the
+  host. Move `lens.ts`'s `LENS_COMMANDS` into the shared catalog and dispatch every verb through
+  `CommandRegistry.run()`; map keys with `InputBinding`/`InputManager` and suppress them while the
+  textarea has focus. **Already available to the host:** `consoleSelect`/`consoleMode`/
+  `consolePresentation` hooks plus `Address.q`/`Address.mode`, so command handlers need no new
+  state plumbing. Proof: `/search ERROR`, `/pin snapshot`, `/as of 2`, menu copy and help listing.
+- **O3 — search and derived views.** `terminalSelect` already returns global match spans and
+  `presentation.highlightMatches` already renders `<mark>`; add `terminalSearch(lines, query,
+  { regex, caseSensitive, scope })`, `terminalMatchFlags` and `terminalDerived` on top of that
+  span representation. Host: `Ctrl+F`/`F3`, case/regex toggles, pin-matches-as-snapshot command,
+  `applyModelEmphasis` dimming and a bounded `createInstrumentKit('logtail')` sidecar.
+- **O4 — lens navigation and targets.** Add `TerminalLensTarget`, `terminalLensRect` over
+  `terminalPlace`, `terminalBookmark` over `view-state`, `Trail.reconcile` history and `edgePath`
+  breadcrumbs. `Address` already allowlists new host keys, so `lens`/`bm` can join `q`/`mode`
+  without a new codec. Reduced-motion `flyTo` snaps.
+- **O5 — reading lens and profiles.** `TerminalPresentation` and the `consoleModel` presentation
+  attributes are the foundation; add `terminalReadingLens`, quick-read scopes and `TerminalProfile`
+  presets, then layer focus roles through `AccessibilityLayer`/`bindA11yFocus`. Shots change here.
+- **O6 — regions and scale (last).** Infer regions from kind/role runs and gaps; add auto-zoom
+  ranking, dirty-gated projection, `logLayout`/`chapterPacking` groups, `diffPositions` and a
+  fixed-seed property suite. Depends on O1–O5 being stable.

@@ -4,6 +4,7 @@ import {
     terminalGrid,
     terminalLayout,
     terminalOrder,
+    terminalSelect,
     type TerminalLine,
     type TerminalOverlay,
     type TerminalProjectionContext,
@@ -79,5 +80,29 @@ describe('consoleModel', () => {
         expect(model.nodes.find((node) => node.id === 'detail-a')?.position[0]).toBeGreaterThan(
             model.nodes[0]!.position[0],
         );
+    });
+
+    it('projects selector output, highlight spans and presentation flags', () => {
+        const selection = terminalSelect(lines, { search: 'ALPHA' });
+        const model = consoleModel(
+            {
+                ...context(),
+                selection,
+                matches: selection.matches,
+                presentation: { highlightMatches: true, lineNumbers: true, wrap: true },
+            },
+            state,
+        );
+        const node = model.nodes.find((entry) => entry.id === 'a');
+        expect(node?.html).toContain('<mark>alpha</mark>');
+        expect(node?.html).toContain('data-line-no="1"');
+        expect(node?.html).toContain('sg-terminal-wrap');
+        expect(model.nodes.map((entry) => entry.id)).toEqual(['a', 'b', 'terminal-prompt']);
+    });
+
+    it('drops selector-hidden lines from the rendered projection', () => {
+        const selection = terminalSelect(lines, { filter: (entry) => entry.id === 'b' });
+        const model = consoleModel({ ...context(), selection }, state);
+        expect(model.nodes.map((entry) => entry.id)).toEqual(['b', 'terminal-prompt']);
     });
 });

@@ -41,6 +41,8 @@ import {
     terminalRangeIDs,
     terminalRangeKey,
     terminalRangeText,
+    terminalSelect,
+    terminalSnapshot,
     terminalSpec,
     terminalTextWidth,
     terminalVisible,
@@ -915,5 +917,66 @@ describe('replay animation', () => {
         expect(rendered).toHaveLength(2);
         await cancelled.finished();
         vi.useRealTimers();
+    });
+});
+
+describe('terminalSelect', () => {
+    const sample = [
+        line('a', 'alpha ERROR'),
+        line('b', 'beta'),
+        line('c', 'gamma error'),
+        line('d', 'delta'),
+    ];
+
+    it('is an identity projection with no selector', () => {
+        const selection = terminalSelect(sample);
+        expect(selection.lines).toEqual(sample);
+        expect(selection.matches).toEqual([]);
+        expect(selection.hidden).toEqual([]);
+    });
+
+    it('composes window, filter, search and maxLines', () => {
+        const selection = terminalSelect(sample, {
+            filter: (entry) => entry.id !== 'd',
+            search: 'error',
+            rows: { start: 'a', end: 'c' },
+            maxLines: 2,
+        });
+        expect(selection.lines.map((entry) => entry.id)).toEqual(['b', 'c']);
+        expect(selection.matches).toEqual([{ lineID: 'c', start: 23, end: 28 }]);
+        expect(selection.hidden.map((entry) => entry.id)).toEqual(['a', 'd']);
+    });
+
+    it('maps search matches to flattened global spans', () => {
+        expect(terminalSelect(sample, { search: 'error' }).matches).toEqual([
+            { lineID: 'a', start: 6, end: 11 },
+            { lineID: 'c', start: 23, end: 28 },
+        ]);
+    });
+
+    it('extracts matched lines in derived mode and highlights in place otherwise', () => {
+        expect(
+            terminalSelect(sample, { search: 'error', mode: 'derived' }).lines.map(
+                (entry) => entry.id,
+            ),
+        ).toEqual(['a', 'c']);
+        const live = terminalSelect(sample, { search: 'error' });
+        expect(live.lines.map((entry) => entry.id)).toEqual(['a', 'b', 'c', 'd']);
+        expect(lineHTML(live.lines[0]!, terminalGlyphs(), undefined, [[6, 11]])).toContain(
+            'alpha <mark>ERROR</mark>',
+        );
+        expect(lineHTML(live.lines[0]!)).not.toContain('<mark>');
+    });
+
+    it('snapshots stay fixed as committed lines change', () => {
+        const mutable: TerminalLine[] = [line('a', 'alpha'), line('b', 'beta')];
+        const snapshot = terminalSnapshot(mutable, { maxLines: 2 });
+        expect(Object.isFrozen(snapshot)).toBe(true);
+        expect(Object.isFrozen(snapshot.lines)).toBe(true);
+        expect(Object.isFrozen(snapshot.lines[0])).toBe(true);
+        (mutable[0] as { text: string }).text = 'changed';
+        mutable.push(line('c', 'gamma'));
+        expect(snapshot.lines.map((entry) => entry.text)).toEqual(['alpha', 'beta']);
+        expect(mutable).toHaveLength(3);
     });
 });
