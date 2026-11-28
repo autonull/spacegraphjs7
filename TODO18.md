@@ -31,14 +31,24 @@ Reading mode = accessibility lens · Dashboard = collection of lenses
 | `spacegraphjs/commands`: `Command`, `CommandRegistry`, `filterCommands` (already used in `app/pi-durable/src/lens.ts`) | one catalog for prompt `/`, palette, context menu, keys, help, tests | another command registry or ad-hoc key handlers |
 | `spacegraphjs/composer`: `mountComposer` (history, multiline, Enter) | scene prompt; extend with completion/`/` hooks | a new textarea editor |
 | `spacegraphjs/view-state`: `viewStateCodec` with allowlisted host keys (already carries `sel/tail/pal/det`) | lens targets, bookmarks, profile in `Address` | a separate URI codec; URIs are a thin formatter over `{id, offset}` |
-| `spacegraphjs/navigation`: `Navigation.project`, `Trail`, `edgePath`, minimap | overview and bookmark targets | another minimap |
-| `spacegraphjs/reading` + `documents`: `mountReading`, `readingOrder`, `readingTextHTML` | reading lens and quick reads | a second readable renderer |
-| `spacegraphjs/representations`, `levels`, `zoom`: `DEFAULT_RUNG_IDS`, band changes | zoom-progressive region/detail reveal | another band vocabulary |
-| `spacegraphjs/overlays`: `ScopedOverlay`, `extractSubgraph`, `renderCodeDiff` | context menus, pinned subgraph cards, diff tiles | new overlay plumbing |
-| `spacegraphjs/widgets`: `WidgetLayer`, `MountedWidget`, `resolveWidgetSize` | sidecar/log-monitor tiles with safe markup | a bespoke tile host |
-| `spacegraphjs/a11y`, `input`: `createAnnouncer`, typing-target rules | focus roles and announcements | a second focus model |
-| `spacegraphjs/salience`, `activity`, `motion`, `policy` | attention accents and reduced-motion snapping | new emphasis or animation systems |
-| `@spacegraphjs/kernel`, `packages/client` | durable facts, typed host API | a second store |
+| `spacegraphjs/navigation`: `Navigation.project`, `Trail.reconcile`, `kindDescent`, `edgePath` | minimap/scrollbar, history that survives model updates, zoom-into-line breadcrumbs | another minimap or back/forward stack |
+| `spacegraphjs/reading` + `documents`: `mountReading`, `readingOrder`, `readingTextHTML`, `parseDocument` | reading lens, quick reads, safe detail markdown | a second readable renderer |
+| `spacegraphjs/representations`, `levels`, `zoom`: `DEFAULT_RUNG_IDS`, `logLayout`, `chapterPacking`, `ScaleDomain`, `playRepresentationChanges` | zoom-progressive regions and log chapters; reduced-motion crossfade | another band vocabulary |
+| `spacegraphjs/overlays`: `ScopedOverlay`, `extractSubgraph`, `renderCodeDiff` | menu focus trap, `/why` provenance card, `/diff` tile | new overlay plumbing |
+| `spacegraphjs/widgets`: `WidgetRegistry`, `WIDGET_SLOTS`, `createInstrumentKit` (`logtail`, `meter`, `sparkline`, `diff`), `resolveWidgetSize`, `isSafeWidgetMarkup` | pinned log monitors and per-line REPL output widgets with safe markup | a bespoke tile host |
+| `spacegraphjs/a11y`: `createAnnouncer`, `AccessibilityLayer`, `bindA11yFocus`; `isEditableTarget` | ordered assistive mirror, roving focus, "never while typing" rule | a second focus model |
+| `spacegraphjs/input`: `InputManager`, `InputBinding`, fingerings | one wheel/key/touch stream for follow, zoom and menus | ad-hoc listeners |
+| `spacegraphjs/salience`: `createSalience` + signals, `applyModelEmphasis`, `/why` explanations | gutter attention bars and dimming non-matches during search | new emphasis system |
+| `spacegraphjs/motion`, `policy`: `playMotion({reducedMotion})` `flyTo`, `PolicySchema`, `encodePolicyVector` | lens transitions and console flags in permalinks | new animation or flag codec |
+| `spacegraphjs/quality`: `checkQuality`, `visionAssert` | DOM-budget, a11y, direction and motion assertions in tests | a second visual gate |
+| `@spacegraphjs/kernel`: `SessionKernel.checkout/fork`, `filterByTime`, `diffKernels`, `GraphHistory` | `/as of`, `/fork`, two-tail diff over one committed fold | a second store |
+
+**Substrate, not implementations:** bookmarks, palette UI, a keybinding registry and slash completion do
+not exist as library features; `Command.shortcut` is search text and `matchShortcut` is internal to
+`packages/shared`. Build thin `terminalBookmark`, `terminalContextMenu` and slash-completion primitives
+on the registries above, and keep key→command mapping in the host. There is no reusable context-menu
+primitive; `ScopedOverlay` only supplies the focus trap. `packages/client` is not part of this repo —
+the published `spacegraphjs/*` subpaths are the SDK.
 
 ## 2. Invariants
 
@@ -76,13 +86,18 @@ existing `CommandRegistry`; every console action has one id reachable from promp
 menu, keybinding and tests.
 
 - Library: extend `mountComposer` with optional `commands`, `onCommand`, `onComplete` (default path
-  unchanged); `terminalConsoleCommands()` catalog ids (`copy`, `export`, `search`, `filter`, `read`,
-  `zoom`, `pin.live`, `pin.snapshot`, `profile`, `asOf`, `help`).
-- Host: move the existing lens commands into the same registry; `/` prompt dispatch, `Ctrl+K` palette,
-  context menu on a range, and help/cheatsheet generated from catalog entries.
-- Proof: E2E scene prompt `/search ERROR`, `/pin snapshot`, menu copy, help listing; no shot needed.
-- Effort: medium. Depends on: O1 for actions that take selectors. Reuses: `commands`, `composer`,
-  `lens.ts`, `overlays`. **Land the catalog before wiring many actions** to avoid rewriting handlers.
+  unchanged); `terminalConsoleCommands()` extends the existing lens catalog with ids (`copy`,
+  `export`, `search`, `filter`, `read`, `zoom`, `pin.live`, `pin.snapshot`, `profile`, `asOf`, `fork`,
+  `why`, `help`), each with `disabledReason` gates; `terminalContextMenu(range, commands)` builds menu
+  data from the catalog and uses `ScopedOverlay` for focus parity (no reusable menu primitive exists).
+- Host: move `app/pi-durable/src/lens.ts` commands into the same `CommandRegistry`; dispatch every verb
+  through `CommandRegistry.run()`; map keys with `InputBinding`/`InputManager` so shortcuts never fire
+  while the textarea has focus; generate palette, help and cheatsheet from catalog entries.
+  `/as of`, `/fork` and `/why` call `SessionKernel.checkout/fork`, `Graph.query` and `diffKernels`.
+- Proof: E2E scene prompt `/search ERROR`, `/pin snapshot`, `/as of 2`, menu copy, help listing.
+- Effort: medium. Depends on: O1 for actions that take selectors. Reuses: `commands.run`, `composer`,
+  `input`, `overlays.ScopedOverlay`, `kernel`, `lens.ts`. **Land the catalog before wiring many
+  actions** to avoid rewriting handlers.
 
 ### O3 — Search and derived views
 
@@ -92,10 +107,13 @@ live derived view or a pinned snapshot without leaving the console.
 - Library: `terminalSearch(lines, query, { regex, caseSensitive, scope })` → matches
   `{lineID, start, end}` using E7 indices; `terminalMatchFlags` for highlight; `terminalDerived`
   recomputes a selector from the kernel fold.
-- Host: `Ctrl+F` / `F3` / `Shift+F3`, case/regex toggles, "pin matches as snapshot" command; log
-  monitor sidecar from a live derived selector (e.g. ERROR lines).
-- Proof: unit tests for regex/case/span mapping; E2E search + pin; one console shot for a search view.
-- Effort: medium. Depends on: O1, O2. Reuses: E7, `overlays`, `widgets`.
+- Host: `Ctrl+F` / `F3` / `Shift+F3`, case/regex toggles, "pin matches as snapshot" command; dim
+  non-matching lines with `applyModelEmphasis(mappingFor(['opacity','glow']))`; mount a log-monitor
+  sidecar through `WidgetRegistry` + `createInstrumentKit('logtail')` from a live derived selector
+  (e.g. ERROR lines), bounded by `resolveWidgetSize`.
+- Proof: unit tests for regex/case/span mapping; E2E search + pin + sidecar; one console shot for a
+  search view.
+- Effort: medium. Depends on: O1, O2. Reuses: E7, `salience`, `widgets`, `overlays`.
 
 ### O4 — Lens navigation and shareable targets
 
@@ -103,12 +121,14 @@ live derived view or a pinned snapshot without leaving the console.
 round-trip through permalinks and name ids, never coordinates.
 
 - Library: `TerminalLensTarget` = `line | range | window | selection | column | region`;
-  `terminalLensRect(placement, target)` from the shared placement contract; `terminalBookmark` over
-  stable ids; reduce-motion snapping via `motion`/`policy`.
-- Host: `focus(target)` command, `bm0`–`bm9` saved/recalled, `Address.lens`/`Address.bm` using the
-  existing codec; cursor-anchored wheel zoom.
-- Proof: unit tests for target→rect and bookmark codec; E2E permalink round-trip and zoom-to-selection.
-- Effort: medium. Depends on: O1, O2. Reuses: E4/E8, `navigation`, `view-state`, `motion`.
+  `terminalLensRect(placement, target)` from the shared placement contract; thin `terminalBookmark`
+  over `view-state` keys (no URI codec); `Trail.reconcile` for lens history that survives model
+  updates; `edgePath` + `kindDescent` for breadcrumbs; `playMotion({verb:'flyTo', reducedMotion})`.
+- Host: `focus(target)` command, `bm0`–`bm9` saved/recalled, `Address.lens`/`Address.bm` via the
+  existing codec; console flags carried by `encodePolicyVector`; cursor-anchored wheel zoom.
+- Proof: unit tests for target→rect and bookmark codec; E2E permalink round-trip, trail back/forward
+  and zoom-to-selection under reduced motion.
+- Effort: medium. Depends on: O1, O2. Reuses: E4/E8, `navigation`, `view-state`, `motion`, `policy`.
 
 ### O5 — Reading lens, profiles and focus polish
 
@@ -119,9 +139,11 @@ contrast, hidden chrome) with quick reads, and a profile preset replaces several
   selection / current line / last N / filtered; `TerminalProfile` = palette + grid + glyphs +
   presentation (`logs`, `presentation`, `high-contrast`, `big-text`).
 - Host: `setConsoleProfile(id)`, `readConsole(scope)`; layered focus roles (camera/view/node/input)
-  and announcements from the command catalog; reduced motion for lens transitions.
-- Proof: E2E reading lens + profile; regenerate `shots:console` for chrome/palette/caret changes.
-- Effort: medium. Depends on: O1, O2, O4. Reuses: `reading`, E10/E11, `a11y`, `policy`.
+  mirrored by `AccessibilityLayer`/`bindA11yFocus`, announced through the command catalog; safe detail
+  markdown via `parseDocument`/`safeDocumentHTML`; reduced motion for lens transitions.
+- Proof: E2E reading lens + profile + assistive mirror; regenerate `shots:console` for chrome/palette/
+  caret changes.
+- Effort: medium. Depends on: O1, O2, O4. Reuses: `reading`, `documents`, `a11y`, E10/E11, `policy`.
 
 ### O6 — Regions, auto-zoom and scale (large, last)
 
@@ -131,9 +153,11 @@ contrast, hidden chrome) with quick reads, and a profile preset replaces several
   boundaries, gaps and gutter slots; auto-zoom ranks candidates and preserves context; dirty-gated
   projection so unchanged state skips `sink.render`; property/fuzz tests for selector, wrap, range
   and window invariants.
-- Host: region overlays via `terminalOverlays`/`ScopedOverlay`, `autoZoom` command, churn telemetry
-  from TODO17 #10 to tune thresholds.
-- Proof: E2E auto-zoom, fuzz/property suite, one console shot for region reveal.
+- Host: region overlays via `terminalOverlays`, `logLayout`/`chapterPacking` for grouped turns,
+  `LaneLayout` for command-reference tables, and `diffPositions` for incremental placement; `autoZoom`
+  command plays `flyTo`; churn telemetry from TODO17 #10 tunes thresholds. `checkQuality` guards DOM
+  budget, a11y mirror, direction and motion in tests.
+- Proof: E2E auto-zoom, fuzz/property suite, `checkQuality` report, one console shot for region reveal.
 - Effort: large — split inference from camera work if it grows. Depends on: O1–O5.
 
 ## 4. Sequencing and why this order
@@ -165,6 +189,8 @@ console shot only when visual shape changes; progress recorded in this file, as 
 - Tier 2: `pnpm run check` from the repository root.
 - Tier 3: `pnpm --filter pi-durable verify:fast`, demo `transcript.spec.ts`,
   `pnpm run check:console-shots`, and `pnpm --filter pi-durable shots:console` on shape changes.
+- `checkQuality(model)` on each projected console window to catch DOM-budget, a11y, direction and
+  `motion-mismatch` regressions; `visionAssert` only for visual-grading changes, never as a REPL gate.
 - Property/fuzz tests use fixed seeds and test pure functions; no kernel mocks.
 
 ## 6. Deliberately not imported
