@@ -2,6 +2,7 @@
 // The host owns vocabulary, theme and camera; nothing here imports a graph runtime or an app.
 
 import { createAnnouncer } from './a11y/announcer';
+import { CommandRegistry, type Command } from './commands';
 import { mountComposer, type ComposerController, type ComposerOptions } from './composer';
 import { transcriptLane, type TranscriptLaneOptions } from './layout/transcript';
 import { escapeHtml } from './markup';
@@ -664,6 +665,94 @@ export const terminalSnapshot = (
     });
 };
 
+export type TerminalConsoleCommandGates = {
+    readonly selection?: boolean;
+    readonly lines?: boolean;
+    readonly fork?: boolean;
+};
+
+/** One catalog for the prompt, palette, context menu, keys, help and tests. */
+export const terminalConsoleCommands = (
+    gates: TerminalConsoleCommandGates = {},
+): CommandRegistry => {
+    const gate = (allowed: boolean | undefined, reason: string): string | undefined =>
+        allowed === false ? reason : undefined;
+    const entry = (
+        id: string,
+        label: string,
+        hint: string,
+        keywords: readonly string[] = [],
+        disabledReason?: string,
+    ): Command => ({
+        id,
+        label,
+        group: 'console',
+        hint,
+        keywords,
+        ...(disabledReason ? { disabledReason } : {}),
+    });
+    return new CommandRegistry([
+        entry('copy', 'copy', '/copy', ['clipboard'], gate(gates.selection, 'Select lines first')),
+        entry(
+            'export',
+            'export',
+            '/export [markdown|json]',
+            ['save'],
+            gate(gates.lines, 'No console lines'),
+        ),
+        entry('search', 'search', '/search <text>', ['find']),
+        entry('filter', 'filter', '/filter <kind>', ['scope']),
+        entry(
+            'read',
+            'read',
+            '/read [line]',
+            ['document'],
+            gate(gates.lines, 'No console lines'),
+        ),
+        entry('zoom', 'zoom', '/zoom <landmark>', ['scale']),
+        entry('pin.live', 'pin live', '/pin live', ['follow']),
+        entry('pin.snapshot', 'pin snapshot', '/pin snapshot', ['freeze']),
+        entry(
+            'profile',
+            'profile',
+            '/profile <logs|presentation|high-contrast|big-text>',
+            ['theme'],
+        ),
+        entry('asOf', 'as of', '/as of <seq>', ['asof', 'history']),
+        entry('fork', 'fork', '/fork [line]', ['branch'], gate(gates.fork, 'Nothing to fork')),
+        entry('why', 'why', '/why', ['provenance']),
+        entry('help', 'help', '/help', ['?']),
+    ]);
+};
+
+export type TerminalMenuItem = {
+    readonly id: string;
+    readonly label: string;
+    readonly group: string;
+    readonly hint?: string;
+    readonly disabled: boolean;
+    readonly disabledReason?: string;
+};
+
+/** Menu data over the same catalog; the host supplies the focus-trapping overlay. */
+export const terminalContextMenu = (
+    range: TerminalRange | undefined,
+    commands: readonly Command[],
+): readonly TerminalMenuItem[] =>
+    commands.map((command) => {
+        const needsSelection = command.id === 'copy' || command.id === 'export';
+        const reason =
+            command.disabledReason ?? (needsSelection && !range ? 'Select lines first' : undefined);
+        return {
+            id: command.id,
+            label: command.label,
+            group: command.group,
+            ...(command.hint ? { hint: command.hint } : {}),
+            disabled: Boolean(reason),
+            ...(reason ? { disabledReason: reason } : {}),
+        };
+    });
+
 export type TerminalExportFormat = 'markdown' | 'json';
 
 /** Lines addressed by a range, in linear order; an absent range exports the whole console. */
@@ -895,9 +984,14 @@ export const mountTerminalPrompt = (
     const attach = (): boolean => {
         const field = container.querySelector<HTMLTextAreaElement>(selector);
         if (!field || composer?.element === field) return false;
-        composer = mountComposer(field, { onSubmit: options.onSubmit, history: options.history });
-        observer?.disconnect();
-        observer = undefined;
+        composer?.destroy();
+        composer = mountComposer(field, {
+            onSubmit: options.onSubmit,
+            history: options.history,
+            commands: options.commands,
+            onCommand: options.onCommand,
+            onComplete: options.onComplete,
+        });
         return true;
     };
     if (!attach()) {

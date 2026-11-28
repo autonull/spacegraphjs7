@@ -12,6 +12,8 @@ import {
     STATUS_GLYPHS,
     TERMINAL_PALETTES,
     terminalChapters,
+    terminalConsoleCommands,
+    terminalContextMenu,
     terminalDiff,
     terminalLink,
     terminalPalette,
@@ -978,5 +980,36 @@ describe('terminalSelect', () => {
         mutable.push(line('c', 'gamma'));
         expect(snapshot.lines.map((entry) => entry.text)).toEqual(['alpha', 'beta']);
         expect(mutable).toHaveLength(3);
+    });
+});
+
+describe('console command catalog', () => {
+    it('carries every console verb with gates for unavailable actions', () => {
+        const commands = terminalConsoleCommands({
+            selection: false,
+            lines: false,
+            fork: false,
+        });
+        expect(commands.list().map((command) => command.id)).toEqual([
+            'copy', 'export', 'search', 'filter', 'read', 'zoom', 'pin.live', 'pin.snapshot',
+            'profile', 'asOf', 'fork', 'why', 'help',
+        ]);
+        expect(commands.get('copy')?.disabledReason).toBe('Select lines first');
+        expect(commands.get('fork')?.disabledReason).toBe('Nothing to fork');
+        expect(commands.get('search')?.disabledReason).toBeUndefined();
+        expect(commands.run('copy')).toBe(false);
+    });
+
+    it('derives menu data from the same catalog and gates copy on a selection', () => {
+        const commands = terminalConsoleCommands().list();
+        expect(terminalContextMenu(undefined, commands).find((item) => item.id === 'copy')?.disabled)
+            .toBe(true);
+        const range = {
+            anchor: { nodeID: 'a', offset: 0 },
+            focus: { nodeID: 'a', offset: 1 },
+        };
+        const items = terminalContextMenu(range, commands);
+        expect(items.find((item) => item.id === 'copy')?.disabled).toBe(false);
+        expect(items.find((item) => item.id === 'pin.snapshot')?.label).toBe('pin snapshot');
     });
 });

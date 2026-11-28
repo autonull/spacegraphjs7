@@ -35,6 +35,30 @@ export const filterCommands = (commands: readonly Command[], query: string): rea
     ];
 };
 
+export interface CommandMatch {
+    readonly command: Command;
+    readonly rest: string;
+}
+/** Resolve `/verb rest` against ids, labels and keywords; labels may span up to three words. */
+export const matchCommand = (
+    commands: readonly Command[],
+    text: string,
+): CommandMatch | undefined => {
+    const value = text.trim().replace(/^\//, '');
+    if (!value) return undefined;
+    const parts = value.split(/\s+/);
+    for (const command of commands) {
+        const names = [command.id, command.label, ...(command.keywords ?? [])].map((name) =>
+            name.toLowerCase(),
+        );
+        for (let count = Math.min(3, parts.length); count >= 1; count--) {
+            const token = parts.slice(0, count).join(' ').toLowerCase();
+            if (names.includes(token)) return { command, rest: parts.slice(count).join(' ') };
+        }
+    }
+    const [prefix] = filterCommands(commands, parts[0]!);
+    return prefix ? { command: prefix, rest: parts.slice(1).join(' ') } : undefined;
+};
 /** A named set of contributed commands, keyed by stable id. */
 export class CommandRegistry {
     readonly #entries: Command[] = [];

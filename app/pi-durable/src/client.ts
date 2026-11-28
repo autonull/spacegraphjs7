@@ -486,6 +486,11 @@ const bindCardFocus = (): void => {
             raisedDots.delete(id);
         });
     });
+    el('canvas').addEventListener('contextmenu', (event) => {
+        if (host.address().view !== 'transcript') return;
+        event.preventDefault();
+        host.openConsoleMenu(event.clientX, event.clientY);
+    });
 };
 
 const bindChrome = (): void => {

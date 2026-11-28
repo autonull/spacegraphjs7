@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
+import { CommandRegistry } from '../src/commands';
 import { mountComposer } from '../src/composer';
 
 const field = (): HTMLTextAreaElement => {
@@ -42,6 +43,33 @@ describe('mountComposer', () => {
         element.value = 'ignored';
         element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
         expect(onSubmit).not.toHaveBeenCalled();
+        element.remove();
+    });
+
+    it('resolves slash commands and completes prefixes without submitting them as text', () => {
+        const element = field();
+        const onSubmit = vi.fn();
+        const onCommand = vi.fn();
+        const onComplete = vi.fn();
+        const commands = new CommandRegistry([
+            { id: 'search', label: 'search', group: 'console' },
+            { id: 'pin.snapshot', label: 'pin snapshot', group: 'console' },
+        ]);
+        const composer = mountComposer(element, { onSubmit, commands, onCommand, onComplete });
+        element.value = '/se';
+        element.dispatchEvent(new Event('input'));
+        expect(onComplete.mock.lastCall?.[0]).toBe('se');
+        expect(onComplete.mock.lastCall?.[1].map((command: { id: string }) => command.id)).toContain(
+            'search',
+        );
+        element.value = '/search ERROR';
+        element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(onCommand).toHaveBeenCalledWith('search', 'ERROR');
+        expect(onSubmit).not.toHaveBeenCalled();
+        element.value = '/pin snapshot';
+        element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(onCommand).toHaveBeenCalledWith('pin.snapshot', '');
+        composer.destroy();
         element.remove();
     });
 });

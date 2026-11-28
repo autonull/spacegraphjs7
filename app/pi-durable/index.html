@@ -375,6 +375,15 @@
             #help > div { max-width: 560px; padding: 24px; border: 1px solid var(--line);
                 border-radius: 14px; background: var(--panel); }
             #help h2 { margin-top: 0; }
+            #console-help { white-space: pre-line; font: 11px/1.5 monospace; color: var(--muted);
+                max-height: 180px; overflow: auto; }
+            #console-menu { position: absolute; z-index: 25; display: flex; flex-direction: column;
+                gap: 2px; padding: 6px; border: 1px solid var(--line); border-radius: 10px;
+                background: var(--panel); min-width: 180px; }
+            #console-menu[hidden], #console-completions[hidden] { display: none; }
+            #console-completions { position: absolute; bottom: 84px; left: 24px; z-index: 26;
+                display: flex; flex-wrap: wrap; gap: 4px; }
+            #console-completions button { font: 11px monospace; }
             kbd { padding: 2px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); }
             @media (max-width: 900px) {
                 main { grid-template-columns: 1fr; }
@@ -583,6 +592,10 @@
                 </form>
                 <p id="prompt-error" role="status" hidden></p>
             </footer>
+            <div id="console-completions" hidden role="listbox" aria-label="Console command completions"></div>
+        </div>
+        <div id="console-menu" hidden role="menu" aria-label="Console commands">
+            <div id="console-menu-items"></div>
         </div>
         <button id="present-exit" type="button" class="action" aria-label="Exit presentation mode" title="Exit presentation mode (Shift+F)">Exit presentation</button>
         <div id="announcer" role="status" aria-live="polite"></div>
@@ -590,6 +603,8 @@
             <div>
                 <h2 id="help-title">Keyboard</h2>
                 <div id="help-shortcuts"></div>
+                <h3>Console commands</h3>
+                <div id="console-help"></div>
                 <p>Every node records a committed Durable fact. Edges are only drawn where Durable recorded a link.</p>
                 <button type="button" class="action" id="help-close">Close</button>
             </div>

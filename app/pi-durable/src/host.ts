@@ -24,6 +24,7 @@ import {
 } from '@spacegraphjs/renderer';
 import { rankedSearch } from '@spacegraphjs/search';
 import { createAnnouncer } from 'spacegraphjs/a11y';
+import { CommandRegistry, matchCommand, type Command } from 'spacegraphjs/commands';
 import type { GraphViewData } from '@spacegraphjs/shared';
 import { defaultTokens, themeFromDesignTokens, type DesignTokens } from '@spacegraphjs/shared/tokens';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
@@ -53,6 +54,8 @@ import {
     terminalExport,
     terminalGrid,
     terminalLink,
+    terminalConsoleCommands,
+    terminalContextMenu,
     terminalPalette,
     terminalRangeFromKey,
     terminalRangeKey,
@@ -67,6 +70,7 @@ import {
     type TerminalOverlay,
     type TerminalPresentation,
     type TerminalPromptController,
+    type TerminalRange,
     type TerminalSelector,
     type TerminalSink,
 } from 'spacegraphjs/terminal';
@@ -90,7 +94,14 @@ import { focusLens } from './focus';
 import { filterCounts, matchesFilter, type MuteFilter } from './filters';
 import { HistoryTracker } from './history';
 import { instrumentsFor, tally, type Instruments } from './instruments';
-import { LAYOUT_NAMES, lensCompletions, LENS_HELP, parseLens, type LayoutName } from './lens';
+import {
+    LAYOUT_NAMES,
+    LENS_COMMANDS,
+    lensCompletions,
+    LENS_HELP,
+    parseLens,
+    type LayoutName,
+} from './lens';
 import { bandForOctave, octaveFor, octaveSizeFor, sizeForOctave, type OctaveBand } from './octaves';
 import { provenanceFor } from './provenance';
 import {
@@ -684,6 +695,9 @@ export class DurableHost {
     #consolePresentation: TerminalPresentation = {};
     #expandedLine: string | undefined;
     #helpScope: ScopedOverlay | undefined;
+    #menuScope: ScopedOverlay | undefined;
+    #commandValue = '';
+    #terminalPrompt: TerminalPromptController | undefined;
     #mutedEdges = 0;
     #activeGroups = new Set<string>();
     #scopeKey = '';
@@ -1810,6 +1824,183 @@ export class DurableHost {
         return this.#consolePresentation;
     }
 
+    #consoleTarget(): TerminalRange | undefined {
+        const selection = this.#terminalController?.selection();
+        if (selection) return selection;
+        const tail = this.#terminalController?.tail();
+        return tail
+            ? { anchor: { nodeID: tail, offset: 0 }, focus: { nodeID: tail, offset: 0 } }
+            : undefined;
+    }
+
+    /** One catalog: lens grammar and console verbs resolve and run through the same registry. */
+    #commands(): CommandRegistry {
+        const lines = this.#terminalController?.lines() ?? [];
+        const target = this.#consoleTarget();
+        const registry = new CommandRegistry([
+            ...LENS_COMMANDS.list().filter((command) => command.group === 'grammar'),
+            ...terminalConsoleCommands({
+                selection: Boolean(target),
+                lines: lines.length > 0,
+                fork: Boolean(target),
+            }).list(),
+        ]);
+        const action = (id: string, run: (rest: string) => void): void => {
+            const command = registry.get(id);
+            if (command) registry.add({ ...command, run: () => run(this.#commandValue) });
+        };
+        LENS_COMMANDS.list()
+            .filter((command) => command.group === 'grammar')
+            .forEach((command) => action(command.id, (rest) => {
+                this.lens(`${command.label}${rest ? ` ${rest}` : ''}`);
+            }));
+        action('copy', () => {
+            const text = this.#terminalController?.copy();
+            this.announce(text ? 'Copied console selection' : 'Nothing to copy');
+        });
+        action('export', (rest) => this.export(rest === 'json' ? 'json' : 'markdown'));
+        action('search', (rest) => {
+            this.setView('transcript');
+            this.consoleSelect({ ...this.#consoleSelector, search: rest });
+            this.announce(rest ? `Searching console for ${rest}` : 'Console search cleared');
+        });
+        action('filter', (rest) => {
+            this.setView('transcript');
+            this.consoleSelect({
+                ...this.#consoleSelector,
+                filter: rest ? (line) => line.kind === rest : undefined,
+            });
+            this.announce(rest ? `Filtering console by ${rest}` : 'Console filter cleared');
+        });
+        action('read', (rest) => this.readInTranscript(rest || this.#terminalController?.tail()));
+        action('zoom', (rest) => {
+            if (isRung(rest)) this.setRung(rest);
+            else this.announce(`Unknown landmark: ${rest || '(none)'}`);
+        });
+        action('pin.live', () => {
+            this.setView('transcript');
+            this.consoleSelect({ ...this.#consoleSelector, mode: 'live', follow: true });
+            this.announce('Console pinned live');
+        });
+        action('pin.snapshot', () => {
+            this.setView('transcript');
+            this.consoleSelect({ ...this.#consoleSelector, mode: 'snapshot', follow: false });
+            this.announce('Console pinned as snapshot');
+        });
+        action('profile', (rest) => {
+            const profiles: Readonly<Record<string, TerminalPresentation>> = {
+                logs: { lineNumbers: true },
+                presentation: { reflow: true, lineNumbers: true },
+                'high-contrast': { highlightMatches: true, sourceStamp: true },
+                'big-text': { wrap: true },
+            };
+            const preset = profiles[rest];
+            if (!preset) return this.announce(`Unknown console profile: ${rest || '(none)'}`);
+            this.consolePresentation(preset);
+            this.announce(`Console profile: ${rest}`);
+        });
+        action('asOf', (rest) => {
+            const seq = Number(rest);
+            if (!rest || !Number.isFinite(seq)) return this.announce('Usage: /as of <seq>');
+            this.setAsOf(seq);
+        });
+        action('fork', (rest) => {
+            void this.forkAt(rest || this.#terminalController?.tail());
+        });
+        action('why', () => this.lens('why'));
+        action('help', () => this.toggleHelp(true));
+        return registry;
+    }
+
+    consoleCommand(text: string): boolean {
+        const registry = this.#commands();
+        const match = matchCommand(registry.list(), text);
+        if (!match) {
+            this.announce(`Unknown console command: ${text.trim()}`);
+            return false;
+        }
+        if (match.command.disabledReason) {
+            this.announce(match.command.disabledReason);
+            return false;
+        }
+        this.#commandValue = match.rest;
+        return registry.run(match.command.id);
+    }
+
+    consoleHelp(): string {
+        return this.#commands()
+            .list()
+            .filter((command) => command.group === 'console' || command.group === 'grammar')
+            .map((command) => `${command.hint ?? `/${command.label}`} — ${command.label}`)
+            .join('\n');
+    }
+
+    #completeConsole(prefix: string, matches: readonly Command[]): void {
+        const box = el('console-completions');
+        if (!prefix) {
+            box.hidden = true;
+            box.replaceChildren();
+            return;
+        }
+        box.hidden = false;
+        box.replaceChildren(
+            ...matches.slice(0, 8).map((command) => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.textContent = command.hint ?? `/${command.label}`;
+                item.addEventListener('click', () => {
+                    const field = this.#terminalPrompt?.composer()?.element;
+                    if (!field) return;
+                    field.value = `${command.hint ?? `/${command.label}`} `;
+                    this.#completeConsole('', []);
+                    field.focus();
+                });
+                return item;
+            }),
+        );
+    }
+
+    openConsoleMenu(x?: number, y?: number): boolean {
+        const menu = el('console-menu');
+        const items = terminalContextMenu(
+            this.#consoleTarget(),
+            this.#commands().list().filter((command) => command.group === 'console'),
+        );
+        const host = el('console-menu-items');
+        host.replaceChildren(
+            ...items.map((item) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.setAttribute('role', 'menuitem');
+                button.className = 'action';
+                button.textContent = item.hint ?? item.label;
+                button.title = item.disabledReason ?? item.group;
+                button.disabled = item.disabled;
+                button.addEventListener('click', () => {
+                    this.closeConsoleMenu();
+                    this.consoleCommand(`/${item.id}`);
+                });
+                return button;
+            }),
+        );
+        menu.hidden = false;
+        menu.style.left = `${x ?? 120}px`;
+        menu.style.top = `${y ?? 120}px`;
+        this.#menuScope?.dispose();
+        this.#menuScope = new ScopedOverlay({
+            container: menu,
+            initialFocus: host.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? menu,
+            onClose: () => this.closeConsoleMenu(),
+        });
+        return true;
+    }
+
+    closeConsoleMenu(): void {
+        el('console-menu').hidden = true;
+        this.#menuScope?.dispose();
+        this.#menuScope = undefined;
+    }
+
     applyAddress(address: Address): boolean {
         this.#history.suppress(true);
         if (address.shot) this.applyShot(address.shot);
@@ -1875,6 +2066,10 @@ export class DurableHost {
             consoleView: () => this.#terminal()?.view(),
             consolePresentation: (presentation: TerminalPresentation) =>
                 this.consolePresentation(presentation),
+            consoleCommands: () => this.#commands().list(),
+            consoleHelp: () => this.consoleHelp(),
+            consoleCommand: (text: string) => this.consoleCommand(text),
+            consoleMenu: (x?: number, y?: number) => this.openConsoleMenu(x, y),
             exportConsole: (format: 'markdown' | 'json') => {
                 const terminal = this.#terminal();
                 return terminalExport(terminal.lines(), terminal.selection(), format);
@@ -2756,13 +2951,18 @@ export class DurableHost {
             onFollowChange: (enabled) =>
                 this.announce(enabled ? 'Following the console tail' : 'Camera released from tail'),
         });
-        let prompt: TerminalPromptController | undefined;
-        prompt = mountTerminalPrompt(el('canvas'), {
+        this.#terminalPrompt = mountTerminalPrompt(el('canvas'), {
             onSubmit: (text) => {
                 el<HTMLInputElement>('prompt-input').value = text;
                 el<HTMLFormElement>('prompt-form').requestSubmit();
-                prompt?.composer()?.clear();
+                this.#terminalPrompt?.composer()?.clear();
             },
+            commands: this.#commands(),
+            onCommand: (id, rest) => {
+                this.consoleCommand(`/${id}${rest ? ` ${rest}` : ''}`);
+                this.#terminalPrompt?.composer()?.clear();
+            },
+            onComplete: (prefix, matches) => this.#completeConsole(prefix, matches),
         });
         return this.#terminalController;
     }
@@ -3024,6 +3224,7 @@ export class DurableHost {
         const next = visible ?? help.hidden;
         if (next === !help.hidden) return;
         help.hidden = !next;
+        if (next) el('console-help').textContent = this.consoleHelp();
         this.#helpScope?.dispose();
         this.#helpScope = next
             ? new ScopedOverlay({

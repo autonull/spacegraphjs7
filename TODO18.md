@@ -1,7 +1,7 @@
 # TODO18 — Terminal 2: one projection, one command surface, many lenses
 
-> **Status: implementing (2026-11-27).** Supersedes the first 12-item draft. **O1 has landed**;
-> O2–O6 remain `spec`. Ideas are harvested from [autonull/fracterm](https://github.com/autonull/fracterm)
+> **Status: implementing (2026-11-27).** Supersedes the first 12-item draft. **O1 and O2 have
+> landed**; O3–O6 remain `spec`. Ideas are harvested from [autonull/fracterm](https://github.com/autonull/fracterm)
 > (`README.md`, `README3.md`, `TODO.md`) and adapted to the vector console delivered by `TODO17.md`.
 > The fidelity decision in TODO17 §3 still stands: no PTY, VT/ANSI/SGR or second console store.
 > §8 records delivered work; §9 turns the remaining outcomes into an executable queue.
@@ -64,7 +64,7 @@ the published `spacegraphjs/*` subpaths are the SDK.
 
 ## 3. Consolidated outcomes
 
-O1 has landed; O2–O6 are `spec`. `E#` = TODO17 enhancement. Effort is relative.
+O1 and O2 have landed; O3–O6 are `spec`. `E#` = TODO17 enhancement. Effort is relative.
 
 ### O1 — One projection contract (foundation) — **Done, see §8**
 
@@ -80,7 +80,7 @@ selector; live/follow/snapshot/derived are view modes of that selector.
   `shots:console` captures unchanged.
 - Effort: medium. Depends on: none. Reuses: E3/E4/E10, `view-state`.
 
-### O2 — Command-driven REPL prompt (highest visible leverage)
+### O2 — Command-driven REPL prompt (highest visible leverage) — **Done, see §8**
 
 **Outcome:** the scene textarea is both agent REPL and CLI. Typing `/` opens completions from the
 existing `CommandRegistry`; every console action has one id reachable from prompt, palette, context
@@ -205,8 +205,8 @@ and terminal-state save/restore. The kernel remains the durable store; layouts s
 
 Implemented O1: added `TerminalSelector`, `terminalSelect`, `TerminalPresentation`,
 `TerminalSelection`, `TERMINAL_MODES` and `terminalSnapshot` to `src/terminal.ts`; ported
-`consoleModel` to consume selector output; verified the twelve `shots:console` captures. O2's catalog
-is the next change; see §9.
+`consoleModel` to consume selector output; verified the twelve `shots:console` captures. O2 then
+landed the shared command catalog and slash prompt; O3 is next. See §8 and §9.
 
 ## 8. Progress
 
@@ -236,23 +236,34 @@ is the next change; see §9.
   `reading.spec.ts` E2E tests, and 12 regenerated `shots:console`. Nine captures are byte-identical;
   the three detail captures differ across identical runs (animation timing), as TODO17 §10 notes.
 
+### O2 — landed (2026-11-27)
+
+- **Library.** `src/commands/index.ts` exports `matchCommand`, resolving `/verb rest` against ids,
+  labels and keywords (labels span up to three words). `mountComposer` gains `commands`, `onCommand`
+  and `onComplete`: plain text still submits, while a slash match calls the host and clears the
+  editor. `mountTerminalPrompt` now keeps its `MutationObserver` after the first attach, so the
+  composer survives renderer node replacement; this was a real detach bug exposed by command
+  dispatch. `src/terminal.ts` exports `terminalConsoleCommands()` (thirteen ids with
+  `disabledReason` gates) and `terminalContextMenu(range, commands)` as pure menu data.
+- **Host.** `DurableHost.#commands()` merges the lens grammar with the console catalog and routes
+  every verb through `CommandRegistry.run()`; `consoleCommand` is exposed as a hook. Prompt
+  completions render in `#console-completions`, right-click in the console opens `#console-menu`
+  with a `ScopedOverlay` focus trap, and the help dialog lists the generated catalog. Existing
+  `pi-kit` `dispatchKeys` already suppresses shortcuts in editable targets, so no second key
+  registry was needed.
+- **Proof.** Composer slash/completion tests, catalog and menu-data tests, and three
+  `prompt.spec.ts` E2E tests covering `/search ERROR` → `/pin snapshot`, generated help with
+  `/as of 2`, and menu copy.
+- **Verification.** Root `pnpm run check`, `pnpm test` (201 files / 1370 tests), Pi Durable
+  `tsc --noEmit` and 21 files / 105 unit tests, `verify:fast` (93 E2E passing, 17 capture-only
+  skipped), plus 12 regenerated `shots:console` with no default-visual change.
+
 ## 9. Remaining work — executable queue
 
 Each outcome follows §5: pure primitive + unit test in `test/terminal.test.ts`, host wiring through
 `consoleModel`/`lens.ts`/`host.ts`, E2E assertion, console shot only on a visual shape change.
 
-- **O2 — command-driven REPL prompt (next).** Land the catalog *before* wiring actions. Add
-  `terminalConsoleCommands()` to `spacegraphjs/terminal` with the ids `copy`, `export`, `search`,
-  `filter`, `read`, `zoom`, `pin.live`, `pin.snapshot`, `profile`, `asOf`, `fork`, `why`, `help`
-  and `disabledReason` gates; reuse `CommandRegistry`/`filterCommands`. Extend `mountComposer`
-  with optional `commands`, `onCommand`, `onComplete` while keeping the default path unchanged.
-  Add `terminalContextMenu(range, commands)` as menu data with a `ScopedOverlay` focus trap in the
-  host. Move `lens.ts`'s `LENS_COMMANDS` into the shared catalog and dispatch every verb through
-  `CommandRegistry.run()`; map keys with `InputBinding`/`InputManager` and suppress them while the
-  textarea has focus. **Already available to the host:** `consoleSelect`/`consoleMode`/
-  `consolePresentation` hooks plus `Address.q`/`Address.mode`, so command handlers need no new
-  state plumbing. Proof: `/search ERROR`, `/pin snapshot`, `/as of 2`, menu copy and help listing.
-- **O3 — search and derived views.** `terminalSelect` already returns global match spans and
+- **O3 — search and derived views (next).** `terminalSelect` already returns global match spans and
   `presentation.highlightMatches` already renders `<mark>`; add `terminalSearch(lines, query,
   { regex, caseSensitive, scope })`, `terminalMatchFlags` and `terminalDerived` on top of that
   span representation. Host: `Ctrl+F`/`F3`, case/regex toggles, pin-matches-as-snapshot command,
