@@ -73,7 +73,8 @@ from the ordered entry sequence.
 | Emoji | Gutters/status columns only — most monospace fonts render emoji double-width and that breaks the character grid. |
 | Permalinks | Add selection range and tail ids beside camera/as-of/focus fields. |
 
-Last two rows are working assumptions from the interview summary; confirm them before Stage 3.
+The emoji and permalink rows were working assumptions; both were confirmed in Stage 3 (§3.1) and
+extended by backlog #11 (optional width map) and #2/#13 (`pal`, `det`, range export).
 
 ### 3.1 Stage 1 resolutions and findings
 
@@ -215,32 +216,34 @@ Tests cannot run from the repository root (guard `do-not-run-tests-from-root`); 
 directories. Read the matching skill in `.opencode/skills` before writing tests (`unit-tests`,
 `component-tests`, `app-e2e-tests`, `tui-tests`). Do not add `.changeset` files.
 
-## 8. Open questions and risks
+## 8. Design risks and resolutions
 
-- **Window vs "one node per fact".** Console view intentionally shows a subset; kernel and other
-  views still hold every fact. Confirm this is acceptable for the invariant wording.
-- **Focus arbitration.** A textarea inside a scene node competes with global scene shortcuts.
-  Follow the existing rule: shortcuts never fire while the composer or another text field has focus.
-- **Selection across unmounted lines.** Must anchor to `{id, offset}`, not DOM index or window
-  position, or copy breaks when the window slides.
+All risks below were resolved during Stages 1–4 and the backlog passes; they remain as design
+rationale, not outstanding work.
+
+- **Window vs "one node per fact" — resolved.** The console shows a windowed subset; the kernel and
+  every other view hold every fact. The window invariant was confirmed in Stage 1 (§3.1).
+- **Focus arbitration — resolved.** Scene textareas are typing targets. Global shortcuts never fire
+  while the composer or another text field has focus; roving focus and selection share that rule.
+- **Selection across unmounted lines — resolved.** Ranges anchor to `{id, offset}`; the controller's
+  cached order never depends on DOM index or window position, so copy and permalinks survive slides.
 - **Tail-follow re-engagement — resolved.** Wheel travel beyond 24 px releases follow; End, the
   badge and a console-view minimap click restore it through `mountTerminalCamera().follow(true)`.
-- **Pan churn.** Window mount/unmount needs hysteresis and a prefetch margin; measure before
-  tuning. Reject the alternative of keeping all nodes and relying only on frustum culling — the
-  decision is a windowed set.
-- **Emoji width.** Keep emoji out of inline text; if a future host needs them inline, the grid
-  contract needs a width map, not a special case.
-- **RTL.** Existing app supports `dir="rtl"`; decide whether spine and gutter mirror or text-only
-  mirrors. Preserve logical order for selection either way.
-- **Address compatibility.** New selection/tail fields need codec compatibility with existing
-  permalinks; follow `app/pi-durable/src/address.ts` conventions.
-- **Zoom-progressive disclosure.** Reuse `DEFAULT_RUNG_IDS` from `src/representations/ladder.ts` (§3.1)
-  rather than inventing a second band vocabulary.
-- **`mountTerminal` contract — resolved in Stage 2.** The host creates and owns `SpaceGraph` and
-  supplies a small `TerminalGraph` adapter; the component owns the window, gaps, overlays, selection
-  and projection sync, and the host owns camera moves through `onFocus`. `mountTerminal(graph, hooks)`
-  therefore never imports the graph runtime. Camera pan-to-scroll and a scene prompt node remain
-  Stage 3 work.
+- **Pan churn — instrumented.** The window stays a windowed set with hysteresis and a prefetch
+  margin, never an all-node scene with culling. `TerminalChurn` records mounts, unmounts and slides
+  (backlog #10); tune the constants only from that data.
+- **Emoji width — resolved.** Inline emoji stay out of the default grammar; the optional width map
+  (#11) handles wide code points and combining marks for hosts that need them inline.
+- **RTL — resolved.** Only text mirrors; spine, gutter and logical selection order stay LTR (§11 #9).
+  Mirrored geometry is explicitly out of scope.
+- **Address compatibility — resolved.** `sel`, `tail`, `pal` and `det` use the existing
+  `app/pi-durable/src/address.ts` codec and leave legacy permalinks readable.
+- **Zoom-progressive disclosure — resolved.** Overlays reveal against `DEFAULT_RUNG_IDS` from
+  `src/representations/ladder.ts`; no second band vocabulary was introduced.
+- **`mountTerminal` contract — resolved.** The host creates and owns `SpaceGraph` and supplies a
+  small `TerminalGraph` adapter; the component owns the window, gaps, overlays, selection and
+  projection sync, and the host owns camera moves through `onFocus`. `mountTerminal(graph, hooks)`
+  never imports the graph runtime. Camera pan-to-scroll and the scene prompt node landed in Stage 3.
 
 ## 9. Progress
 
