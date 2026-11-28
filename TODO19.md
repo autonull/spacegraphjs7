@@ -301,6 +301,14 @@ console store. The kernel remains the durable store; layouts stay arrangement-on
   `check:generated`, `check:console-shots` (17 captures), Pi Durable `verify:fast` (112 unit /
   120 E2E, 22 capture-only skipped). `reading-lens.spec.ts` and `prompt.spec.ts` cover the path.
 
+### Post-closure re-verification — 2026-11-28
+
+- Every command in §9 was re-run from a clean tree: `build:lib`, `check`, `pnpm test` (201 files /
+  1417 tests), `test:exports` (6), `source:snapshot` + `check:generated`, `check:console-shots`
+  (17 captures), Pi Durable `verify:fast` (120 E2E, 22 capture-only skipped). All green, no drift.
+- No implementation work remains. The items in §8's deferred list need a concrete consumer and a
+  new TODO; none is a follow-up to this plan.
+
 ## 8. Queue status — all 17 items landed
 
 | # | Outcome | Where it landed | Status |
