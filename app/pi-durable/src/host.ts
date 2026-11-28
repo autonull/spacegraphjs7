@@ -65,6 +65,7 @@ import {
     mountTerminalPrompt,
     mountTerminalSink,
     playTerminalReplay,
+    TERMINAL_LOD_BANDS,
     TERMINAL_MODES,
     TERMINAL_PALETTES,
     TERMINAL_PROFILES,
@@ -755,6 +756,7 @@ export class DurableHost {
     #consoleGrid: TerminalGrid = CONSOLE_GRID;
     #regionsEnabled = false;
     #consoleLOD = 'card';
+    #lodOverride: string | undefined;
     #hoveredLine: string | undefined;
     #consoleModel: RenderModel = { nodes: [], edges: [] };
     #a11yLayer: AccessibilityLayer | undefined;
@@ -794,6 +796,9 @@ export class DurableHost {
 
     async mount(container: HTMLElement): Promise<void> {
         await this.renderer.mount(container, { theme: THEME, projection: '2d' });
+        this.#consoleLOD = terminalLODFor(
+            this.#scale.normalizedAt(this.renderer.getViewport().zoom),
+        );
         this.renderer.on('nodeClick', ({ id }) => {
             if (this.#viewName !== 'transcript') this.focus(id);
         });
@@ -801,7 +806,7 @@ export class DurableHost {
         this.renderer.on('viewportChange', ({ zoom, center }) => {
             this.patchView({ camera: { zoom, center } });
             const lod = terminalLODFor(this.#scale.normalizedAt(zoom));
-            if (lod !== this.#consoleLOD) {
+            if (!this.#lodOverride && lod !== this.#consoleLOD) {
                 this.#consoleLOD = lod;
                 if (this.#viewName === 'transcript') this.#terminalController?.refresh();
             }
@@ -1819,6 +1824,7 @@ export class DurableHost {
         const bookmark = [...this.#bookmarks.values()].at(-1);
         if (bookmark) params.set('bm', terminalBookmark.encode(bookmark));
         if (this.#regionsEnabled) params.set('regions', 'on');
+        if (this.#lodOverride) params.set('lod', this.#lodOverride);
         const viewport = this.renderer.getViewport?.();
         if (viewport) params.set('zoom', viewport.zoom.toFixed(3));
         return `${location.pathname}?${params.toString()}`;
@@ -1882,6 +1888,7 @@ export class DurableHost {
             lens: inConsole ? this.#lensTrail.current?.id : undefined,
             bm: bookmark ? terminalBookmark.encode(bookmark) : undefined,
             regions: inConsole && this.#regionsEnabled ? 'on' : undefined,
+            lod: inConsole ? this.#lodOverride : undefined,
         };
     }
 
@@ -1918,6 +1925,27 @@ export class DurableHost {
         Object.assign(this.#consolePresentation, presentation);
         this.refresh();
         return this.#consolePresentation;
+    }
+
+    /** Pin a fidelity band, or `auto` to follow camera zoom again. */
+    consoleLOD(band?: string): string {
+        if (band === undefined) return this.#lodOverride ?? this.#consoleLOD;
+        if (band === 'auto') {
+            this.#lodOverride = undefined;
+            this.#consoleLOD = terminalLODFor(
+                this.#scale.normalizedAt(this.renderer.getViewport().zoom),
+            );
+        } else if (TERMINAL_LOD_BANDS.includes(band as (typeof TERMINAL_LOD_BANDS)[number])) {
+            this.#lodOverride = band;
+            this.#consoleLOD = band;
+        } else {
+            this.announce(`Unknown console fidelity: ${band}`);
+            return this.#lodOverride ?? this.#consoleLOD;
+        }
+        Object.assign(this.#consolePresentation, { zoomLOD: true });
+        this.#terminalController?.refresh();
+        this.announce(`Console fidelity: ${this.#consoleLOD}`);
+        return this.#consoleLOD;
     }
 
     #consoleLayout(lines = this.#terminalController?.lines() ?? []) {
@@ -2001,6 +2029,9 @@ export class DurableHost {
         });
         action('regions', (rest) => {
             this.setConsoleRegions(rest !== 'off');
+        });
+        action('lod', (rest) => {
+            this.consoleLOD(rest.trim() || 'auto');
         });
         action('lens.focus', (rest) => {
             this.consoleFocus(rest);
@@ -2512,6 +2543,7 @@ export class DurableHost {
             this.#terminalController?.select(range);
             if (address.pal) this.#terminal()?.setPalette(address.pal);
             if (address.regions !== undefined) this.setConsoleRegions(address.regions === 'on');
+            if (address.lod) this.consoleLOD(address.lod);
             if (address.lens) this.consoleFocus(address.lens);
             const bookmark = terminalBookmark.decode(address.bm);
             if (bookmark) {
@@ -2589,7 +2621,7 @@ export class DurableHost {
                 return terminalExport(terminal.lines(), terminal.selection(), format);
             },
             consoleBand: () => this.#terminalController?.band() ?? DEFAULT_RUNG_IDS[0],
-            consoleLOD: () => this.#consoleLOD,
+            consoleLOD: (band?: string) => this.consoleLOD(band),
             consoleChapters: () => terminalChapters(lines()),
             consoleReplaySteps: () => terminalReplaySteps(lines()).length,
             consoleChapterRail: () =>

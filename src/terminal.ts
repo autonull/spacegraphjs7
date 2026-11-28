@@ -707,6 +707,7 @@ export const terminalConsoleCommands = (
         entry('fork', 'fork', '/fork [line]', ['branch'], gate(gates.fork, 'Nothing to fork')),
         entry('why', 'why', '/why', ['provenance']),
         entry('monitor', 'monitor', '/monitor', ['sidecar', 'logtail']),
+        entry('lod', 'lod', '/lod <dot|glyph|card|detail|auto>', ['fidelity', 'density']),
         entry('autoZoom', 'auto zoom', '/auto zoom', ['regions', 'flyTo']),
         entry('regions', 'regions', '/regions [on|off]', ['bands']),
         entry('read.lens', 'read lens', '/read lens [scope]', ['document', 'reading']),
@@ -1272,13 +1273,31 @@ export const lineHTML = (
     return `<span class="tg-gutter">${escapeHtml(lineGlyph(line, glyphs))} ${escapeHtml(statusGlyph(line, glyphs))}</span><span class="tg-text"${direction ? ` dir="${direction}"` : ''}>${text}</span>`;
 };
 
+export const TERMINAL_LOD_BANDS = ['dot', 'glyph', 'card', 'detail'] as const;
+export type TerminalLODBand = (typeof TERMINAL_LOD_BANDS)[number];
+
+export type TerminalLODStops = {
+    readonly dot?: number;
+    readonly glyph?: number;
+    readonly detail?: number;
+};
+
+const DEFAULT_LOD_STOPS: TerminalLODStops = { dot: 0.15, glyph: 0.4, detail: 0.9 };
+
 /** Map a continuous zoom position (0 far, 1 near) onto the terminal fidelity ladder. */
 export const terminalLODFor = (
     normalized: number,
     ladder: readonly string[] = DEFAULT_RUNG_IDS,
+    stops: TerminalLODStops = DEFAULT_LOD_STOPS,
 ): string => {
     const index =
-        normalized < 0.15 ? 0 : normalized < 0.4 ? 1 : normalized < 0.9 ? 2 : ladder.length - 1;
+        normalized < (stops.dot ?? 0.15)
+            ? 0
+            : normalized < (stops.glyph ?? 0.4)
+              ? 1
+              : normalized < (stops.detail ?? 0.9)
+                ? 2
+                : ladder.length - 1;
     return ladder[index]!;
 };
 
@@ -1287,18 +1306,32 @@ export type TerminalLineHTMLOptions = {
     readonly matches?: readonly (readonly [number, number])[];
     readonly band?: string;
     readonly ladder?: readonly string[];
+    /** Characters kept in the label stage between glyph and full text. */
+    readonly labelChars?: number;
 };
 
-/** At far zoom bands a line becomes an accessible glyph; identity and text remain addressable. */
+/** Zoom fidelity: glyph, short label, or full text. Identity and text stay addressable throughout. */
 export const terminalLineHTML = (
     line: TerminalLine,
     glyphs: TerminalGlyphs = terminalGlyphs(),
-    { direction, matches = [], band, ladder = DEFAULT_RUNG_IDS }: TerminalLineHTMLOptions = {},
+    {
+        direction,
+        matches = [],
+        band,
+        ladder = DEFAULT_RUNG_IDS,
+        labelChars = 20,
+    }: TerminalLineHTMLOptions = {},
 ): string => {
     const at = band ? ladder.indexOf(band) : ladder.length - 1;
-    if (at >= 0 && at <= 1) {
-        const label = escapeHtml(line.text || line.label);
-        return `<span class="tg-glyph-only" aria-label="${label}" title="${label}">${escapeHtml(lineGlyph(line, glyphs))}</span>`;
+    const label = line.text || line.label;
+    const escaped = escapeHtml(label);
+    const gutter = `<span class="tg-gutter">${escapeHtml(lineGlyph(line, glyphs))} ${escapeHtml(statusGlyph(line, glyphs))}</span>`;
+    if (at === 0)
+        return `<span class="tg-glyph-only" aria-label="${escaped}" title="${escaped}">${escapeHtml(lineGlyph(line, glyphs))}</span>`;
+    if (at === 1) {
+        const short = escapeHtml(label.slice(0, Math.max(1, labelChars)).trim());
+        const suffix = label.length > labelChars ? '…' : '';
+        return `${gutter}<span class="tg-glyph-label" aria-label="${escaped}" title="${escaped}">${short}${suffix}</span>`;
     }
     return lineHTML(line, glyphs, direction, matches);
 };

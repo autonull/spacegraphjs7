@@ -364,8 +364,11 @@ describe('glyph grammar', () => {
         expect(far).not.toContain('tg-text');
         expect(far).not.toContain('<b>');
         expect(terminalLineHTML(entry, terminalGlyphs(), { band: 'glyph' })).toContain(
-            'tg-glyph-only',
+            'tg-glyph-label',
         );
+        const short = terminalLineHTML(entry, terminalGlyphs(), { band: 'glyph', labelChars: 3 });
+        expect(short).toContain('&lt;b&gt;…');
+        expect(short).toContain('aria-label="&lt;b&gt;x&lt;/b&gt;"');
         expect(terminalLineHTML(entry, terminalGlyphs(), { band: 'card' })).toContain('tg-text');
         expect(terminalLineHTML(entry, terminalGlyphs())).toContain('tg-text');
         expect(
@@ -384,6 +387,7 @@ describe('zoom fidelity ladder', () => {
         expect(terminalLODFor(0.5)).toBe('card');
         expect(terminalLODFor(1)).toBe('detail');
         expect(terminalLODFor(1, ['far', 'near'])).toBe('near');
+        expect(terminalLODFor(0.5, undefined, { dot: 0.1, glyph: 0.2, detail: 0.4 })).toBe('detail');
     });
 });
 
@@ -1042,7 +1046,7 @@ describe('console command catalog', () => {
         expect(commands.list().map((command) => command.id)).toEqual([
             'copy', 'export', 'search', 'filter', 'read', 'zoom',
             'pin.live', 'pin.snapshot',
-            'pin.matches', 'profile', 'asOf', 'fork', 'why', 'monitor', 'autoZoom', 'regions',
+            'pin.matches', 'profile', 'asOf', 'fork', 'why', 'monitor', 'lod', 'autoZoom', 'regions',
             'read.lens',
             'lens.focus', 'bookmark', 'help',
         ]);
