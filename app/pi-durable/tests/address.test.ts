@@ -7,6 +7,7 @@ const address: Address = {
     sel: 'd:1:message:1:0~d:1:message:2:8', tail: 'd:1:message:2',
     pal: 'retro', det: 'popup~d:1:message:2',
     q: 'ERROR', mode: 'derived',
+    lens: 'line:d:1:message:2', bm: 'bookmark-token',
 };
 
 describe('deep-link codec', () => {

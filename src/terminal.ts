@@ -10,6 +10,7 @@ import { DEFAULT_RUNG_IDS } from './representations/ladder';
 import type { EdgeSpec, GraphSpec, NodeSpec } from './types';
 import { isEditableTarget } from './utils/DOMUtils';
 import { clamp } from './utils/math';
+import { viewStateCodec } from './view-state';
 
 export type TerminalLine = {
     readonly id: string;
@@ -709,6 +710,8 @@ export const terminalConsoleCommands = (
         entry('fork', 'fork', '/fork [line]', ['branch'], gate(gates.fork, 'Nothing to fork')),
         entry('why', 'why', '/why', ['provenance']),
         entry('monitor', 'monitor', '/monitor', ['sidecar', 'logtail']),
+        entry('lens.focus', 'lens focus', '/lens focus <target>', ['bookmark', 'zoom']),
+        entry('bookmark', 'bookmark', '/bookmark <0-9>', ['bm', 'recall']),
         entry('help', 'help', '/help', ['?']),
     ]);
 };
@@ -819,6 +822,136 @@ export const terminalDerived = (
     lines: readonly TerminalLine[],
     selector: TerminalSelector,
 ): TerminalSelection => terminalSelect(lines, { ...selector, mode: 'derived' });
+
+export type TerminalLensTarget =
+    | { readonly kind: 'line'; readonly id: string }
+    | { readonly kind: 'column'; readonly id: string; readonly offset: number }
+    | { readonly kind: 'range'; readonly range: TerminalRange }
+    | { readonly kind: 'window'; readonly window: TerminalWindow }
+    | { readonly kind: 'selection'; readonly ids: readonly string[] }
+    | { readonly kind: 'region'; readonly ids: readonly string[] };
+
+export type TerminalLensRect = {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+};
+
+export const terminalLensKey = (target: TerminalLensTarget): string => {
+    switch (target.kind) {
+        case 'line':
+            return `line:${target.id}`;
+        case 'column':
+            return `column:${target.id}:${target.offset}`;
+        case 'range':
+            return `range:${terminalRangeKey(target.range)}`;
+        case 'window':
+            return `window:${target.window.start}~${target.window.end}`;
+        case 'selection':
+        case 'region':
+            return `${target.kind}:${target.ids.join(',')}`;
+    }
+};
+
+export const terminalLensFromKey = (key: string | undefined): TerminalLensTarget | undefined => {
+    if (!key) return undefined;
+    const separator = key.indexOf(':');
+    const kind = key.slice(0, separator);
+    const value = key.slice(separator + 1);
+    if (kind === 'line' && value) return { kind, id: value };
+    if (kind === 'column') {
+        const offsetAt = value.lastIndexOf(':');
+        const id = value.slice(0, offsetAt);
+        const offset = Number(value.slice(offsetAt + 1));
+        return id && Number.isFinite(offset) && offset >= 0 ? { kind, id, offset } : undefined;
+    }
+    if (kind === 'range') {
+        const range = terminalRangeFromKey(value);
+        return range ? { kind, range } : undefined;
+    }
+    if (kind === 'window') {
+        const [start, end] = value.split('~');
+        return start && end ? { kind, window: { start, end } } : undefined;
+    }
+    if (kind === 'selection' || kind === 'region')
+        return { kind, ids: value.split(',').filter(Boolean) };
+    return undefined;
+};
+
+/** Bounding rectangle of a lens target in the shared placement space; ids never become coordinates. */
+export const terminalLensRect = (
+    layout: TerminalLayout,
+    target: TerminalLensTarget,
+    lines?: readonly TerminalLine[],
+    grid: TerminalGrid = terminalGrid(),
+): TerminalLensRect | undefined => {
+    const ids = lines?.map((line) => line.id) ?? [...layout.placements.keys()];
+    const chosen =
+        target.kind === 'line' || target.kind === 'column'
+            ? [target.id]
+            : target.kind === 'range'
+              ? terminalRangeIDs(
+                    target.range,
+                    new Map(ids.map((id, index) => [id, index] as const)),
+                )
+              : target.kind === 'window'
+                ? ids.slice(
+                      Math.max(0, ids.indexOf(target.window.start)),
+                      target.window.end ? ids.indexOf(target.window.end) + 1 : ids.length,
+                  )
+                : target.ids;
+    const rects = chosen.flatMap((id) => {
+        const placement = layout.placements.get(id);
+        return placement
+            ? [
+                  {
+                      x: placement.position[0] - placement.size[0] / 2,
+                      y: placement.position[1] - placement.size[1] / 2,
+                      width: placement.size[0],
+                      height: placement.size[1],
+                  },
+              ]
+            : [];
+    });
+    if (!rects.length) return undefined;
+    if (target.kind === 'column') {
+        const rect = rects[0]!;
+        const x = rect.x + Math.min(target.offset, rect.width) * grid.charWidth;
+        return { x, y: rect.y, width: grid.charWidth, height: rect.height };
+    }
+    const x = Math.min(...rects.map((rect) => rect.x));
+    const y = Math.min(...rects.map((rect) => rect.y));
+    return {
+        x,
+        y,
+        width: Math.max(...rects.map((rect) => rect.x + rect.width)) - x,
+        height: Math.max(...rects.map((rect) => rect.y + rect.height)) - y,
+    };
+};
+
+export type TerminalBookmark = {
+    readonly key: string;
+    readonly target: TerminalLensTarget;
+};
+
+const bookmarkCodec = viewStateCodec<TerminalBookmark>({
+    format: 'compact',
+    keys: ['key', 'target', 'version'],
+    flatten: (bookmark) => ({ key: bookmark.key, target: terminalLensKey(bookmark.target) }),
+    parse: (record) => {
+        if (typeof record.key !== 'string' || typeof record.target !== 'string') return undefined;
+        const target = terminalLensFromKey(record.target);
+        return target ? { key: record.key, target } : undefined;
+    },
+});
+
+/** Thin bookmark codec over view-state; no second URI format. */
+export const terminalBookmark = {
+    key: (index: number): string => `bm${clamp(Math.floor(index), 0, 9)}`,
+    encode: (bookmark: TerminalBookmark): string => bookmarkCodec.encode(bookmark),
+    decode: (value: string | undefined): TerminalBookmark | undefined => bookmarkCodec.decode(value),
+};
 
 export type TerminalExportFormat = 'markdown' | 'json';
 

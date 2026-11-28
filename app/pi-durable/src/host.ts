@@ -29,7 +29,13 @@ import type { GraphViewData } from '@spacegraphjs/shared';
 import { defaultTokens, themeFromDesignTokens, type DesignTokens } from '@spacegraphjs/shared/tokens';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { ScopeSimulation, solveNodeAreaDensity, type ScopeSpec } from 'spacegraphjs/layout';
-import { Navigation, type MinimapProjection } from 'spacegraphjs/navigation';
+import {
+    edgePath,
+    kindDescent,
+    Navigation,
+    Trail,
+    type MinimapProjection,
+} from 'spacegraphjs/navigation';
 import type { NodeSpec } from 'spacegraphjs';
 import { ScopedOverlay } from 'spacegraphjs/overlays';
 import {
@@ -43,6 +49,7 @@ import {
     type ReadingController,
     type ReadingNode,
 } from 'spacegraphjs/reading';
+import { playMotion } from 'spacegraphjs/motion';
 import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import {
@@ -64,10 +71,18 @@ import {
     terminalPalette,
     terminalRangeFromKey,
     terminalRangeKey,
+    terminalBookmark,
     terminalDerived,
+    terminalLensFromKey,
+    terminalLensKey,
+    terminalLensRect,
+    terminalPlace,
     terminalReplaySteps,
     terminalSearch,
     terminalVisibleAt,
+    type TerminalBookmark,
+    type TerminalLensRect,
+    type TerminalLensTarget,
     type TerminalSpan,
     type TerminalReplayHandle,
     type TerminalCameraController,
@@ -711,6 +726,8 @@ export class DurableHost {
     #matchIndex = 0;
     #monitorEnabled = false;
     #consoleKit: InstrumentKit | undefined;
+    #lensTrail = new Trail({ maxDepth: 20 });
+    #bookmarks = new Map<string, TerminalBookmark>();
     #mutedEdges = 0;
     #activeGroups = new Set<string>();
     #scopeKey = '';
@@ -1745,6 +1762,10 @@ export class DurableHost {
         if (this.#consoleSelector.search) params.set('q', this.#consoleSelector.search);
         const mode = this.#consoleSelector.mode;
         if (mode && mode !== 'live') params.set('mode', mode);
+        const lens = this.#lensTrail.current?.id;
+        if (lens) params.set('lens', lens);
+        const bookmark = [...this.#bookmarks.values()].at(-1);
+        if (bookmark) params.set('bm', terminalBookmark.encode(bookmark));
         const viewport = this.renderer.getViewport?.();
         if (viewport) params.set('zoom', viewport.zoom.toFixed(3));
         return `${location.pathname}?${params.toString()}`;
@@ -1776,6 +1797,8 @@ export class DurableHost {
             det: params.get('det') ?? undefined,
             q: params.get('q') ?? undefined,
             mode: mode && TERMINAL_MODES.includes(mode as TerminalMode) ? (mode as TerminalMode) : undefined,
+            lens: params.get('lens') ?? undefined,
+            bm: params.get('bm') ?? undefined,
         });
     }
 
@@ -1784,6 +1807,7 @@ export class DurableHost {
         const inConsole = this.#viewName === 'transcript';
         const selection = inConsole ? this.#terminalController?.selection() : undefined;
         const tail = inConsole ? this.#terminalController?.tail() : undefined;
+        const bookmark = inConsole ? [...this.#bookmarks.values()].at(-1) : undefined;
         return {
             s: this.registry.activeID() || undefined,
             shot: this.#shot,
@@ -1801,6 +1825,8 @@ export class DurableHost {
             det: this.#consoleDetailKey(),
             q: inConsole ? this.#consoleSelector.search : undefined,
             mode: inConsole ? this.#consoleSelector.mode : undefined,
+            lens: inConsole ? this.#lensTrail.current?.id : undefined,
+            bm: bookmark ? terminalBookmark.encode(bookmark) : undefined,
         };
     }
 
@@ -1904,6 +1930,14 @@ export class DurableHost {
         });
         action('monitor', () => {
             this.consoleToggleMonitor();
+        });
+        action('lens.focus', (rest) => {
+            this.consoleFocus(rest);
+        });
+        action('bookmark', (rest) => {
+            const index = Number(rest);
+            if (Number.isFinite(index)) this.consoleBookmark(index);
+            else this.announce('Usage: /bookmark <0-9>');
         });
         action('profile', (rest) => {
             const profiles: Readonly<Record<string, TerminalPresentation>> = {
@@ -2151,6 +2185,155 @@ export class DurableHost {
         ]);
     }
 
+    #focusTarget(target: TerminalLensTarget, record: boolean): boolean {
+        const lines = this.#terminalController?.lines() ?? [];
+        const layout = terminalPlace(lines, CONSOLE_GRID, {
+            width: CONSOLE_GRID.maxWidth,
+            rowGap: 4,
+            trimGutter: true,
+        });
+        const rect = terminalLensRect(layout, target, lines, CONSOLE_GRID);
+        if (!rect) {
+            this.announce('Lens target is outside the console');
+            return false;
+        }
+        if (record) {
+            const key = terminalLensKey(target);
+            this.#lensTrail.push({ id: key, label: key, kind: target.kind });
+        }
+        const viewport = this.renderer.getViewport?.();
+        if (viewport) {
+            const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+            playMotion(
+                [
+                    {
+                        id: 'lens.flyTo',
+                        verb: 'flyTo',
+                        target: 'camera',
+                        from: viewport.zoom,
+                        to: viewport.zoom,
+                        duration: 0.25,
+                    },
+                ],
+                (frame) =>
+                    this.renderer.setViewport({
+                        zoom: frame.value,
+                        center: [rect.x + rect.width / 2, rect.y + rect.height / 2, viewport.center[2]],
+                    }),
+                { reducedMotion: reduced },
+            );
+        }
+        const lineID =
+            target.kind === 'line' || target.kind === 'column'
+                ? target.id
+                : target.kind === 'range'
+                  ? target.range.anchor.nodeID
+                  : target.kind === 'window'
+                    ? target.window.end || target.window.start
+                    : target.ids[0] ?? lines.at(-1)?.id;
+        if (lineID) this.#terminalController?.focusLine(lineID);
+        this.announce(`Focused ${target.kind}`);
+        return true;
+    }
+
+    consoleFocus(target: TerminalLensTarget | string): boolean {
+        const resolved = typeof target === 'string' ? terminalLensFromKey(target) : target;
+        if (!resolved) {
+            this.announce('Unknown lens target');
+            return false;
+        }
+        return this.#focusTarget(resolved, true);
+    }
+
+    consoleBookmark(index: number): TerminalBookmark | undefined {
+        const key = terminalBookmark.key(index);
+        const saved = this.#bookmarks.get(key);
+        if (saved) {
+            this.#focusTarget(saved.target, true);
+            this.announce(`Recalled ${key}`);
+            return saved;
+        }
+        const current = this.#lensTrail.current;
+        const target = current ? terminalLensFromKey(current.id) : undefined;
+        if (!target) {
+            this.announce('Focus a console target first');
+            return undefined;
+        }
+        const bookmark = { key, target };
+        this.#bookmarks.set(key, bookmark);
+        this.announce(`Saved ${key}`);
+        return bookmark;
+    }
+
+    #trailStep(direction: -1 | 1): boolean {
+        const entry = direction < 0 ? this.#lensTrail.back() : this.#lensTrail.forward();
+        const target = entry ? terminalLensFromKey(entry.id) : undefined;
+        return target ? this.#focusTarget(target, false) : false;
+    }
+
+    consoleTrailBack(): boolean {
+        return this.#trailStep(-1);
+    }
+
+    consoleTrailForward(): boolean {
+        return this.#trailStep(1);
+    }
+
+    consoleBreadcrumbs(id?: string): readonly string[] {
+        const tab = this.registry.active();
+        if (!tab) return [];
+        const kernel = tabKernel(tab);
+        const target = id ?? this.#terminalController?.tail();
+        if (!target) return [];
+        const children = new Map<string, string[]>();
+        kernel.edges.forEach((edge) => {
+            const list = children.get(edge.source) ?? [];
+            list.push(edge.target);
+            children.set(edge.source, list);
+        });
+        const nodes = new Map(
+            kernel.nodes.map((entry) => [
+                entry.id,
+                { id: entry.id, kind: entry.kind, children: children.get(entry.id) ?? [] },
+            ]),
+        );
+        const policy = kindDescent('console', ['entry', 'tool', 'message', 'fact', 'task']);
+        const node = nodes.get(target);
+        const descended = node ? (policy.children(node, { nodes }) ?? []) : [];
+        const path = edgePath(
+            {
+                nodes: kernel.nodes.map((entry) => ({ id: entry.id })),
+                edges: kernel.edges.map((edge) => ({
+                    source: edge.source,
+                    target: edge.target,
+                    kind: edge.kind,
+                })),
+            },
+            target,
+            { directed: false },
+        )
+            .slice(0, 3)
+            .map((step) => step.id);
+        return [target, ...new Set([...descended, ...path])];
+    }
+
+    #reconcileLensTrail(): void {
+        const ids = new Set((this.#terminalController?.lines() ?? []).map((line) => line.id));
+        const kept = new Map(
+            this.#lensTrail.entries.flatMap((entry) => {
+                const target = terminalLensFromKey(entry.id);
+                const targets =
+                    target && 'ids' in target
+                        ? target.ids
+                        : target && 'id' in target
+                          ? [target.id]
+                          : [];
+                return targets.some((id) => ids.has(id)) ? ([[entry.id, entry]] as const) : [];
+            }),
+        );
+        this.#lensTrail.reconcile(kept);
+    }
+
     applyAddress(address: Address): boolean {
         this.#history.suppress(true);
         if (address.shot) this.applyShot(address.shot);
@@ -2176,6 +2359,12 @@ export class DurableHost {
             const range = terminalRangeFromKey(address.sel);
             this.#terminalController?.select(range);
             if (address.pal) this.#terminal()?.setPalette(address.pal);
+            if (address.lens) this.consoleFocus(address.lens);
+            const bookmark = terminalBookmark.decode(address.bm);
+            if (bookmark) {
+                this.#bookmarks.set(bookmark.key, bookmark);
+                this.announce(`Loaded ${bookmark.key}`);
+            }
             if (address.q !== undefined || address.mode !== undefined)
                 this.consoleSelect({
                     ...this.#consoleSelector,
@@ -2229,6 +2418,12 @@ export class DurableHost {
             consoleRegex: () => this.consoleToggleSearchOption('regex'),
             consolePinMatches: () => this.consolePinMatches(),
             consoleMonitor: () => this.consoleToggleMonitor(),
+            consoleFocus: (target: string) => this.consoleFocus(target),
+            consoleBookmark: (index: number) => this.consoleBookmark(index),
+            consoleTrail: () => this.#lensTrail.entries.map((entry) => entry.id),
+            consoleTrailBack: () => this.consoleTrailBack(),
+            consoleTrailForward: () => this.consoleTrailForward(),
+            consoleBreadcrumbs: (id?: string) => this.consoleBreadcrumbs(id),
             exportConsole: (format: 'markdown' | 'json') => {
                 const terminal = this.#terminal();
                 return terminalExport(terminal.lines(), terminal.selection(), format);
@@ -3202,6 +3397,7 @@ export class DurableHost {
         this.#replay?.cancel();
         terminal.setOverlays(this.#consoleOverlays(kernel, lines));
         terminal.setLines(lines);
+        this.#reconcileLensTrail();
         this.#renderChapterRail();
         if (!this.#consoleFramed) this.#frameConsole();
         if (this.#replayPending) {

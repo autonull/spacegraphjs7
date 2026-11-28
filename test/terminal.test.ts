@@ -11,8 +11,12 @@ import {
     playTerminalReplay,
     STATUS_GLYPHS,
     TERMINAL_PALETTES,
+    terminalBookmark,
     terminalChapters,
     terminalConsoleCommands,
+    terminalLensFromKey,
+    terminalLensKey,
+    terminalLensRect,
     terminalContextMenu,
     terminalDiff,
     terminalLink,
@@ -55,6 +59,7 @@ import {
     terminalWindow,
     terminalWrap,
     type TerminalGraph,
+    type TerminalLensTarget,
     type TerminalLine,
     type TerminalOverlay,
 } from '../src/terminal';
@@ -995,7 +1000,8 @@ describe('console command catalog', () => {
         });
         expect(commands.list().map((command) => command.id)).toEqual([
             'copy', 'export', 'search', 'filter', 'read', 'zoom', 'pin.live', 'pin.snapshot',
-            'pin.matches', 'profile', 'asOf', 'fork', 'why', 'monitor', 'help',
+            'pin.matches', 'profile', 'asOf', 'fork', 'why', 'monitor', 'lens.focus',
+            'bookmark', 'help',
         ]);
         expect(commands.get('copy')?.disabledReason).toBe('Select lines first');
         expect(commands.get('fork')?.disabledReason).toBe('Nothing to fork');
@@ -1058,5 +1064,47 @@ describe('terminalSearch', () => {
         expect(terminalDerived(sample, { search: 'error' }).lines.map((entry) => entry.id)).toEqual([
             'a', 'b', 'c',
         ]);
+    });
+});
+
+describe('lens targets and bookmarks', () => {
+    const sample = [line('a', 'alpha'), line('b', 'beta'), line('c', 'gamma')];
+    const layout = terminalLayout(sample, terminalGrid());
+
+    it('round-trips every target kind through one key', () => {
+        const targets: readonly TerminalLensTarget[] = [
+            { kind: 'line', id: 'b' },
+            { kind: 'column', id: 'b', offset: 2 },
+            {
+                kind: 'range',
+                range: {
+                    anchor: { nodeID: 'a', offset: 0 },
+                    focus: { nodeID: 'b', offset: 1 },
+                },
+            },
+            { kind: 'window', window: { start: 'a', end: 'b' } },
+            { kind: 'selection', ids: ['a', 'c'] },
+        ];
+        targets.forEach((target) => expect(terminalLensFromKey(terminalLensKey(target))).toEqual(target));
+        expect(terminalLensFromKey('unknown:x')).toBeUndefined();
+    });
+
+    it('maps targets to bounding rectangles in placement space', () => {
+        const rect = terminalLensRect(layout, { kind: 'line', id: 'b' }, sample);
+        const placement = layout.placements.get('b')!;
+        expect(rect?.width).toBe(placement.size[0]);
+        const windowRect = terminalLensRect(
+            layout,
+            { kind: 'window', window: { start: 'a', end: 'b' } },
+            sample,
+        );
+        expect(windowRect?.height).toBeGreaterThan(rect!.height);
+    });
+
+    it('round-trips a bookmark through the view-state codec', () => {
+        const bookmark = { key: terminalBookmark.key(3), target: { kind: 'line' as const, id: 'c' } };
+        expect(terminalBookmark.decode(terminalBookmark.encode(bookmark))).toEqual(bookmark);
+        expect(terminalBookmark.key(12)).toBe('bm9');
+        expect(terminalBookmark.decode('not-a-bookmark')).toBeUndefined();
     });
 });

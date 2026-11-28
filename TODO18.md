@@ -1,7 +1,7 @@
 # TODO18 — Terminal 2: one projection, one command surface, many lenses
 
-> **Status: implementing (2026-11-27).** Supersedes the first 12-item draft. **O1–O3 have
-> landed**; O4–O6 remain `spec`. Ideas are harvested from [autonull/fracterm](https://github.com/autonull/fracterm)
+> **Status: implementing (2026-11-27).** Supersedes the first 12-item draft. **O1–O4 have
+> landed**; O5–O6 remain `spec`. Ideas are harvested from [autonull/fracterm](https://github.com/autonull/fracterm)
 > (`README.md`, `README3.md`, `TODO.md`) and adapted to the vector console delivered by `TODO17.md`.
 > The fidelity decision in TODO17 §3 still stands: no PTY, VT/ANSI/SGR or second console store.
 > §8 records delivered work; §9 turns the remaining outcomes into an executable queue.
@@ -64,7 +64,7 @@ the published `spacegraphjs/*` subpaths are the SDK.
 
 ## 3. Consolidated outcomes
 
-O1–O3 have landed; O4–O6 are `spec`. `E#` = TODO17 enhancement. Effort is relative.
+O1–O4 have landed; O5–O6 are `spec`. `E#` = TODO17 enhancement. Effort is relative.
 
 ### O1 — One projection contract (foundation) — **Done, see §8**
 
@@ -116,7 +116,7 @@ live derived view or a pinned snapshot without leaving the console.
   search view.
 - Effort: medium. Depends on: O1, O2. Reuses: E7, `salience`, `widgets`, `overlays`.
 
-### O4 — Lens navigation and shareable targets
+### O4 — Lens navigation and shareable targets — **Done, see §8**
 
 **Outcome:** zoom-to-line/range/selection/region is one operation; camera bookmarks and lens targets
 round-trip through permalinks and name ids, never coordinates.
@@ -206,8 +206,8 @@ and terminal-state save/restore. The kernel remains the durable store; layouts s
 Implemented O1: added `TerminalSelector`, `terminalSelect`, `TerminalPresentation`,
 `TerminalSelection`, `TERMINAL_MODES` and `terminalSnapshot` to `src/terminal.ts`; ported
 `consoleModel` to consume selector output; verified the twelve `shots:console` captures. O2 then
-landed the shared command catalog and slash prompt; O3 added search, derived views and a sidecar.
-O4 is next. See §8 and §9.
+landed the shared command catalog and slash prompt; O3 added search, derived views and a sidecar;
+O4 added lens targets, a trail and bookmarks. O5 is next. See §8 and §9.
 
 ## 8. Progress
 
@@ -280,16 +280,31 @@ O4 is next. See §8 and §9.
   `check:generated`, `check:console-shots` (13), Pi Durable 21 files / 106 unit tests and
   `verify:fast` (96 E2E passing, 18 capture-only skipped).
 
+### O4 — landed (2026-11-27)
+
+- **Library.** `TerminalLensTarget` covers line, column, range, window, selection and region;
+  `terminalLensKey`/`terminalLensFromKey` round-trip all six through one string.
+  `terminalLensRect(layout, target, lines?, grid?)` returns a bounding rectangle in the shared
+  placement space, never coordinates as identity. `terminalBookmark` is a thin `view-state` codec
+  for `bm0`–`bm9` with no second URI format.
+- **Host.** `consoleFocus` resolves a target, computes its rect from `terminalPlace`, pushes it onto
+  a `Trail`, and moves the camera with `playMotion({ verb: 'flyTo' })`; reduced motion emits only
+  the final frame. `consoleTrailBack`/`Forward` step the trail, `#reconcileLensTrail` drops stale
+  ids after each projection, and `consoleBreadcrumbs` combines `edgePath` with `kindDescent`.
+  `Address.lens`/`Address.bm` join `q`/`mode` in permalinks and compact addresses; `lens.focus`
+  and `bookmark` join the one catalog.
+- **Proof.** Target-key round-trip, rectangle and bookmark-codec unit tests, plus two
+  `lens-nav.spec.ts` E2E tests for permalink/trail/bookmark round-trip and reduced-motion fly-to.
+- **Verification.** Root `pnpm run check`, `pnpm test` (201 files / 1378 tests), `test:exports`,
+  `check:generated`, `check:console-shots` (13), Pi Durable 21 files / 106 unit tests and
+  `verify:fast` (98 E2E passing, 18 capture-only skipped). No shot changed.
+
 ## 9. Remaining work — executable queue
 
 Each outcome follows §5: pure primitive + unit test in `test/terminal.test.ts`, host wiring through
 `consoleModel`/`lens.ts`/`host.ts`, E2E assertion, console shot only on a visual shape change.
 
-- **O4 — lens navigation and targets (next).** Add `TerminalLensTarget`, `terminalLensRect` over
-  `terminalPlace`, `terminalBookmark` over `view-state`, `Trail.reconcile` history and `edgePath`
-  breadcrumbs. `Address` already allowlists new host keys, so `lens`/`bm` can join `q`/`mode`
-  without a new codec. Reduced-motion `flyTo` snaps.
-- **O5 — reading lens and profiles.** `TerminalPresentation` and the `consoleModel` presentation
+- **O5 — reading lens and profiles (next).** `TerminalPresentation` and the `consoleModel` presentation
   attributes are the foundation; add `terminalReadingLens`, quick-read scopes and `TerminalProfile`
   presets, then layer focus roles through `AccessibilityLayer`/`bindA11yFocus`. Shots change here.
 - **O6 — regions and scale (last).** Infer regions from kind/role runs and gaps; add auto-zoom
