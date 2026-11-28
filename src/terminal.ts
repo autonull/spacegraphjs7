@@ -146,11 +146,20 @@ export type TerminalLayout = {
     readonly spine: readonly string[];
 };
 
-/** Append-only spine with attached context in halving columns; caller-owned text sizes the nodes. */
-export const terminalLayout = (
+/** One placement contract for every console builder: the lane uses text widths, a fixed-width host
+ * uses an even column, and a tight-text host drops the gutter and opens a row gap. */
+export type TerminalPlacementRule = TranscriptLaneOptions & {
+    readonly width?: number;
+    readonly rowGap?: number;
+    readonly trimGutter?: boolean;
+    readonly sizeOf?: (line: TerminalLine, octave: number) => readonly [number, number];
+};
+
+/** Place lines and their context; both `terminalSpec` and host projections consume this result. */
+export const terminalPlace = (
     lines: readonly TerminalLine[],
     grid: TerminalGrid = terminalGrid(),
-    options: TranscriptLaneOptions = {},
+    rule: TerminalPlacementRule = {},
 ): TerminalLayout => {
     const ids = new Set(lines.map((line) => line.id));
     const parentOf = new Map(
@@ -170,18 +179,44 @@ export const terminalLayout = (
         }
         return -depth;
     };
-    const sizes = new Map(
-        lines.map(
-            (line) => [line.id, terminalLineSize(line.text, grid, octaveOf(line))] as const,
-        ),
-    );
-    const solved = transcriptLane(
-        lines.map((line) => {
-            const [width, height] = sizes.get(line.id)!;
-            return { id: line.id, parent: line.parent, width, height };
-        }),
-        { gutter: grid.gutter, ...options },
-    );
+    const sizeOf = (line: TerminalLine, octave: number): readonly [number, number] => {
+        const explicit = rule.sizeOf?.(line, octave);
+        if (explicit) return explicit;
+        const measured = terminalLineSize(line.text, grid, octave);
+        return [
+            rule.width ?? measured[0],
+            rule.trimGutter ? Math.max(grid.lineHeight, measured[1] - grid.gutter) : measured[1],
+        ];
+    };
+    const sizes = new Map(lines.map((line) => [line.id, sizeOf(line, octaveOf(line))] as const));
+    const lane: TranscriptLaneOptions = {
+        gutter: rule.gutter ?? grid.gutter,
+        ...(rule.spineStep === undefined ? {} : { spineStep: rule.spineStep }),
+        ...(rule.contextStep === undefined ? {} : { contextStep: rule.contextStep }),
+    };
+    const fixedWidth = rule.width;
+    const solved =
+        fixedWidth === undefined
+            ? transcriptLane(
+                  lines.map((line) => {
+                      const [lineWidth, height] = sizes.get(line.id)!;
+                      return { id: line.id, parent: line.parent, width: lineWidth, height };
+                  }),
+                  lane,
+              )
+            : {
+                  positions: new Map(
+                      lines.map((line, index) => [
+                          line.id,
+                          {
+                              x: fixedWidth / 2,
+                              y: -index * (sizes.get(line.id)![1] + (rule.rowGap ?? 0)),
+                              z: 0,
+                          },
+                      ]),
+                  ),
+                  octaves: new Map(lines.map((line) => [line.id, line.octave ?? 0])),
+              };
     const spine = lines.filter((line) => !parentOf.has(line.id)).map((line) => line.id);
     const placements = new Map(
         lines.map((line) => {
@@ -199,6 +234,13 @@ export const terminalLayout = (
     );
     return { placements, spine };
 };
+
+/** Default contract: append-only spine with attached context in halving columns. */
+export const terminalLayout = (
+    lines: readonly TerminalLine[],
+    grid: TerminalGrid = terminalGrid(),
+    options: TranscriptLaneOptions = {},
+): TerminalLayout => terminalPlace(lines, grid, options);
 
 export type TerminalGap = { readonly after: string; readonly lines: number };
 

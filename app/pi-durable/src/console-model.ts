@@ -6,8 +6,8 @@ import {
 import {
     lineHTML,
     terminalGaps,
-    terminalLineSize,
     terminalOrder,
+    terminalPlace,
     terminalOverlays,
     terminalOverlayGaps,
     terminalPromptHTML,
@@ -58,9 +58,14 @@ export const consoleModel = (
         grid.lineHeight,
     );
     const lineWidth = grid.maxWidth;
-    const lineNodes: RenderNode[] = visible.map((entry, index) => {
-        const [, measured] = terminalLineSize(entry.text, grid, entry.octave ?? 0);
-        const height = Math.max(grid.lineHeight, measured - grid.gutter);
+    const layout = terminalPlace(visible, grid, {
+        width: lineWidth,
+        rowGap: 4,
+        trimGutter: true,
+    });
+    const lineNodes: RenderNode[] = visible.map((entry) => {
+        const placement = layout.placements.get(entry.id)!;
+        const [width, height] = placement.size;
         const attrs = `data-selected="${selected.has(entry.id)}" data-kind="${escapeHtml(
             entry.kind,
         )}" data-status="${escapeHtml(entry.status)}" data-role="${escapeHtml(entry.role ?? '')}"`;
@@ -69,8 +74,12 @@ export const consoleModel = (
             kind: entry.kind,
             label: entry.label,
             html: `<div class="sg-terminal-line" ${attrs}>${lineHTML(entry, glyphs, state.direction)}</div>`,
-            position: [lineWidth / 2, -index * (height + 4) + (offsets.get(entry.id) ?? 0), 0],
-            size: [lineWidth, height, 1],
+            position: [
+                placement.position[0],
+                placement.position[1] + (offsets.get(entry.id) ?? 0),
+                placement.position[2],
+            ],
+            size: [width, height, 1],
             status: lineStatus(entry.status),
             interactive: true,
             data: { terminal: true, useRawHtml: true },

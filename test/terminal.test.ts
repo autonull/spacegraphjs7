@@ -33,6 +33,7 @@ import {
     terminalLineSize,
     terminalMoveLine,
     terminalOrder,
+    terminalPlace,
     terminalRangeFromIndices,
     terminalOverlays,
     terminalRange,
@@ -102,6 +103,26 @@ describe('terminalLayout', () => {
         expect(layout.placements.get('c')?.octave).toBe(-1);
         expect(layout.placements.get('d')?.octave).toBe(-2);
         expect(layout.placements.get('d')?.size[0]).toBe(45);
+    });
+
+    it('shares one placement contract between the lane and a fixed-width console', () => {
+        const lines = [line('a', 'abcd'), line('b', 'efgh'), line('c', 'ijkl')];
+        const grid = terminalGrid();
+        const lane = terminalLayout(lines, grid, { spineStep: 40, contextStep: 20 });
+        expect(terminalPlace(lines, grid, { spineStep: 40, contextStep: 20 })).toEqual(lane);
+
+        const console = terminalPlace(lines, grid, {
+            width: grid.maxWidth,
+            rowGap: 4,
+            trimGutter: true,
+        });
+        const height = Math.max(grid.lineHeight, terminalLineSize('abcd', grid)[1] - grid.gutter);
+        expect(console.placements.get('b')?.position).toEqual([
+            grid.maxWidth / 2,
+            -(height + 4),
+            0,
+        ]);
+        expect(console.placements.get('c')?.size).toEqual([grid.maxWidth, height]);
     });
 });
 
