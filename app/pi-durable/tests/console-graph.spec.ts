@@ -27,3 +27,17 @@ test('opt-in graph projection frames a selection with structural edges', async (
     await expect(page.locator('#canvas .spacegraph-group-node')).toHaveCount(0);
     expect(errors).toEqual([]);
 });
+
+test('chapter frames descend into a window lens and return through the trail', async ({ page }) => {
+    const errors = await bootConsole(page);
+    await call(page, 'consoleGraph', true);
+    const frames = page.locator('#canvas [data-node-id^="chapter-group-"]');
+    await expect(frames.first()).toBeVisible();
+    const chapters = await call<readonly { startID: string; endID: string }[]>(page, 'consoleChapters');
+    await call(page, 'consoleFocus', `window:${chapters[0]!.startID}~${chapters[0]!.endID}`);
+    await expect
+        .poll(() => call<{ lens?: string }>(page, 'address').then((address) => address.lens))
+        .toMatch(/^window:/);
+    await call(page, 'consoleTrailBack');
+    expect(errors).toEqual([]);
+});

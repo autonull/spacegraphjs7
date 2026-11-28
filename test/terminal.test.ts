@@ -26,6 +26,7 @@ import {
     terminalAutoZoom,
     terminalBookmark,
     terminalChapters,
+    terminalChapterTargets,
     terminalConsoleCommands,
     terminalLensFromKey,
     terminalLensIDs,
@@ -141,6 +142,12 @@ describe('terminal grid', () => {
 });
 
 describe('terminalLayout', () => {
+    it('inherits octaves in the fixed-width console layout', () => {
+        const entries = [line('a', 'a'), line('b', 'b', 'a')];
+        const layout = terminalPlace(entries, terminalGrid(), { width: 200 });
+        expect(layout.placements.get('b')?.octave).toBe(-1);
+    });
+
     it('places an append-only spine and attached context in halving octaves', () => {
         const layout = terminalLayout(
             [line('a', 'abcd'), line('c', 'abcd', 'a'), line('b', 'abcd'), line('d', 'abcd', 'c')],
@@ -1353,6 +1360,23 @@ describe('reading lens and profiles', () => {
         ]);
         expect(terminalProfile('big-text').presentation.wrap).toBe(true);
         expect(terminalProfile('missing').id).toBe('logs');
+    });
+});
+
+describe('chapter portals', () => {
+    it('maps chapters onto shareable window lens targets', () => {
+        const entries = [
+            { ...line('a', 'a'), turn: 1 },
+            { ...line('b', 'b'), turn: 1 },
+            { ...line('c', 'c'), turn: 2 },
+        ];
+        const chapters = terminalChapters(entries);
+        expect(terminalChapterTargets(chapters)).toEqual(
+            chapters.map((chapter) => ({
+                kind: 'window',
+                window: { start: chapter.startID, end: chapter.endID },
+            })),
+        );
     });
 });
 

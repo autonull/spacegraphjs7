@@ -6,6 +6,8 @@ import {
 } from '@spacegraphjs/renderer';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import {
+    terminalChapterTargets,
+    terminalChapters,
     terminalColumns,
     terminalLineHTML,
     terminalMatchFlags,
@@ -55,6 +57,7 @@ export type ConsoleModelState = {
     /** Lens target to frame as a structural group when graph projection is enabled. */
     readonly graphTarget?: TerminalLensTarget;
     readonly edges?: boolean;
+    readonly chapterFrames?: boolean;
 };
 
 const lineStatus = (status: string): RenderNode['status'] =>
@@ -168,6 +171,28 @@ export const consoleModel = (
         });
         lineNodes.forEach((node) => {
             if (members.has(node.id)) node.parent = group.id;
+        });
+    }
+    if (state.chapterFrames) {
+        const chapters = terminalChapters(lines);
+        terminalChapterTargets(chapters).forEach((target, index) => {
+            const frame = terminalGroup(target, lineNodes);
+            if (!frame) return;
+            const id = `chapter-group-${index + 1}`;
+            nodes.push({
+                id,
+                kind: 'terminal-chapter',
+                label: chapters[index]!.label,
+                shape: 'group',
+                position: [...frame.position],
+                size: [frame.size[0], frame.size[1], 1],
+                status: 'neutral',
+                data: { members: frame.members, chapter: chapters[index]!.id, lens: `window:${chapters[index]!.startID}~${chapters[index]!.endID}` },
+            });
+            frame.members.forEach((member) => {
+                const node = byID.get(member);
+                if (node && !node.parent) node.parent = id;
+            });
         });
     }
 

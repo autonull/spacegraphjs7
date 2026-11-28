@@ -38,4 +38,5 @@ export const CONSOLE_SHOT_META: readonly ConsoleShotMeta[] = [
     { id: 'console-regions', source: 'basic-turn', regions: true },
     { id: 'console-fractal', source: 'basic-turn', profile: 'fractal' },
     { id: 'console-chrome', source: 'basic-turn', chrome: 'wn' },
+    { id: 'console-chapters', source: 'basic-turn', chrome: 'g' },
 ];

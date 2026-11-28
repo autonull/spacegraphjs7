@@ -244,7 +244,8 @@ export const terminalPlace = (
             rule.trimGutter ? Math.max(grid.lineHeight, measured[1] - grid.gutter) : measured[1],
         ];
     };
-    const sizes = new Map(lines.map((line) => [line.id, sizeOf(line, octaveOf(line))] as const));
+    const octaves = new Map(lines.map((line) => [line.id, octaveOf(line)] as const));
+    const sizes = new Map(lines.map((line) => [line.id, sizeOf(line, octaves.get(line.id)!)] as const));
     const lane: TranscriptLaneOptions = {
         gutter: rule.gutter ?? grid.gutter,
         ...(rule.spineStep === undefined ? {} : { spineStep: rule.spineStep }),
@@ -271,7 +272,7 @@ export const terminalPlace = (
                           },
                       ]),
                   ),
-                  octaves: new Map(lines.map((line) => [line.id, line.octave ?? 0])),
+                  octaves,
               };
     const spine = lines.filter((line) => !parentOf.has(line.id)).map((line) => line.id);
     const placements = new Map(
@@ -459,6 +460,15 @@ export const terminalChapters = (lines: readonly TerminalLine[]): readonly Termi
         };
     });
 };
+
+/** Chapters become shareable window lens targets, never a second scope store. */
+export const terminalChapterTargets = (
+    chapters: readonly TerminalChapter[],
+): readonly TerminalLensTarget[] =>
+    chapters.map((chapter) => ({
+        kind: 'window',
+        window: { start: chapter.startID, end: chapter.endID },
+    }));
 
 /** Progressive prefixes for replay-as-typing; each step keeps the same committed ids. */
 export const terminalReplaySteps = (

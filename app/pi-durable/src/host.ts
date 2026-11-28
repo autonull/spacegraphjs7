@@ -3676,11 +3676,22 @@ export class DurableHost {
                     hovered: this.#hoveredLine,
                     focusID: this.#terminalController?.tail(),
                     edges: Boolean(this.#consolePresentation.graphEdges),
+                    chapterFrames: Boolean(this.#consolePresentation.graphEdges),
                     graphTarget: selection ? { kind: 'range', range: selection } : undefined,
                 });
             },
             onReveal: (id) => {
                 if (id.startsWith('grow-')) return;
+                if (id.startsWith('chapter-group-')) {
+                    const lens = (this.#consoleModel.nodes.find((node) => node.id === id)?.data?.[
+                        'lens'
+                    ]) as string | undefined;
+                    if (lens) {
+                        this.consoleFocus(lens);
+                        this.announce(`Descended into ${id}`);
+                    }
+                    return;
+                }
                 this.#expandedLine = this.#expandedLine === id ? undefined : id;
                 this.announce(
                     this.#expandedLine ? `Expanded ${this.#expandedLine}` : 'Collapsed detail',
