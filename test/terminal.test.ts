@@ -42,7 +42,10 @@ import {
     terminalRangeFromKey,
     terminalRangeIDs,
     terminalRangeKey,
+    terminalDerived,
+    terminalMatchFlags,
     terminalRangeText,
+    terminalSearch,
     terminalSelect,
     terminalSnapshot,
     terminalSpec,
@@ -992,7 +995,7 @@ describe('console command catalog', () => {
         });
         expect(commands.list().map((command) => command.id)).toEqual([
             'copy', 'export', 'search', 'filter', 'read', 'zoom', 'pin.live', 'pin.snapshot',
-            'profile', 'asOf', 'fork', 'why', 'help',
+            'pin.matches', 'profile', 'asOf', 'fork', 'why', 'monitor', 'help',
         ]);
         expect(commands.get('copy')?.disabledReason).toBe('Select lines first');
         expect(commands.get('fork')?.disabledReason).toBe('Nothing to fork');
@@ -1011,5 +1014,49 @@ describe('console command catalog', () => {
         const items = terminalContextMenu(range, commands);
         expect(items.find((item) => item.id === 'copy')?.disabled).toBe(false);
         expect(items.find((item) => item.id === 'pin.snapshot')?.label).toBe('pin snapshot');
+    });
+});
+
+describe('terminalSearch', () => {
+    const sample = [
+        line('a', 'alpha ERROR'),
+        line('b', 'beta error'),
+        line('c', 'gamma Error'),
+    ];
+
+    it('is case-insensitive by default and exact when requested', () => {
+        expect(terminalSearch(sample, 'error').map((match) => match.lineID)).toEqual([
+            'a', 'b', 'c',
+        ]);
+        expect(terminalSearch(sample, 'error', { caseSensitive: true })).toEqual([
+            { lineID: 'b', start: 17, end: 22 },
+        ]);
+    });
+
+    it('supports regex spans and reports invalid patterns as no matches', () => {
+        expect(terminalSearch(sample, 'e.r', { regex: true })).toEqual([
+            { lineID: 'a', start: 6, end: 9 },
+            { lineID: 'b', start: 17, end: 20 },
+            { lineID: 'c', start: 29, end: 32 },
+        ]);
+        expect(terminalSearch(sample, '[', { regex: true })).toEqual([]);
+    });
+
+    it('restricts matches to an anchored scope', () => {
+        const scope = {
+            anchor: { nodeID: 'a', offset: 0 },
+            focus: { nodeID: 'b', offset: 0 },
+        };
+        expect(terminalSearch(sample, 'error', { scope }).map((match) => match.lineID)).toEqual([
+            'a', 'b',
+        ]);
+    });
+
+    it('maps global spans to line-relative ranges and extracts a derived view', () => {
+        const matches = terminalSearch(sample, 'error');
+        expect(terminalMatchFlags(sample, matches).get('b')).toEqual([[5, 10]]);
+        expect(terminalDerived(sample, { search: 'error' }).lines.map((entry) => entry.id)).toEqual([
+            'a', 'b', 'c',
+        ]);
     });
 });

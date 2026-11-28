@@ -579,6 +579,7 @@ export type TerminalSelector = {
     readonly columns?: number;
     readonly filter?: (line: TerminalLine) => boolean;
     readonly search?: string;
+    readonly searchOptions?: TerminalSearchOptions;
     readonly maxLines?: number;
     readonly follow?: boolean;
     readonly mode?: TerminalMode;
@@ -605,24 +606,9 @@ export const terminalSelect = (
 ): TerminalSelection => {
     const filter = selector.filter;
     const allowed = filter ? lines.filter((line) => filter(line)) : lines;
-    const query = selector.search?.trim().toLowerCase() ?? '';
-    const flat = terminalFlatten(allowed);
-    const matches: TerminalSpan[] = [];
-    const matched = new Set<string>();
-    if (query) {
-        allowed.forEach((line, index) => {
-            const span = flat.spans[index]!;
-            const text = line.text.toLowerCase();
-            for (let at = text.indexOf(query); at >= 0; at = text.indexOf(query, at + query.length)) {
-                matches.push({
-                    lineID: line.id,
-                    start: span.start + at,
-                    end: span.start + at + query.length,
-                });
-                matched.add(line.id);
-            }
-        });
-    }
+    const query = selector.search?.trim() ?? '';
+    const matches = terminalSearch(allowed, query, selector.searchOptions);
+    const matched = new Set(matches.map((match) => match.lineID));
     let selected =
         query && selector.mode === 'derived'
             ? allowed.filter((line) => matched.has(line.id))
@@ -712,6 +698,7 @@ export const terminalConsoleCommands = (
         entry('zoom', 'zoom', '/zoom <landmark>', ['scale']),
         entry('pin.live', 'pin live', '/pin live', ['follow']),
         entry('pin.snapshot', 'pin snapshot', '/pin snapshot', ['freeze']),
+        entry('pin.matches', 'pin matches', '/pin matches', ['snapshot', 'find']),
         entry(
             'profile',
             'profile',
@@ -721,6 +708,7 @@ export const terminalConsoleCommands = (
         entry('asOf', 'as of', '/as of <seq>', ['asof', 'history']),
         entry('fork', 'fork', '/fork [line]', ['branch'], gate(gates.fork, 'Nothing to fork')),
         entry('why', 'why', '/why', ['provenance']),
+        entry('monitor', 'monitor', '/monitor', ['sidecar', 'logtail']),
         entry('help', 'help', '/help', ['?']),
     ]);
 };
@@ -752,6 +740,85 @@ export const terminalContextMenu = (
             ...(reason ? { disabledReason: reason } : {}),
         };
     });
+
+export type TerminalSearchOptions = {
+    readonly regex?: boolean;
+    readonly caseSensitive?: boolean;
+    /** Restrict matches to lines addressed by an anchored range. */
+    readonly scope?: TerminalRange;
+};
+
+/** Exact global spans over committed lines; invalid regular expressions match nothing. */
+export const terminalSearch = (
+    lines: readonly TerminalLine[],
+    query: string,
+    options: TerminalSearchOptions = {},
+): readonly TerminalSpan[] => {
+    if (!query) return [];
+    const order = terminalOrder(lines);
+    const scoped = options.scope ? terminalRangeIDs(options.scope, order) : undefined;
+    const allowed = new Set(scoped ?? lines.map((line) => line.id));
+    const flat = terminalFlatten(lines);
+    const pattern = options.regex
+        ? (() => {
+              try {
+                  return new RegExp(query, options.caseSensitive ? 'g' : 'gi');
+              } catch {
+                  return undefined;
+              }
+          })()
+        : undefined;
+    if (options.regex && !pattern) return [];
+    const needle = options.caseSensitive ? query : query.toLowerCase();
+    const matches: TerminalSpan[] = [];
+    lines.forEach((line, index) => {
+        if (!allowed.has(line.id)) return;
+        const span = flat.spans[index]!;
+        const text = options.caseSensitive ? line.text : line.text.toLowerCase();
+        if (pattern) {
+            pattern.lastIndex = 0;
+            for (let found = pattern.exec(text); found; found = pattern.exec(text)) {
+                matches.push({
+                    lineID: line.id,
+                    start: span.start + found.index,
+                    end: span.start + found.index + found[0].length,
+                });
+                if (!found[0].length) pattern.lastIndex++;
+            }
+            return;
+        }
+        for (let at = text.indexOf(needle); at >= 0; at = text.indexOf(needle, at + needle.length))
+            matches.push({
+                lineID: line.id,
+                start: span.start + at,
+                end: span.start + at + needle.length,
+            });
+    });
+    return matches;
+};
+
+/** Convert global match spans to line-relative ranges ready for `lineHTML`. */
+export const terminalMatchFlags = (
+    lines: readonly TerminalLine[],
+    matches: readonly TerminalSpan[],
+): ReadonlyMap<string, readonly (readonly [number, number])[]> => {
+    const spans = new Map(terminalFlatten(lines).spans.map((span) => [span.lineID, span] as const));
+    const grouped = new Map<string, (readonly [number, number])[]>();
+    matches.forEach((match) => {
+        const span = spans.get(match.lineID);
+        if (!span) return;
+        const ranges = grouped.get(match.lineID) ?? [];
+        ranges.push([match.start - span.start, match.end - span.start]);
+        grouped.set(match.lineID, ranges);
+    });
+    return grouped;
+};
+
+/** Recompute a derived read model from the committed fold; other modes stay live views. */
+export const terminalDerived = (
+    lines: readonly TerminalLine[],
+    selector: TerminalSelector,
+): TerminalSelection => terminalSelect(lines, { ...selector, mode: 'derived' });
 
 export type TerminalExportFormat = 'markdown' | 'json';
 

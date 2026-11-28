@@ -30,4 +30,5 @@ export const CONSOLE_SHOT_META: readonly ConsoleShotMeta[] = [
     { id: 'console-detail-inline', source: 'basic-turn', detailMode: 'inline', detailLine: 1 },
     { id: 'console-detail-popup', source: 'basic-turn', detailMode: 'popup', detailLine: 1 },
     { id: 'console-detail-rail', source: 'basic-turn', detailMode: 'rail', detailLine: 1 },
+    { id: 'console-search', source: 'basic-turn', query: 'q=France' },
 ];

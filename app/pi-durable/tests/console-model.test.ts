@@ -105,4 +105,20 @@ describe('consoleModel', () => {
         const model = consoleModel({ ...context(), selection }, state);
         expect(model.nodes.map((entry) => entry.id)).toEqual(['b', 'terminal-prompt']);
     });
+
+    it('dims lines without matches while keeping the prompt and matched lines loud', () => {
+        const selection = terminalSelect(lines, { search: 'ALPHA' });
+        const model = consoleModel(
+            {
+                ...context(),
+                selection,
+                matches: selection.matches,
+                presentation: { highlightMatches: true },
+            },
+            { ...state, dimNonMatches: true },
+        );
+        expect(model.nodes.find((node) => node.id === 'a')?.data?.['opacity']).toBe(1);
+        expect(model.nodes.find((node) => node.id === 'b')?.data?.['opacity']).toBe(0.35);
+        expect(model.nodes.find((node) => node.id === 'terminal-prompt')?.data?.['opacity']).toBe(1);
+    });
 });

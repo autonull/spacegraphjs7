@@ -3,9 +3,10 @@ import {
     type RenderModel,
     type RenderNode,
 } from '@spacegraphjs/renderer';
+import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import {
     lineHTML,
-    terminalFlatten,
+    terminalMatchFlags,
     terminalGaps,
     terminalOrder,
     terminalPlace,
@@ -21,6 +22,7 @@ import {
     type TerminalProjectionContext,
     type TerminalRange,
 } from 'spacegraphjs/terminal';
+const DIM_MAPPING = mappingFor(['opacity', 'glow'], { opacity: [0.35, 1] });
 
 export type ConsoleModelState = {
     readonly grid: TerminalGrid;
@@ -34,6 +36,7 @@ export type ConsoleModelState = {
     readonly promptID?: string;
     readonly detailMode: 'inline' | 'popup' | 'rail';
     readonly presentation?: TerminalPresentation;
+    readonly dimNonMatches?: boolean;
 };
 
 const lineStatus = (status: string): RenderNode['status'] =>
@@ -62,7 +65,7 @@ export const consoleModel = (
     const { grid, glyphs, lines, detailMode } = state;
     const flags = presentation ?? state.presentation;
     const projected = selection?.lines ?? visible;
-    const spans = new Map(terminalFlatten(committed).spans.map((span) => [span.lineID, span] as const));
+    const rangesByLine = terminalMatchFlags(committed, matches ?? []);
     const index = state.index ?? terminalOrder(lines);
     const selected = state.selection
         ? new Set(terminalRangeIDs(state.selection, index))
@@ -82,14 +85,7 @@ export const consoleModel = (
     const lineNodes: RenderNode[] = projected.map((entry) => {
         const placement = layout.placements.get(entry.id)!;
         const [width, height] = placement.size;
-        const ranges = flags?.highlightMatches
-            ? (matches ?? []).flatMap((match) => {
-                  const span = spans.get(match.lineID);
-                  return match.lineID === entry.id && span
-                      ? ([[match.start - span.start, match.end - span.start]] as const)
-                      : [];
-              })
-            : [];
+        const ranges = flags?.highlightMatches ? (rangesByLine.get(entry.id) ?? []) : [];
         const attrs = `data-selected="${selected.has(entry.id)}" data-kind="${escapeHtml(
             entry.kind,
         )}" data-status="${escapeHtml(entry.status)}" data-role="${escapeHtml(entry.role ?? '')}"${
@@ -191,5 +187,11 @@ export const consoleModel = (
             interactive: true,
             data: { terminal: true },
         });
-    return { nodes, edges: [] };
+    const model: RenderModel = { nodes, edges: [] };
+    if (!state.dimNonMatches || !rangesByLine.size) return model;
+    const lineIDs = new Set(lineNodes.map((node) => node.id));
+    const emphasis = new Map(
+        nodes.map((node) => [node.id, lineIDs.has(node.id) && !rangesByLine.has(node.id) ? 0 : 1]),
+    );
+    return applyModelEmphasis(model, emphasis, DIM_MAPPING);
 };

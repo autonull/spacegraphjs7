@@ -5,6 +5,7 @@ import type { RenderNode } from '@spacegraphjs/renderer';
 import { clamp } from '../utils/math';
 import { WidgetLayer } from './layer';
 import { WidgetRegistry, type WidgetDescriptor, type WidgetHandle } from './registry';
+import type { WidgetSizingPolicy } from './sizing';
 
 export const INSTRUMENT_IDS = [
     'sparkline',
@@ -127,6 +128,7 @@ export const createInstrumentKit = (
     container: HTMLElement,
     dataFor: (node: RenderNode) => InstrumentData,
     onAction?: ActionHandler,
+    sizing?: WidgetSizingPolicy,
 ): InstrumentKit => {
     const registry = new WidgetRegistry();
     for (const id of INSTRUMENT_IDS) {
@@ -157,6 +159,7 @@ export const createInstrumentKit = (
         registry,
         slots: ['attached'],
         representationOf: () => 'detail',
+        sizing,
     });
     return { layer, refresh: (nodes) => layer.refresh(nodes) };
 };

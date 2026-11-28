@@ -384,6 +384,12 @@
             #console-completions { position: absolute; bottom: 84px; left: 24px; z-index: 26;
                 display: flex; flex-wrap: wrap; gap: 4px; }
             #console-completions button { font: 11px monospace; }
+            #console-sidecar { position: absolute; top: 56px; right: 24px; z-index: 12;
+                max-width: 360px; padding: 8px; border: 1px solid var(--line);
+                border-radius: 10px; background: var(--panel); }
+            #console-sidecar[hidden] { display: none; }
+            .instrument-logtail { display: flex; flex-direction: column; gap: 2px;
+                font: 11px/1.4 monospace; color: var(--muted); }
             kbd { padding: 2px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); }
             @media (max-width: 900px) {
                 main { grid-template-columns: 1fr; }
@@ -453,6 +459,7 @@
                     <div id="canvas" aria-label="Conversation graph"></div>
                     <button type="button" id="follow-badge" aria-pressed="true" hidden>tail: follow</button>
                     <div id="chapter-rail" role="group" aria-label="Console chapters" hidden></div>
+                    <aside id="console-sidecar" role="region" aria-label="Console monitor" hidden></aside>
                     <div id="reader" role="region" aria-label="Conversation transcript" hidden></div>
                     <div id="survey" role="button" tabindex="0" aria-label="Survey overview — click or press Enter to pan">
                         <svg id="survey-svg" viewBox="0 0 160 100"></svg>

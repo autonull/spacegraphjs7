@@ -33,6 +33,11 @@ import { Navigation, type MinimapProjection } from 'spacegraphjs/navigation';
 import type { NodeSpec } from 'spacegraphjs';
 import { ScopedOverlay } from 'spacegraphjs/overlays';
 import {
+    createInstrumentKit,
+    type InstrumentData,
+    type InstrumentKit,
+} from 'spacegraphjs/widgets';
+import {
     mountReading,
     readingOrder,
     type ReadingController,
@@ -59,8 +64,11 @@ import {
     terminalPalette,
     terminalRangeFromKey,
     terminalRangeKey,
+    terminalDerived,
     terminalReplaySteps,
+    terminalSearch,
     terminalVisibleAt,
+    type TerminalSpan,
     type TerminalReplayHandle,
     type TerminalCameraController,
     type TerminalController,
@@ -698,6 +706,11 @@ export class DurableHost {
     #menuScope: ScopedOverlay | undefined;
     #commandValue = '';
     #terminalPrompt: TerminalPromptController | undefined;
+    #searchCase = false;
+    #searchRegex = false;
+    #matchIndex = 0;
+    #monitorEnabled = false;
+    #consoleKit: InstrumentKit | undefined;
     #mutedEdges = 0;
     #activeGroups = new Set<string>();
     #scopeKey = '';
@@ -1860,9 +1873,8 @@ export class DurableHost {
         });
         action('export', (rest) => this.export(rest === 'json' ? 'json' : 'markdown'));
         action('search', (rest) => {
-            this.setView('transcript');
-            this.consoleSelect({ ...this.#consoleSelector, search: rest });
-            this.announce(rest ? `Searching console for ${rest}` : 'Console search cleared');
+            const count = this.consoleSearch(rest);
+            this.announce(rest ? `${count} matches for ${rest}` : 'Console search cleared');
         });
         action('filter', (rest) => {
             this.setView('transcript');
@@ -1886,6 +1898,12 @@ export class DurableHost {
             this.setView('transcript');
             this.consoleSelect({ ...this.#consoleSelector, mode: 'snapshot', follow: false });
             this.announce('Console pinned as snapshot');
+        });
+        action('pin.matches', () => {
+            this.consolePinMatches();
+        });
+        action('monitor', () => {
+            this.consoleToggleMonitor();
         });
         action('profile', (rest) => {
             const profiles: Readonly<Record<string, TerminalPresentation>> = {
@@ -2001,6 +2019,138 @@ export class DurableHost {
         this.#menuScope = undefined;
     }
 
+    #searchMatches(): readonly TerminalSpan[] {
+        const query = this.#consoleSelector.search;
+        return query
+            ? terminalSearch(this.#terminalController?.lines() ?? [], query, {
+                  caseSensitive: this.#searchCase,
+                  regex: this.#searchRegex,
+              })
+            : [];
+    }
+
+    consoleSearch(
+        query: string,
+        options: { readonly caseSensitive?: boolean; readonly regex?: boolean } = {},
+    ): number {
+        this.#searchCase = options.caseSensitive ?? this.#searchCase;
+        this.#searchRegex = options.regex ?? this.#searchRegex;
+        this.#matchIndex = 0;
+        Object.assign(this.#consolePresentation, { highlightMatches: Boolean(query) });
+        this.setView('transcript');
+        this.consoleSelect({
+            ...this.#consoleSelector,
+            search: query,
+            searchOptions: {
+                caseSensitive: this.#searchCase,
+                regex: this.#searchRegex,
+            },
+        });
+        this.#refreshConsoleSidecar();
+        return this.#searchMatches().length;
+    }
+
+    consoleFocusSearch(): void {
+        this.setView('transcript');
+        const field = this.#terminalPrompt?.composer()?.element;
+        if (!field) return;
+        field.value = '/search ';
+        this.#completeConsole('', []);
+        field.focus();
+    }
+
+    consoleFindNext(delta = 1): string | undefined {
+        const matches = this.#searchMatches();
+        if (!matches.length) return undefined;
+        this.#matchIndex = (this.#matchIndex + delta + matches.length) % matches.length;
+        const match = matches[this.#matchIndex]!;
+        this.#terminalController?.focusLine(match.lineID);
+        this.announce(`Match ${this.#matchIndex + 1} of ${matches.length}`);
+        return match.lineID;
+    }
+
+    consoleToggleSearchOption(option: 'case' | 'regex'): boolean {
+        if (option === 'case') this.#searchCase = !this.#searchCase;
+        else this.#searchRegex = !this.#searchRegex;
+        this.consoleSearch(this.#consoleSelector.search ?? '');
+        return option === 'case' ? this.#searchCase : this.#searchRegex;
+    }
+
+    consolePinMatches(): boolean {
+        const lines = this.#terminalController?.lines() ?? [];
+        const matches = this.#searchMatches();
+        if (!matches.length) {
+            this.announce('No matches to pin');
+            return false;
+        }
+        const ids = new Set(matches.map((match) => match.lineID));
+        const derived = terminalDerived(lines, { filter: (line) => ids.has(line.id) });
+        const kept = new Set(derived.lines.map((entry) => entry.id));
+        Object.assign(this.#consolePresentation, { highlightMatches: false });
+        this.consoleSelect({
+            ...this.#consoleSelector,
+            search: undefined,
+            searchOptions: undefined,
+            filter: (line) => kept.has(line.id),
+            mode: 'snapshot',
+            follow: false,
+        });
+        this.announce(`Pinned ${derived.lines.length} matching lines as snapshot`);
+        return true;
+    }
+
+    consoleToggleMonitor(): boolean {
+        this.#monitorEnabled = !this.#monitorEnabled;
+        this.#refreshConsoleSidecar();
+        this.announce(this.#monitorEnabled ? 'Console monitor on' : 'Console monitor off');
+        return this.#monitorEnabled;
+    }
+
+    #refreshConsoleSidecar(): void {
+        const container = el('console-sidecar');
+        const lines = this.#terminalController?.lines() ?? [];
+        const source = this.#consoleSelector.search
+            ? this.#searchMatches()
+            : terminalDerived(lines, { search: 'error' }).matches;
+        if (!this.#monitorEnabled && !this.#consoleSelector.search) {
+            container.hidden = true;
+            this.#consoleKit?.refresh([]);
+            return;
+        }
+        container.hidden = false;
+        if (!this.#consoleKit) {
+            this.#consoleKit = createInstrumentKit(
+                container,
+                (node) => (node.data?.['instrument'] as InstrumentData | undefined) ?? {},
+                undefined,
+                {
+                    max: { width: 360, height: 96 },
+                    overflow: 'clip',
+                    feedLayout: false,
+                },
+            );
+        }
+        const texts = [
+            ...new Set(
+                source.map(
+                    (match) => lines.find((line) => line.id === match.lineID)?.text ?? '',
+                ),
+            ),
+        ]
+            .filter(Boolean)
+            .slice(-3);
+        this.#consoleKit.refresh([
+            {
+                id: 'console-monitor',
+                kind: 'widget',
+                label: 'Console monitor',
+                position: [0, 0, 0],
+                data: { instrument: { lines: texts } },
+                widgets: ['logtail'],
+            },
+        ]);
+    }
+
     applyAddress(address: Address): boolean {
         this.#history.suppress(true);
         if (address.shot) this.applyShot(address.shot);
@@ -2070,6 +2220,15 @@ export class DurableHost {
             consoleHelp: () => this.consoleHelp(),
             consoleCommand: (text: string) => this.consoleCommand(text),
             consoleMenu: (x?: number, y?: number) => this.openConsoleMenu(x, y),
+            consoleSearch: (query: string, options?: {
+                readonly caseSensitive?: boolean;
+                readonly regex?: boolean;
+            }) => this.consoleSearch(query, options),
+            consoleFindNext: (delta?: number) => this.consoleFindNext(delta),
+            consoleCase: () => this.consoleToggleSearchOption('case'),
+            consoleRegex: () => this.consoleToggleSearchOption('regex'),
+            consolePinMatches: () => this.consolePinMatches(),
+            consoleMonitor: () => this.consoleToggleMonitor(),
             exportConsole: (format: 'markdown' | 'json') => {
                 const terminal = this.#terminal();
                 return terminalExport(terminal.lines(), terminal.selection(), format);
@@ -2923,6 +3082,7 @@ export class DurableHost {
                     index: context.index,
                     direction: document.documentElement.dir === 'rtl' ? 'rtl' : undefined,
                     detailMode: this.#detailMode,
+                    dimNonMatches: Boolean(this.#consoleSelector.search),
                 }),
             onReveal: (id) => {
                 this.#expandedLine = this.#expandedLine === id ? undefined : id;

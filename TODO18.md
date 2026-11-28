@@ -1,7 +1,7 @@
 # TODO18 — Terminal 2: one projection, one command surface, many lenses
 
-> **Status: implementing (2026-11-27).** Supersedes the first 12-item draft. **O1 and O2 have
-> landed**; O3–O6 remain `spec`. Ideas are harvested from [autonull/fracterm](https://github.com/autonull/fracterm)
+> **Status: implementing (2026-11-27).** Supersedes the first 12-item draft. **O1–O3 have
+> landed**; O4–O6 remain `spec`. Ideas are harvested from [autonull/fracterm](https://github.com/autonull/fracterm)
 > (`README.md`, `README3.md`, `TODO.md`) and adapted to the vector console delivered by `TODO17.md`.
 > The fidelity decision in TODO17 §3 still stands: no PTY, VT/ANSI/SGR or second console store.
 > §8 records delivered work; §9 turns the remaining outcomes into an executable queue.
@@ -64,7 +64,7 @@ the published `spacegraphjs/*` subpaths are the SDK.
 
 ## 3. Consolidated outcomes
 
-O1 and O2 have landed; O3–O6 are `spec`. `E#` = TODO17 enhancement. Effort is relative.
+O1–O3 have landed; O4–O6 are `spec`. `E#` = TODO17 enhancement. Effort is relative.
 
 ### O1 — One projection contract (foundation) — **Done, see §8**
 
@@ -100,7 +100,7 @@ menu, keybinding and tests.
   `input`, `overlays.ScopedOverlay`, `kernel`, `lens.ts`. **Land the catalog before wiring many
   actions** to avoid rewriting handlers.
 
-### O3 — Search and derived views
+### O3 — Search and derived views — **Done, see §8**
 
 **Outcome:** incremental search over committed lines with exact character spans; matches can become a
 live derived view or a pinned snapshot without leaving the console.
@@ -206,7 +206,8 @@ and terminal-state save/restore. The kernel remains the durable store; layouts s
 Implemented O1: added `TerminalSelector`, `terminalSelect`, `TerminalPresentation`,
 `TerminalSelection`, `TERMINAL_MODES` and `terminalSnapshot` to `src/terminal.ts`; ported
 `consoleModel` to consume selector output; verified the twelve `shots:console` captures. O2 then
-landed the shared command catalog and slash prompt; O3 is next. See §8 and §9.
+landed the shared command catalog and slash prompt; O3 added search, derived views and a sidecar.
+O4 is next. See §8 and §9.
 
 ## 8. Progress
 
@@ -258,17 +259,33 @@ landed the shared command catalog and slash prompt; O3 is next. See §8 and §9.
   `tsc --noEmit` and 21 files / 105 unit tests, `verify:fast` (93 E2E passing, 17 capture-only
   skipped), plus 12 regenerated `shots:console` with no default-visual change.
 
+### O3 — landed (2026-11-27)
+
+- **Library.** `terminalSearch(lines, query, { regex, caseSensitive, scope })` returns exact global
+  spans over committed lines; invalid patterns yield no matches. `terminalMatchFlags` converts spans
+  to line-relative ranges and is now the single source for `lineHTML` highlights in `consoleModel`.
+  `terminalDerived` materializes a derived read model. `TerminalSelector.searchOptions` carries the
+  case/regex flags so `terminalSelect`, `terminalSearch` and the host agree on one span set.
+  `createInstrumentKit` accepts an optional `WidgetSizingPolicy`.
+- **Host.** `consoleSearch`, `consoleFindNext`, `consoleToggleSearchOption`, `consolePinMatches` and
+  `consoleToggleMonitor` are host hooks and commands; `Ctrl/⌘ F` seeds `/search `, `F3`/`Shift+F3`
+  step matches. Non-matching lines are dimmed through `applyModelEmphasis(mappingFor(['opacity',
+  'glow']))`; matches feed a bounded `logtail` sidecar through `createInstrumentKit` and
+  `resolveWidgetSize`. Pinning matches freezes a filtered snapshot. `pin.matches` and `monitor`
+  join the one catalog.
+- **Proof.** Regex/case/scope/span unit tests, a `consoleModel` dimming test, and three
+  `search.spec.ts` E2E tests for highlight + sidecar + `F3`, pin-as-snapshot, and case/regex toggles.
+  Added the `console-search` capture (13 total).
+- **Verification.** Root `pnpm run check`, `pnpm test` (201 files / 1375 tests), `test:exports`,
+  `check:generated`, `check:console-shots` (13), Pi Durable 21 files / 106 unit tests and
+  `verify:fast` (96 E2E passing, 18 capture-only skipped).
+
 ## 9. Remaining work — executable queue
 
 Each outcome follows §5: pure primitive + unit test in `test/terminal.test.ts`, host wiring through
 `consoleModel`/`lens.ts`/`host.ts`, E2E assertion, console shot only on a visual shape change.
 
-- **O3 — search and derived views (next).** `terminalSelect` already returns global match spans and
-  `presentation.highlightMatches` already renders `<mark>`; add `terminalSearch(lines, query,
-  { regex, caseSensitive, scope })`, `terminalMatchFlags` and `terminalDerived` on top of that
-  span representation. Host: `Ctrl+F`/`F3`, case/regex toggles, pin-matches-as-snapshot command,
-  `applyModelEmphasis` dimming and a bounded `createInstrumentKit('logtail')` sidecar.
-- **O4 — lens navigation and targets.** Add `TerminalLensTarget`, `terminalLensRect` over
+- **O4 — lens navigation and targets (next).** Add `TerminalLensTarget`, `terminalLensRect` over
   `terminalPlace`, `terminalBookmark` over `view-state`, `Trail.reconcile` history and `edgePath`
   breadcrumbs. `Address` already allowlists new host keys, so `lens`/`bm` can join `q`/`mode`
   without a new codec. Reduced-motion `flyTo` snaps.
