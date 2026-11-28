@@ -1,5 +1,6 @@
 import {
     escapeHtml,
+    type RenderEdge,
     type RenderModel,
     type RenderNode,
 } from '@spacegraphjs/renderer';
@@ -15,7 +16,9 @@ import {
     terminalOverlayGaps,
     terminalPromptHTML,
     terminalRangeIDs,
+    terminalEdges,
     terminalFocusWeights,
+    terminalGroup,
     terminalSlots,
     terminalTokens,
     terminalWrapRows,
@@ -23,6 +26,7 @@ import {
     type TerminalGrid,
     type TerminalLine,
     type TerminalLineChrome,
+    type TerminalLensTarget,
     type TerminalPresentation,
     type TerminalProjectionContext,
     type TerminalRange,
@@ -48,6 +52,9 @@ export type ConsoleModelState = {
     readonly hovered?: string;
     /** Followed line, used as the focus centre for dimming. */
     readonly focusID?: string;
+    /** Lens target to frame as a structural group when graph projection is enabled. */
+    readonly graphTarget?: TerminalLensTarget;
+    readonly edges?: boolean;
 };
 
 const lineStatus = (status: string): RenderNode['status'] =>
@@ -82,7 +89,11 @@ export const consoleModel = (
         ? new Set(terminalRangeIDs(state.selection, index))
         : new Set<string>();
     const revealedBand = flags?.zoomLOD && state.lod ? state.lod : band;
-    const revealed = terminalOverlays(overlays, { band: revealedBand, hovered: state.hovered });
+    const revealed = terminalOverlays(overlays, {
+        band: revealedBand,
+        hovered: state.hovered,
+        selected,
+    });
     const offsets = terminalGaps(
         order,
         terminalOverlayGaps(revealed, detailMode === 'inline' ? 3 : 2),
@@ -142,6 +153,23 @@ export const consoleModel = (
     });
     const nodes: RenderNode[] = [...lineNodes];
     const byID = new Map(lineNodes.map((node) => [node.id, node] as const));
+    const group = state.graphTarget ? terminalGroup(state.graphTarget, lineNodes) : undefined;
+    if (group) {
+        const members = new Set(group.members);
+        nodes.push({
+            id: group.id,
+            kind: 'terminal-group',
+            label: 'Console scope',
+            shape: 'group',
+            position: [...group.position],
+            size: [group.size[0], group.size[1], 1],
+            status: 'neutral',
+            data: { members: group.members },
+        });
+        lineNodes.forEach((node) => {
+            if (members.has(node.id)) node.parent = group.id;
+        });
+    }
 
     terminalSlots(revealed, 'gutter').forEach((entries, lineID) => {
         const line = byID.get(lineID);
@@ -213,7 +241,18 @@ export const consoleModel = (
             interactive: true,
             data: { terminal: true },
         });
-    const model: RenderModel = { nodes, edges: [] };
+    const edges: RenderEdge[] = state.edges
+        ? terminalEdges(lines, projected, layout, revealed).map((edge) => ({
+              id: `console:${edge.id}`,
+              source: edge.source,
+              target: edge.target,
+              kind: edge.type ?? 'edge',
+              style: edge.type === 'DottedEdge' ? 'dotted' : 'solid',
+              directed: true,
+              data: { terminal: true },
+          }))
+        : [];
+    const model: RenderModel = { nodes, edges };
     if (flags?.focusDimming) {
         const weights = terminalFocusWeights(
             lines,

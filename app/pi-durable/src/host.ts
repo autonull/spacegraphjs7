@@ -1965,6 +1965,14 @@ export class DurableHost {
         return this.#consolePresentation;
     }
 
+    /** Opt in to structural console edges and a group frame over the current lens. */
+    consoleGraph(enabled?: boolean): boolean {
+        const next = enabled ?? !this.#consolePresentation.graphEdges;
+        this.consolePresentation({ graphEdges: next });
+        this.announce(`Console graph ${next ? 'on' : 'off'}`);
+        return next;
+    }
+
     /** Pin a fidelity band, or `auto` to follow camera zoom again. */
     consoleLOD(band?: string): string {
         if (band === undefined) return this.#lodOverride ?? this.#consoleLOD;
@@ -2193,6 +2201,9 @@ export class DurableHost {
         });
         action('lod', (rest) => {
             this.consoleLOD(rest.trim() || 'auto');
+        });
+        action('graph', (rest) => {
+            this.consoleGraph(rest !== 'off');
         });
         action('grow', (rest) => {
             this.consoleGrow(rest.trim() || undefined);
@@ -2802,6 +2813,7 @@ export class DurableHost {
             },
             consoleBand: () => this.#terminalController?.band() ?? DEFAULT_RUNG_IDS[0],
             consoleLOD: (band?: string) => this.consoleLOD(band),
+            consoleGraph: (enabled?: boolean) => this.consoleGraph(enabled),
             consoleGrow: (id?: string) => this.consoleGrow(id),
             consoleGrown: () => this.consoleGrown(),
             consoleEmbed: (enabled?: boolean) => this.consoleEmbed(enabled),
@@ -3649,12 +3661,13 @@ export class DurableHost {
             windowConfig: { size: 28, margin: 6, hysteresis: 5 },
             selector: this.#consoleSelector,
             presentation: this.#consolePresentation,
-            project: (context) =>
-                consoleModel(context, {
+            project: (context) => {
+                const selection = this.#terminalController?.selection();
+                return consoleModel(context, {
                     grid,
                     glyphs: terminalPalette(this.#terminalController?.palette() ?? 'classic').glyphs,
                     lines: this.#terminalController?.lines() ?? [],
-                    selection: this.#terminalController?.selection(),
+                    selection,
                     index: context.index,
                     direction: document.documentElement.dir === 'rtl' ? 'rtl' : undefined,
                     detailMode: this.#detailMode,
@@ -3662,7 +3675,10 @@ export class DurableHost {
                     lod: this.#consoleLOD,
                     hovered: this.#hoveredLine,
                     focusID: this.#terminalController?.tail(),
-                }),
+                    edges: Boolean(this.#consolePresentation.graphEdges),
+                    graphTarget: selection ? { kind: 'range', range: selection } : undefined,
+                });
+            },
             onReveal: (id) => {
                 if (id.startsWith('grow-')) return;
                 this.#expandedLine = this.#expandedLine === id ? undefined : id;

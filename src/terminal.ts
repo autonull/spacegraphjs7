@@ -721,6 +721,8 @@ export type TerminalPresentation = {
     readonly inlineTokens?: boolean;
     readonly focusDimming?: boolean;
     readonly markdownDetail?: boolean;
+    /** Project structural edges and a group frame over the visible console window. */
+    readonly graphEdges?: boolean;
 };
 
 const PRESENTATION_FLAGS = [
@@ -733,6 +735,7 @@ const PRESENTATION_FLAGS = [
     ['inlineTokens', 't'],
     ['focusDimming', 'f'],
     ['markdownDetail', 'm'],
+    ['graphEdges', 'g'],
 ] as const satisfies readonly (readonly [keyof TerminalPresentation, string])[];
 
 /** Canonical compact key for addressable presentation flags, e.g. `nsw`. */
@@ -2000,6 +2003,81 @@ export const terminalOverlays = (
     ladder: readonly string[] = DEFAULT_RUNG_IDS,
 ): readonly TerminalOverlay[] => overlays.filter((overlay) => terminalVisible(overlay, state, ladder));
 
+/** Structural spine/parent/overlay edges, deduped and restricted to visible endpoints. */
+export const terminalEdges = (
+    lines: readonly TerminalLine[],
+    visible: readonly TerminalLine[],
+    layout: TerminalLayout,
+    overlays: readonly TerminalOverlay[] = [],
+): readonly EdgeSpec[] => {
+    const visibleIDs = new Set(visible.map((line) => line.id));
+    const edges = new Map<string, EdgeSpec>();
+    const add = (edge: EdgeSpec): void => {
+        if (!edges.has(edge.id)) edges.set(edge.id, edge);
+    };
+    layout.spine.forEach((id, index) => {
+        const previous = layout.spine[index - 1];
+        if (previous && visibleIDs.has(previous) && visibleIDs.has(id))
+            add({ id: `${previous}->${id}`, source: previous, target: id, type: 'CurvedEdge' });
+    });
+    lines.forEach((line) => {
+        if (line.parent && visibleIDs.has(line.parent) && visibleIDs.has(line.id))
+            add({
+                id: `${line.parent}->${line.id}`,
+                source: line.parent,
+                target: line.id,
+                type: line.octave === -1 ? 'DottedEdge' : 'Edge',
+            });
+    });
+    overlays.forEach((overlay) => {
+        if (overlay.edge && visibleIDs.has(overlay.lineID)) add(overlay.edge);
+    });
+    return [...edges.values()];
+};
+
+/** A structural group frame around the line nodes addressed by a lens target. */
+export type TerminalGroupNode = {
+    readonly id: string;
+    readonly position: readonly [number, number, number];
+    readonly size?: readonly [number, number, number];
+};
+
+export type TerminalGroup = {
+    readonly id: string;
+    readonly members: readonly string[];
+    readonly position: readonly [number, number, number];
+    readonly size: readonly [number, number];
+};
+
+export const terminalGroup = (
+    target: TerminalLensTarget,
+    nodes: readonly TerminalGroupNode[],
+): TerminalGroup | undefined => {
+    const ids = new Set(terminalLensIDs(target, nodes.map((node) => node.id)));
+    const members = nodes.filter((node) => ids.has(node.id));
+    if (!members.length) return undefined;
+    const bounds = members.map((node) => {
+        const width = (node.size?.[0] ?? 0) / 2;
+        const height = (node.size?.[1] ?? 0) / 2;
+        return {
+            left: node.position[0] - width,
+            right: node.position[0] + width,
+            top: node.position[1] - height,
+            bottom: node.position[1] + height,
+        };
+    });
+    const left = Math.min(...bounds.map((box) => box.left));
+    const right = Math.max(...bounds.map((box) => box.right));
+    const top = Math.min(...bounds.map((box) => box.top));
+    const bottom = Math.max(...bounds.map((box) => box.bottom));
+    return {
+        id: `group:${terminalLensKey(target)}`,
+        members: members.map((node) => node.id),
+        position: [(left + right) / 2, (top + bottom) / 2, 0],
+        size: [right - left + 24, bottom - top + 12],
+    };
+};
+
 export type TerminalSpecOptions = {
     readonly grid?: TerminalGrid;
     readonly lane?: TranscriptLaneOptions;
@@ -2067,28 +2145,11 @@ export const terminalSpec = (
             },
         };
     });
-    const edges: EdgeSpec[] = [];
-    layout.spine.forEach((id, index) => {
-        const previous = layout.spine[index - 1];
-        if (previous && visibleIDs.has(previous) && visibleIDs.has(id)) {
-            edges.push({ id: `${previous}->${id}`, source: previous, target: id, type: 'CurvedEdge' });
-        }
+    const revealed = terminalOverlays(options.overlays ?? [], options.reveal ?? {});
+    revealed.forEach((overlay) => {
+        if (visibleIDs.has(overlay.lineID) && overlay.node) nodes.push(overlay.node);
     });
-    lines.forEach((line) => {
-        if (line.parent && visibleIDs.has(line.parent) && visibleIDs.has(line.id)) {
-            edges.push({
-                id: `${line.parent}->${line.id}`,
-                source: line.parent,
-                target: line.id,
-                type: line.octave === -1 ? 'DottedEdge' : 'Edge',
-            });
-        }
-    });
-    terminalOverlays(options.overlays ?? [], options.reveal ?? {}).forEach((overlay) => {
-        if (!visibleIDs.has(overlay.lineID)) return;
-        if (overlay.node) nodes.push(overlay.node);
-        if (overlay.edge) edges.push(overlay.edge);
-    });
+    const edges = [...terminalEdges(lines, visible, layout, revealed)];
     return { spec: { nodes, edges }, window, layout };
 };
 

@@ -4,6 +4,7 @@ import {
     terminalGrid,
     terminalLayout,
     terminalOrder,
+    terminalRange,
     terminalSelect,
     type TerminalLine,
     type TerminalOverlay,
@@ -139,6 +140,35 @@ describe('consoleModel', () => {
         expect(model.nodes[0]!.html).toContain('<code>alpha</code>');
         expect(model.nodes[1]!.data?.['opacity']).toBeLessThan(1);
         expect(model.nodes[0]!.data?.['opacity']).toBe(1);
+    });
+
+    it('projects structural edges and a group frame when opted in', () => {
+        const model = consoleModel(context(), {
+            ...state,
+            edges: true,
+            graphTarget: { kind: 'selection', ids: ['a', 'b'] },
+        });
+        const group = model.nodes.find((node) => node.shape === 'group');
+        expect(group?.data?.['members']).toEqual(['a', 'b']);
+        expect(model.nodes.find((node) => node.id === 'a')?.parent).toBe(group?.id);
+        expect(model.edges.some((edge) => edge.id === 'console:a->b')).toBe(true);
+    });
+
+    it('reveals select overlays for selected lines', () => {
+        const selected = {
+            ...overlay('select-a', 'a', 'gap'),
+            reveal: 'select' as const,
+            node: { id: 'select-a', type: 'HtmlNode', data: { html: '<b>selected</b>' } },
+        };
+        const model = consoleModel(context([selected]), {
+            ...state,
+            selection: terminalRange(
+                { nodeID: 'a', offset: 0 },
+                { nodeID: 'a', offset: 1 },
+                terminalOrder(lines),
+            ),
+        });
+        expect(model.nodes.some((node) => node.id === 'select-a')).toBe(true);
     });
 
     it('renders far zoom bands as accessible glyphs with a stable data-lod', () => {

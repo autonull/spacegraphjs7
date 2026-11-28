@@ -8,6 +8,8 @@ import {
     terminalTokens,
     terminalFocusWeights,
     terminalDetailSize,
+    terminalEdges,
+    terminalGroup,
     terminalColumns,
     terminalLODFor,
     terminalPresentationFromKey,
@@ -1351,6 +1353,38 @@ describe('reading lens and profiles', () => {
         ]);
         expect(terminalProfile('big-text').presentation.wrap).toBe(true);
         expect(terminalProfile('missing').id).toBe('logs');
+    });
+});
+
+describe('structural console graph', () => {
+    it('dedupes edges and drops endpoints outside the visible window', () => {
+        const entries = [line('a', 'a'), line('b', 'b', 'a'), line('c', 'c')];
+        const layout = terminalLayout(entries, terminalGrid());
+        const edges = terminalEdges(entries, entries.slice(0, 2), layout, [
+            {
+                id: 'overlay-edge',
+                lineID: 'b',
+                slot: 'gap',
+                reveal: 'always',
+                edge: { id: 'a->b', source: 'a', target: 'b', type: 'CurvedEdge' },
+            },
+        ]);
+        expect(edges.map((edge) => edge.id)).toEqual(['a->b']);
+        expect(edges[0]?.source).toBe('a');
+        expect(edges[0]?.target).toBe('b');
+    });
+
+    it('boxes the nodes addressed by a lens target', () => {
+        const nodes = [
+            { id: 'a', position: [0, 0, 0] as const, size: [100, 20, 1] as const },
+            { id: 'b', position: [0, -20, 0] as const, size: [100, 20, 1] as const },
+        ];
+        const group = terminalGroup({ kind: 'selection', ids: ['a', 'b'] }, nodes);
+        expect(group?.members).toEqual(['a', 'b']);
+        expect(group?.position).toEqual([0, -10, 0]);
+        expect(group?.size[0]).toBeGreaterThan(100);
+        expect(group?.size[1]).toBeGreaterThan(40);
+        expect(terminalGroup({ kind: 'line', id: 'missing' }, nodes)).toBeUndefined();
     });
 });
 
