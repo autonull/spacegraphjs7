@@ -29,6 +29,8 @@ export type Address = {
     readonly lens?: string;
     /** Saved console bookmark, encoded by `terminalBookmark`. */
     readonly bm?: string;
+    /** Console region overlays, encoded as `on`. */
+    readonly regions?: string;
 };
 
 export const CONSOLE_DETAIL_MODES = ['inline', 'popup', 'rail'] as const;
@@ -67,23 +69,25 @@ const flatten = (address: Address): ViewStateRecord => ({
     mode: address.mode,
     lens: address.lens,
     bm: address.bm,
+    regions: address.regions,
 });
 
 const parse = (record: ViewStateRecord): Address | undefined => {
-    const { view, layout, focus, zoom, asOf, s, shot, sel, tail, pal, det, q, mode, lens, bm } =
-        record;
+    const {
+        view, layout, focus, zoom, asOf, s, shot, sel, tail, pal, det, q, mode, lens, bm, regions,
+    } = record;
     if (typeof det === 'string' && !parseDetailKey(det)) return undefined;
     if (mode !== undefined && !TERMINAL_MODES.includes(mode as TerminalMode)) return undefined;
     const band: unknown = record.band ?? record.rung;
     if (view !== undefined && !VIEW_NAMES.includes(view as ViewName)) return undefined;
     if (band !== undefined && !isRung(band)) return undefined;
     if (layout !== undefined && !LAYOUT_NAMES.includes(layout as LayoutName)) return undefined;
-    for (const value of [s, shot, focus, sel, tail, pal, det, q, lens, bm])
+    for (const value of [s, shot, focus, sel, tail, pal, det, q, lens, bm, regions])
         if (value !== undefined && typeof value !== 'string') return undefined;
     return Object.fromEntries(
         Object.entries({
             s, shot, view, rung: band, layout, asOf, zoom, focus, sel, tail, pal, det, q,
-            mode, lens, bm,
+            mode, lens, bm, regions,
         }).filter(([, value]) => value !== undefined),
     ) as Address;
 };
@@ -92,7 +96,7 @@ const codec = viewStateCodec<Address>({
     format: 'compact',
     keys: [
         's', 'shot', 'view', 'band', 'rung', 'layout', 'asOf', 'zoom', 'focus', 'sel', 'tail',
-        'pal', 'det', 'q', 'mode', 'lens', 'bm', 'version',
+        'pal', 'det', 'q', 'mode', 'lens', 'bm', 'regions', 'version',
     ],
     flatten,
     parse,

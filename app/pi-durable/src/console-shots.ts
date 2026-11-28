@@ -9,6 +9,7 @@ export type ConsoleShotMeta = {
     readonly detailLine?: number;
     readonly query?: string;
     readonly rtl?: boolean;
+    readonly regions?: boolean;
     readonly viewport?: { readonly width: number; readonly height: number };
 };
 
@@ -31,4 +32,5 @@ export const CONSOLE_SHOT_META: readonly ConsoleShotMeta[] = [
     { id: 'console-detail-popup', source: 'basic-turn', detailMode: 'popup', detailLine: 1 },
     { id: 'console-detail-rail', source: 'basic-turn', detailMode: 'rail', detailLine: 1 },
     { id: 'console-search', source: 'basic-turn', query: 'q=France' },
+    { id: 'console-regions', source: 'basic-turn', regions: true },
 ];

@@ -7,10 +7,12 @@ import {
     mountTerminal,
     mountTerminalA11y,
     mountTerminalCamera,
+    mountTerminalSink,
     mountTerminalPrompt,
     playTerminalReplay,
     STATUS_GLYPHS,
     TERMINAL_PALETTES,
+    terminalAutoZoom,
     terminalBookmark,
     terminalChapters,
     terminalConsoleCommands,
@@ -42,6 +44,7 @@ import {
     TERMINAL_PROFILES,
     terminalPlace,
     terminalProfile,
+    terminalRegions,
     terminalReadingLens,
     terminalRangeFromIndices,
     terminalOverlays,
@@ -63,6 +66,7 @@ import {
     terminalWrap,
     type TerminalGraph,
     type TerminalLensTarget,
+    type TerminalSelector,
     type TerminalLine,
     type TerminalOverlay,
 } from '../src/terminal';
@@ -1002,8 +1006,10 @@ describe('console command catalog', () => {
             fork: false,
         });
         expect(commands.list().map((command) => command.id)).toEqual([
-            'copy', 'export', 'search', 'filter', 'read', 'zoom', 'pin.live', 'pin.snapshot',
-            'pin.matches', 'profile', 'asOf', 'fork', 'why', 'monitor', 'read.lens',
+            'copy', 'export', 'search', 'filter', 'read', 'zoom',
+            'pin.live', 'pin.snapshot',
+            'pin.matches', 'profile', 'asOf', 'fork', 'why', 'monitor', 'autoZoom', 'regions',
+            'read.lens',
             'lens.focus', 'bookmark', 'help',
         ]);
         expect(commands.get('copy')?.disabledReason).toBe('Select lines first');
@@ -1137,5 +1143,74 @@ describe('reading lens and profiles', () => {
         ]);
         expect(terminalProfile('big-text').presentation.wrap).toBe(true);
         expect(terminalProfile('missing').id).toBe('logs');
+    });
+});
+
+describe('regions and dirty projection', () => {
+    const regional = [
+        { ...line('a', 'alpha'), kind: 'user', turn: 1, role: 'user' },
+        { ...line('b', 'beta'), kind: 'user', turn: 1, role: 'user' },
+        { ...line('c', 'gamma'), kind: 'tool', turn: 2, role: 'assistant' },
+        { ...line('d', 'delta'), kind: 'tool', turn: 2, role: 'assistant' },
+    ];
+    const layout = terminalLayout(regional, terminalGrid());
+
+    it('infers regions from kind and turn runs', () => {
+        expect(terminalRegions(regional, layout).map((region) => region.lines)).toEqual([
+            ['a', 'b'],
+            ['c', 'd'],
+        ]);
+    });
+
+    it('ranks an auto-zoom window near the tail and keeps context', () => {
+        const zoom = terminalAutoZoom(regional, layout, terminalRegions(regional, layout), {
+            context: 1,
+        });
+        expect(zoom?.region.lines).toEqual(['c', 'd']);
+        expect(zoom?.target.kind).toBe('window');
+    });
+
+    it('skips sink.render when controller state has not changed', () => {
+        const sink = {
+            render: vi.fn(),
+            show: () => undefined,
+            select: () => undefined,
+            onNodeClick: () => () => undefined,
+            onZoomBand: () => () => undefined,
+        };
+        const terminal = mountTerminalSink(sink);
+        terminal.setLines([line('a', 'alpha')]);
+        expect(sink.render).toHaveBeenCalledTimes(1);
+        terminal.focusLine('missing');
+        expect(sink.render).toHaveBeenCalledTimes(1);
+        terminal.refresh();
+        expect(sink.render).toHaveBeenCalledTimes(2);
+        terminal.destroy();
+    });
+});
+
+describe('selector invariants (fixed seed)', () => {
+    it('never invents ids or drops committed lines across seeded selectors', () => {
+        let seed = 42;
+        const next = (): number =>
+            ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+        for (let round = 0; round < 24; round++) {
+            const count = 1 + Math.floor(next() * 8);
+            const lines = Array.from({ length: count }, (_, index) =>
+                line(`l${index}`, `text ${index} ERROR`),
+            );
+            const selector: TerminalSelector = {
+                filter: next() > 0.5 ? (entry) => entry.id !== 'l0' : undefined,
+                search: next() > 0.5 ? 'error' : undefined,
+                maxLines: 1 + Math.floor(next() * count),
+                follow: next() > 0.5,
+            };
+            const selection = terminalSelect(lines, selector);
+            const ids = new Set(lines.map((entry) => entry.id));
+            expect(selection.lines.every((entry) => ids.has(entry.id))).toBe(true);
+            expect(selection.hidden.every((entry) => ids.has(entry.id))).toBe(true);
+            expect(new Set([...selection.lines, ...selection.hidden]).size).toBe(count);
+            expect(selection.matches.every((match) => ids.has(match.lineID))).toBe(true);
+        }
     });
 });

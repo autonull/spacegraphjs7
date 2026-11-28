@@ -711,6 +711,8 @@ export const terminalConsoleCommands = (
         entry('fork', 'fork', '/fork [line]', ['branch'], gate(gates.fork, 'Nothing to fork')),
         entry('why', 'why', '/why', ['provenance']),
         entry('monitor', 'monitor', '/monitor', ['sidecar', 'logtail']),
+        entry('autoZoom', 'auto zoom', '/auto zoom', ['regions', 'flyTo']),
+        entry('regions', 'regions', '/regions [on|off]', ['bands']),
         entry('read.lens', 'read lens', '/read lens [scope]', ['document', 'reading']),
         entry('lens.focus', 'lens focus', '/lens focus <target>', ['bookmark', 'zoom']),
         entry('bookmark', 'bookmark', '/bookmark <0-9>', ['bm', 'recall']),
@@ -1035,6 +1037,100 @@ export const TERMINAL_PROFILES: readonly TerminalProfile[] = [
 
 export const terminalProfile = (id: string): TerminalProfile =>
     TERMINAL_PROFILES.find((profile) => profile.id === id) ?? TERMINAL_PROFILES[0]!;
+
+export type TerminalRegion = {
+    readonly id: string;
+    readonly label: string;
+    readonly kind: string;
+    readonly startID: string;
+    readonly endID: string;
+    readonly lines: readonly string[];
+};
+
+/** Infer reading regions from kind/role runs, turn changes, gaps, gutter slots and layout distance. */
+export const terminalRegions = (
+    lines: readonly TerminalLine[],
+    layout: TerminalLayout,
+    gaps: readonly TerminalGap[] = [],
+    overlays: readonly TerminalOverlay[] = [],
+): readonly TerminalRegion[] => {
+    const after = new Set(gaps.map((gap) => gap.after));
+    const gutters = new Set(
+        overlays.filter((overlay) => overlay.slot === 'gutter').map((overlay) => overlay.lineID),
+    );
+    const groups: TerminalLine[][] = [];
+    let current: TerminalLine[] = [];
+    lines.forEach((line, index) => {
+        const previous = lines[index - 1];
+        const before = previous ? layout.placements.get(previous.id) : undefined;
+        const afterPlacement = layout.placements.get(line.id);
+        const distant =
+            before && afterPlacement
+                ? afterPlacement.position[1] - before.position[1] >
+                  (before.size[1] + afterPlacement.size[1]) / 2
+                : false;
+        const boundary =
+            previous &&
+            (previous.kind !== line.kind ||
+                (line.turn !== undefined && previous.turn !== line.turn) ||
+                after.has(previous.id) ||
+                gutters.has(previous.id) ||
+                distant);
+        if (boundary && current.length) {
+            groups.push(current);
+            current = [];
+        }
+        current.push(line);
+    });
+    if (current.length) groups.push(current);
+    return groups.map((group) => {
+        const first = group[0]!;
+        return {
+            id: `region-${first.id}`,
+            label: first.role ?? first.kind,
+            kind: first.kind,
+            startID: first.id,
+            endID: group.at(-1)!.id,
+            lines: group.map((line) => line.id),
+        };
+    });
+};
+
+export type TerminalAutoZoomOptions = {
+    readonly minLines?: number;
+    readonly context?: number;
+};
+
+/** Rank regions by size near the tail and keep context lines around the chosen window. */
+export const terminalAutoZoom = (
+    lines: readonly TerminalLine[],
+    layout: TerminalLayout,
+    regions: readonly TerminalRegion[],
+    options: TerminalAutoZoomOptions = {},
+): { readonly region: TerminalRegion; readonly target: TerminalLensTarget } | undefined => {
+    const candidates = regions.filter((region) => region.lines.length >= (options.minLines ?? 2));
+    if (!candidates.length || !lines.length) return undefined;
+    const tail = lines.length - 1;
+    const ranked = candidates
+        .map((region) => {
+            const start = lines.findIndex((line) => line.id === region.startID);
+            return { region, start, score: region.lines.length - Math.abs(start - tail) * 0.5 };
+        })
+        .sort((a, b) => b.score - a.score)[0]!;
+    const context = Math.max(0, options.context ?? 1);
+    const start = Math.max(0, ranked.start - context);
+    const end = Math.min(
+        lines.length - 1,
+        ranked.start + ranked.region.lines.length - 1 + context,
+    );
+    return {
+        region: ranked.region,
+        target: {
+            kind: 'window',
+            window: { start: lines[start]!.id, end: lines[end]!.id },
+        },
+    };
+};
 
 export type TerminalExportFormat = 'markdown' | 'json';
 
@@ -1678,6 +1774,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
     let index: ReadonlyMap<string, number> = new Map();
     let flat: TerminalFlatText = { text: '', spans: [] };
     let churn: TerminalChurn = { mounted: 0, unmounted: 0, slides: 0 };
+    let dirty = true;
     const unsubscribeChurn = sink.onChurn?.((stats) => {
         churn = {
             mounted: churn.mounted + stats.mounted,
@@ -1706,6 +1803,8 @@ export const mountTerminalSink = <Model = GraphSpec>(
     const view = (): TerminalSelection =>
         terminalSelect(lines, { ...selector, rows: selector.rows ?? windowState });
     const selectedIDs = (): readonly string[] => (range ? terminalRangeIDs(range, index) : []);
+    const rangeKey = (value: TerminalRange | undefined): string =>
+        value ? terminalRangeKey(value) : '';
 
     const project = (): Model => {
         const selection = view();
@@ -1738,11 +1837,14 @@ export const mountTerminalSink = <Model = GraphSpec>(
     };
 
     const apply = (): void => {
-        sink.render(project());
-        const filter = hooks.filter;
-        if (filter) lines.forEach((entry) => sink.show(entry.id, filter(entry)));
-        const selected = selectedIDs();
-        sink.select(selected.length ? selected : focusID || null);
+        if (dirty) {
+            sink.render(project());
+            const filter = hooks.filter;
+            if (filter) lines.forEach((entry) => sink.show(entry.id, filter(entry)));
+            const selected = selectedIDs();
+            sink.select(selected.length ? selected : focusID || null);
+            dirty = false;
+        }
         hooks.onCamera?.({ band, window: windowState, following, churn });
     };
 
@@ -1757,10 +1859,12 @@ export const mountTerminalSink = <Model = GraphSpec>(
         cacheIndices();
         focusID = focus ?? lines.at(-1)?.id ?? '';
         if (following) moveWindow(focusID);
+        dirty = true;
         apply();
     };
 
     const unsubscribeNode = sink.onNodeClick((id) => {
+        if (focusID !== id) dirty = true;
         focusID = id;
         sink.select(id);
         hooks.onReveal?.(id);
@@ -1768,6 +1872,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
     const unsubscribeBand = sink.onZoomBand((next) => {
         if (next === band) return;
         band = next;
+        dirty = true;
         apply();
     });
 
@@ -1784,13 +1889,16 @@ export const mountTerminalSink = <Model = GraphSpec>(
             );
         },
         setWindow: (startID, endID) => {
-            if (startID !== windowState.start || endID !== windowState.end)
+            if (startID !== windowState.start || endID !== windowState.end) {
                 churn = { ...churn, slides: churn.slides + 1 };
+                dirty = true;
+            }
             windowState = { start: startID, end: endID };
             following = false;
             apply();
         },
         select: (next) => {
+            if (rangeKey(next) !== rangeKey(range)) dirty = true;
             range = next;
             apply();
             const count = selectedIDs().length;
@@ -1802,6 +1910,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
         lines: () => lines,
         palette: () => palette.id,
         setPalette: (id) => {
+            if (palette.id !== id) dirty = true;
             palette = terminalPalette(id);
             apply();
         },
@@ -1815,32 +1924,39 @@ export const mountTerminalSink = <Model = GraphSpec>(
             return text;
         },
         setOverlays: (next) => {
+            if (next !== overlays) dirty = true;
             overlays = next;
             apply();
         },
         followTail: (enabled) => {
+            if (following !== enabled) dirty = true;
             following = enabled;
             if (enabled) commit(lines);
             else apply();
         },
         focusLine: (id) => {
-            if (!lines.some((entry) => entry.id === id)) return;
+            if (!lines.some((entry) => entry.id === id) || focusID === id) return;
             focusID = id;
             if (following) moveWindow(id);
             hooks.onFocus?.(id);
             apply();
         },
         setSelector: (next) => {
+            if (next !== selector) dirty = true;
             selector = next;
             apply();
         },
         selector: () => selector,
         setMode: (mode) => {
+            if (selector.mode !== mode) dirty = true;
             selector = { ...selector, mode };
             apply();
         },
         view,
-        refresh: apply,
+        refresh: () => {
+            dirty = true;
+            apply();
+        },
         destroy: () => {
             unsubscribeNode();
             unsubscribeBand();

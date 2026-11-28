@@ -56,6 +56,7 @@ import {
     type ReadingNode,
 } from 'spacegraphjs/reading';
 import { playMotion } from 'spacegraphjs/motion';
+import { checkQuality, type QualityReport } from 'spacegraphjs/quality';
 import { representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import {
@@ -78,8 +79,10 @@ import {
     terminalPalette,
     terminalRangeFromKey,
     terminalRangeKey,
+    terminalAutoZoom,
     terminalBookmark,
     terminalDerived,
+    terminalRegions,
     terminalLensFromKey,
     terminalLensKey,
     terminalLensRect,
@@ -742,6 +745,8 @@ export class DurableHost {
     #lensTrail = new Trail({ maxDepth: 20 });
     #bookmarks = new Map<string, TerminalBookmark>();
     #consoleGrid: TerminalGrid = CONSOLE_GRID;
+    #regionsEnabled = false;
+    #consoleModel: RenderModel = { nodes: [], edges: [] };
     #a11yLayer: AccessibilityLayer | undefined;
     #a11yEvents = new EventEmitter<SpaceGraphEvents>();
     #unbindA11yFocus: (() => void) | undefined;
@@ -1784,6 +1789,7 @@ export class DurableHost {
         if (lens) params.set('lens', lens);
         const bookmark = [...this.#bookmarks.values()].at(-1);
         if (bookmark) params.set('bm', terminalBookmark.encode(bookmark));
+        if (this.#regionsEnabled) params.set('regions', 'on');
         const viewport = this.renderer.getViewport?.();
         if (viewport) params.set('zoom', viewport.zoom.toFixed(3));
         return `${location.pathname}?${params.toString()}`;
@@ -1817,6 +1823,7 @@ export class DurableHost {
             mode: mode && TERMINAL_MODES.includes(mode as TerminalMode) ? (mode as TerminalMode) : undefined,
             lens: params.get('lens') ?? undefined,
             bm: params.get('bm') ?? undefined,
+            regions: params.get('regions') ?? undefined,
         });
     }
 
@@ -1845,6 +1852,7 @@ export class DurableHost {
             mode: inConsole ? this.#consoleSelector.mode : undefined,
             lens: inConsole ? this.#lensTrail.current?.id : undefined,
             bm: bookmark ? terminalBookmark.encode(bookmark) : undefined,
+            regions: inConsole && this.#regionsEnabled ? 'on' : undefined,
         };
     }
 
@@ -1948,6 +1956,12 @@ export class DurableHost {
         });
         action('monitor', () => {
             this.consoleToggleMonitor();
+        });
+        action('autoZoom', () => {
+            this.consoleAutoZoom();
+        });
+        action('regions', (rest) => {
+            this.setConsoleRegions(rest !== 'off');
         });
         action('lens.focus', (rest) => {
             this.consoleFocus(rest);
@@ -2390,6 +2404,60 @@ export class DurableHost {
         this.#readingScope = undefined;
     }
 
+    setConsoleRegions(enabled: boolean): boolean {
+        this.#regionsEnabled = enabled;
+        this.refresh();
+        this.announce(enabled ? 'Console regions on' : 'Console regions off');
+        return enabled;
+    }
+
+    consoleAutoZoom(): boolean {
+        const lines = this.#terminalController?.lines() ?? [];
+        if (!lines.length) return false;
+        const layout = terminalPlace(lines, this.#consoleGrid, {
+            width: this.#consoleGrid.maxWidth,
+            rowGap: 4,
+            trimGutter: true,
+        });
+        const churn = this.#terminal()?.churn();
+        const zoom = terminalAutoZoom(lines, layout, terminalRegions(lines, layout), {
+            minLines: churn && churn.slides > 20 ? 3 : 2,
+            context: 1,
+        });
+        if (!zoom) {
+            this.announce('No console region to zoom');
+            return false;
+        }
+        const focused = this.consoleFocus(zoom.target);
+        if (focused) this.announce(`Zoomed to region: ${zoom.region.label}`);
+        return focused;
+    }
+
+    consoleQuality(): QualityReport {
+        return checkQuality(
+            {
+                nodes: this.#consoleModel.nodes.map((node) => ({
+                    id: node.id,
+                    label: node.label,
+                    kind: node.kind,
+                    position: node.position,
+                    data: node.data as Record<string, unknown>,
+                })),
+                edges: this.#consoleModel.edges.map((edge) => ({
+                    id: edge.id,
+                    source: edge.source,
+                    target: edge.target,
+                })),
+            },
+            {
+                dom: el('canvas'),
+                direction: document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr',
+                reducedMotion:
+                    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
+            },
+        );
+    }
+
     #syncConsoleA11y(): void {
         const layer = this.#a11yLayer;
         if (!layer) return;
@@ -2445,6 +2513,7 @@ export class DurableHost {
             const range = terminalRangeFromKey(address.sel);
             this.#terminalController?.select(range);
             if (address.pal) this.#terminal()?.setPalette(address.pal);
+            if (address.regions !== undefined) this.setConsoleRegions(address.regions === 'on');
             if (address.lens) this.consoleFocus(address.lens);
             const bookmark = terminalBookmark.decode(address.bm);
             if (bookmark) {
@@ -2514,6 +2583,9 @@ export class DurableHost {
             consoleProfiles: () => TERMINAL_PROFILES.map(({ id, label }) => ({ id, label })),
             consoleRead: (scope?: TerminalReadingScope) => this.readConsole(scope),
             consoleFocusRole: () => this.#consoleFocusRole(),
+            consoleAutoZoom: () => this.consoleAutoZoom(),
+            consoleRegions: (enabled: boolean) => this.setConsoleRegions(enabled),
+            consoleQuality: () => this.consoleQuality(),
             exportConsole: (format: 'markdown' | 'json') => {
                 const terminal = this.#terminal();
                 return terminalExport(terminal.lines(), terminal.selection(), format);
@@ -3344,7 +3416,10 @@ export class DurableHost {
         if (this.#terminalController) return this.#terminalController;
         const grid = this.#consoleGrid;
         const sink: TerminalSink<RenderModel> = {
-            render: (model) => this.renderer.setModel(model),
+            render: (model) => {
+                this.#consoleModel = model;
+                this.renderer.setModel(model);
+            },
             show: () => undefined,
             select: (target) =>
                 this.renderer.setSelection(
@@ -3498,11 +3573,28 @@ export class DurableHost {
                 },
             ];
         };
-        return lines.flatMap((line, index) => [
+        const base = lines.flatMap((line, index) => [
             ...(index % 4 === 0 ? gap(line) : []),
             ...(index % 3 === 0 ? gutter(line) : []),
             ...(this.#expandedLine === line.id ? detail(line) : []),
         ]);
+        if (!this.#regionsEnabled) return base;
+        const layout = terminalPlace(lines, this.#consoleGrid, {
+            width: this.#consoleGrid.maxWidth,
+            rowGap: 4,
+            trimGutter: true,
+        });
+        return [
+            ...base,
+            ...terminalRegions(lines, layout)
+                .slice(1)
+                .map((region) => ({
+                    id: `region-${region.startID}`,
+                    lineID: region.startID,
+                    slot: 'gap' as const,
+                    reveal: 'always' as const,
+                })),
+        ];
     }
 
     #renderConsole(kernel: Kernel): void {

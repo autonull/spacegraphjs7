@@ -40,6 +40,7 @@ for (const shot of shots) {
         await expect(page.locator('#canvas canvas').first()).toBeVisible({ timeout: 10_000 });
         await call(page, 'setView', 'transcript');
         if (shot.rtl) await call(page, 'setDirection', 'rtl');
+        if (shot.regions) await call(page, 'consoleRegions', true);
         await settle(page);
         if (shot.palette) {
             await call(page, 'setConsolePalette', shot.palette);

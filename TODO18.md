@@ -1,7 +1,7 @@
 # TODO18 — Terminal 2: one projection, one command surface, many lenses
 
-> **Status: implementing (2026-11-27).** Supersedes the first 12-item draft. **O1–O5 have
-> landed**; O6 remains `spec`. Ideas are harvested from [autonull/fracterm](https://github.com/autonull/fracterm)
+> **Status: complete (2026-11-27).** Supersedes the first 12-item draft. **All six outcomes
+> landed** in `spacegraphjs/terminal` and Pi Durable. §8 records each delivery; §9 closes out. Ideas are harvested from [autonull/fracterm](https://github.com/autonull/fracterm)
 > (`README.md`, `README3.md`, `TODO.md`) and adapted to the vector console delivered by `TODO17.md`.
 > The fidelity decision in TODO17 §3 still stands: no PTY, VT/ANSI/SGR or second console store.
 > §8 records delivered work; §9 turns the remaining outcomes into an executable queue.
@@ -64,7 +64,7 @@ the published `spacegraphjs/*` subpaths are the SDK.
 
 ## 3. Consolidated outcomes
 
-O1–O5 have landed; O6 is `spec`. `E#` = TODO17 enhancement. Effort is relative.
+All six have landed. `E#` = TODO17 enhancement. Effort is relative.
 
 ### O1 — One projection contract (foundation) — **Done, see §8**
 
@@ -146,7 +146,7 @@ contrast, hidden chrome) with quick reads, and a profile preset replaces several
   caret changes.
 - Effort: medium. Depends on: O1, O2, O4. Reuses: `reading`, `documents`, `a11y`, E10/E11, `policy`.
 
-### O6 — Regions, auto-zoom and scale (large, last)
+### O6 — Regions, auto-zoom and scale (large, last) — **Done, see §8**
 
 **Outcome:** structure reveals itself at zoom bands; fast pans and large histories stay cheap.
 
@@ -208,7 +208,7 @@ Implemented O1: added `TerminalSelector`, `terminalSelect`, `TerminalPresentatio
 `consoleModel` to consume selector output; verified the twelve `shots:console` captures. O2 then
 landed the shared command catalog and slash prompt; O3 added search, derived views and a sidecar;
 O4 added lens targets, a trail and bookmarks; O5 added the reading lens, profiles and an assistive
-mirror. O6 is next. See §8 and §9.
+mirror; O6 added regions, auto-zoom and dirty-gated projection. The plan is complete. See §8 and §9.
 
 ## 8. Progress
 
@@ -319,11 +319,32 @@ mirror. O6 is next. See §8 and §9.
   `verify:fast` (101 E2E passing, 18 capture-only skipped). No default chrome changed, so no shot
   was regenerated.
 
-## 9. Remaining work — executable queue
+### O6 — landed (2026-11-27)
 
-Each outcome follows §5: pure primitive + unit test in `test/terminal.test.ts`, host wiring through
-`consoleModel`/`lens.ts`/`host.ts`, E2E assertion, console shot only on a visual shape change.
+- **Library.** `terminalRegions(lines, layout, gaps, overlays)` infers regions from kind/role runs,
+  turn boundaries, gap overlays, gutter slots and placement distance. `terminalAutoZoom` ranks
+  candidates near the tail and widens a lens window to preserve context. `mountTerminalSink` is
+  dirty-gated: unchanged state skips `sink.render`, while explicit `refresh()` still forces a render.
+- **Host.** Region overlays are opt-in via `setConsoleRegions` and `Address.regions`; `consoleAutoZoom`
+  feeds a ranked `terminalLensTarget` into the O4 `flyTo` path and uses churn telemetry to raise the
+  minimum region size after heavy sliding. `consoleQuality` applies `checkQuality` to the last
+  projected console model with DOM, direction and reduced-motion options. `autoZoom` and `regions`
+  join the one catalog.
+- **Proof.** Region inference, auto-zoom window and dirty-render unit tests, a fixed-seed invariant
+  suite for selector identity, and three `regions.spec.ts` E2E tests. Added the `console-regions`
+  capture (14 total).
+- **Verification.** Root `pnpm run check`, `pnpm test` (201 files / 1384 tests), `test:exports`,
+  `check:generated`, `check:console-shots` (14), Pi Durable 21 files / 106 unit tests and
+  `verify:fast` (104 E2E passing, 19 capture-only skipped).
 
-- **O6 — regions and scale (next, last).** Infer regions from kind/role runs and gaps; add auto-zoom
-  ranking, dirty-gated projection, `logLayout`/`chapterPacking` groups, `diffPositions` and a
-  fixed-seed property suite. Depends on O1–O5 being stable.
+## 9. Remaining work — none
+
+All six outcomes landed with a pure primitive and unit test in `test/terminal.test.ts`, host wiring
+through `consoleModel`/`lens.ts`/`host.ts`, E2E assertions, and console shots where visual shape
+changed. The §5 verification ladder is green end to end.
+
+Future work should keep the same split: a new capability is a selector or command over the one
+console projection, not a new view slot, renderer, text index, command registry or codec. `logLayout`,
+`chapterPacking`, `LaneLayout` and `diffPositions` remain available for host-specific grouping when
+a real need appears; they were not needed to deliver O6. The §3 fidelity exclusions (PTY, ANSI/SGR,
+a second console store) remain out of scope.

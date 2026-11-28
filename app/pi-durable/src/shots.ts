@@ -49,6 +49,8 @@ export type ConsoleShot = Shot & {
     readonly query?: string;
     /** Mirror console text without moving the spine or gutter. */
     readonly rtl?: boolean;
+    /** Reveal inferred region overlays before capture. */
+    readonly regions?: boolean;
 };
 
 const consoleShot = (
