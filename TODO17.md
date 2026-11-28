@@ -508,3 +508,7 @@ when the visual shape changes.
   emulation, and a second console store.
 
 Out of scope unless a host needs them: ANSI/SGR parsing, PTY and cursor-control emulation (§3 fidelity decision), and a second console store.
+
+Further ideas harvested from [autonull/fracterm](https://github.com/autonull/fracterm) — lens targets,
+projection selectors, search, live/snapshot/derived views and command catalogs — are tracked in
+`TODO18.md`.
