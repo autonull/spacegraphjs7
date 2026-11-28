@@ -51,6 +51,8 @@ export type ConsoleShot = Shot & {
     readonly rtl?: boolean;
     /** Reveal inferred region overlays before capture. */
     readonly regions?: boolean;
+    /** Apply a named console profile before capture. */
+    readonly profile?: string;
 };
 
 const consoleShot = (

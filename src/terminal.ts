@@ -599,6 +599,8 @@ export type TerminalPresentation = {
     readonly lineNumbers?: boolean;
     readonly sourceStamp?: boolean;
     readonly highlightMatches?: boolean;
+    /** Collapse lines to accessible glyphs at far zoom bands. */
+    readonly zoomLOD?: boolean;
 };
 
 export type TerminalSelection = {
@@ -695,7 +697,12 @@ export const terminalConsoleCommands = (
         entry('pin.live', 'pin live', '/pin live', ['follow']),
         entry('pin.snapshot', 'pin snapshot', '/pin snapshot', ['freeze']),
         entry('pin.matches', 'pin matches', '/pin matches', ['snapshot', 'find']),
-        entry('profile', 'profile', '/profile <logs|presentation|high-contrast|big-text>', ['theme']),
+        entry(
+            'profile',
+            'profile',
+            '/profile <logs|presentation|high-contrast|big-text|fractal>',
+            ['theme'],
+        ),
         entry('asOf', 'as of', '/as of <seq>', ['asof', 'history']),
         entry('fork', 'fork', '/fork [line]', ['branch'], gate(gates.fork, 'Nothing to fork')),
         entry('why', 'why', '/why', ['provenance']),
@@ -1031,6 +1038,13 @@ export const TERMINAL_PROFILES: readonly TerminalProfile[] = [
         grid: { charWidth: 11, lineHeight: 22 },
         presentation: { wrap: true },
     },
+    {
+        id: 'fractal',
+        label: 'Fractal text',
+        palette: 'classic',
+        grid: {},
+        presentation: { zoomLOD: true },
+    },
 ];
 
 export const terminalProfile = (id: string): TerminalProfile =>
@@ -1256,6 +1270,37 @@ export const lineHTML = (
     });
     text += escapeHtml(line.text.slice(at));
     return `<span class="tg-gutter">${escapeHtml(lineGlyph(line, glyphs))} ${escapeHtml(statusGlyph(line, glyphs))}</span><span class="tg-text"${direction ? ` dir="${direction}"` : ''}>${text}</span>`;
+};
+
+/** Map a continuous zoom position (0 far, 1 near) onto the terminal fidelity ladder. */
+export const terminalLODFor = (
+    normalized: number,
+    ladder: readonly string[] = DEFAULT_RUNG_IDS,
+): string => {
+    const index =
+        normalized < 0.15 ? 0 : normalized < 0.4 ? 1 : normalized < 0.9 ? 2 : ladder.length - 1;
+    return ladder[index]!;
+};
+
+export type TerminalLineHTMLOptions = {
+    readonly direction?: 'ltr' | 'rtl';
+    readonly matches?: readonly (readonly [number, number])[];
+    readonly band?: string;
+    readonly ladder?: readonly string[];
+};
+
+/** At far zoom bands a line becomes an accessible glyph; identity and text remain addressable. */
+export const terminalLineHTML = (
+    line: TerminalLine,
+    glyphs: TerminalGlyphs = terminalGlyphs(),
+    { direction, matches = [], band, ladder = DEFAULT_RUNG_IDS }: TerminalLineHTMLOptions = {},
+): string => {
+    const at = band ? ladder.indexOf(band) : ladder.length - 1;
+    if (at >= 0 && at <= 1) {
+        const label = escapeHtml(line.text || line.label);
+        return `<span class="tg-glyph-only" aria-label="${label}" title="${label}">${escapeHtml(lineGlyph(line, glyphs))}</span>`;
+    }
+    return lineHTML(line, glyphs, direction, matches);
 };
 
 export type TerminalDetail = {
@@ -1529,6 +1574,8 @@ export type TerminalSpecOptions = {
     readonly focusID?: string;
     readonly previous?: TerminalWindow;
     readonly glyphs?: TerminalGlyphs;
+    /** Active zoom ladder band; far bands render glyph-only lines. */
+    readonly band?: string;
     readonly render?: (line: TerminalLine) => string;
     /** Explicit selector result; wins over the window slice when provided. */
     readonly selection?: TerminalSelection;
@@ -1549,7 +1596,7 @@ export const terminalSpec = (
         options.range ??
         terminalWindow(ids, options.focusID ?? ids.at(-1) ?? '', options.window, options.previous);
     const offsets = terminalGaps(ids, options.gaps ?? [], grid.lineHeight);
-    const render = options.render ?? ((line: TerminalLine) => lineHTML(line, options.glyphs));
+    const render = options.render ?? ((line: TerminalLine) => terminalLineHTML(line, options.glyphs, { band: options.band }));
     const selected = options.selection?.lines;
     const selectedIDs = selected ? new Set(selected.map((line) => line.id)) : undefined;
     const startIndex = ids.indexOf(window.start);
@@ -1712,6 +1759,8 @@ export type TerminalController = {
     setMode(mode: TerminalMode): void;
     /** Resolved selector result for the current committed lines and window. */
     view(): TerminalSelection;
+    /** Active zoom ladder band, mapped by the host from its renderer band. */
+    band(): string;
     refresh(): void;
     destroy(): void;
 };
@@ -1796,6 +1845,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
             gaps,
             overlays: terminalOverlays(overlays, { band, selected: new Set(selectedIDs()) }),
             glyphs: palette.glyphs,
+            band,
             selection,
         }).spec as Model;
     };
@@ -1917,6 +1967,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
             apply();
         },
         view,
+        band: () => band,
         refresh: () => {
             dirty = true;
             apply();

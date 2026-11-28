@@ -41,6 +41,7 @@ for (const shot of shots) {
         await call(page, 'setView', 'transcript');
         if (shot.rtl) await call(page, 'setDirection', 'rtl');
         if (shot.regions) await call(page, 'consoleRegions', true);
+        if (shot.profile) await call(page, 'consoleProfile', shot.profile);
         await settle(page);
         if (shot.palette) {
             await call(page, 'setConsolePalette', shot.palette);

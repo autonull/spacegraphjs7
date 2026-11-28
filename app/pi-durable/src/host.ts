@@ -57,7 +57,7 @@ import {
     type ReadingNode,
 } from 'spacegraphjs/reading';
 import { checkQuality, type QualityReport } from 'spacegraphjs/quality';
-import { representationChanges } from 'spacegraphjs/representations';
+import { DEFAULT_RUNG_IDS, representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import {
     mountTerminalA11y,
@@ -86,6 +86,7 @@ import {
     terminalLensFromKey,
     terminalLensIDs,
     terminalLensKey,
+    terminalLODFor,
     terminalLensRect,
     terminalOrder,
     terminalPlace,
@@ -299,6 +300,13 @@ const CONSOLE_GRID = terminalGrid({
     minWidth: 260,
     maxWidth: 720,
 });
+
+/** Renderer bands name scale, the terminal ladder names fidelity; map once at the sink boundary. */
+const CONSOLE_BAND: Readonly<Record<string, string>> = {
+    overview: 'dot',
+    execution: 'card',
+    detail: 'detail',
+};
 
 const reducedMotion = (): boolean =>
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
@@ -746,6 +754,7 @@ export class DurableHost {
     #bookmarks = new Map<string, TerminalBookmark>();
     #consoleGrid: TerminalGrid = CONSOLE_GRID;
     #regionsEnabled = false;
+    #consoleLOD = 'card';
     #consoleModel: RenderModel = { nodes: [], edges: [] };
     #a11yLayer: AccessibilityLayer | undefined;
     #a11yEvents = new EventEmitter<SpaceGraphEvents>();
@@ -790,6 +799,11 @@ export class DurableHost {
         this.renderer.on('nodeDoubleClick', ({ id }) => this.toggleFocusLens(id));
         this.renderer.on('viewportChange', ({ zoom, center }) => {
             this.patchView({ camera: { zoom, center } });
+            const lod = terminalLODFor(this.#scale.normalizedAt(zoom));
+            if (lod !== this.#consoleLOD) {
+                this.#consoleLOD = lod;
+                if (this.#viewName === 'transcript') this.#terminalController?.refresh();
+            }
             this.regrade();
             this.renderOverview();
         });
@@ -2558,6 +2572,8 @@ export class DurableHost {
                 const terminal = this.#terminal();
                 return terminalExport(terminal.lines(), terminal.selection(), format);
             },
+            consoleBand: () => this.#terminalController?.band() ?? DEFAULT_RUNG_IDS[0],
+            consoleLOD: () => this.#consoleLOD,
             consoleChapters: () => terminalChapters(lines()),
             consoleReplaySteps: () => terminalReplaySteps(lines()).length,
             consoleChapterRail: () =>
@@ -3394,7 +3410,8 @@ export class DurableHost {
                     target === null ? [] : typeof target === 'string' ? [target] : [...target],
                 ),
             onNodeClick: (callback) => this.renderer.on('nodeClick', ({ id }) => callback(id)),
-            onZoomBand: (callback) => this.renderer.on('bandChange', ({ band }) => callback(band)),
+            onZoomBand: (callback) =>
+                this.renderer.on('bandChange', ({ band }) => callback(CONSOLE_BAND[band] ?? band)),
         };
         this.#terminalController = mountTerminalSink(sink, {
             grid,
@@ -3411,6 +3428,7 @@ export class DurableHost {
                     direction: document.documentElement.dir === 'rtl' ? 'rtl' : undefined,
                     detailMode: this.#detailMode,
                     dimNonMatches: Boolean(this.#consoleSelector.search),
+                    lod: this.#consoleLOD,
                 }),
             onReveal: (id) => {
                 this.#expandedLine = this.#expandedLine === id ? undefined : id;

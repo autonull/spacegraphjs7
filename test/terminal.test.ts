@@ -4,6 +4,8 @@ import {
     KIND_GLYPHS,
     lineGlyph,
     lineHTML,
+    terminalLineHTML,
+    terminalLODFor,
     mountTerminal,
     mountTerminalA11y,
     mountTerminalCamera,
@@ -352,6 +354,36 @@ describe('glyph grammar', () => {
         expect(html).toContain('&lt;b&gt;x&lt;/b&gt;');
         expect(html).not.toContain('<b>');
         expect(html).toContain('×');
+    });
+
+    it('keeps only an accessible glyph at far zoom bands', () => {
+        const entry = { ...line('a', '<b>x</b>'), status: 'failed' };
+        const far = terminalLineHTML(entry, terminalGlyphs(), { band: 'dot' });
+        expect(far).toContain('class="tg-glyph-only"');
+        expect(far).toContain('aria-label="&lt;b&gt;x&lt;/b&gt;"');
+        expect(far).not.toContain('tg-text');
+        expect(far).not.toContain('<b>');
+        expect(terminalLineHTML(entry, terminalGlyphs(), { band: 'glyph' })).toContain(
+            'tg-glyph-only',
+        );
+        expect(terminalLineHTML(entry, terminalGlyphs(), { band: 'card' })).toContain('tg-text');
+        expect(terminalLineHTML(entry, terminalGlyphs())).toContain('tg-text');
+        expect(
+            terminalLineHTML(entry, terminalGlyphs(), {
+                band: 'overview',
+                ladder: ['overview', 'detail'],
+            }),
+        ).toContain('tg-glyph-only');
+    });
+});
+
+describe('zoom fidelity ladder', () => {
+    it('maps continuous zoom onto the terminal ladder', () => {
+        expect(terminalLODFor(0)).toBe('dot');
+        expect(terminalLODFor(0.28)).toBe('glyph');
+        expect(terminalLODFor(0.5)).toBe('card');
+        expect(terminalLODFor(1)).toBe('detail');
+        expect(terminalLODFor(1, ['far', 'near'])).toBe('near');
     });
 });
 
@@ -1183,7 +1215,7 @@ describe('reading lens and profiles', () => {
 
     it('exposes named profiles with one presentation contract', () => {
         expect(TERMINAL_PROFILES.map((profile) => profile.id)).toEqual([
-            'logs', 'presentation', 'high-contrast', 'big-text',
+            'logs', 'presentation', 'high-contrast', 'big-text', 'fractal',
         ]);
         expect(terminalProfile('big-text').presentation.wrap).toBe(true);
         expect(terminalProfile('missing').id).toBe('logs');

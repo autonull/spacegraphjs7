@@ -100,6 +100,19 @@ describe('consoleModel', () => {
         expect(model.nodes.map((entry) => entry.id)).toEqual(['a', 'b', 'terminal-prompt']);
     });
 
+    it('renders far zoom bands as accessible glyphs with a stable data-lod', () => {
+        const model = consoleModel(
+            { ...context(), band: 'dot' },
+            { ...state, lod: 'dot', presentation: { zoomLOD: true } },
+        );
+        const node = model.nodes.find((entry) => entry.id === 'a');
+        expect(node?.html).toContain('data-lod="dot"');
+        expect(node?.html).toContain('class="tg-glyph-only"');
+        expect(node?.html).toContain('aria-label="alpha"');
+        expect(node?.html).not.toContain('tg-text');
+        expect(node?.label).toBe('A');
+    });
+
     it('drops selector-hidden lines from the rendered projection', () => {
         const selection = terminalSelect(lines, { filter: (entry) => entry.id === 'b' });
         const model = consoleModel({ ...context(), selection }, state);

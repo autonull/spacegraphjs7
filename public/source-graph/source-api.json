@@ -28978,259 +28978,259 @@
           "name": "TerminalSelection",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 604,
+          "line": 606,
           "signature": "export type TerminalSelection = {"
         },
         {
           "name": "terminalSelect",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 611,
+          "line": 613,
           "signature": "terminalSelect = ("
         },
         {
           "name": "terminalSnapshot",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 648,
+          "line": 650,
           "signature": "terminalSnapshot = ("
         },
         {
           "name": "TerminalConsoleCommandGates",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 662,
+          "line": 664,
           "signature": "export type TerminalConsoleCommandGates = {"
         },
         {
           "name": "terminalConsoleCommands",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 669,
+          "line": 671,
           "signature": "terminalConsoleCommands = ("
         },
         {
           "name": "TerminalMenuItem",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 712,
+          "line": 719,
           "signature": "export type TerminalMenuItem = {"
         },
         {
           "name": "terminalContextMenu",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 722,
+          "line": 729,
           "signature": "terminalContextMenu = ("
         },
         {
           "name": "TerminalSearchOptions",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 740,
+          "line": 747,
           "signature": "export type TerminalSearchOptions = {"
         },
         {
           "name": "terminalSearch",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 748,
+          "line": 755,
           "signature": "terminalSearch = ("
         },
         {
           "name": "terminalMatchFlags",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 796,
+          "line": 803,
           "signature": "terminalMatchFlags = ("
         },
         {
           "name": "terminalDerived",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 813,
+          "line": 820,
           "signature": "terminalDerived = ("
         },
         {
           "name": "TerminalLensTarget",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 818,
+          "line": 825,
           "signature": "export type TerminalLensTarget ="
         },
         {
           "name": "TerminalLensRect",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 826,
+          "line": 833,
           "signature": "export type TerminalLensRect = {"
         },
         {
           "name": "terminalLensKey",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 833,
+          "line": 840,
           "signature": "terminalLensKey = (target: TerminalLensTarget): string => {"
         },
         {
           "name": "terminalLensFromKey",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 849,
+          "line": 856,
           "signature": "terminalLensFromKey = (key: string | undefined): TerminalLensTarget | undefined => {"
         },
         {
           "name": "terminalLensIDs",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 873,
+          "line": 880,
           "signature": "terminalLensIDs = ("
         },
         {
           "name": "terminalLensRect",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 898,
+          "line": 905,
           "signature": "terminalLensRect = ("
         },
         {
           "name": "TerminalBookmark",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 935,
+          "line": 942,
           "signature": "export type TerminalBookmark = {"
         },
         {
           "name": "terminalBookmark",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 952,
+          "line": 959,
           "signature": "terminalBookmark = {"
         },
         {
           "name": "TerminalReadingScope",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 958,
+          "line": 965,
           "signature": "export type TerminalReadingScope = 'all' | 'selection' | 'current' | 'last' | 'filtered';"
         },
         {
           "name": "terminalReadingLens",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 961,
+          "line": 968,
           "signature": "terminalReadingLens = ("
         },
         {
           "name": "TerminalProfile",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 996,
+          "line": 1003,
           "signature": "export type TerminalProfile = {"
         },
         {
           "name": "TERMINAL_PROFILES",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1005,
+          "line": 1012,
           "signature": "TERMINAL_PROFILES: readonly TerminalProfile[] = ["
         },
         {
           "name": "terminalProfile",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1036,
+          "line": 1050,
           "signature": "terminalProfile = (id: string): TerminalProfile =>"
         },
         {
           "name": "TerminalRegion",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1039,
+          "line": 1053,
           "signature": "export type TerminalRegion = {"
         },
         {
           "name": "terminalRegions",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1049,
+          "line": 1063,
           "signature": "terminalRegions = ("
         },
         {
           "name": "TerminalAutoZoomOptions",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1098,
+          "line": 1112,
           "signature": "export type TerminalAutoZoomOptions = {"
         },
         {
           "name": "terminalAutoZoom",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1104,
+          "line": 1118,
           "signature": "terminalAutoZoom = ("
         },
         {
           "name": "TerminalExportFormat",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1135,
+          "line": 1149,
           "signature": "export type TerminalExportFormat = 'markdown' | 'json';"
         },
         {
           "name": "terminalExcerpt",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1138,
+          "line": 1152,
           "signature": "terminalExcerpt = ("
         },
         {
           "name": "terminalExport",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1151,
+          "line": 1165,
           "signature": "terminalExport = ("
         },
         {
           "name": "terminalMoveLine",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1167,
+          "line": 1181,
           "signature": "terminalMoveLine = ("
         },
         {
           "name": "STATUS_GLYPHS",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1178,
+          "line": 1192,
           "signature": "STATUS_GLYPHS: Readonly<Record<string, string>> = {"
         },
         {
           "name": "KIND_GLYPHS",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1183,
+          "line": 1197,
           "signature": "KIND_GLYPHS: Readonly<Record<string, string>> = {"
         },
         {
           "name": "TerminalGlyphs",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1193,
+          "line": 1207,
           "signature": "export type TerminalGlyphs = {"
         },
         {
           "name": "terminalGlyphs",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1198,
+          "line": 1212,
           "signature": "terminalGlyphs = ("
         },
         {
           "name": "TerminalPalette",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1206,
+          "line": 1220,
           "signature": "export type TerminalPalette = {",
           "doc": "Palettes name theme tokens; hosts supply the actual colours in their CSS."
         },
@@ -29238,168 +29238,189 @@
           "name": "TERMINAL_PALETTES",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1226,
+          "line": 1240,
           "signature": "TERMINAL_PALETTES: readonly TerminalPalette[] = ["
         },
         {
           "name": "terminalPalette",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1233,
+          "line": 1247,
           "signature": "terminalPalette = (id: string): TerminalPalette =>"
         },
         {
           "name": "lineGlyph",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1236,
+          "line": 1250,
           "signature": "lineGlyph = (line: TerminalLine, glyphs: TerminalGlyphs = terminalGlyphs()): string =>"
         },
         {
           "name": "statusGlyph",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1238,
+          "line": 1252,
           "signature": "statusGlyph = (line: TerminalLine, glyphs: TerminalGlyphs = terminalGlyphs()): string =>"
         },
         {
           "name": "lineHTML",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1242,
+          "line": 1256,
           "signature": "lineHTML = ("
+        },
+        {
+          "name": "terminalLODFor",
+          "kind": "const",
+          "fileId": "src/terminal",
+          "line": 1276,
+          "signature": "terminalLODFor = (normalized: number, ladder: readonly string[] = DEFAULT_RUNG_IDS): string => {"
+        },
+        {
+          "name": "TerminalLineHTMLOptions",
+          "kind": "type",
+          "fileId": "src/terminal",
+          "line": 1281,
+          "signature": "export type TerminalLineHTMLOptions = {"
+        },
+        {
+          "name": "terminalLineHTML",
+          "kind": "const",
+          "fileId": "src/terminal",
+          "line": 1289,
+          "signature": "terminalLineHTML = ("
         },
         {
           "name": "TerminalDetail",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1261,
+          "line": 1302,
           "signature": "export type TerminalDetail = {"
         },
         {
           "name": "terminalDetailHTML",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1268,
+          "line": 1309,
           "signature": "terminalDetailHTML = (detail: TerminalDetail): string => {"
         },
         {
           "name": "terminalPromptHTML",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1279,
+          "line": 1320,
           "signature": "terminalPromptHTML = (placeholder = 'Send a message'): string =>"
         },
         {
           "name": "TerminalPromptNodeOptions",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1282,
+          "line": 1323,
           "signature": "export type TerminalPromptNodeOptions = {"
         },
         {
           "name": "terminalPromptNode",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1289,
+          "line": 1330,
           "signature": "terminalPromptNode = ("
         },
         {
           "name": "TerminalPromptOptions",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1309,
+          "line": 1350,
           "signature": "export type TerminalPromptOptions = ComposerOptions & {"
         },
         {
           "name": "TerminalPromptController",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1314,
+          "line": 1355,
           "signature": "export type TerminalPromptController = {"
         },
         {
           "name": "mountTerminalPrompt",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1320,
+          "line": 1361,
           "signature": "mountTerminalPrompt = ("
         },
         {
           "name": "TerminalA11yOptions",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1356,
+          "line": 1397,
           "signature": "export type TerminalA11yOptions = {"
         },
         {
           "name": "mountTerminalA11y",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1367,
+          "line": 1408,
           "signature": "mountTerminalA11y = ("
         },
         {
           "name": "TerminalCameraOptions",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1426,
+          "line": 1467,
           "signature": "export type TerminalCameraOptions = {"
         },
         {
           "name": "TerminalCameraController",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1434,
+          "line": 1475,
           "signature": "export type TerminalCameraController = {"
         },
         {
           "name": "mountTerminalCamera",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1441,
+          "line": 1482,
           "signature": "mountTerminalCamera = ("
         },
         {
           "name": "TerminalRevealState",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1487,
+          "line": 1528,
           "signature": "export type TerminalRevealState = {"
         },
         {
           "name": "terminalVisible",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1493,
+          "line": 1534,
           "signature": "terminalVisible = ("
         },
         {
           "name": "terminalOverlays",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1514,
+          "line": 1555,
           "signature": "terminalOverlays = ("
         },
         {
           "name": "TerminalSpecOptions",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1520,
+          "line": 1561,
           "signature": "export type TerminalSpecOptions = {"
         },
         {
           "name": "terminalSpec",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1537,
+          "line": 1580,
           "signature": "terminalSpec = ("
         },
         {
           "name": "TerminalGraph",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1611,
+          "line": 1654,
           "signature": "export type TerminalGraph = {",
           "doc": "The small graph surface the controller needs; a SpaceGraph adapter satisfies it at runtime."
         },
@@ -29407,7 +29428,7 @@
           "name": "TerminalChurn",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1624,
+          "line": 1667,
           "signature": "export type TerminalChurn = {",
           "doc": "Cumulative window activity; hosts use it to tune mount/unmount hysteresis."
         },
@@ -29415,7 +29436,7 @@
           "name": "TerminalSink",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1631,
+          "line": 1674,
           "signature": "export type TerminalSink<Model = GraphSpec> = {",
           "doc": "A host-owned model sink. `project` may return any model the host can render."
         },
@@ -29423,35 +29444,35 @@
           "name": "TerminalProjectionContext",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1644,
+          "line": 1687,
           "signature": "export type TerminalProjectionContext = {"
         },
         {
           "name": "TerminalHooks",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1661,
+          "line": 1704,
           "signature": "export type TerminalHooks<Model = GraphSpec> = {"
         },
         {
           "name": "TerminalController",
           "kind": "type",
           "fileId": "src/terminal",
-          "line": 1688,
+          "line": 1731,
           "signature": "export type TerminalController = {"
         },
         {
           "name": "mountTerminalSink",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1720,
+          "line": 1765,
           "signature": "mountTerminalSink = <Model = GraphSpec>("
         },
         {
           "name": "mountTerminal",
           "kind": "const",
           "fileId": "src/terminal",
-          "line": 1935,
+          "line": 1982,
           "signature": "mountTerminal = ("
         }
       ],

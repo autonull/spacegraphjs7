@@ -5,7 +5,7 @@ import {
 } from '@spacegraphjs/renderer';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import {
-    lineHTML,
+    terminalLineHTML,
     terminalMatchFlags,
     terminalGaps,
     terminalOrder,
@@ -37,6 +37,8 @@ export type ConsoleModelState = {
     readonly detailMode: 'inline' | 'popup' | 'rail';
     readonly presentation?: TerminalPresentation;
     readonly dimNonMatches?: boolean;
+    /** Zoom-derived ladder band; used only when `presentation.zoomLOD` is set. */
+    readonly lod?: string;
 };
 
 const lineStatus = (status: string): RenderNode['status'] =>
@@ -89,6 +91,8 @@ export const consoleModel = (
         const attrs = `data-selected="${selected.has(entry.id)}" data-kind="${escapeHtml(
             entry.kind,
         )}" data-status="${escapeHtml(entry.status)}" data-role="${escapeHtml(entry.role ?? '')}"${
+            flags?.zoomLOD && state.lod ? ` data-lod="${escapeHtml(state.lod)}"` : ''
+        }${
             flags?.lineNumbers ? ` data-line-no="${(index.get(entry.id) ?? 0) + 1}"` : ''
         }${
             flags?.sourceStamp && entry.at !== undefined
@@ -102,7 +106,11 @@ export const consoleModel = (
             id: entry.id,
             kind: entry.kind,
             label: entry.label,
-            html: `<div class="${className}" ${attrs}>${lineHTML(entry, glyphs, state.direction, ranges)}</div>`,
+            html: `<div class="${className}" ${attrs}>${terminalLineHTML(entry, glyphs, {
+                direction: state.direction,
+                matches: ranges,
+                band: flags?.zoomLOD ? state.lod : undefined,
+            })}</div>`,
             position: [
                 placement.position[0],
                 placement.position[1] + (offsets.get(entry.id) ?? 0),
