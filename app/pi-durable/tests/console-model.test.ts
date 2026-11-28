@@ -113,6 +113,37 @@ describe('consoleModel', () => {
         expect(node?.label).toBe('A');
     });
 
+    it('gates hover and zoom overlays by interaction and LOD state', () => {
+        const withNode = (id: string, reveal: TerminalOverlay['reveal'], band?: string): TerminalOverlay => ({
+            ...overlay(id, 'a', 'margin'),
+            reveal,
+            band,
+            node: {
+                id,
+                type: 'HtmlNode',
+                label: 'peek',
+                data: { html: '<span>peek</span>', width: 100, height: 20 },
+            } as TerminalOverlay['node'],
+        });
+        const overlays = [withNode('hover-a', 'hover'), withNode('chapter-a', 'zoom', 'card')];
+        const contextWith = { ...context(), overlays, band: 'dot' };
+        const hidden = consoleModel(contextWith, state);
+        expect(hidden.nodes.map((node) => node.id)).not.toContain('hover-a');
+        expect(hidden.nodes.map((node) => node.id)).not.toContain('chapter-a');
+
+        const hovered = consoleModel(contextWith, { ...state, hovered: 'a' });
+        expect(hovered.nodes.map((node) => node.id)).toContain('hover-a');
+        expect(hovered.nodes.map((node) => node.id)).not.toContain('chapter-a');
+
+        const zoomed = consoleModel(contextWith, {
+            ...state,
+            lod: 'card',
+            presentation: { zoomLOD: true },
+        });
+        expect(zoomed.nodes.map((node) => node.id)).toContain('chapter-a');
+        expect(zoomed.nodes.map((node) => node.id)).not.toContain('hover-a');
+    });
+
     it('drops selector-hidden lines from the rendered projection', () => {
         const selection = terminalSelect(lines, { filter: (entry) => entry.id === 'b' });
         const model = consoleModel({ ...context(), selection }, state);

@@ -39,6 +39,8 @@ export type ConsoleModelState = {
     readonly dimNonMatches?: boolean;
     /** Zoom-derived ladder band; used only when `presentation.zoomLOD` is set. */
     readonly lod?: string;
+    /** Line under the pointer, for `reveal: 'hover'` overlays. */
+    readonly hovered?: string;
 };
 
 const lineStatus = (status: string): RenderNode['status'] =>
@@ -72,7 +74,8 @@ export const consoleModel = (
     const selected = state.selection
         ? new Set(terminalRangeIDs(state.selection, index))
         : new Set<string>();
-    const revealed = terminalOverlays(overlays, { band });
+    const revealedBand = flags?.zoomLOD && state.lod ? state.lod : band;
+    const revealed = terminalOverlays(overlays, { band: revealedBand, hovered: state.hovered });
     const offsets = terminalGaps(
         order,
         terminalOverlayGaps(revealed, detailMode === 'inline' ? 3 : 2),

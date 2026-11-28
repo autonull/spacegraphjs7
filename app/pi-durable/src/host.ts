@@ -755,6 +755,7 @@ export class DurableHost {
     #consoleGrid: TerminalGrid = CONSOLE_GRID;
     #regionsEnabled = false;
     #consoleLOD = 'card';
+    #hoveredLine: string | undefined;
     #consoleModel: RenderModel = { nodes: [], edges: [] };
     #a11yLayer: AccessibilityLayer | undefined;
     #a11yEvents = new EventEmitter<SpaceGraphEvents>();
@@ -808,6 +809,18 @@ export class DurableHost {
             this.renderOverview();
         });
         this.renderer.on('bandChange', ({ band }) => this.patchView({ band }));
+        el('canvas').addEventListener('pointerover', (event) => {
+            const id = (event.target as HTMLElement).closest<HTMLElement>('[data-node-id]')
+                ?.dataset['nodeId'];
+            if (!id || id === this.#hoveredLine) return;
+            this.#hoveredLine = id;
+            if (this.#viewName === 'transcript') this.#terminalController?.refresh();
+        });
+        el('canvas').addEventListener('pointerout', (event) => {
+            if ((event.target as HTMLElement).closest('[data-node-id]')) return;
+            this.#hoveredLine = undefined;
+            if (this.#viewName === 'transcript') this.#terminalController?.refresh();
+        });
         this.renderGlossary();
         this.renderLegend();
         this.renderRungs();
@@ -1094,7 +1107,10 @@ export class DurableHost {
 
     setView(name: ViewName): void {
         if (name === this.#viewName) return;
-        if (name !== 'transcript') this.#replay?.cancel();
+        if (name !== 'transcript') {
+            this.#replay?.cancel();
+            this.#hoveredLine = undefined;
+        }
         if (this.#viewName === 'transcript') this.#consoleFramed = false;
         this.#viewName = name;
         this.refresh();
@@ -3429,6 +3445,7 @@ export class DurableHost {
                     detailMode: this.#detailMode,
                     dimNonMatches: Boolean(this.#consoleSelector.search),
                     lod: this.#consoleLOD,
+                    hovered: this.#hoveredLine,
                 }),
             onReveal: (id) => {
                 this.#expandedLine = this.#expandedLine === id ? undefined : id;
@@ -3559,14 +3576,63 @@ export class DurableHost {
                 },
             ];
         };
+        const hover = (line: TerminalLine): TerminalOverlay[] => [
+            {
+                id: `hover-${line.id}`,
+                lineID: line.id,
+                slot: 'margin',
+                reveal: 'hover',
+                mode: 'rail',
+                node: {
+                    id: `hover-${line.id}`,
+                    type: 'HtmlNode',
+                    label: 'peek',
+                    data: {
+                        html: terminalDetailHTML({
+                            title: line.label,
+                            fields: [
+                                ['kind', line.kind],
+                                ['status', line.status],
+                            ],
+                            text: line.text,
+                        }),
+                        width: 240,
+                        height: 72,
+                    },
+                } as NodeSpec,
+            },
+        ];
+        const chapterLabels = (): TerminalOverlay[] =>
+            this.#consolePresentation.zoomLOD
+                ? terminalChapters(lines).map((chapter) => ({
+                      id: `chapter-label-${chapter.startID}`,
+                      lineID: chapter.startID,
+                      slot: 'margin' as const,
+                      reveal: 'zoom' as const,
+                      band: 'card',
+                      mode: 'rail' as const,
+                      node: {
+                          id: `chapter-label-${chapter.startID}`,
+                          type: 'HtmlNode',
+                          label: chapter.label,
+                          data: {
+                              html: terminalDetailHTML({ title: chapter.label, fields: [] }),
+                              width: 180,
+                              height: 30,
+                          },
+                      } as NodeSpec,
+                  }))
+                : [];
         const base = lines.flatMap((line, index) => [
+            ...hover(line),
             ...(index % 4 === 0 ? gap(line) : []),
             ...(index % 3 === 0 ? gutter(line) : []),
             ...(this.#expandedLine === line.id ? detail(line) : []),
         ]);
-        if (!this.#regionsEnabled) return base;
+        const all = [...base, ...chapterLabels()];
+        if (!this.#regionsEnabled) return all;
         return [
-            ...base,
+            ...all,
             ...terminalRegions(lines, this.#consoleLayout(lines))
                 .slice(1)
                 .map((region) => ({
