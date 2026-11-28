@@ -152,18 +152,23 @@
         <div class="hud top">
             <b>dev session</b>
             <span id="band">detail</span>
-            <input id="scrub" type="range" min="1" max="14" value="14" aria-label="Replay prefix" />
-            <button id="play" type="button">▶ replay</button>
-            <button id="stop" type="button">■ stop</button>
-            <span id="step">14/14</span>
         </div>
-        <div class="hud inspector" id="inspector"><h3>Event</h3><div class="meta">Click a node or an edge.</div></div>
-        <div class="hud hint">wheel = fly through the session · click an edge to travel it · replay reveals committed prefixes</div>
+        <div class="hud inspector" id="atlas"></div>
+        <div class="hud hint">wheel = fly through the session · arrows scrub · Enter opens a window · Escape closes it · click an edge to travel it</div>
 
         <script type="module">
+            import '../../../../packages/domain/agent/src/atlas.css';
+            import {
+                atlasModel,
+                atlasStats,
+                atlasTravel,
+                atlasVisible,
+                reduceAtlas,
+                replayScrubberHTML,
+                sessionAtlasHTML,
+            } from '../../../../packages/domain/agent/src/atlas';
             import { SpaceGraph } from 'spacegraphjs';
             import {
-                terminalChapters,
                 terminalFacets,
                 terminalLineHTML,
                 terminalLODFor,
@@ -174,8 +179,8 @@
             import { playRepresentationChanges } from 'spacegraphjs/representations';
 
             const el = (id) => document.getElementById(id);
-            const esc = (value) => String(value).replaceAll('<', '&lt;').replaceAll('&', '&amp;').replaceAll('"', '&quot;');
             const LADDER = ['dot', 'glyph', 'card', 'detail'];
+            const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
             const lines = [
                 ['user', 'complete', 'user', 'Refactor `router.dispatch()` and fix the failing test.', 1],
@@ -227,17 +232,17 @@
                     backgroundColor: '#111a28',
                 },
             }));
-            const edges = lines.slice(1).map((line, i) => ({
-                id: `edge-${i}`,
-                source: line.parent,
-                target: line.id,
-                type: line.status === 'failed' ? 'DottedEdge' : 'CurvedEdge',
+            const model = atlasModel(lines);
+            const edges = model.edges.map((edge) => ({
+                id: edge.id,
+                source: edge.source,
+                target: edge.target,
+                type: edge.kind === 'failed' ? 'DottedEdge' : 'CurvedEdge',
             }));
 
-            const chapters = terminalChapters(lines);
-            const frames = chapters
+            const frames = model.chapters
                 .map((chapter) => {
-                    const members = lines.filter((line) => line.turn === chapter.turn);
+                    const members = lines.filter((line) => chapter.ids.includes(line.id));
                     if (!members.length) return undefined;
                     const positions = members.map((line) => nodes.find((node) => node.id === line.id).position);
                     const xs = positions.map((p) => p[0]);
@@ -273,45 +278,46 @@
             sg.frame(null, { duration: 0.01 });
             frames.forEach((frame) => sg.hide(frame.id));
 
-            let prefix = lines.length;
+            let atlas = {
+                total: lines.length,
+                prefix: lines.length,
+                playing: false,
+                selected: lines.at(-1).id,
+            };
             let handle;
+            let playback;
+            window._atlas = () => atlas;
 
-            const setPrefix = (count) => {
-                prefix = Math.max(1, Math.min(lines.length, count));
-                lines.forEach((line, index) => {
-                    if (index < prefix) sg.show(line.id);
-                    else sg.hide(line.id);
+            const esc = (value) => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+
+            const render = () => {
+                el('atlas').innerHTML = sessionAtlasHTML({
+                    model,
+                    state: atlas,
+                    stats: atlasStats(lines, model.chapters, atlas.prefix),
                 });
-                el('scrub').value = String(prefix);
-                el('step').textContent = `${prefix}/${lines.length}`;
+                const visible = new Set(atlasVisible(lines, atlas.prefix).map((line) => line.id));
+                lines.forEach((line) => (visible.has(line.id) ? sg.show(line.id) : sg.hide(line.id)));
             };
 
-            const inspect = (id) => {
+            const openWindow = (id) => {
                 const line = lines.find((entry) => entry.id === id);
-                if (!line) return;
-                el('inspector').innerHTML = `<h3>${esc(line.id)} · ${esc(line.kind)}/${esc(line.status)}</h3>
-                    <div class="meta">turn ${line.turn} · role ${esc(line.role)} · at ${line.at}</div>
-                    <div class="text">${terminalLineHTML(line, undefined, { band: 'detail', tokens: terminalTokens(line.text) })}</div>
-                    <div class="tools"><button data-action="focus">FOCUS</button><button data-action="window">OPEN WINDOW</button></div>`;
-                el('inspector').querySelector('[data-action="focus"]').addEventListener('click', () => sg.inspect(id));
-                el('inspector').querySelector('[data-action="window"]').addEventListener('click', () => {
-                    const windowID = `window-${id}`;
-                    if (sg.hasNode(windowID)) return;
-                    const source = sg.graph.nodes.get(id);
-                    sg.addNode({
-                        id: windowID,
-                        type: 'HtmlNode',
-                        label: line.label,
-                        position: [source.position.x + 220, source.position.y + 120, 20],
-                        data: {
-                            html: `<div style="height:120px;border:1px solid #7aa2f7;background:#111a28;padding:10px;font:13px 'SFMono-Regular',Consolas,monospace"><b>${esc(line.id)}</b><br />${terminalLineHTML(line, undefined, { band: 'detail', tokens: terminalTokens(line.text) })}<button data-sg-interactive="true" data-close="${windowID}" style="margin-top:8px;background:#1f2d41;color:#b8c8dc;border:1px solid #34506f;font:inherit">CLOSE</button></div>`,
-                            useRawHtml: true,
-                            width: 420,
-                            height: 120,
-                            pointerEvents: 'auto',
-                            backgroundColor: '#111a28',
-                        },
-                    });
+                const source = sg.graph.nodes.get(id);
+                const windowID = `window-${id}`;
+                if (!line || !source || sg.hasNode(windowID)) return;
+                sg.addNode({
+                    id: windowID,
+                    type: 'HtmlNode',
+                    label: line.label,
+                    position: [source.position.x + 220, source.position.y + 120, 20],
+                    data: {
+                        html: `<div style="height:120px;border:1px solid #7aa2f7;background:#111a28;padding:10px;font:13px 'SFMono-Regular',Consolas,monospace"><b>${esc(line.id)}</b><br />${terminalLineHTML(line, undefined, { band: 'detail', tokens: terminalTokens(line.text) })}<button data-sg-interactive="true" data-close="${windowID}" style="margin-top:8px;background:#1f2d41;color:#b8c8dc;border:1px solid #34506f;font:inherit">CLOSE</button></div>`,
+                        useRawHtml: true,
+                        width: 420,
+                        height: 120,
+                        pointerEvents: 'auto',
+                        backgroundColor: '#111a28',
+                    },
                 });
             };
 
@@ -319,34 +325,61 @@
                 const from = sg.graph.nodes.get(fromID);
                 const to = sg.graph.nodes.get(toID);
                 if (!from || !to) return;
-                const a = [from.position.x, from.position.y];
-                const b = [to.position.x, to.position.y];
+                const a = { x: from.position.x, y: from.position.y };
+                const b = { x: to.position.x, y: to.position.y };
+                atlas = reduceAtlas(atlas, { type: 'travel', from: fromID, to: toID });
                 const change = { id: `travel:${fromID}:${toID}`, from: fromID, to: toID, duration: 0.65 };
                 let previous = performance.now();
                 playback = playRepresentationChanges([change], (_, t) => {
-                    sg.center(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t);
-                }, { ease: 'power2.inOut' });
+                    const point = atlasTravel(a, b, t);
+                    sg.center(point.x, point.y);
+                }, { ease: 'power2.inOut', reducedMotion: reducedMotion() });
                 const step = (now) => {
                     const dt = (now - previous) / 1000;
                     previous = now;
                     if (playback && !playback.done) {
                         playback.advance(dt);
                         requestAnimationFrame(step);
-                    } else playback = undefined;
+                    } else {
+                        playback = undefined;
+                        atlas = reduceAtlas(atlas, { type: 'arrive' });
+                        render();
+                    }
                 };
                 requestAnimationFrame(step);
             };
-            let playback;
+
+            const stop = () => {
+                handle?.cancel();
+                atlas = reduceAtlas(atlas, { type: 'stop' });
+                render();
+            };
+
+            const play = () => {
+                handle?.cancel();
+                atlas = reduceAtlas(atlas, { type: 'play' });
+                handle = playTerminalReplay(terminalReplaySteps(lines), (visible) => {
+                    atlas = reduceAtlas(atlas, { type: 'prefix', value: visible.length });
+                    render();
+                }, {
+                    intervalMs: 140,
+                    reducedMotion: reducedMotion(),
+                    onStep: (step, total) => { if (step === total) stop(); },
+                });
+            };
 
             sg.events.on('node:click', ({ id }) => {
-                if (typeof id === 'string' && id.startsWith('event-')) inspect(id);
+                if (typeof id === 'string' && id.startsWith('event-')) {
+                    atlas = reduceAtlas(atlas, { type: 'select', id });
+                    render();
+                }
             });
             sg.events.on('edge:click', ({ id }) => {
-                const edge = edges.find((entry) => entry.id === id);
-                if (edge) {
-                    travel(edge.source, edge.target);
-                    inspect(edge.target);
-                }
+                const edge = model.edges.find((entry) => entry.id === id);
+                if (!edge) return;
+                travel(edge.source, edge.target);
+                atlas = reduceAtlas(atlas, { type: 'select', id: edge.target });
+                render();
             });
             sg.events.on('zoom:change', ({ zoom }) => {
                 const next = terminalLODFor(zoom, LADDER);
@@ -359,29 +392,75 @@
 
             el('app').addEventListener('click', (event) => {
                 const close = event.target.closest?.('[data-close]');
-                if (close) sg.removeNode(close.dataset.close);
+                if (!close) return;
+                sg.removeNode(close.dataset.close);
+                atlas = reduceAtlas(atlas, { type: 'close' });
+                render();
             });
 
-            el('scrub').addEventListener('input', () => {
+            el('atlas').addEventListener('input', (event) => {
+                if (!(event.target instanceof HTMLInputElement) || event.target.dataset.atlasScrub === undefined) return;
                 handle?.cancel();
-                setPrefix(Number(el('scrub').value));
+                atlas = reduceAtlas(atlas, { type: 'prefix', value: Number(event.target.value) });
+                render();
             });
-            el('play').addEventListener('click', () => {
-                handle?.cancel();
-                const steps = terminalReplaySteps(lines);
-                handle = playTerminalReplay(steps, (visible) => {
-                    setPrefix(visible.length);
-                }, { intervalMs: 140, onStep: (step, total) => (el('step').textContent = `${step}/${total}`) });
+            el('atlas').addEventListener('click', (event) => {
+                if (!(event.target instanceof HTMLElement)) return;
+                const chapter = event.target.closest('[data-atlas-chapter]');
+                if (chapter?.dataset.atlasChapter) {
+                    const found = model.chapters.find((entry) => entry.id === chapter.dataset.atlasChapter);
+                    if (found) {
+                        handle?.cancel();
+                        const count = lines.findIndex((line) => line.id === found.ids.at(-1)) + 1;
+                        atlas = reduceAtlas(atlas, { type: 'prefix', value: count });
+                        render();
+                    }
+                    return;
+                }
+                const value = event.target.closest('[data-atlas-action]')?.dataset.atlasAction;
+                if (!value) return;
+                const separator = value.indexOf(':');
+                const kind = separator < 0 ? value : value.slice(0, separator);
+                const args = separator < 0 ? [] : value.slice(separator + 1).split('|');
+                if (kind === 'play') play();
+                else if (kind === 'stop') stop();
+                else if (kind === 'select' && args[0]) {
+                    atlas = reduceAtlas(atlas, { type: 'select', id: args[0] });
+                    render();
+                } else if (kind === 'window' && args[0]) {
+                    atlas = reduceAtlas(atlas, { type: 'window', id: args[0] });
+                    render();
+                    openWindow(args[0]);
+                } else if (kind === 'close') {
+                    if (atlas.window && sg.hasNode(`window-${atlas.window}`)) sg.removeNode(`window-${atlas.window}`);
+                    atlas = reduceAtlas(atlas, { type: 'close' });
+                    render();
+                } else if (kind === 'travel' && args[0] && args[1]) travel(args[0], args[1]);
             });
-            el('stop').addEventListener('click', () => {
-                handle?.cancel();
-                setPrefix(lines.length);
+
+            document.addEventListener('keydown', (event) => {
+                if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+                if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                    handle?.cancel();
+                    atlas = reduceAtlas(atlas, {
+                        type: 'prefix',
+                        value: atlas.prefix + (event.key === 'ArrowRight' ? 1 : -1),
+                    });
+                    render();
+                } else if (event.key === 'Enter' && atlas.selected) {
+                    atlas = reduceAtlas(atlas, { type: 'window', id: atlas.selected });
+                    render();
+                    openWindow(atlas.selected);
+                } else if (event.key === 'Escape' && atlas.window) {
+                    if (sg.hasNode(`window-${atlas.window}`)) sg.removeNode(`window-${atlas.window}`);
+                    atlas = reduceAtlas(atlas, { type: 'close' });
+                    render();
+                }
             });
 
             const facets = terminalFacets(lines);
             el('band').textContent = `${band} · ${[...facets].filter(([key]) => key === 'status:failed').map(([, count]) => `${count} failed`).join('')}`;
-            inspect(lines.at(-1).id);
-            setPrefix(lines.length);
+            render();
         </script>
     </body>
 </html>

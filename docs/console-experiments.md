@@ -219,6 +219,11 @@ Pi Durable session view where the transcript, graph and time travel share one pr
 [`GRAPH-WINDOW.md`](../packages/window-manager/GRAPH-WINDOW.md). Demo 14 and Pi Durable labs mode
 (`?labs=1`) are its two consumers.
 
+`SessionAtlas` + `ReplayScrubber` + `EventWindow` are promoted as one read model with a
+[pattern card](../packages/domain/agent/ATLAS.md). Demo 17 and Pi Durable labs mode (`?labs=1`, `a`)
+are its two consumers. The prefix is a view over committed entries: the host binds it to `scrubTo`,
+so replay never creates a second timeline.
+
 Suggested adoption order for Pi Durable: (1) per-agent graph windows and a team toggle, (2) steer and
 approve edges, (3) the session atlas with replay, (4) team scope and lens as density grows. Each step
 reuses the terminal projection and kernel facts; none introduces a second store.

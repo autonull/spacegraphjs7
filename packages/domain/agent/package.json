@@ -13,11 +13,13 @@
             "import": "./dist/index.js",
             "default": "./dist/index.js"
         },
-        "./team.css": "./src/team.css"
+        "./team.css": "./src/team.css",
+        "./atlas.css": "./src/atlas.css"
     },
     "files": [
         "dist",
         "src/team.css",
+        "src/atlas.css",
         "README.md"
     ],
     "scripts": {

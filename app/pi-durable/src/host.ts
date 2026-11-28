@@ -63,6 +63,15 @@ import {
     type TeamModel,
     type TeamState,
 } from '../../../packages/domain/agent/src/team';
+import {
+    atlasModel,
+    atlasStats,
+    atlasTravel,
+    reduceAtlas,
+    sessionAtlasHTML,
+    type AtlasEvent,
+    type AtlasState,
+} from '../../../packages/domain/agent/src/atlas';
 import { isEditableTarget } from 'spacegraphjs/utils';
 import {
     createInstrumentKit,
@@ -75,6 +84,7 @@ import {
     type ReadingController,
     type ReadingNode,
 } from 'spacegraphjs/reading';
+import { playRepresentationChanges } from 'spacegraphjs/representations';
 import { checkQuality, type QualityReport } from 'spacegraphjs/quality';
 import { DEFAULT_RUNG_IDS, representationChanges } from 'spacegraphjs/representations';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
@@ -796,6 +806,11 @@ export class DurableHost {
     #windowMax = false;
     #teamEnabled = false;
     #teamState: TeamState = { active: '', scope: [], log: [] };
+    #atlasEnabled = false;
+    #atlasState: AtlasState = { total: 1, prefix: 1, playing: false };
+    #atlasHandle: TerminalReplayHandle | undefined;
+    #atlasEventsCache: readonly AtlasEvent[] = [];
+    #atlasScrubbing = false;
     #hoveredLine: string | undefined;
     #consoleModel: RenderModel = { nodes: [], edges: [] };
     #a11yLayer: AccessibilityLayer | undefined;
@@ -899,6 +914,7 @@ export class DurableHost {
         if (this.#labs) {
             this.#mountLabTaskbar();
             this.#mountLabTeam();
+            this.#mountLabAtlas();
         }
         this.renderGlossary();
         this.renderLegend();
@@ -1183,6 +1199,7 @@ export class DurableHost {
         if (this.#labs) {
             this.#renderLabTaskbar(tab.id);
             this.#renderTeam();
+            this.#renderAtlas();
         }
         if (consoleDiff) this.#renderConsoleDiff(full);
         this.opsCount = kernel.nodes.length + kernel.edges.length;
@@ -2385,6 +2402,239 @@ export class DurableHost {
         this.announce(`Approved ${tabID}`);
     }
 
+    toggleAtlas(): boolean {
+        if (!this.#labs) return false;
+        this.#atlasEnabled = !this.#atlasEnabled;
+        const total = Math.max(1, this.#atlasEvents().length);
+        this.#atlasState = { total, prefix: total, playing: false };
+        const panel = document.getElementById('lab-atlas');
+        if (panel) panel.hidden = !this.#atlasEnabled;
+        this.announce(this.#atlasEnabled ? 'Session atlas on' : 'Session atlas off');
+        this.#renderAtlas();
+        return this.#atlasEnabled;
+    }
+
+    atlasState(): AtlasState {
+        return this.#atlasState;
+    }
+
+    #mountLabAtlas(): void {
+        const panel = document.createElement('section');
+        panel.id = 'lab-atlas';
+        panel.hidden = true;
+        panel.setAttribute('aria-label', 'Session atlas');
+        el('stage').append(panel);
+        panel.addEventListener('input', (event) => {
+            if (
+                !(event.target instanceof HTMLInputElement) ||
+                event.target.dataset['atlasScrub'] === undefined
+            )
+                return;
+            this.#atlasHandle?.cancel();
+            const value = Number(event.target.value);
+            this.#atlasState = reduceAtlas(this.#atlasState, { type: 'prefix', value });
+            this.#scrubAtlas(value);
+            this.#renderAtlas();
+        });
+        panel.addEventListener('click', (event) => {
+            const target = event.target as HTMLElement;
+            const chapter = target.closest<HTMLElement>('[data-atlas-chapter]');
+            if (chapter?.dataset['atlasChapter']) {
+                this.#atlasChapter(chapter.dataset['atlasChapter']);
+                return;
+            }
+            const action = target.closest<HTMLElement>('[data-atlas-action]');
+            if (action?.dataset['atlasAction']) this.#atlasAction(action.dataset['atlasAction']);
+        });
+    }
+
+    #atlasEvents(): readonly AtlasEvent[] {
+        if (this.#asOf !== undefined && this.#atlasEventsCache.length > 0)
+            return this.#atlasEventsCache;
+        const tab = this.registry.active();
+        if (!tab) return [];
+        const kernel = tabKernel(tab);
+        const nodes = kernel.nodes.filter((node) => TRANSCRIPT_KINDS.has(node.kind));
+        const events = nodes.map((node, index) => {
+            const parent = kernel.edges.find(
+                (edge) => edge.kind === 'orders' && edge.target === node.id,
+            );
+            const label = labelForNode(node);
+            return {
+                id: node.id,
+                kind: node.kind,
+                status: String(node.data?.['status'] ?? 'complete'),
+                role: typeof node.data?.['role'] === 'string' ? node.data['role'] : '',
+                text: dataText(node) || label || node.kind,
+                turn: typeof node.data?.['turn'] === 'number' ? node.data['turn'] : 1,
+                at: typeof node.data?.['at'] === 'number' ? node.data['at'] : index + 1,
+                label,
+                parent: parent?.source ?? (index > 0 ? nodes[index - 1]!.id : undefined),
+            };
+        });
+        if (this.#asOf === undefined && !this.#atlasScrubbing) this.#atlasEventsCache = events;
+        return events;
+    }
+
+    #renderAtlas(): void {
+        const panel = document.getElementById('lab-atlas');
+        if (!panel || !this.#atlasEnabled) return;
+        const events = this.#atlasEvents();
+        if (
+            !this.#atlasScrubbing &&
+            this.#asOf === undefined &&
+            events.length !== this.#atlasState.total
+        ) {
+            const total = Math.max(1, events.length);
+            this.#atlasState = { total, prefix: total, playing: false };
+        }
+        const model = atlasModel(events);
+        panel.innerHTML = sessionAtlasHTML({
+            model,
+            state: this.#atlasState,
+            stats: atlasStats(events, model.chapters, this.#atlasState.prefix),
+        });
+    }
+
+    #scrubAtlas(value: number): void {
+        this.#atlasScrubbing = true;
+        this.scrubTo(value === this.#atlasState.total ? undefined : value);
+        this.#atlasScrubbing = false;
+        this.announce(
+            value === this.#atlasState.total
+                ? 'Session atlas returned to present'
+                : `Session atlas as of event ${value}`,
+        );
+    }
+
+    #atlasChapter(id: string): void {
+        const events = this.#atlasEvents();
+        const chapter = atlasModel(events).chapters.find((entry) => entry.id === id);
+        if (!chapter) return;
+        const value = events.findIndex((event) => event.id === chapter.ids.at(-1)) + 1;
+        this.#atlasHandle?.cancel();
+        this.#atlasState = reduceAtlas(this.#atlasState, { type: 'prefix', value });
+        this.#scrubAtlas(value);
+        this.announce(`Session chapter: ${chapter.label}`);
+        this.#renderAtlas();
+    }
+
+    #atlasPlay(): void {
+        this.#atlasHandle?.cancel();
+        const events = this.#atlasEvents().map((event) => ({
+            id: event.id,
+            kind: event.kind,
+            status: event.status,
+            label: event.label,
+            text: event.text,
+            role: event.role,
+            turn: event.turn,
+            at: event.at,
+        }));
+        this.#atlasState = reduceAtlas(this.#atlasState, { type: 'play' });
+        this.#atlasHandle = playTerminalReplay(
+            terminalReplaySteps(events),
+            (visible) => {
+                this.#atlasState = reduceAtlas(this.#atlasState, {
+                    type: 'prefix',
+                    value: visible.length,
+                });
+                this.#renderAtlas();
+            },
+            {
+                reducedMotion: reducedMotion(),
+                onStep: (step, total) => {
+                    if (step !== total) return;
+                    this.#atlasState = reduceAtlas(this.#atlasState, { type: 'stop' });
+                    this.#atlasScrubbing = true;
+                    this.scrubTo(undefined);
+                    this.#atlasScrubbing = false;
+                    this.announce(`Replayed ${total} committed events`);
+                    this.#renderAtlas();
+                },
+            },
+        );
+    }
+
+    #atlasAction(action: string): void {
+        const separator = action.indexOf(':');
+        const kind = separator < 0 ? action : action.slice(0, separator);
+        const args = separator < 0 ? [] : action.slice(separator + 1).split('|');
+        if (kind === 'play') {
+            this.#atlasPlay();
+            return;
+        }
+        if (kind === 'stop') {
+            this.#atlasHandle?.cancel();
+            this.#atlasState = reduceAtlas(this.#atlasState, { type: 'stop' });
+            this.#atlasScrubbing = true;
+            this.scrubTo(undefined);
+            this.#atlasScrubbing = false;
+            this.announce('Session replay stopped');
+            this.#renderAtlas();
+            return;
+        }
+        if (kind === 'close') {
+            this.#atlasState = reduceAtlas(this.#atlasState, { type: 'close' });
+            this.announce('Event window closed');
+            this.#renderAtlas();
+            return;
+        }
+        if (kind === 'select' && args[0]) {
+            this.#atlasState = reduceAtlas(this.#atlasState, { type: 'select', id: args[0] });
+            this.focus(args[0]);
+            this.#renderAtlas();
+            return;
+        }
+        if (kind === 'window' && args[0]) {
+            this.#atlasState = reduceAtlas(this.#atlasState, { type: 'window', id: args[0] });
+            this.announce(`Event window opened: ${args[0]}`);
+            this.#renderAtlas();
+            return;
+        }
+        if (kind === 'travel' && args[0] && args[1]) this.#travelAtlas(args[0], args[1]);
+    }
+
+    #travelAtlas(fromID: string, toID: string): void {
+        const from = this.#positions.get(fromID);
+        const to = this.#positions.get(toID);
+        if (!from || !to) {
+            this.announce('Causal edge is out of view');
+            return;
+        }
+        this.#atlasState = reduceAtlas(this.#atlasState, { type: 'travel', from: fromID, to: toID });
+        const a = { x: from.x, y: from.y };
+        const b = { x: to.x, y: to.y };
+        const change = {
+            id: `atlas-travel:${fromID}:${toID}`,
+            from: fromID,
+            to: toID,
+            duration: 0.65,
+        };
+        let previous = performance.now();
+        const playback = playRepresentationChanges(
+            [change],
+            (_, t) => {
+                const point = atlasTravel(a, b, t);
+                this.#moveCamera(point);
+            },
+            { ease: 'power2.inOut', reducedMotion: reducedMotion() },
+        );
+        const step = (now: number): void => {
+            const dt = (now - previous) / 1000;
+            previous = now;
+            if (!playback.done) {
+                playback.advance(dt);
+                requestAnimationFrame(step);
+                return;
+            }
+            this.#atlasState = reduceAtlas(this.#atlasState, { type: 'arrive' });
+            this.announce(`Travelled ${fromID} to ${toID}`);
+            this.#renderAtlas();
+        };
+        requestAnimationFrame(step);
+    }
+
     #syncConsoleOverlays(): void {
         const tab = this.registry.active();
         if (!tab) return;
@@ -3302,6 +3552,8 @@ export class DurableHost {
             historyForward: () => this.historyForward(),
             setFeedID: (id: string) => this.setFeedID(id),
             scrubTo: (seq?: number) => this.scrubTo(seq),
+            toggleAtlas: () => this.toggleAtlas(),
+            atlasState: () => this.atlasState(),
             digest: () => this.digest(),
             instruments: () => this.instruments(),
             density: () => ({ ...this.#density }),

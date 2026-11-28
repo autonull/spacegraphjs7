@@ -1,10 +1,11 @@
 # TODO20 — From experiments to agentic development surfaces
 
-> **Status: O1 + O2 + O3 landed (2026-11-28).** Extends `TODO19.md` (complete). This plan records
-> the experiment methodology developed across seventeen demos and turns the strongest results into a
-> promotion queue. O1 (promotion template + labs index), O2 (`GraphWindow`) and O3 (team view with
-> committed steer/approve facts) are in place, along with the cheap process upgrades in §12. O4–O8
-> have not landed. Continue from §11.
+> **Status: O1 + O2 + O3 + O4 landed (2026-11-28).** Extends `TODO19.md` (complete). This plan
+> records the experiment methodology developed across seventeen demos and turns the strongest
+> results into a promotion queue. O1 (promotion template + labs index), O2 (`GraphWindow`), O3
+> (team view with committed steer/approve facts) and O4 (session atlas bound to the existing
+> time-travel view) are in place, along with the cheap process upgrades in §12. O5–O8 have not
+> landed. Continue from §11.
 
 ## 0. Outcome
 
@@ -195,8 +196,8 @@ O1 ──► O2 ──► O3 ──► O7
 ## 7. Definition of done and verification
 
 Per outcome: pure primitive + unit test in `test/`; package component with typed props; second
-consumer in Pi Durable; E2E in `app/pi-durable/tests/`; capture only when visual shape changes;
-progress recorded in §10.
+consumer in Pi Durable; E2E in `app/pi-durable/tests/` plus a demo spec wired to a root `test:*`
+script; capture only when visual shape changes; progress recorded in §10.
 
 - Tier 1: package `typecheck`, `pnpm --filter pi-durable check:fast`, `pnpm run test:exports`.
 - Tier 2: `pnpm run check`, `pnpm test` from the repository root.
@@ -225,6 +226,11 @@ All seventeen demos are in `app/demo/html/**`; the shared experiment style is
 `docs/console-experiments.md`. The generated registry lists 59 HTML demos (58 experiments/hosts plus
 the labs index). Promotion work lands in small commits; O2 is the first library/package change.
 
+- **O4 (2026-11-28):** `packages/domain/agent/src/atlas.ts` is the pure session model: chapters,
+  causal edges, committed-prefix stats, a scrubber, event chrome, window and travel transitions.
+  Demo 17 and Pi Durable labs mode (`a`) are the two consumers. The host derives events from
+  committed kernel nodes and binds the prefix to `scrubTo`, so replay is a read model over the
+  existing time-travel view. Pattern card: `packages/domain/agent/ATLAS.md`.
 - **O3 (2026-11-28):** `packages/domain/agent/src/team.ts` is the pure team model, scope aggregation
   and state reducer; demo 16 and Pi Durable labs mode (`t`) are the two consumers. Steer commits an
   `action` node plus an `orders` edge; approval re-commits the existing `task` fact. Both E2E specs
@@ -264,16 +270,17 @@ the labs index). Promotion work lands in small commits; O2 is the first library/
 | 1 | Promotion template + labs index | done (O1) | `docs/promotion-template.md` + labs index |
 | 2 | `GraphWindow` | done (O2) | Pi Durable `?labs=1`, demo 14 |
 | 3 | `AgentTeamView`, `SteerEdge`, `TeamScope` | done (O3) | Pi Durable `?labs=1` team panel, demo 16 |
-| 4 | `SessionAtlas`, `ReplayScrubber` | open | Pi Durable session view, demo 17 |
+| 4 | `SessionAtlas`, `ReplayScrubber` | done (O4) | Pi Durable `?labs=1` atlas panel (`a`), demo 17 |
 | 5 | `InnerWidget`, `FoldableNode` | open | Pi Durable agent card, demos 10/15 |
 | 6 | Density kit (`GatherFocus`, `GraphLens`, `GraphLasso`, `ZoomMorphLayout`) | open | Pi Durable team view, demos 8/9/11/12 |
 | 7 | Multi-agent tabs, fork and diff | open | Pi Durable tabs, demo 16 |
 | 8 | Ergonomics and a11y parity | open | every promoted component |
 
-Gate status: `JOB:` lines, Lift links and path resolution are enforced by `check:labs`. The promoted
-`GraphWindow` has keyboard buttons, a reduced-motion CSS snap and E2E coverage in both consumers.
-Keyboard and reduced-motion coverage is **not** universal across the other sixteen demos; §12 tracks
-it as a per-component promotion gate. §10 is the authoritative queue status.
+Gate status: `JOB:` lines, Lift links and path resolution are enforced by `check:labs`. Each promoted
+component (`GraphWindow`, the team panel, the session atlas) has native keyboard buttons, a
+reduced-motion CSS snap and E2E coverage in both consumers. Keyboard and reduced-motion coverage is
+**not** universal across the other demos; §12 tracks it as a per-component promotion gate. §10 is the
+authoritative queue status.
 
 ## 11. Fresh-session handoff
 
@@ -287,9 +294,10 @@ Read these first, in order:
    primitives.
 5. `AGENTS.md` at both repo roots for the repository rules.
 
-Suggested first move: **O4** (O1–O3 are done). Do not start by rewriting Pi Durable's host; extract a
-small pure model from demo 14, give it a unit test and a typed component, then wire one Pi Durable
-view. Keep every experiment runnable until its second consumer passes E2E.
+Suggested first move: **O5** (O1–O4 are done). Do not start by rewriting Pi Durable's host; extract a
+small pure model from demos 10/15, give it a unit test and a typed component, then wire one Pi
+Durable view. Keep every experiment runnable until its second consumer passes E2E. O6 (density kit)
+can follow O3 without O5; O7 still needs O4, and O8 stays a per-component gate throughout.
 
 Before any promotion, decide explicitly: *which committed fact does this read model derive from?*
 If the answer is "none", the component is decoration and should stay a demo.
@@ -318,17 +326,17 @@ becomes a durable, reusable capability instead of a good screenshot.
 
 Landed with O1: **job statement** (`JOB:` in all seventeen demo headers), **API smell journal** and
 **rejected-ideas log** (`docs/console-experiments.md`), and **executable docs** (`pnpm run check:labs`).
-Remaining priorities: **keyboard/reduced-motion gate** — needs a real keyboard path and a reduced-motion
-snap per demo, not a source-text assertion, so enforce it when each component is promoted — and **labs
-mode in Pi Durable** — two promoted patterns now run behind `?labs=1` (`GraphWindow` and the team
-panel), both against committed kernel facts, so labs mode is ready to retire once O4 lands. The
-keyboard gate must still be extended to the remaining demos rather than inferred from a source-text
-check.
+Remaining priority: **keyboard/reduced-motion gate** — needs a real keyboard path and a reduced-motion
+snap per demo, not a source-text assertion, so enforce it when each component is promoted. The
+keyboard gate must be extended to the remaining demos rather than inferred from a source-text check.
+**Labs mode in Pi Durable** now runs three promoted patterns behind `?labs=1`: `GraphWindow`, the
+team panel and the session atlas (`a`), all against committed kernel facts. With O4 landed, labs mode
+is no longer a prerequisite for promotion; keep it as the host surface for the remaining outcomes.
 
 ## 13. Closure
 
 This plan closes when each promoted component has two consumers, an E2E test and an a11y path, and
-the lab demos still pass. O1 is complete; §10 is the authoritative queue status. Do not mark a
+the lab demos still pass. O1–O4 are complete; §10 is the authoritative queue status. Do not mark a
 promotion done until its second consumer and E2E exist. To re-verify, run §7 in order. Regenerate
 captures only when visual shape changes; re-check the demo registry after adding or removing any
 HTML page.

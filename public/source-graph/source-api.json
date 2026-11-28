@@ -1683,6 +1683,147 @@
       ]
     },
     {
+      "id": "packages/domain/agent/src/atlas",
+      "path": "packages/domain/agent/src/atlas.ts",
+      "packageId": "@spacegraphjs/agent",
+      "symbols": [
+        {
+          "name": "AtlasEvent",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 1,
+          "signature": "export interface AtlasEvent {"
+        },
+        {
+          "name": "AtlasChapter",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 13,
+          "signature": "export interface AtlasChapter {"
+        },
+        {
+          "name": "AtlasEdge",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 20,
+          "signature": "export interface AtlasEdge {"
+        },
+        {
+          "name": "AtlasModel",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 27,
+          "signature": "export interface AtlasModel {"
+        },
+        {
+          "name": "AtlasStats",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 33,
+          "signature": "export interface AtlasStats {"
+        },
+        {
+          "name": "AtlasPoint",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 40,
+          "signature": "export interface AtlasPoint {"
+        },
+        {
+          "name": "AtlasState",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 45,
+          "signature": "export interface AtlasState {"
+        },
+        {
+          "name": "AtlasAction",
+          "kind": "type",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 54,
+          "signature": "export type AtlasAction ="
+        },
+        {
+          "name": "reduceAtlas",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 67,
+          "signature": "reduceAtlas = (state: AtlasState, action: AtlasAction): AtlasState => {"
+        },
+        {
+          "name": "atlasChapters",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 98,
+          "signature": "atlasChapters = (events: readonly AtlasEvent[]): readonly AtlasChapter[] => {"
+        },
+        {
+          "name": "atlasEdges",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 116,
+          "signature": "atlasEdges = (events: readonly AtlasEvent[]): readonly AtlasEdge[] =>"
+        },
+        {
+          "name": "atlasModel",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 130,
+          "signature": "atlasModel = (events: readonly AtlasEvent[]): AtlasModel => ({"
+        },
+        {
+          "name": "atlasVisible",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 136,
+          "signature": "atlasVisible = (events: readonly AtlasEvent[], prefix: number) =>"
+        },
+        {
+          "name": "atlasStats",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 139,
+          "signature": "atlasStats = ("
+        },
+        {
+          "name": "atlasTravel",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 153,
+          "signature": "atlasTravel = (from: AtlasPoint, to: AtlasPoint, t: number): AtlasPoint => {"
+        },
+        {
+          "name": "ReplayScrubberProps",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 165,
+          "signature": "export interface ReplayScrubberProps {"
+        },
+        {
+          "name": "replayScrubberHTML",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 171,
+          "signature": "replayScrubberHTML = ({ prefix, total, playing }: ReplayScrubberProps): string =>"
+        },
+        {
+          "name": "SessionAtlasProps",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 179,
+          "signature": "export interface SessionAtlasProps {"
+        },
+        {
+          "name": "sessionAtlasHTML",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/atlas",
+          "line": 185,
+          "signature": "sessionAtlasHTML = ({ model, state, stats }: SessionAtlasProps): string => {"
+        }
+      ],
+      "imports": []
+    },
+    {
       "id": "packages/domain/agent/src/facets",
       "path": "packages/domain/agent/src/facets.ts",
       "packageId": "@spacegraphjs/agent",
@@ -1710,6 +1851,14 @@
       "packageId": "@spacegraphjs/agent",
       "symbols": [],
       "imports": [
+        {
+          "specifier": "./atlas",
+          "fileId": "packages/domain/agent/src/atlas",
+          "names": [
+            "*"
+          ],
+          "kind": "export"
+        },
         {
           "specifier": "./facets",
           "fileId": "packages/domain/agent/src/facets",

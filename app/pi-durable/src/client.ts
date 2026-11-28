@@ -1,5 +1,6 @@
 import '../../../packages/window-manager/src/graph-window.css';
 import '../../../packages/domain/agent/src/team.css';
+import '../../../packages/domain/agent/src/atlas.css';
 import { addEdge, addNode } from '@spacegraphjs/kernel';
 import { mountComposer, type ComposerController } from 'spacegraphjs/composer';
 import {
@@ -454,6 +455,7 @@ const KEY_BINDINGS: readonly KeyBinding[] = [
       run: () => togglePresentation() },
     { keys: 'g', label: 'Cycle views', match: plainKey('g'), run: () => host.cycleView() },
     { keys: 't', label: 'Toggle agent team (labs)', match: plainKey('t'), run: () => host.toggleTeam() },
+    { keys: 'a', label: 'Toggle session atlas (labs)', match: plainKey('a'), run: () => host.toggleAtlas() },
     { keys: 'f', label: 'Focus selection', match: plainKey('f'), run: focusSelection },
     { keys: '0', label: 'Reset view', match: plainKey('0'), run: () => host.resetView() },
     { keys: 'm', label: 'Reset muting filters', match: plainKey('m'), run: () => host.resetFilters() },
