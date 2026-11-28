@@ -98,6 +98,7 @@
                 width: 100%; height: 100%; box-sizing: border-box; overflow: hidden; color: var(--text);
                 overflow-wrap: anywhere; padding: 0 8px; border: 1px solid transparent; border-radius: 0;
                 font: 13px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+            .sg-terminal-line { transition: border-color .14s ease-out, background-color .14s ease-out; }
             .sg-terminal-line:hover, .sg-terminal-line:focus-visible {
                 border-color: var(--line); background: color-mix(in srgb, var(--panel) 70%, transparent); }
             .sg-terminal-line:focus-visible { outline: 1px solid var(--line-accent); outline-offset: -2px; }
@@ -105,18 +106,37 @@
             .sg-terminal-line .tg-text { min-width: 0; color: var(--text); white-space: pre-wrap; }
             .sg-terminal-line .tg-text[dir='rtl'] { direction: rtl; text-align: right; flex: 1; }
             .sg-terminal-line .tg-glyph-only { color: var(--line-accent); font-size: 16px; line-height: 1; }
-            .sg-terminal-line .tg-glyph-label { color: var(--text); opacity: .85; font-size: 12px;
-                letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-            .sg-grow { font: 11px/1.4 ui-monospace, monospace; color: var(--text); }
-            .sg-grow-head { display: flex; justify-content: space-between; align-items: center;
-                padding-bottom: 4px; border-bottom: 1px solid var(--line); }
-            .sg-grow-close { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 16px; }
-            .sg-grow-canvas { position: relative; height: 210px; margin-top: 6px; }
-            .sg-grow-canvas svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-            .sg-grow-canvas svg line { stroke: var(--line); stroke-width: .7; }
-            .sg-grow-chip { position: absolute; overflow: hidden; padding: 2px 4px; font: 10px/1.2 monospace;
-                color: var(--text); background: var(--panel-2); border: 1px solid var(--line);
-                border-radius: 3px; cursor: pointer; text-overflow: ellipsis; white-space: nowrap; }
+            .sg-terminal-line .tg-glyph-label { color: var(--text); font-size: 12px;
+                letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .sg-grow { --line-accent: var(--accent); height: 100%; box-sizing: border-box;
+                font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                color: var(--text); animation: sg-grow-in .18s ease-out both; }
+            @keyframes sg-grow-in { from { opacity: 0; transform: translateY(4px); } }
+            .sg-grow-head { display: flex; align-items: baseline; gap: 8px; padding-bottom: 5px;
+                border-bottom: 1px solid var(--line); }
+            .sg-grow-head strong { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                font-weight: 600; letter-spacing: .02em; }
+            .sg-grow-count { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+            .sg-grow-close { border: 0; padding: 0 2px; background: none; color: var(--muted);
+                cursor: pointer; font-size: 15px; line-height: 1; }
+            .sg-grow-close:hover, .sg-grow-close:focus-visible { color: var(--text); }
+            .sg-grow-canvas { position: relative; height: calc(100% - 24px); margin-top: 4px; border-radius: 4px;
+                background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent) 6%, transparent), transparent 65%); }
+            .sg-grow-canvas svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+            .sg-grow-canvas svg line { stroke: color-mix(in srgb, var(--accent) 55%, var(--line));
+                stroke-width: .6; marker-end: url(#sg-grow-arrow); }
+            .sg-grow-chip[data-kind='tool'], .sg-grow-chip[data-kind='action'] { --line-accent: #6cc7d4; }
+            .sg-grow-chip[data-kind='approval'] { --line-accent: #b48ead; }
+            .sg-grow-chip[data-kind='error'] { --line-accent: #e06c75; }
+            .sg-grow-chip { position: absolute; display: flex; align-items: center; overflow: hidden;
+                padding: 0 4px; font: 11px/1.2 ui-monospace, monospace; text-align: left;
+                color: var(--text); background: color-mix(in srgb, var(--panel) 92%, transparent);
+                border: 1px solid var(--line); border-left: 2px solid var(--line-accent);
+                border-radius: 3px; cursor: pointer; text-overflow: ellipsis; white-space: nowrap;
+                animation: sg-chip-in .2s ease-out both; animation-delay: calc(var(--i, 0) * 24ms); }
+            @keyframes sg-chip-in { from { opacity: 0; transform: scale(.94); } }
+            .sg-grow-chip:hover, .sg-grow-chip:focus-visible { border-color: var(--accent);
+                background: color-mix(in srgb, var(--accent) 12%, var(--panel)); outline: none; }
             .sg-terminal-line[data-role='user'] { --line-accent: #7aa2f7; font-weight: 600;
                 background: color-mix(in srgb, #7aa2f7 5%, transparent); }
             .sg-terminal-line[data-role='assistant'] { --line-accent: #7ec87e; }
@@ -442,6 +462,9 @@
     </head>
     <body>
         <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute;overflow:hidden">
+            <marker id="sg-grow-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+                <path d="M0 0 L8 4 L0 8 Z" fill="var(--line-accent, var(--muted))" />
+            </marker>
             <symbol id="i-survey" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="10" height="10" rx="1" transform="rotate(45 12 12)"/><rect x="10" y="10" width="4" height="4"/></symbol>
             <symbol id="i-views" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></symbol>
             <symbol id="i-rung" viewBox="0 0 24 24"><path d="M3 20h18M6 20V9M12 20V4M18 20v-7"/></symbol>

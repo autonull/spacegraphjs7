@@ -1,6 +1,15 @@
 import { expect, test } from '@playwright/test';
 import { bootConsole, call, settle } from './boot';
 
+test('growth is reachable by keyboard and collapses on Escape', async ({ page }) => {
+    const errors = await bootConsole(page);
+    await page.keyboard.press('x');
+    await expect(page.locator('#canvas .sg-grow')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#canvas .sg-grow')).toHaveCount(0);
+    expect(errors).toEqual([]);
+});
+
 test('the console can be embedded as a node in the larger graph', async ({ page }) => {
     const errors = await bootConsole(page);
     await call(page, 'setView', 'graph');

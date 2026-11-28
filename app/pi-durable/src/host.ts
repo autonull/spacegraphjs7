@@ -813,7 +813,10 @@ export class DurableHost {
             const lod = terminalLODFor(this.#scale.normalizedAt(zoom));
             if (!this.#lodOverride && lod !== this.#consoleLOD) {
                 this.#consoleLOD = lod;
-                if (this.#viewName === 'transcript') this.#terminalController?.refresh();
+                if (this.#viewName === 'transcript') {
+                    this.#terminalController?.refresh();
+                    requestAnimationFrame(() => this.#fadeConsoleLines());
+                }
             }
             this.regrade();
             this.renderOverview();
@@ -1969,6 +1972,7 @@ export class DurableHost {
         }
         Object.assign(this.#consolePresentation, { zoomLOD: true });
         this.#terminalController?.refresh();
+        requestAnimationFrame(() => this.#fadeConsoleLines());
         this.announce(`Console fidelity: ${this.#consoleLOD}`);
         return this.#consoleLOD;
     }
@@ -2026,6 +2030,10 @@ export class DurableHost {
         );
     }
 
+    consoleGrown(): boolean {
+        return Boolean(this.#growth);
+    }
+
     /** Grow a bounded graph from a terminal line; calling again with the same seed closes it. */
     consoleGrow(id?: string): boolean {
         const seed = id ?? this.#terminalController?.tail();
@@ -2074,11 +2082,23 @@ export class DurableHost {
             .join('');
         const chips = growth.placements
             .map(
-                ({ chip, left, top, width, height }) =>
-                    `<button type="button" class="sg-grow-chip" data-grow-id="${escapeHTML(chip.id)}" title="${escapeHTML(chip.label)}" style="left:${left}%;top:${top}%;width:${width}%;height:${height}%">${escapeHTML(chip.label)}</button>`,
+                ({ chip, left, top, width, height }, index) =>
+                    `<button type="button" class="sg-grow-chip" data-grow-id="${escapeHTML(chip.id)}" data-kind="${escapeHTML(chip.kind)}" title="${escapeHTML(chip.label)} · ${escapeHTML(chip.kind)}" style="left:${left}%;top:${top}%;width:${width}%;height:${height}%;--i:${index}">${escapeHTML(chip.label)}</button>`,
             )
             .join('');
-        return `<div class="sg-grow" data-seed="${escapeHTML(growth.seed)}"><div class="sg-grow-head"><strong>${escapeHTML(growth.seed)}</strong><button type="button" class="sg-grow-close" aria-label="Collapse graph">×</button></div><div class="sg-grow-canvas"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${spokes}</svg>${chips}</div></div>`;
+        return `<div class="sg-grow" data-seed="${escapeHTML(growth.seed)}"><div class="sg-grow-head"><strong>${escapeHTML(growth.seed)}</strong><span class="sg-grow-count">${growth.chips.length} links</span><button type="button" class="sg-grow-close" aria-label="Collapse graph">×</button></div><div class="sg-grow-canvas"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${spokes}</svg>${chips}</div></div>`;
+    }
+
+    #fadeConsoleLines(): void {
+        if (reducedMotion() || this.#viewName !== 'transcript') return;
+        el('canvas')
+            .querySelectorAll<HTMLElement>('.sg-terminal-line')
+            .forEach((node) =>
+                node.animate?.([{ opacity: 0.55 }, { opacity: 1 }], {
+                    duration: 180,
+                    easing: 'ease-out',
+                }),
+            );
     }
 
     #consoleLayout(lines = this.#terminalController?.lines() ?? []) {
@@ -2762,6 +2782,7 @@ export class DurableHost {
             consoleBand: () => this.#terminalController?.band() ?? DEFAULT_RUNG_IDS[0],
             consoleLOD: (band?: string) => this.consoleLOD(band),
             consoleGrow: (id?: string) => this.consoleGrow(id),
+            consoleGrown: () => this.consoleGrown(),
             consoleEmbed: (enabled?: boolean) => this.consoleEmbed(enabled),
             consoleChapters: () => terminalChapters(lines()),
             consoleReplaySteps: () => terminalReplaySteps(lines()).length,

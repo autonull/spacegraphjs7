@@ -400,6 +400,10 @@ const closePriority = (): void => {
         host.exitThread();
         return;
     }
+    if (host.consoleGrown()) {
+        host.consoleGrow();
+        return;
+    }
     if (host.focusLensActive()) {
         host.exitFocusLens();
         return;
@@ -450,6 +454,8 @@ const KEY_BINDINGS: readonly KeyBinding[] = [
     { keys: '0', label: 'Reset view', match: plainKey('0'), run: () => host.resetView() },
     { keys: 'm', label: 'Reset muting filters', match: plainKey('m'), run: () => host.resetFilters() },
     { keys: 'e', label: 'Focus neighbourhood', match: plainKey('e'), run: () => host.toggleFocusLens() },
+    { keys: 'x', label: 'Grow graph from console line', match: plainKey('x'),
+      run: () => { host.setView('transcript'); host.consoleGrow(); } },
     { keys: 'Ctrl+Enter', label: 'Cancel prompt', whileTyping: true,
       match: (event) => (event.ctrlKey || event.metaKey) && event.key === 'Enter',
       run: () => void cancelPrompt() },
