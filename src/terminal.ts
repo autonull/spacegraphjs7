@@ -1277,18 +1277,34 @@ export const terminalGrow = (
 };
 
 export type TerminalExportFormat = 'markdown' | 'json';
+export type TerminalExcerptOptions = { readonly exact?: boolean };
 
 /** Lines addressed by a range, in linear order; an absent range exports the whole console. */
 export const terminalExcerpt = (
     lines: readonly TerminalLine[],
     range?: TerminalRange,
     order: ReadonlyMap<string, number> = terminalOrder(lines),
+    { exact = false }: TerminalExcerptOptions = {},
 ): readonly TerminalLine[] => {
     if (!range) return lines;
     const byID = new Map(lines.map((line) => [line.id, line] as const));
-    return terminalRangeIDs(range, order)
+    const addressed = terminalRangeIDs(range, order)
         .map((id) => byID.get(id))
         .filter((line): line is TerminalLine => line !== undefined);
+    if (!exact) return addressed;
+    const normalized = terminalRange(range.anchor, range.focus, order);
+    return addressed.map((line) => {
+        const from =
+            line.id === normalized.anchor.nodeID
+                ? clamp(normalized.anchor.offset, 0, line.text.length)
+                : 0;
+        const to =
+            line.id === normalized.focus.nodeID
+                ? clamp(normalized.focus.offset, 0, line.text.length)
+                : line.text.length;
+        const text = line.text.slice(from, Math.max(from, to));
+        return text === line.text ? line : { ...line, text };
+    });
 };
 
 /** Shareable excerpt of a console range; ids and turn numbers stay stable across exports. */
@@ -1297,12 +1313,26 @@ export const terminalExport = (
     range: TerminalRange | undefined,
     format: TerminalExportFormat,
     order: ReadonlyMap<string, number> = terminalOrder(lines),
+    options: TerminalExcerptOptions = {},
 ): string => {
-    const excerpt = terminalExcerpt(lines, range, order);
-    if (format === 'json')
+    const excerpt = terminalExcerpt(lines, range, order, options);
+    if (format === 'json') {
+        const flat = terminalFlatten(excerpt);
+        const spans = new Map(flat.spans.map((span) => [span.lineID, span] as const));
         return JSON.stringify(
-            excerpt.map(({ id, kind, status, text, turn }) => ({ id, kind, status, text, turn })),
+            excerpt.map((line) => ({
+                id: line.id,
+                kind: line.kind,
+                status: line.status,
+                role: line.role,
+                at: line.at,
+                turn: line.turn,
+                text: line.text,
+                start: spans.get(line.id)!.start,
+                end: spans.get(line.id)!.end,
+            })),
         );
+    }
     return excerpt
         .map((line) => `- ${lineGlyph(line)} ${line.text} \`${line.id}\``)
         .join('\n');
@@ -1317,6 +1347,18 @@ export const terminalMoveLine = (
     if (index < 0) return point;
     const next = clamp(index + delta, 0, ids.length - 1);
     return { nodeID: ids[next]!, offset: next === index ? point.offset : 0 };
+};
+
+/** Move a character point across flat text, using line boundaries at each separator. */
+export const terminalMovePoint = (
+    flat: TerminalFlatText,
+    point: TerminalPoint,
+    delta: number,
+): TerminalPoint => {
+    const at = terminalIndexOfPoint(flat, point);
+    if (at === undefined) return point;
+    const target = clamp(at + delta, 0, flat.text.length);
+    return terminalPointAtIndex(flat, target) ?? point;
 };
 
 export const STATUS_GLYPHS: Readonly<Record<string, string>> = {
@@ -1717,6 +1759,8 @@ export type TerminalA11yOptions = {
     /** Current anchored range; Shift+Arrow extends it from the original anchor. */
     readonly selection?: () => TerminalRange | undefined;
     readonly onSelect?: (range: TerminalRange) => void;
+    /** Committed lines; enables character-precise Shift+ArrowLeft/Right movement. */
+    readonly lines?: () => readonly TerminalLine[];
 };
 
 /** Roving focus, list roles and announced line navigation over scene-rendered nodes. */
@@ -1740,9 +1784,35 @@ export const mountTerminalA11y = (
     const onKeyDown = (event: KeyboardEvent): void => {
         if (isEditableTarget(event.target)) return;
         const target = (event.target as HTMLElement | null)?.closest<HTMLElement>(selector);
-        if (!target || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
-        event.preventDefault();
+        if (!target) return;
         const nodes = [...container.querySelectorAll<HTMLElement>(selector)];
+        const ids = nodes.flatMap((entry) => {
+            const id = entry.dataset['nodeId'];
+            return id ? [id] : [];
+        });
+        const order = new Map(ids.map((id, position) => [id, position] as const));
+        if (
+            event.shiftKey &&
+            (event.key === 'ArrowLeft' || event.key === 'ArrowRight') &&
+            options.onSelect &&
+            options.lines
+        ) {
+            event.preventDefault();
+            const lines = options.lines();
+            const selection = options.selection?.();
+            const current = selection?.focus ?? { nodeID: target.dataset['nodeId']!, offset: 0 };
+            const focus = terminalMovePoint(
+                terminalFlatten(lines),
+                current,
+                event.key === 'ArrowRight' ? 1 : -1,
+            );
+            const range = terminalRange(selection?.anchor ?? current, focus, order);
+            options.onSelect(range);
+            say(`Selected ${terminalRangeText(range, lines, order)} characters`);
+            return;
+        }
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
         const index = nodes.indexOf(target);
         const next =
             event.key === 'Home'
@@ -1753,11 +1823,6 @@ export const mountTerminalA11y = (
         const node = nodes[next];
         if (!node?.dataset['nodeId']) return;
         if (event.shiftKey && options.onSelect) {
-            const ids = nodes.flatMap((entry) => {
-                const id = entry.dataset['nodeId'];
-                return id ? [id] : [];
-            });
-            const order = new Map(ids.map((id, position) => [id, position] as const));
             const anchor = options.selection?.()?.anchor ?? {
                 nodeID: target.dataset['nodeId']!,
                 offset: 0,

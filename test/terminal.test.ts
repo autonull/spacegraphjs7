@@ -39,6 +39,8 @@ import {
     terminalCompare,
     terminalDetailHTML,
     terminalExport,
+    terminalExcerpt,
+    terminalMovePoint,
     terminalFlatten,
     terminalGaps,
     terminalIndexOfPoint,
@@ -357,6 +359,17 @@ describe('anchored ranges', () => {
             nodeID: 'c',
             offset: 2,
         });
+    });
+
+    it('moves a character point across lines and clamps at both ends', () => {
+        const flat = terminalFlatten(lines);
+        const at = (nodeID: string, offset: number) => ({ nodeID, offset });
+        expect(terminalMovePoint(flat, at('a', 2), 1)).toEqual(at('a', 3));
+        expect(terminalMovePoint(flat, at('a', 4), 1)).toEqual(at('a', 5));
+        expect(terminalMovePoint(flat, at('a', 5), 1)).toEqual(at('b', 0));
+        expect(terminalMovePoint(flat, at('b', 0), -1)).toEqual(at('a', 5));
+        expect(terminalMovePoint(flat, at('a', 0), -1)).toEqual(at('a', 0));
+        expect(terminalMovePoint(flat, at('c', 5), 1)).toEqual(at('c', 5));
     });
 });
 
@@ -845,6 +858,38 @@ describe('range export', () => {
             'b',
         ]);
         expect(terminalExport(lines, undefined, 'json')).toContain('"id":"c"');
+    });
+
+    it('trims boundary lines for an exact excerpt and exports committed metadata', () => {
+        const exact = terminalExcerpt(lines, range, terminalOrder(lines), { exact: true });
+        expect(exact.map((entry) => entry.text)).toEqual(['alpha', 'bet']);
+        expect(terminalExcerpt(lines, range)).toHaveLength(2);
+        const single = {
+            anchor: { nodeID: 'b', offset: 1 },
+            focus: { nodeID: 'b', offset: 4 },
+        };
+        expect(terminalExcerpt(lines, single, terminalOrder(lines), { exact: true })[0]?.text).toBe(
+            'eta',
+        );
+        const exported = JSON.parse(
+            terminalExport(lines, range, 'json', undefined, { exact: true }),
+        ) as {
+            id: string;
+            text: string;
+            start: number;
+            end: number;
+            role?: string;
+            at?: number;
+        }[];
+        expect(exported[0]).toMatchObject({ id: 'a', text: 'alpha', start: 0, end: 5 });
+        expect(exported[1]).toMatchObject({ id: 'b', text: 'bet', start: 6, end: 9 });
+        const rich = [{ ...lines[0]!, role: 'user', at: 123 }];
+        const full = JSON.parse(terminalExport(rich, undefined, 'json')) as {
+            role?: string;
+            at?: number;
+            start: number;
+        }[];
+        expect(full[0]).toMatchObject({ role: 'user', at: 123, start: 0 });
     });
 });
 

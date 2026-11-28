@@ -2494,7 +2494,12 @@ export class DurableHost {
             return saved;
         }
         const current = this.#lensTrail.current;
-        const target = current ? terminalLensFromKey(current.id) : undefined;
+        const selection = this.#terminalController?.selection();
+        const target: TerminalLensTarget | undefined = selection
+            ? { kind: 'range', range: selection }
+            : current
+              ? terminalLensFromKey(current.id)
+              : undefined;
         if (!target) {
             this.announce('Focus a console target first');
             return undefined;
@@ -2786,7 +2791,9 @@ export class DurableHost {
             consoleQuality: () => this.consoleQuality(),
             exportConsole: (format: 'markdown' | 'json') => {
                 const terminal = this.#terminal();
-                return terminalExport(terminal.lines(), terminal.selection(), format);
+                return terminalExport(terminal.lines(), terminal.selection(), format, undefined, {
+                    exact: true,
+                });
             },
             consoleBand: () => this.#terminalController?.band() ?? DEFAULT_RUNG_IDS[0],
             consoleLOD: (band?: string) => this.consoleLOD(band),
@@ -3685,6 +3692,7 @@ export class DurableHost {
             announce: (message) => this.announce(message),
             onFocus: (id) => this.#terminalController?.focusLine(id),
             selection: () => this.#terminalController?.selection(),
+            lines: () => this.#terminalController?.lines() ?? [],
             onSelect: (range) => {
                 this.#terminalController?.select(range);
                 this.#syncConsoleA11y();
