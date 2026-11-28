@@ -5,6 +5,7 @@ import {
 } from '@spacegraphjs/renderer';
 import { applyModelEmphasis, mappingFor } from 'spacegraphjs/salience';
 import {
+    terminalColumns,
     terminalLineHTML,
     terminalMatchFlags,
     terminalGaps,
@@ -15,9 +16,11 @@ import {
     terminalPromptHTML,
     terminalRangeIDs,
     terminalSlots,
+    terminalWrapRows,
     type TerminalGlyphs,
     type TerminalGrid,
     type TerminalLine,
+    type TerminalLineChrome,
     type TerminalPresentation,
     type TerminalProjectionContext,
     type TerminalRange,
@@ -91,16 +94,21 @@ export const consoleModel = (
         const placement = layout.placements.get(entry.id)!;
         const [width, height] = placement.size;
         const ranges = flags?.highlightMatches ? (rangesByLine.get(entry.id) ?? []) : [];
+        const number = (index.get(entry.id) ?? 0) + 1;
+        const source = entry.at === undefined ? undefined : new Date(entry.at).toISOString();
+        const chrome: TerminalLineChrome = {
+            ...(flags?.lineNumbers ? { lineNumber: number } : {}),
+            ...(flags?.sourceStamp && source ? { source } : {}),
+            ...(flags?.wrap
+                ? { rows: terminalWrapRows(entry.text, terminalColumns(grid, placement.octave)) }
+                : {}),
+        };
         const attrs = `data-selected="${selected.has(entry.id)}" data-kind="${escapeHtml(
             entry.kind,
         )}" data-status="${escapeHtml(entry.status)}" data-role="${escapeHtml(entry.role ?? '')}"${
             flags?.zoomLOD && state.lod ? ` data-lod="${escapeHtml(state.lod)}"` : ''
-        }${
-            flags?.lineNumbers ? ` data-line-no="${(index.get(entry.id) ?? 0) + 1}"` : ''
-        }${
-            flags?.sourceStamp && entry.at !== undefined
-                ? ` data-source="${new Date(entry.at).toISOString()}"`
-                : ''
+        }${flags?.lineNumbers ? ` data-line-no="${number}"` : ''}${
+            chrome.source ? ` data-source="${escapeHtml(chrome.source)}"` : ''
         }`;
         const className = `sg-terminal-line${flags?.wrap ? ' sg-terminal-wrap' : ''}${
             flags?.reflow ? ' sg-terminal-reflow' : ''
@@ -113,6 +121,7 @@ export const consoleModel = (
                 direction: state.direction,
                 matches: ranges,
                 band: flags?.zoomLOD ? state.lod : undefined,
+                chrome,
             })}</div>`,
             position: [
                 placement.position[0],

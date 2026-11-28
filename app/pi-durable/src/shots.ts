@@ -53,6 +53,8 @@ export type ConsoleShot = Shot & {
     readonly regions?: boolean;
     /** Apply a named console profile before capture. */
     readonly profile?: string;
+    /** Presentation key applied through the address codec. */
+    readonly chrome?: string;
 };
 
 const consoleShot = (

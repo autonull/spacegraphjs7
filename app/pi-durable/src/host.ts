@@ -88,6 +88,8 @@ import {
     terminalLensIDs,
     terminalLensKey,
     terminalLODFor,
+    terminalPresentationFromKey,
+    terminalPresentationKey,
     terminalGrow,
     type TerminalGrowth,
     terminalLensRect,
@@ -1853,6 +1855,8 @@ export class DurableHost {
         if (bookmark) params.set('bm', terminalBookmark.encode(bookmark));
         if (this.#regionsEnabled) params.set('regions', 'on');
         if (this.#lodOverride) params.set('lod', this.#lodOverride);
+        const pres = terminalPresentationKey(this.#consolePresentation);
+        if (pres) params.set('pres', pres);
         const viewport = this.renderer.getViewport?.();
         if (viewport) params.set('zoom', viewport.zoom.toFixed(3));
         return `${location.pathname}?${params.toString()}`;
@@ -1887,6 +1891,7 @@ export class DurableHost {
             lens: params.get('lens') ?? undefined,
             bm: params.get('bm') ?? undefined,
             regions: params.get('regions') ?? undefined,
+            pres: params.get('pres') ?? undefined,
         });
     }
 
@@ -1917,6 +1922,7 @@ export class DurableHost {
             bm: bookmark ? terminalBookmark.encode(bookmark) : undefined,
             regions: inConsole && this.#regionsEnabled ? 'on' : undefined,
             lod: inConsole ? this.#lodOverride : undefined,
+            pres: inConsole ? terminalPresentationKey(this.#consolePresentation) || undefined : undefined,
         };
     }
 
@@ -2704,6 +2710,8 @@ export class DurableHost {
             if (address.regions !== undefined) this.setConsoleRegions(address.regions === 'on');
             if (address.lod) this.consoleLOD(address.lod);
             if (address.lens) this.consoleFocus(address.lens);
+            const presentation = terminalPresentationFromKey(address.pres);
+            if (presentation) this.consolePresentation(presentation);
             const bookmark = terminalBookmark.decode(address.bm);
             if (bookmark) {
                 this.#bookmarks.set(bookmark.key, bookmark);

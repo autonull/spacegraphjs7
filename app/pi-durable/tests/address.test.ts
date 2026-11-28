@@ -8,6 +8,7 @@ const address: Address = {
     pal: 'retro', det: 'popup~d:1:message:2',
     q: 'ERROR', mode: 'derived',
     lens: 'line:d:1:message:2', bm: 'bookmark-token', regions: 'on', lod: 'dot',
+    pres: 'wns',
 };
 
 describe('deep-link codec', () => {
@@ -42,5 +43,6 @@ describe('deep-link codec', () => {
         expect(decodeAddress(btoa('secret=1'))).toBeUndefined();
         expect(decodeAddress(btoa('mode=nowhere'))).toBeUndefined();
         expect(decodeAddress(btoa('lod=huge'))).toBeUndefined();
+        expect(decodeAddress(btoa('pres=q'))).toBeUndefined();
     });
 });

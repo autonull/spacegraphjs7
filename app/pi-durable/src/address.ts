@@ -1,4 +1,9 @@
-import { TERMINAL_LOD_BANDS, TERMINAL_MODES, type TerminalMode } from 'spacegraphjs/terminal';
+import {
+    TERMINAL_LOD_BANDS,
+    TERMINAL_MODES,
+    terminalPresentationFromKey,
+    type TerminalMode,
+} from 'spacegraphjs/terminal';
 import { viewStateCodec, type ViewStateRecord } from 'spacegraphjs/view-state';
 import { LAYOUT_NAMES, type LayoutName } from './lens';
 import { isRung, type Rung } from './rungs';
@@ -33,6 +38,8 @@ export type Address = {
     readonly regions?: string;
     /** Pinned console fidelity band, from `TERMINAL_LOD_BANDS`. */
     readonly lod?: string;
+    /** Console reading chrome, encoded by `terminalPresentationKey`. */
+    readonly pres?: string;
 };
 
 export const CONSOLE_DETAIL_MODES = ['inline', 'popup', 'rail'] as const;
@@ -73,13 +80,18 @@ const flatten = (address: Address): ViewStateRecord => ({
     bm: address.bm,
     regions: address.regions,
     lod: address.lod,
+    pres: address.pres,
 });
 
 const parse = (record: ViewStateRecord): Address | undefined => {
     const {
         view, layout, focus, zoom, asOf, s, shot, sel, tail, pal, det, q, mode, lens, bm, regions,
-        lod,
+        lod, pres,
     } = record;
+    if (pres !== undefined) {
+        if (typeof pres !== 'string' || terminalPresentationFromKey(pres) === undefined)
+            return undefined;
+    }
     if (typeof det === 'string' && !parseDetailKey(det)) return undefined;
     if (mode !== undefined && !TERMINAL_MODES.includes(mode as TerminalMode)) return undefined;
     if (lod !== undefined && !TERMINAL_LOD_BANDS.includes(lod as (typeof TERMINAL_LOD_BANDS)[number]))
@@ -88,12 +100,12 @@ const parse = (record: ViewStateRecord): Address | undefined => {
     if (view !== undefined && !VIEW_NAMES.includes(view as ViewName)) return undefined;
     if (band !== undefined && !isRung(band)) return undefined;
     if (layout !== undefined && !LAYOUT_NAMES.includes(layout as LayoutName)) return undefined;
-    for (const value of [s, shot, focus, sel, tail, pal, det, q, lens, bm, regions, lod])
+    for (const value of [s, shot, focus, sel, tail, pal, det, q, lens, bm, regions, lod, pres])
         if (value !== undefined && typeof value !== 'string') return undefined;
     return Object.fromEntries(
         Object.entries({
             s, shot, view, rung: band, layout, asOf, zoom, focus, sel, tail, pal, det, q,
-            mode, lens, bm, regions, lod,
+            mode, lens, bm, regions, lod, pres,
         }).filter(([, value]) => value !== undefined),
     ) as Address;
 };
@@ -102,7 +114,7 @@ const codec = viewStateCodec<Address>({
     format: 'compact',
     keys: [
         's', 'shot', 'view', 'band', 'rung', 'layout', 'asOf', 'zoom', 'focus', 'sel', 'tail',
-        'pal', 'det', 'q', 'mode', 'lens', 'bm', 'regions', 'lod', 'version',
+        'pal', 'det', 'q', 'mode', 'lens', 'bm', 'regions', 'lod', 'pres', 'version',
     ],
     flatten,
     parse,

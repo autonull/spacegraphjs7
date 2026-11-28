@@ -100,6 +100,26 @@ describe('consoleModel', () => {
         expect(model.nodes.map((entry) => entry.id)).toEqual(['a', 'b', 'terminal-prompt']);
     });
 
+    it('emits visible line numbers, source stamps and wrapped rows', () => {
+        const stamped = [{ ...lines[0]!, at: 1_700_000_000_000 }];
+        const model = consoleModel(
+            {
+                ...context(),
+                lines: stamped,
+                visible: stamped,
+                order: ['a'],
+                index: terminalOrder(stamped),
+                presentation: { lineNumbers: true, sourceStamp: true, wrap: true },
+            },
+            { ...state, lines: stamped },
+        );
+        const html = model.nodes[0]!.html;
+        expect(html).toContain('<span class="tg-line-no" aria-hidden="true">1</span>');
+        expect(html).toContain('<time class="tg-source" datetime="2023-11-14T22:13:20.000Z"');
+        expect(html).toContain('data-source="2023-11-14T22:13:20.000Z"');
+        expect(html).toContain('class="tg-row"');
+    });
+
     it('renders far zoom bands as accessible glyphs with a stable data-lod', () => {
         const model = consoleModel(
             { ...context(), band: 'dot' },

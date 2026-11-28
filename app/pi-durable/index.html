@@ -108,6 +108,14 @@
             .sg-terminal-line .tg-glyph-only { color: var(--line-accent); font-size: 16px; line-height: 1; }
             .sg-terminal-line .tg-glyph-label { color: var(--text); font-size: 12px;
                 letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .sg-terminal-line[data-line-no], .sg-terminal-line[data-source] { gap: 6px; }
+            .sg-terminal-line .tg-line-no { flex: none; min-width: 2ch; text-align: right;
+                color: var(--muted); font-size: 10px; }
+            .sg-terminal-line .tg-source { flex: none; margin-left: auto; white-space: nowrap;
+                color: var(--muted); font-size: 10px; }
+            .sg-terminal-line .tg-row { display: block; min-width: 0; }
+            .sg-terminal-wrap .tg-text { white-space: normal; overflow-wrap: anywhere; }
+            .sg-terminal-reflow .tg-text { white-space: normal; }
             .sg-grow { --line-accent: var(--accent); height: 100%; box-sizing: border-box;
                 font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
                 color: var(--text); animation: sg-grow-in .18s ease-out both; }

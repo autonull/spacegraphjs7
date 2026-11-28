@@ -117,30 +117,58 @@ export const terminalTextWidth = (
     widthOf: TerminalCharWidth = unitWidth,
 ): number => [...text].reduce((total, character) => total + Math.max(0, widthOf(character)), 0);
 
+/** A wrapped row keeps its character offsets so text spans stay addressable. */
+export type TerminalWrapRow = {
+    readonly text: string;
+    /** Start offset in the original text, in UTF-16 code units. */
+    readonly start: number;
+    /** Exclusive end offset in the original text. */
+    readonly end: number;
+    /** Display width consumed by the row. */
+    readonly width: number;
+};
+
+export const terminalWrapRows = (
+    text: string,
+    columns: number,
+    widthOf: TerminalCharWidth = unitWidth,
+): readonly TerminalWrapRow[] => {
+    if (!text.length) return [{ text: '', start: 0, end: 0, width: 0 }];
+    if (columns <= 0)
+        return [{ text, start: 0, end: text.length, width: terminalTextWidth(text, widthOf) }];
+    const limit = Math.max(1, Math.floor(columns));
+    const rows: TerminalWrapRow[] = [];
+    let row = '';
+    let start = 0;
+    let index = 0;
+    let width = 0;
+    for (const character of text) {
+        const measure = Math.max(0, widthOf(character));
+        if (row && width + measure > limit) {
+            rows.push({ text: row, start, end: index, width });
+            row = '';
+            start = index;
+            width = 0;
+        }
+        row += character;
+        width += measure;
+        index += character.length;
+    }
+    if (row || !rows.length) rows.push({ text: row, start, end: index, width });
+    return rows;
+};
+
 /** Wrap by display width so each span still maps back to an entry-id and offset. */
 export const terminalWrap = (
     text: string,
     columns: number,
     widthOf: TerminalCharWidth = unitWidth,
-): readonly string[] => {
-    if (!text.length) return [''];
-    if (columns <= 0) return [text];
-    const limit = Math.max(1, Math.floor(columns));
-    const lines: string[] = [];
-    let line = '';
-    let used = 0;
-    for (const character of text) {
-        const measure = Math.max(0, widthOf(character));
-        if (line && used + measure > limit) {
-            lines.push(line);
-            line = '';
-            used = 0;
-        }
-        line += character;
-        used += measure;
-    }
-    if (line || !lines.length) lines.push(line);
-    return lines;
+): readonly string[] => terminalWrapRows(text, columns, widthOf).map((row) => row.text);
+
+/** Columns available to a line at an octave; the one source for geometry and wrap rows. */
+export const terminalColumns = (grid: TerminalGrid = terminalGrid(), octave = 0): number => {
+    const scale = 2 ** clamp(octave, -2, 0);
+    return Math.max(1, Math.floor((grid.maxWidth - grid.gutter) / (grid.charWidth * scale)));
 };
 
 export const terminalLineSize = (
@@ -152,8 +180,7 @@ export const terminalLineSize = (
     const scale = 2 ** clamp(octave, -2, 0);
     const charWidth = grid.charWidth * scale;
     const lineHeight = grid.lineHeight * scale;
-    const columns = Math.max(1, Math.floor((grid.maxWidth - grid.gutter) / charWidth));
-    const rows = terminalWrap(text, columns, widthOf).length;
+    const rows = terminalWrapRows(text, terminalColumns(grid, octave), widthOf).length;
     const width = clamp(
         terminalTextWidth(text, widthOf) * charWidth + grid.gutter,
         grid.minWidth * scale,
@@ -612,6 +639,30 @@ export type TerminalPresentation = {
     readonly highlightMatches?: boolean;
     /** Collapse lines to accessible glyphs at far zoom bands. */
     readonly zoomLOD?: boolean;
+};
+
+const PRESENTATION_FLAGS = [
+    ['wrap', 'w'],
+    ['reflow', 'r'],
+    ['lineNumbers', 'n'],
+    ['sourceStamp', 's'],
+    ['highlightMatches', 'h'],
+    ['zoomLOD', 'z'],
+] as const satisfies readonly (readonly [keyof TerminalPresentation, string])[];
+
+/** Canonical compact key for addressable presentation flags, e.g. `nsw`. */
+export const terminalPresentationKey = (presentation: TerminalPresentation): string =>
+    PRESENTATION_FLAGS.filter(([flag]) => presentation[flag]).map(([, code]) => code).join('');
+
+export const terminalPresentationFromKey = (
+    key: string | undefined,
+): TerminalPresentation | undefined => {
+    if (key === undefined) return undefined;
+    const codes = new Set(key);
+    const parsed = Object.fromEntries(
+        PRESENTATION_FLAGS.filter(([, code]) => codes.has(code)).map(([flag]) => [flag, true]),
+    ) as TerminalPresentation;
+    return key === terminalPresentationKey(parsed) ? parsed : undefined;
 };
 
 export type TerminalSelection = {
@@ -1290,24 +1341,52 @@ export const lineGlyph = (line: TerminalLine, glyphs: TerminalGlyphs = terminalG
 export const statusGlyph = (line: TerminalLine, glyphs: TerminalGlyphs = terminalGlyphs()): string =>
     glyphs.status[line.status] ?? '';
 
+/** Reading chrome added to full-text lines; every field is optional and off by default. */
+export type TerminalLineChrome = {
+    readonly lineNumber?: number;
+    /** ISO-8601 source stamp, escaped into a `<time>` element. */
+    readonly source?: string;
+    /** Pre-wrapped rows with original character offsets; emits one `tg-row` span each. */
+    readonly rows?: readonly TerminalWrapRow[];
+};
+
+const markedText = (
+    text: string,
+    start: number,
+    matches: readonly (readonly [number, number])[],
+): string => {
+    let result = '';
+    let at = start;
+    matches.forEach(([from, to]) => {
+        if (from < at || from < start || to > start + text.length) return;
+        result +=
+            escapeHtml(text.slice(at - start, from - start)) +
+            `<mark>${escapeHtml(text.slice(from - start, to - start))}</mark>`;
+        at = to;
+    });
+    return result + escapeHtml(text.slice(at - start));
+};
+
 /** Text direction applies to the text span only; the gutter stays in logical (LTR) order. */
 export const lineHTML = (
     line: TerminalLine,
     glyphs: TerminalGlyphs = terminalGlyphs(),
     direction?: 'ltr' | 'rtl',
     matches: readonly (readonly [number, number])[] = [],
+    { lineNumber, source, rows }: TerminalLineChrome = {},
 ): string => {
-    let text = '';
-    let at = 0;
-    matches.forEach(([start, end]) => {
-        if (start < at || start < 0 || end > line.text.length) return;
-        text +=
-            escapeHtml(line.text.slice(at, start)) +
-            `<mark>${escapeHtml(line.text.slice(start, end))}</mark>`;
-        at = end;
-    });
-    text += escapeHtml(line.text.slice(at));
-    return `<span class="tg-gutter">${escapeHtml(lineGlyph(line, glyphs))} ${escapeHtml(statusGlyph(line, glyphs))}</span><span class="tg-text"${direction ? ` dir="${direction}"` : ''}>${text}</span>`;
+    const body = rows
+        ? rows
+              .map((row) => `<span class="tg-row">${markedText(row.text, row.start, matches)}</span>`)
+              .join('')
+        : markedText(line.text, 0, matches);
+    const number =
+        lineNumber === undefined ? '' : `<span class="tg-line-no" aria-hidden="true">${lineNumber}</span>`;
+    const stamp =
+        source === undefined
+            ? ''
+            : `<time class="tg-source" datetime="${escapeHtml(source)}">${escapeHtml(source)}</time>`;
+    return `${number}<span class="tg-gutter">${escapeHtml(lineGlyph(line, glyphs))} ${escapeHtml(statusGlyph(line, glyphs))}</span><span class="tg-text"${direction ? ` dir="${direction}"` : ''}>${body}</span>${stamp}`;
 };
 
 export const TERMINAL_LOD_BANDS = ['dot', 'glyph', 'card', 'detail'] as const;
@@ -1345,6 +1424,8 @@ export type TerminalLineHTMLOptions = {
     readonly ladder?: readonly string[];
     /** Characters kept in the label stage between glyph and full text. */
     readonly labelChars?: number;
+    /** Visible reading chrome, applied only in the full-text band. */
+    readonly chrome?: TerminalLineChrome;
 };
 
 /** Zoom fidelity: glyph, short label, or full text. Identity and text stay addressable throughout. */
@@ -1357,6 +1438,7 @@ export const terminalLineHTML = (
         band,
         ladder = DEFAULT_RUNG_IDS,
         labelChars = 20,
+        chrome = {},
     }: TerminalLineHTMLOptions = {},
 ): string => {
     const at = band ? ladder.indexOf(band) : ladder.length - 1;
@@ -1370,7 +1452,7 @@ export const terminalLineHTML = (
         const suffix = label.length > labelChars ? '…' : '';
         return `${gutter}<span class="tg-glyph-label" aria-label="${escaped}" title="${escaped}">${short}${suffix}</span>`;
     }
-    return lineHTML(line, glyphs, direction, matches);
+    return lineHTML(line, glyphs, direction, matches, chrome);
 };
 
 export type TerminalDetail = {

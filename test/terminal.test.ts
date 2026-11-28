@@ -5,7 +5,10 @@ import {
     lineGlyph,
     lineHTML,
     terminalLineHTML,
+    terminalColumns,
     terminalLODFor,
+    terminalPresentationFromKey,
+    terminalPresentationKey,
     terminalGrow,
     mountTerminal,
     mountTerminalA11y,
@@ -69,6 +72,7 @@ import {
     terminalVisibleAt,
     terminalWindow,
     terminalWrap,
+    terminalWrapRows,
     type TerminalGraph,
     type TerminalLensTarget,
     type TerminalSelector,
@@ -111,6 +115,18 @@ describe('terminal grid', () => {
         expect(terminalLineSize('abcd', grid)).toEqual([180, 28]);
         expect(terminalLineSize('abcd', grid, -1)).toEqual([90, 14]);
         expect(terminalLineSize('x'.repeat(200), grid)).toEqual([520, 76]);
+    });
+
+    it('keeps character offsets and display widths across wrapped rows', () => {
+        expect(terminalWrapRows('abcdefghij', 4)).toEqual([
+            { text: 'abcd', start: 0, end: 4, width: 4 },
+            { text: 'efgh', start: 4, end: 8, width: 4 },
+            { text: 'ij', start: 8, end: 10, width: 2 },
+        ]);
+        expect(terminalWrapRows('', 4)).toEqual([{ text: '', start: 0, end: 0, width: 0 }]);
+        const grid = terminalGrid();
+        expect(terminalColumns(grid)).toBe(61);
+        expect(terminalWrapRows('x'.repeat(200), terminalColumns(grid))).toHaveLength(4);
     });
 });
 
@@ -378,6 +394,24 @@ describe('glyph grammar', () => {
                 ladder: ['overview', 'detail'],
             }),
         ).toContain('tg-glyph-only');
+    });
+
+    it('renders escaped reading chrome and composes marks with wrap rows', () => {
+        const entry = { ...line('a', 'alpha beta'), at: 1_700_000_000_000 };
+        const rows = terminalWrapRows(entry.text, 6);
+        const html = terminalLineHTML(entry, terminalGlyphs(), {
+            chrome: { lineNumber: 2, source: '<script>bad</script>', rows },
+            matches: [[6, 10]],
+        });
+        expect(html).toContain('<span class="tg-line-no" aria-hidden="true">2</span>');
+        expect(html).toContain('<time class="tg-source" datetime="&lt;script&gt;bad&lt;/script&gt;">');
+        expect(html).toContain('<span class="tg-row">alpha </span>');
+        expect(html).toContain('<span class="tg-row"><mark>beta</mark></span>');
+        expect(html).not.toContain('<script>');
+        const plain = terminalLineHTML(entry, terminalGlyphs());
+        expect(plain).not.toContain('tg-row');
+        expect(plain).not.toContain('tg-line-no');
+        expect(plain).not.toContain('tg-source');
     });
 });
 
@@ -912,6 +946,17 @@ describe('wide glyphs', () => {
             terminalLineSize('abc', grid, 0)[0],
         );
     });
+
+    it('keeps row offsets in code units across surrogate pairs and combining marks', () => {
+        expect(terminalWrapRows('a😀b', 3, widthOf)).toEqual([
+            { text: 'a😀', start: 0, end: 3, width: 3 },
+            { text: 'b', start: 3, end: 4, width: 1 },
+        ]);
+        const combining = (character: string): number => (character === '\u0301' ? 0 : 1);
+        expect(terminalWrapRows('e\u0301x', 2, combining)).toEqual([
+            { text: 'e\u0301x', start: 0, end: 3, width: 2 },
+        ]);
+    });
 });
 
 describe('window telemetry', () => {
@@ -1255,6 +1300,17 @@ describe('reading lens and profiles', () => {
         ]);
         expect(terminalProfile('big-text').presentation.wrap).toBe(true);
         expect(terminalProfile('missing').id).toBe('logs');
+    });
+});
+
+describe('addressable presentation', () => {
+    it('round-trips canonical flags and rejects unknown keys', () => {
+        expect(terminalPresentationKey({ lineNumbers: true, wrap: true })).toBe('wn');
+        expect(terminalPresentationFromKey('wn')).toEqual({ wrap: true, lineNumbers: true });
+        expect(terminalPresentationFromKey('')).toEqual({});
+        expect(terminalPresentationFromKey(undefined)).toBeUndefined();
+        expect(terminalPresentationFromKey('nw')).toBeUndefined();
+        expect(terminalPresentationFromKey('q')).toBeUndefined();
     });
 });
 

@@ -11,6 +11,8 @@ export type ConsoleShotMeta = {
     readonly rtl?: boolean;
     readonly regions?: boolean;
     readonly profile?: string;
+    /** Presentation key applied through the address codec, e.g. `wn` for wrap + line numbers. */
+    readonly chrome?: string;
     readonly viewport?: { readonly width: number; readonly height: number };
 };
 
@@ -35,4 +37,5 @@ export const CONSOLE_SHOT_META: readonly ConsoleShotMeta[] = [
     { id: 'console-search', source: 'basic-turn', query: 'q=France' },
     { id: 'console-regions', source: 'basic-turn', regions: true },
     { id: 'console-fractal', source: 'basic-turn', profile: 'fractal' },
+    { id: 'console-chrome', source: 'basic-turn', chrome: 'wn' },
 ];
