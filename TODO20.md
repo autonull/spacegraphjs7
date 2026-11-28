@@ -1,10 +1,9 @@
 # TODO20 — From experiments to agentic development surfaces
 
-> **Status: draft (2026-11-28).** Extends `TODO19.md` (complete). This plan records the experiment
-> methodology developed across seventeen demos and turns the strongest results into a promotion
-> queue. Nothing in §5–§6 has landed as library code yet: the working tree holds the experiments,
-> the generated demo registry, and `docs/console-experiments.md`. Continue from §11 in a fresh
-> session.
+> **Status: O1 landed (2026-11-28).** Extends `TODO19.md` (complete). This plan records the
+> experiment methodology developed across seventeen demos and turns the strongest results into a
+> promotion queue. O1 (promotion template + generated labs index) and the cheap process upgrades in
+> §12 are in place; no promotion in §5–§6 has landed as library code yet. Continue from §11.
 
 ## 0. Outcome
 
@@ -105,6 +104,8 @@ review, debugging, onboarding, presentation. Single-use experiments stay experim
 
 ## 5. Outcomes
 
+Every lift candidate is indexed in §4; this section records only promotions with a second consumer.
+
 ### O1 — Promotion pipeline and lab index
 
 - Define a one-page template: metaphor → pure primitive → unit test → component → second consumer →
@@ -198,7 +199,7 @@ progress recorded in §10.
 
 - Tier 1: package `typecheck`, `pnpm --filter pi-durable check:fast`, `pnpm run test:exports`.
 - Tier 2: `pnpm run check`, `pnpm test` from the repository root.
-- Tier 3: `pnpm run check:generated`, `check:console-shots`, `check:paths`,
+- Tier 3: `pnpm run check:generated`, `pnpm run check:labs`, `check:console-shots`, `check:paths`,
   `pnpm --filter pi-durable verify:fast`, `pnpm run build:demo`.
 - Lab check: `PLAYWRIGHT_BASE_URL=<dev-server> pnpm run test:demo-errors`. The root Playwright
   config hardcodes `http://localhost:5173`; if that port is held by another project, either start
@@ -220,9 +221,13 @@ and agent state kept only in DOM. The kernel remains the durable store; layouts 
 
 All seventeen demos are in `app/demo/html/**`; the shared experiment style is
 `app/demo/html/interaction/lab.css`; the catalogue and lift lines are in
-`docs/console-experiments.md`. The generated registry lists 58 HTML demos. The working tree is
-uncommitted; no library or Pi Durable code was changed.
+`docs/console-experiments.md`. The generated registry lists 59 HTML demos (58 experiments/hosts plus
+the labs index). Promotion work lands in small commits; no library or Pi Durable code has changed.
 
+- **O1 (2026-11-28):** `docs/promotion-template.md` defines the handoff; `app/demo/src/lab-catalogue.ts`
+  is the single experiment catalogue; `app/demo/html/labs.html` groups all seventeen demos by
+  application and links each to its Lift line through the generated registry. Every demo source has
+  a `JOB:` line, and `pnpm run check:labs` asserts catalogue ↔ registry ↔ docs ↔ §4 agreement.
 - **Methodology (2026-11-28):** observe → name the metaphor → host-owned experiment → drive in
   Chromium → record the Lift line → promote with a second consumer. Applied to all seventeen demos.
 - **Text/graph coupling (1–5):** margins with graph rails, node→console portal, facet monitor, diff
@@ -246,7 +251,7 @@ uncommitted; no library or Pi Durable code was changed.
 
 | # | Outcome | Status | First consumer |
 | - | ------- | ------ | -------------- |
-| 1 | Promotion template + labs index | open | docs + demo registry |
+| 1 | Promotion template + labs index | done (O1) | `docs/promotion-template.md` + labs index |
 | 2 | `GraphWindow` | open | Pi Durable view, demo 14 |
 | 3 | `AgentTeamView`, `SteerEdge`, `TeamScope` | open | Pi Durable team view, demo 16 |
 | 4 | `SessionAtlas`, `ReplayScrubber` | open | Pi Durable session view, demo 17 |
@@ -255,19 +260,23 @@ uncommitted; no library or Pi Durable code was changed.
 | 7 | Multi-agent tabs, fork and diff | open | Pi Durable tabs, demo 16 |
 | 8 | Ergonomics and a11y parity | open | every promoted component |
 
+Gate status: `JOB:` lines, Lift links and path resolution are enforced by `check:labs`. Keyboard and
+reduced-motion coverage is **not** universal across the seventeen demos; §12 tracks it as a per-component
+promotion gate, not an O1 condition. §10 is the authoritative queue status.
+
 ## 11. Fresh-session handoff
 
 Read these first, in order:
 
-1. `TODO20.md` §1–§3 for the method and invariants.
-2. `docs/console-experiments.md` for the seventeen demos and their Lift lines.
-3. `app/demo/html/interaction/agent-team.html` and `app/demo/html/layout/dev-session.html` for the
-   two integrated surfaces.
-4. `app/demo/html/interaction/window-desktop.html` and `widget-detach.html` for the window/widget
+1. `TODO20.md` §1–§3 for the method and invariants, §10 for the authoritative queue status.
+2. `docs/promotion-template.md` for the handoff and `docs/console-experiments.md` for the Lift lines.
+3. `app/demo/src/lab-catalogue.ts` and `app/demo/html/labs.html` for the generated index.
+4. `app/demo/html/interaction/agent-team.html` and `app/demo/html/layout/dev-session.html` for the
+   two integrated surfaces; `window-desktop.html` and `widget-detach.html` for the window/widget
    primitives.
 5. `AGENTS.md` at both repo roots for the repository rules.
 
-Suggested first move: **O1**, then **O2**. Do not start by rewriting Pi Durable's host; extract a
+Suggested first move: **O2** (O1 is done). Do not start by rewriting Pi Durable's host; extract a
 small pure model from demo 14, give it a unit test and a typed component, then wire one Pi Durable
 view. Keep every experiment runnable until its second consumer passes E2E.
 
@@ -296,12 +305,17 @@ becomes a durable, reusable capability instead of a good screenshot.
 | **Rejected-ideas log** | Keep a short list of ideas tried and dropped, with reasons. Prevents re-litigation and documents deliberate scope. | Appendix in `docs/console-experiments.md`. |
 | **Clean handoff commits** | Commit experiments in small self-contained increments so a fresh session starts from a known state. | No uncommitted experiment work at session end unless explicitly requested. |
 
-Priority for the next session: **job statement**, **API smell journal**, **keyboard/reduced-motion
-gate**, and **labs mode in Pi Durable**. The first three cost almost nothing and immediately improve
-every experiment; the fourth is the only one that tests patterns against real data.
+Landed with O1: **job statement** (`JOB:` in all seventeen demo headers), **API smell journal** and
+**rejected-ideas log** (`docs/console-experiments.md`), and **executable docs** (`pnpm run check:labs`).
+Remaining priorities: **keyboard/reduced-motion gate** — needs a real keyboard path and a reduced-motion
+snap per demo, not a source-text assertion, so enforce it when each component is promoted — and **labs
+mode in Pi Durable** — needs two promoted components plus a host decision on which committed kernel
+facts they read. The latter is the only upgrade that tests patterns against real data.
 
 ## 13. Closure
 
 This plan closes when each promoted component has two consumers, an E2E test and an a11y path, and
-the lab demos still pass. To re-verify, run §7 in order. Regenerate captures only when visual shape
-changes; re-check the demo registry after adding or removing any HTML page.
+the lab demos still pass. O1 is complete; §10 is the authoritative queue status. Do not mark a
+promotion done until its second consumer and E2E exist. To re-verify, run §7 in order. Regenerate
+captures only when visual shape changes; re-check the demo registry after adding or removing any
+HTML page.

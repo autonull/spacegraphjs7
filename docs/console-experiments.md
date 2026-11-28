@@ -4,6 +4,11 @@ These demos combine existing SpaceGraphJS primitives in new arrangements. Each i
 experiment: no second graph store, text index, command registry or codec. They are a place to try
 interactions before promoting a pure model into `src/` and a component into a package.
 
+Use [the promotion template](./promotion-template.md) for the handoff: metaphor → job → pure
+primitive → unit test → component → second consumer → E2E. Each demo source starts with a `JOB:`
+line; `app/demo/src/lab-catalogue.ts` groups the seventeen experiments and the
+[lab index](../app/demo/html/labs.html) links each demo to its Lift line.
+
 The first five explore text/graph coupling. Demos 6–9 exploit the WebGL vector canvas directly:
 continuous zoom, camera-as-scroll, zoom-driven layout and a second camera in a magnifier lens.
 Demos 10–13 invent interaction metaphors: folded subgraphs, attention gravity, brushing a scope
@@ -128,7 +133,7 @@ Hovering a node rewrites geometry: the node moves to the centre, its one-hop nei
 around it, and unrelated nodes drift outward and dim. `diffPositions` plus shared playback animates
 the transition; the committed graph is unchanged.
 
-**Lift:** a `FocusGravity` policy — attention as a layout input rather than a color overlay. This is
+**Lift:** a `GatherFocus` policy — attention as a layout input rather than a color overlay. This is
 a ZUI-specific affordance: color-only dimming is weak when 30 nodes are on screen.
 
 ## 12. Lasso scope — `html/interaction/lasso-scope.html`
@@ -233,3 +238,27 @@ reuses the terminal projection and kernel facts; none introduces a second store.
 
 The only genuinely new code is host layout: rail alignment, bridge paths and the scope→console
 binding. Promote those as one pure model plus one component per experiment, not as new primitives.
+
+## API smell journal
+
+Where host code reached around the library, write down the missing API instead of the workaround.
+Promote the API with the component; do not leave the workaround in a second consumer.
+
+| Candidate | Felt in | Workaround it replaces |
+| --------- | ------- | ---------------------- |
+| `worldToScreen` / `screenToWorld` | 9, 12 | Projecting world positions through `sg.camera` by hand to find a node under the pointer. |
+| `scopeFromSelection(ids)` | 12, 16 | Rebuilding a scoped read model from raw ids in the host. |
+| `frameGroup(ids)` | 5, 10, 12 | Fitting a `GroupNode` frame after each selection change. |
+| `committedEdge(kind)` | 16, 17 | Separating durable steer/handoff/causal edges from visual-only edges. |
+| `fidelitySample()` | 1, 6, 7 | Calling `terminalLODFor` and `ScaleDomain.sample()` separately for one zoom band. |
+
+## Rejected ideas
+
+Kept here so a later session does not re-litigate deliberate scope.
+
+- **Retro skin and rounded chrome** — the screenshots proved structure, not styling; square corners
+  stay the default and visual style belongs to the host.
+- **Renderer hit testing** — breaks the vector-first invariant; project through the camera instead.
+- **A second command registry for agent actions** — one catalog of selectors over one projection.
+- **Agent state in DOM only** — steer and approve must become committed facts before promotion.
+- **A second console store** — the kernel and the terminal projection remain the only sources.

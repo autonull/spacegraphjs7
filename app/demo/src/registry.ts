@@ -70,6 +70,7 @@ const pages: readonly Omit<DemoEntry, 'kind'>[] = [
     },
     { id: 'widget-detach', category: 'interaction', path: 'html/interaction/widget-detach.html' },
     { id: 'window-desktop', category: 'interaction', path: 'html/interaction/window-desktop.html' },
+    { id: 'labs', category: 'core', path: 'html/labs.html' },
     {
         id: 'compositional-wrappers',
         category: 'layout',

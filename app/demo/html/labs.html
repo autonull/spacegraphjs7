@@ -1,0 +1,172 @@
+<!doctype html>
+<!-- JOB: A promoter opens one index and finds every experiment's application, metaphor and Lift line; proof: all 17 links resolve and the catalogue check passes. -->
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Experiment labs — SpaceGraphJS</title>
+        <style>
+            :root {
+                --bg: #0b0f16;
+                --surface: #111823;
+                --border: #28364b;
+                --text: #e7edf5;
+                --muted: #8ea0b8;
+                --accent: #7aa2f7;
+                --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+            }
+            @media (prefers-color-scheme: light) {
+                :root {
+                    --bg: #f4f6fa;
+                    --surface: #ffffff;
+                    --border: #c8d2e2;
+                    --text: #182233;
+                    --muted: #53637b;
+                    --accent: #2456b8;
+                }
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                background: var(--bg);
+                color: var(--text);
+                font: 13px/1.5 var(--mono);
+            }
+            header,
+            main {
+                max-width: 1100px;
+                margin: 0 auto;
+                padding: 24px 20px;
+            }
+            header {
+                border-bottom: 1px solid var(--border);
+            }
+            h1 {
+                font-size: 20px;
+                margin: 0 0 6px;
+            }
+            h2 {
+                font-size: 13px;
+                color: var(--accent);
+                margin: 28px 0 10px;
+            }
+            p {
+                margin: 0 0 8px;
+                color: var(--muted);
+            }
+            a {
+                color: var(--accent);
+            }
+            a:focus-visible {
+                outline: 2px solid var(--accent);
+                outline-offset: 2px;
+            }
+            ul {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+                gap: 10px;
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+            li {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                padding: 12px 14px;
+            }
+            li h3 {
+                font-size: 13px;
+                margin: 0 0 6px;
+            }
+            li h3 a {
+                text-decoration: none;
+            }
+            li h3 a:hover {
+                text-decoration: underline;
+            }
+            .metaphor {
+                color: var(--text);
+            }
+            .job,
+            .lift,
+            .primitives {
+                font-size: 11px;
+            }
+            .lift strong,
+            .primitives strong {
+                color: var(--text);
+            }
+            code {
+                color: var(--text);
+            }
+            @media (prefers-reduced-motion: reduce) {
+                * {
+                    transition: none !important;
+                    animation: none !important;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>Experiment labs</h1>
+            <p id="summary"></p>
+            <p>
+                Each card links to a runnable demo and names its promotion target. See
+                <code>docs/promotion-template.md</code> for the handoff.
+            </p>
+        </header>
+        <main id="catalogue"></main>
+        <script type="module">
+            import {
+                LAB_APPLICATIONS,
+                LAB_EXPERIMENTS,
+                labExperimentsFor,
+                labHref,
+            } from '../src/lab-catalogue';
+
+            const element = (tag, className, text) => {
+                const node = document.createElement(tag);
+                if (className) node.className = className;
+                if (text != null) node.textContent = text;
+                return node;
+            };
+
+            const card = (experiment) => {
+                const item = element('li');
+                item.dataset.labId = experiment.id;
+                const title = element('h3');
+                const link = element('a', null, experiment.id);
+                link.href = labHref(experiment);
+                title.append(link);
+                item.append(
+                    title,
+                    element('p', 'metaphor', experiment.metaphor),
+                    element('p', 'job', `JOB: ${experiment.job}`),
+                );
+                const lift = element('p', 'lift');
+                lift.append(element('strong', null, 'Lift: '));
+                lift.append(element('code', null, experiment.lift.join(' + ')));
+                item.append(lift);
+                item.append(element('p', 'primitives', `Primitives: ${experiment.primitives}`));
+                return item;
+            };
+
+            const catalogue = document.getElementById('catalogue');
+            for (const application of LAB_APPLICATIONS) {
+                const section = element('section');
+                section.append(element('h2', null, application));
+                const list = element('ul');
+                for (const experiment of labExperimentsFor(application)) {
+                    list.append(card(experiment));
+                }
+                section.append(list);
+                catalogue.append(section);
+            }
+            document.getElementById('summary').textContent =
+                `${LAB_EXPERIMENTS.length} experiments in ${LAB_APPLICATIONS.length} applications; links resolve through the generated demo registry.`;
+        </script>
+    </body>
+</html>
