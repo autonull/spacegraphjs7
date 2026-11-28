@@ -178,6 +178,63 @@ test('palette and detail state survive a compact permalink', async ({ page }) =>
     expect(errors).toEqual([]);
 });
 
+test('two consoles share one scene and link their selections', async ({ page }) => {
+    const errors = await boot(page, '?shot=fork-tabs');
+    await call(page, 'setView', 'diff');
+    expect(await call<boolean>(page, 'setConsoleCompare', true)).toBe(true);
+    const left = page.locator('#canvas [data-node-id^="left:"] .sg-terminal-line');
+    const right = page.locator('#canvas [data-node-id^="right:"] .sg-terminal-line');
+    expect(await left.count()).toBeGreaterThan(0);
+    expect(await right.count()).toBeGreaterThan(0);
+    const linked = await call<string | undefined>(page, 'consoleDiffLinked', 0, 1);
+    expect(linked).toMatch(/:0~.*:0$/);
+    expect(errors).toEqual([]);
+});
+
+test('RTL mirrors line text while keeping the gutter in logical order', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    expect(await call<string>(page, 'setDirection', 'rtl')).toBe('rtl');
+    const line = page.locator('#canvas .sg-terminal-line').first();
+    await expect(line.locator('.tg-text')).toHaveAttribute('dir', 'rtl');
+    await expect(line.locator('.tg-gutter')).not.toHaveAttribute('dir', 'rtl');
+    expect(await call<string | undefined>(page, 'consoleText')).toContain('Capital of France?');
+    expect(errors).toEqual([]);
+});
+
+test('the chapter rail jumps between console turns', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    const rail = page.locator('#chapter-rail');
+    await expect(rail).toBeVisible();
+    const labels = await call<string[]>(page, 'consoleChapterRail');
+    expect(labels.length).toBeGreaterThan(1);
+    await rail.locator('button').nth(1).click();
+    await expect(page.locator('#announcer')).toContainText('Chapter 2');
+    expect(errors).toEqual([]);
+});
+
+test('replay animation reveals committed prefixes', async ({ page }) => {
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    const total = await call<number>(page, 'consoleReplaySteps');
+    await call(page, 'replayConsole');
+    await expect.poll(() => page.locator('#canvas .sg-terminal-line').count()).toBe(total);
+    await expect(page.locator('#announcer')).toContainText(`Replayed ${total} committed lines`);
+    expect(errors).toEqual([]);
+});
+
+test('reduced motion skips replay animation steps', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const errors = await boot(page, '?shot=basic-turn');
+    await call(page, 'setView', 'transcript');
+    const total = await call<number>(page, 'consoleReplaySteps');
+    await call(page, 'replayConsole');
+    expect(await page.locator('#canvas .sg-terminal-line').count()).toBe(total);
+    await expect(page.locator('#announcer')).toContainText(`Replayed ${total} committed lines`);
+    expect(errors).toEqual([]);
+});
+
 test('exports a selected console range as Markdown and JSON', async ({ page }) => {
     const errors = await boot(page, '?shot=basic-turn');
     await call(page, 'setView', 'transcript');

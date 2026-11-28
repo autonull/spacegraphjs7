@@ -1,4 +1,5 @@
 import { findShotByID } from 'spacegraphjs/experiments';
+import { CONSOLE_SHOT_META } from './console-shots';
 import { SCENARIOS, type ScenarioTier, type ViewName } from './scenarios';
 
 export type Shot = {
@@ -46,6 +47,8 @@ export type ConsoleShot = Shot & {
     readonly detailLine?: number;
     /** Extra query parameters, e.g. `asOf=2`. */
     readonly query?: string;
+    /** Mirror console text without moving the spine or gutter. */
+    readonly rtl?: boolean;
 };
 
 const consoleShot = (
@@ -65,22 +68,11 @@ const consoleShot = (
     };
 };
 
-export const CONSOLE_SHOTS: readonly ConsoleShot[] = [
-    consoleShot('console-turn', 'basic-turn'),
-    consoleShot('console-selection', 'basic-turn', { selection: [0, 3] }),
-    consoleShot('console-retro', 'basic-turn', { palette: 'retro', selection: [1, 4] }),
-    consoleShot('console-history', 'basic-turn', { query: 'asOf=2' }),
-    consoleShot('console-approval', 'sleeping-approval', { palette: 'amber' }),
-    consoleShot('console-fork', 'fork-tabs', { selection: [0, 2] }),
-    consoleShot('console-narrow', 'basic-turn', {
-        viewport: { width: 1000, height: 700 },
-        selection: [0, 2],
-    }),
-    consoleShot('console-zoom', 'basic-turn', { zoomOut: 0.38 }),
-    consoleShot('console-detail-inline', 'basic-turn', { detailMode: 'inline', detailLine: 1 }),
-    consoleShot('console-detail-popup', 'basic-turn', { detailMode: 'popup', detailLine: 1 }),
-    consoleShot('console-detail-rail', 'basic-turn', { detailMode: 'rail', detailLine: 1 }),
-];
+export { CONSOLE_SHOT_META };
+
+export const CONSOLE_SHOTS: readonly ConsoleShot[] = CONSOLE_SHOT_META.map(
+    ({ id, source, ...meta }) => consoleShot(id, source, meta),
+);
 
 const HERO_IDS = new Set(['basic-turn', 'sleeping-approval', 'fork-tabs', 'resumed']);
 export const HERO_SHOTS = SHOTS.filter((shot) => HERO_IDS.has(shot.id));

@@ -80,28 +80,54 @@ export const terminalGrid = (options: Partial<TerminalGrid> = {}): TerminalGrid 
     maxWidth: options.maxWidth ?? 520,
 });
 
-/** Hard-wrap by character count so every span maps back to an entry-id and offset. */
-export const terminalWrap = (text: string, columns: number): readonly string[] => {
+/** Code-point width: 1 by default, 2 for wide glyphs, 0 for combining marks. */
+export type TerminalCharWidth = (character: string) => number;
+const unitWidth: TerminalCharWidth = () => 1;
+
+export const terminalTextWidth = (
+    text: string,
+    widthOf: TerminalCharWidth = unitWidth,
+): number => [...text].reduce((total, character) => total + Math.max(0, widthOf(character)), 0);
+
+/** Wrap by display width so each span still maps back to an entry-id and offset. */
+export const terminalWrap = (
+    text: string,
+    columns: number,
+    widthOf: TerminalCharWidth = unitWidth,
+): readonly string[] => {
     if (!text.length) return [''];
     if (columns <= 0) return [text];
-    const width = Math.floor(columns);
-    return Array.from({ length: Math.ceil(text.length / width) }, (_, index) =>
-        text.slice(index * width, (index + 1) * width),
-    );
+    const limit = Math.max(1, Math.floor(columns));
+    const lines: string[] = [];
+    let line = '';
+    let used = 0;
+    for (const character of text) {
+        const measure = Math.max(0, widthOf(character));
+        if (line && used + measure > limit) {
+            lines.push(line);
+            line = '';
+            used = 0;
+        }
+        line += character;
+        used += measure;
+    }
+    if (line || !lines.length) lines.push(line);
+    return lines;
 };
 
 export const terminalLineSize = (
     text: string,
     grid: TerminalGrid = terminalGrid(),
     octave = 0,
+    widthOf: TerminalCharWidth = unitWidth,
 ): readonly [number, number] => {
     const scale = 2 ** clamp(octave, -2, 0);
     const charWidth = grid.charWidth * scale;
     const lineHeight = grid.lineHeight * scale;
     const columns = Math.max(1, Math.floor((grid.maxWidth - grid.gutter) / charWidth));
-    const rows = terminalWrap(text, columns).length;
+    const rows = terminalWrap(text, columns, widthOf).length;
     const width = clamp(
-        text.length * charWidth + grid.gutter,
+        terminalTextWidth(text, widthOf) * charWidth + grid.gutter,
         grid.minWidth * scale,
         grid.maxWidth * scale,
     );
@@ -316,16 +342,26 @@ export type TerminalChapter = {
 /** Consecutive lines sharing a turn form one chapter; ids and offsets stay addressable. */
 export const terminalChapters = (lines: readonly TerminalLine[]): readonly TerminalChapter[] => {
     const groups: { readonly turn?: number; readonly lines: TerminalLine[] }[] = [];
-    lines.forEach((line) => {
+    lines.forEach((line, index) => {
         const last = groups.at(-1);
-        if (!last || last.turn !== line.turn) groups.push({ turn: line.turn, lines: [line] });
+        const startsChapter =
+            !last ||
+            (line.turn !== undefined
+                ? last.turn !== line.turn
+                : last.turn !== undefined || (line.role === 'user' && index > 0));
+        if (!last || startsChapter) groups.push({ turn: line.turn, lines: [line] });
         else last.lines.push(line);
     });
     return groups.map((group, index) => {
         const first = group.lines[0]!;
         return {
             id: `chapter-${index + 1}`,
-            label: group.turn === undefined ? `Lines ${index + 1}` : `Turn ${group.turn}`,
+            label:
+                group.turn === undefined
+                    ? group.lines.some((entry) => entry.role === 'user')
+                        ? `Turn ${index + 1}`
+                        : `Lines ${index + 1}`
+                    : `Turn ${group.turn}`,
             startID: first.id,
             endID: group.lines.at(-1)!.id,
             turn: group.turn,
@@ -338,6 +374,54 @@ export const terminalChapters = (lines: readonly TerminalLine[]): readonly Termi
 export const terminalReplaySteps = (
     lines: readonly TerminalLine[],
 ): readonly (readonly TerminalLine[])[] => lines.map((_, index) => lines.slice(0, index + 1));
+
+export type TerminalReplayOptions = {
+    readonly intervalMs?: number;
+    readonly reducedMotion?: boolean;
+    readonly onStep?: (step: number, total: number) => void;
+};
+
+export type TerminalReplayHandle = {
+    cancel(): void;
+    finished(): Promise<void>;
+};
+
+/** Reveals replay prefixes in order; reduced motion jumps straight to the final prefix. */
+export const playTerminalReplay = (
+    steps: readonly (readonly TerminalLine[])[],
+    render: (lines: readonly TerminalLine[]) => void,
+    options: TerminalReplayOptions = {},
+): TerminalReplayHandle => {
+    let index = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let cancelled = false;
+    let complete!: () => void;
+    const finished = new Promise<void>((resolve) => {
+        complete = resolve;
+    });
+    const stop = (): void => {
+        cancelled = true;
+        if (timer !== undefined) clearTimeout(timer);
+        complete();
+    };
+    const advance = (): void => {
+        if (cancelled) return;
+        render(steps[index] ?? []);
+        options.onStep?.(index + 1, steps.length);
+        index += 1;
+        if (index >= steps.length) {
+            complete();
+            return;
+        }
+        timer = setTimeout(advance, Math.max(0, options.intervalMs ?? 90));
+    };
+    if (options.reducedMotion) {
+        render(steps.at(-1) ?? []);
+        options.onStep?.(steps.length, steps.length);
+        complete();
+    } else advance();
+    return { cancel: stop, finished: () => finished };
+};
 
 export type TerminalSpan = {
     readonly lineID: string;
@@ -585,8 +669,13 @@ export const lineGlyph = (line: TerminalLine, glyphs: TerminalGlyphs = terminalG
 export const statusGlyph = (line: TerminalLine, glyphs: TerminalGlyphs = terminalGlyphs()): string =>
     glyphs.status[line.status] ?? '';
 
-export const lineHTML = (line: TerminalLine, glyphs: TerminalGlyphs = terminalGlyphs()): string =>
-    `<span class="tg-gutter">${escapeHtml(lineGlyph(line, glyphs))} ${escapeHtml(statusGlyph(line, glyphs))}</span><span class="tg-text">${escapeHtml(line.text)}</span>`;
+/** Text direction applies to the text span only; the gutter stays in logical (LTR) order. */
+export const lineHTML = (
+    line: TerminalLine,
+    glyphs: TerminalGlyphs = terminalGlyphs(),
+    direction?: 'ltr' | 'rtl',
+): string =>
+    `<span class="tg-gutter">${escapeHtml(lineGlyph(line, glyphs))} ${escapeHtml(statusGlyph(line, glyphs))}</span><span class="tg-text"${direction ? ` dir="${direction}"` : ''}>${escapeHtml(line.text)}</span>`;
 
 export type TerminalDetail = {
     readonly title: string;
@@ -939,6 +1028,13 @@ export type TerminalGraph = {
     onZoomBand(callback: (band: string) => void): () => void;
 };
 
+/** Cumulative window activity; hosts use it to tune mount/unmount hysteresis. */
+export type TerminalChurn = {
+    readonly mounted: number;
+    readonly unmounted: number;
+    readonly slides: number;
+};
+
 /** A host-owned model sink. `project` may return any model the host can render. */
 export type TerminalSink<Model = GraphSpec> = {
     render(model: Model): void;
@@ -946,6 +1042,10 @@ export type TerminalSink<Model = GraphSpec> = {
     select(target: string | readonly string[] | null): void;
     onNodeClick(callback: (id: string) => void): () => void;
     onZoomBand(callback: (band: string) => void): () => void;
+    /** Reports per-render node diffs when the sink performs incremental diffing. */
+    readonly onChurn?: (
+        listener: (stats: { readonly mounted: number; readonly unmounted: number }) => void,
+    ) => () => void;
     destroy?(): void;
 };
 
@@ -981,6 +1081,7 @@ export type TerminalHooks<Model = GraphSpec> = {
         band: string;
         window: TerminalWindow;
         following: boolean;
+        churn: TerminalChurn;
     }) => void;
     readonly announce?: (message: string) => void;
 };
@@ -1001,6 +1102,8 @@ export type TerminalController = {
     palette(): string;
     setPalette(id: string): void;
     following(): boolean;
+    /** Cumulative mount/unmount and window-slide counts. */
+    churn(): TerminalChurn;
     copy(): string;
     setOverlays(overlays: readonly TerminalOverlay[]): void;
     followTail(enabled: boolean): void;
@@ -1029,6 +1132,14 @@ export const mountTerminalSink = <Model = GraphSpec>(
     let ids: readonly string[] = [];
     let index: ReadonlyMap<string, number> = new Map();
     let flat: TerminalFlatText = { text: '', spans: [] };
+    let churn: TerminalChurn = { mounted: 0, unmounted: 0, slides: 0 };
+    const unsubscribeChurn = sink.onChurn?.((stats) => {
+        churn = {
+            mounted: churn.mounted + stats.mounted,
+            unmounted: churn.unmounted + stats.unmounted,
+            slides: churn.slides,
+        };
+    });
     const cacheIndices = (): void => {
         ids = lines.map((line) => line.id);
         index = terminalOrder(lines);
@@ -1072,11 +1183,14 @@ export const mountTerminalSink = <Model = GraphSpec>(
         if (filter) lines.forEach((entry) => sink.show(entry.id, filter(entry)));
         const selected = selectedIDs();
         sink.select(selected.length ? selected : focusID || null);
-        hooks.onCamera?.({ band, window: windowState, following });
+        hooks.onCamera?.({ band, window: windowState, following, churn });
     };
 
     const moveWindow = (id: string): void => {
-        windowState = terminalWindow(ids, id, hooks.windowConfig);
+        const next = terminalWindow(ids, id, hooks.windowConfig);
+        if (next.start !== windowState.start || next.end !== windowState.end)
+            churn = { ...churn, slides: churn.slides + 1 };
+        windowState = next;
     };
     const commit = (next: readonly TerminalLine[], focus?: string): void => {
         lines = [...next];
@@ -1110,6 +1224,8 @@ export const mountTerminalSink = <Model = GraphSpec>(
             );
         },
         setWindow: (startID, endID) => {
+            if (startID !== windowState.start || endID !== windowState.end)
+                churn = { ...churn, slides: churn.slides + 1 };
             windowState = { start: startID, end: endID };
             following = false;
             apply();
@@ -1130,6 +1246,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
             apply();
         },
         following: () => following,
+        churn: () => churn,
         copy: () => {
             const text = range
                 ? terminalRangeText(range, lines, index, flat)
@@ -1157,6 +1274,7 @@ export const mountTerminalSink = <Model = GraphSpec>(
         destroy: () => {
             unsubscribeNode();
             unsubscribeBand();
+            unsubscribeChurn?.();
             sink.destroy?.();
             lines = [];
         },
@@ -1170,13 +1288,17 @@ export const mountTerminal = (
 ): TerminalController => {
     let nodeIDs: readonly string[] = [];
     let edgeIDs: readonly string[] = [];
+    const churnListeners: ((stats: { readonly mounted: number; readonly unmounted: number }) => void)[] = [];
     const sink: TerminalSink<GraphSpec> = {
         render: (spec) => {
             const nodes = spec.nodes ?? [];
             const edges = spec.edges ?? [];
+            const previousNodes = new Set(nodeIDs);
             const nextNodes = new Set(nodes.map((node) => node.id));
             const nextEdges = new Set(edges.map((edge) => edge.id));
-            nodeIDs.filter((id) => !nextNodes.has(id)).forEach((id) => graph.removeNode(id));
+            const removed = nodeIDs.filter((id) => !nextNodes.has(id));
+            const mounted = nodes.filter((node) => !previousNodes.has(node.id)).length;
+            removed.forEach((id) => graph.removeNode(id));
             edgeIDs.filter((id) => !nextEdges.has(id)).forEach((id) => graph.removeEdge(id));
             nodes.forEach((node) => graph.addNode(node));
             edges.forEach((edge) => graph.addEdge(edge));
@@ -1184,6 +1306,10 @@ export const mountTerminal = (
                 nodes.filter((node) => node.position).map((node) => [node.id, node.position!]),
             );
             if (Object.keys(positions).length) graph.setPositions(positions);
+            if (churnListeners.length && (mounted || removed.length))
+                churnListeners.forEach((listener) =>
+                    listener({ mounted, unmounted: removed.length }),
+                );
             nodeIDs = [...nextNodes];
             edgeIDs = [...nextEdges];
         },
@@ -1195,6 +1321,13 @@ export const mountTerminal = (
         },
         onNodeClick: graph.onNodeClick,
         onZoomBand: graph.onZoomBand,
+        onChurn: (listener) => {
+            churnListeners.push(listener);
+            return () => {
+                const index = churnListeners.indexOf(listener);
+                if (index >= 0) churnListeners.splice(index, 1);
+            };
+        },
         destroy: () => {
             nodeIDs.forEach((id) => graph.removeNode(id));
             edgeIDs.forEach((id) => graph.removeEdge(id));

@@ -8,6 +8,7 @@ import {
     mountTerminalA11y,
     mountTerminalCamera,
     mountTerminalPrompt,
+    playTerminalReplay,
     STATUS_GLYPHS,
     TERMINAL_PALETTES,
     terminalChapters,
@@ -40,6 +41,7 @@ import {
     terminalRangeKey,
     terminalRangeText,
     terminalSpec,
+    terminalTextWidth,
     terminalVisible,
     terminalVisibleAt,
     terminalWindow,
@@ -189,6 +191,19 @@ describe('time axis', () => {
             { id: 'chapter-1', label: 'Turn 1', startID: 'a', endID: 'b', turn: 1, at: 10 },
             { id: 'chapter-2', label: 'Turn 2', startID: 'c', endID: 'c', turn: 2, at: 30 },
             { id: 'chapter-3', label: 'Lines 3', startID: 'd', endID: 'd', turn: undefined, at: undefined },
+        ]);
+    });
+
+    it('starts chapters at user lines when turns are not recorded', () => {
+        const untimed = [
+            line('a', 'alpha'),
+            { ...line('b', 'beta'), role: 'user' },
+            line('c', 'gamma'),
+            { ...line('d', 'delta'), role: 'user' },
+        ];
+        expect(terminalChapters(untimed).map((chapter) => chapter.startID)).toEqual(['a', 'b', 'd']);
+        expect(terminalChapters(untimed).map((chapter) => chapter.label)).toEqual([
+            'Lines 1', 'Turn 2', 'Turn 3',
         ]);
     });
 
@@ -798,5 +813,86 @@ describe('camera follow API', () => {
         camera.destroy();
         terminal.destroy();
         container.remove();
+    });
+});
+
+describe('wide glyphs', () => {
+    const widthOf = (character: string): number => (character.codePointAt(0)! > 0xffff ? 2 : 1);
+
+    it('wraps by display width without splitting surrogate pairs', () => {
+        expect(terminalTextWidth('a😀b', widthOf)).toBe(4);
+        expect(terminalWrap('a😀b', 3, widthOf)).toEqual(['a😀', 'b']);
+    });
+
+    it('supports zero-width combining marks and keeps the default unit grid', () => {
+        const combining = (character: string): number => (character === '\u0301' ? 0 : 1);
+        expect(terminalWrap('e\u0301x', 2, combining)).toEqual(['e\u0301x']);
+        expect(terminalWrap('abcd', 2)).toEqual(['ab', 'cd']);
+        const grid = terminalGrid({ minWidth: 0, maxWidth: 1000 });
+        expect(terminalLineSize('a😀b', grid, 0, widthOf)[0]).toBeGreaterThan(
+            terminalLineSize('abc', grid, 0)[0],
+        );
+    });
+});
+
+describe('window telemetry', () => {
+    it('reports node diffs and window slides to the host', () => {
+        const graph = graphDouble();
+        const cameras: { readonly slides: number }[] = [];
+        const terminal = mountTerminal(graph, {
+            windowConfig: { size: 1, margin: 0, hysteresis: 0 },
+            onCamera: ({ churn }) => cameras.push(churn),
+        });
+        terminal.append([line('a', 'alpha'), line('b', 'beta'), line('c', 'gamma')]);
+        expect(terminal.churn().mounted).toBeGreaterThan(0);
+        expect(terminal.churn().slides).toBe(cameras.at(-1)?.slides);
+        const slides = terminal.churn().slides;
+        terminal.setWindow('a', 'a');
+        expect(terminal.churn().unmounted).toBeGreaterThan(0);
+        expect(terminal.churn().slides).toBe(slides + 1);
+        terminal.destroy();
+    });
+});
+
+describe('replay animation', () => {
+    const steps = () =>
+        terminalReplaySteps([line('a', 'alpha'), line('b', 'beta'), line('c', 'gamma')]);
+
+    it('reveals prefixes one step at a time', async () => {
+        vi.useFakeTimers();
+        const rendered: string[][] = [];
+        const onStep = vi.fn();
+        const handle = playTerminalReplay(
+            steps(),
+            (lines) => rendered.push(lines.map((entry) => entry.id)),
+            { intervalMs: 10, onStep },
+        );
+        expect(rendered).toEqual([['a']]);
+        vi.advanceTimersByTime(10);
+        expect(rendered.at(-1)).toEqual(['a', 'b']);
+        vi.advanceTimersByTime(10);
+        expect(rendered.at(-1)).toEqual(['a', 'b', 'c']);
+        expect(onStep).toHaveBeenCalledTimes(3);
+        await handle.finished();
+        vi.useRealTimers();
+    });
+
+    it('jumps to the final prefix under reduced motion and stops on cancel', async () => {
+        vi.useFakeTimers();
+        const rendered: string[][] = [];
+        const reduced = playTerminalReplay(steps(), (lines) =>
+            rendered.push(lines.map((entry) => entry.id)), { reducedMotion: true },
+        );
+        expect(rendered).toEqual([['a', 'b', 'c']]);
+        await reduced.finished();
+
+        const cancelled = playTerminalReplay(steps(), (lines) =>
+            rendered.push(lines.map((entry) => entry.id)), { intervalMs: 10 });
+        expect(rendered).toHaveLength(2);
+        cancelled.cancel();
+        vi.advanceTimersByTime(100);
+        expect(rendered).toHaveLength(2);
+        await cancelled.finished();
+        vi.useRealTimers();
     });
 });

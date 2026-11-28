@@ -27,6 +27,9 @@ export type ConsoleModelState = {
     readonly selection?: TerminalRange;
     /** Controller cache; falls back to rebuilding the order for standalone callers. */
     readonly index?: ReadonlyMap<string, number>;
+    readonly direction?: 'ltr' | 'rtl';
+    /** Distinct prompt node id when multiple consoles share one scene. */
+    readonly promptID?: string;
     readonly detailMode: 'inline' | 'popup' | 'rail';
 };
 
@@ -65,7 +68,7 @@ export const consoleModel = (
             id: entry.id,
             kind: entry.kind,
             label: entry.label,
-            html: `<div class="sg-terminal-line" ${attrs}>${lineHTML(entry, glyphs)}</div>`,
+            html: `<div class="sg-terminal-line" ${attrs}>${lineHTML(entry, glyphs, state.direction)}</div>`,
             position: [lineWidth / 2, -index * (height + 4) + (offsets.get(entry.id) ?? 0), 0],
             size: [lineWidth, height, 1],
             status: lineStatus(entry.status),
@@ -136,7 +139,7 @@ export const consoleModel = (
     const last = lineNodes.at(-1);
     if (last)
         nodes.push({
-            id: 'terminal-prompt',
+            id: state.promptID ?? 'terminal-prompt',
             kind: 'prompt',
             label: 'Prompt',
             html: terminalPromptHTML('Send a message'),

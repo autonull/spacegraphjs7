@@ -44,17 +44,20 @@ import {
     mountTerminalCamera,
     mountTerminalPrompt,
     mountTerminalSink,
+    playTerminalReplay,
     TERMINAL_PALETTES,
     terminalChapters,
     terminalDetailHTML,
     terminalDiff,
     terminalExport,
     terminalGrid,
+    terminalLink,
     terminalPalette,
     terminalRangeFromKey,
     terminalRangeKey,
     terminalReplaySteps,
     terminalVisibleAt,
+    type TerminalReplayHandle,
     type TerminalCameraController,
     type TerminalController,
     type TerminalDetail,
@@ -667,6 +670,10 @@ export class DurableHost {
     #readerController: ReadingController | undefined;
     #terminalController: TerminalController | undefined;
     #terminalCamera: TerminalCameraController | undefined;
+    #replay: TerminalReplayHandle | undefined;
+    #replayPending = false;
+    #consoleCompare = false;
+    #diffControllers: readonly TerminalController[] | undefined;
     #consoleFramed = false;
     #detailMode: 'inline' | 'popup' | 'rail' = 'inline';
     #expandedLine: string | undefined;
@@ -974,7 +981,9 @@ export class DurableHost {
             },
         );
         this.#baseModel = model;
-        if (this.#viewName !== 'transcript') this.#setModel(this.#emphasised(model));
+        const consoleDiff = this.#viewName === 'diff' && this.#consoleCompare;
+        if (this.#viewName !== 'transcript' && !consoleDiff)
+            this.#setModel(this.#emphasised(model));
         this.#edgeLabels = model.edges.flatMap((edge) => (edge.label ? [edge.label] : []));
         if (!this.#fitted && presented.nodes.length) {
             this.#fitted = true;
@@ -987,6 +996,7 @@ export class DurableHost {
         this.renderTimeline(kernel.nodes, kernel.edges);
         this.renderView();
         this.renderReader(full);
+        if (consoleDiff) this.#renderConsoleDiff(full);
         this.opsCount = kernel.nodes.length + kernel.edges.length;
     }
 
@@ -998,6 +1008,7 @@ export class DurableHost {
 
     setView(name: ViewName): void {
         if (name === this.#viewName) return;
+        if (name !== 'transcript') this.#replay?.cancel();
         if (this.#viewName === 'transcript') this.#consoleFramed = false;
         this.#viewName = name;
         this.refresh();
@@ -1422,7 +1433,12 @@ export class DurableHost {
     }
 
     regrade(): void {
-        if (!this.#baseModel || this.#viewName === 'transcript') return;
+        if (
+            !this.#baseModel ||
+            this.#viewName === 'transcript' ||
+            (this.#viewName === 'diff' && this.#consoleCompare)
+        )
+            return;
         this.#attention = this.#attentionFor(this.registry.active()?.view.focus).weights;
         this.#setModel(this.#emphasised(this.#baseModel), false);
     }
@@ -1647,6 +1663,7 @@ export class DurableHost {
     async scrub(index: number): Promise<boolean> {
         const frame = this.#story?.frames[index];
         if (!frame) return false;
+        this.#replayPending = Boolean('replayId' in frame && frame.replayId);
         if ('shot' in frame) {
             if (frame.observer) {
                 this.announce('Observer chapters need a read-only stream — open ?observer=1');
@@ -1812,12 +1829,18 @@ export class DurableHost {
             },
             copyConsole: () => this.#terminalController?.copy(),
             consoleText: () => this.#terminalController?.text(),
+            consoleChurn: () => this.#terminal()?.churn(),
             exportConsole: (format: 'markdown' | 'json') => {
                 const terminal = this.#terminal();
                 return terminalExport(terminal.lines(), terminal.selection(), format);
             },
             consoleChapters: () => terminalChapters(lines()),
             consoleReplaySteps: () => terminalReplaySteps(lines()).length,
+            consoleChapterRail: () =>
+                [...el('chapter-rail').querySelectorAll<HTMLButtonElement>('button')].map(
+                    (element) => element.textContent ?? '',
+                ),
+            replayConsole: () => this.#playConsoleReplay(),
             consoleDetailMode: () => this.#detailMode,
             consoleExpanded: () => this.#expandedLine,
             setConsoleDetailMode: (mode: string) => {
@@ -1840,8 +1863,31 @@ export class DurableHost {
                 if (!peer) return undefined;
                 return terminalDiff(lines(), this.#consoleLines(tabKernel(peer)));
             },
+            setConsoleCompare: (enabled: boolean) => {
+                this.#consoleCompare = Boolean(enabled);
+                this.refresh();
+                return this.#consoleCompare;
+            },
+            consoleDiffLinked: (start: number, end: number) => {
+                const [left, right] = this.#diffControllers ?? [];
+                const ids = (left?.lines() ?? []).map((line) => line.id);
+                const anchor = ids[start];
+                const focus = ids[end];
+                if (!left || !right || !anchor || !focus) return undefined;
+                left.select({
+                    anchor: { nodeID: anchor, offset: 0 },
+                    focus: { nodeID: focus, offset: 0 },
+                });
+                terminalLink([left, right]).sync();
+                return right.selection() ? terminalRangeKey(right.selection()!) : undefined;
+            },
             consolePalettes: () => TERMINAL_PALETTES.map(({ id, label }) => ({ id, label })),
             setConsolePalette: (id: string) => this.#terminal()?.setPalette(id),
+            setDirection: (value: string) => {
+                document.documentElement.dir = value === 'rtl' ? 'rtl' : 'ltr';
+                this.refresh();
+                return document.documentElement.dir;
+            },
             focus: (id: string) => this.focus(id),
             applyShot: (id: string) => this.applyShot(id),
             setAsOf: (seq?: number) => this.setAsOf(seq),
@@ -2570,6 +2616,7 @@ export class DurableHost {
                 'aria-pressed',
                 String(element.dataset['view'] === this.#viewName),
             );
+        this.#renderChapterRail();
     }
 
     /** Documents keep the readable projection; transcript is a vector console over the same fold. */
@@ -2632,6 +2679,7 @@ export class DurableHost {
                     lines: this.#terminalController?.lines() ?? [],
                     selection: this.#terminalController?.selection(),
                     index: context.index,
+                    direction: document.documentElement.dir === 'rtl' ? 'rtl' : undefined,
                     detailMode: this.#detailMode,
                 }),
             onReveal: (id) => {
@@ -2744,9 +2792,111 @@ export class DurableHost {
     #renderConsole(kernel: Kernel): void {
         const lines = this.#consoleLines(kernel);
         const terminal = this.#terminal();
+        this.#replay?.cancel();
         terminal.setOverlays(this.#consoleOverlays(kernel, lines));
         terminal.setLines(lines);
+        this.#renderChapterRail();
         if (!this.#consoleFramed) this.#frameConsole();
+        if (this.#replayPending) {
+            this.#replayPending = false;
+            this.#playConsoleReplay();
+        }
+    }
+
+    #renderConsoleDiff(kernel: Kernel): void {
+        const peer = this.registry.list().find((tab) => tab.id !== this.registry.activeID());
+        if (!peer) return;
+        const groups = [
+            { tag: 'left', lines: this.#consoleLines(kernel) },
+            { tag: 'right', lines: this.#consoleLines(tabKernel(peer)) },
+        ];
+        const columns = groups.map(({ tag, lines }) => {
+            let model: RenderModel = { nodes: [], edges: [] };
+            const sink: TerminalSink<RenderModel> = {
+                render: (next) => {
+                    model = next;
+                },
+                show: () => undefined,
+                select: () => undefined,
+                onNodeClick: () => () => undefined,
+                onZoomBand: () => () => undefined,
+            };
+            const controller = mountTerminalSink(sink, {
+                grid: CONSOLE_GRID,
+                project: (context) =>
+                    consoleModel(context, {
+                        grid: CONSOLE_GRID,
+                        glyphs: terminalPalette(this.#terminalController?.palette() ?? 'classic')
+                            .glyphs,
+                        lines,
+                        direction: document.documentElement.dir === 'rtl' ? 'rtl' : undefined,
+                        promptID: `terminal-prompt-${tag}`,
+                        detailMode: 'inline',
+                    }),
+            });
+            controller.setLines(lines);
+            return { controller, model: () => model, tag };
+        });
+        this.#diffControllers = columns.map((column) => column.controller);
+        terminalLink(this.#diffControllers).sync();
+        const offset = CONSOLE_GRID.maxWidth + 60;
+        const nodes = columns.flatMap(({ model, tag }, index) =>
+            model().nodes.map((node) => ({
+                ...node,
+                id: `${tag}:${node.id}`,
+                position: [
+                    node.position[0] + index * offset,
+                    node.position[1],
+                    node.position[2],
+                ] as [number, number, number],
+            })),
+        );
+        this.renderer.setModel({ nodes, edges: [] });
+        this.announce('Linked console comparison');
+    }
+
+    #renderChapterRail(): void {
+        const rail = el('chapter-rail');
+        const inConsole = this.#viewName === 'transcript';
+        const chapters = inConsole ? terminalChapters(this.#terminalController?.lines() ?? []) : [];
+        rail.hidden = !inConsole || chapters.length < 2;
+        rail.replaceChildren(
+            ...chapters.map((chapter, index) => {
+                const element = button(chapter.label, () => void this.#activateChapter(index), {
+                    title: `Jump to ${chapter.label}`,
+                    dataset: { chapter: String(index), line: chapter.startID },
+                });
+                element.setAttribute('aria-current', String(this.#chapter === index));
+                return element;
+            }),
+        );
+    }
+
+    async #activateChapter(index: number): Promise<void> {
+        const chapter = terminalChapters(this.#terminalController?.lines() ?? [])[index];
+        if (this.#story?.frames[index]) await this.scrub(index);
+        if (chapter) this.#terminalController?.focusLine(chapter.startID);
+        this.#terminalCamera?.follow(true);
+        this.announce(`Chapter ${index + 1}: ${chapter?.label ?? 'line'}`);
+    }
+
+    #playConsoleReplay(): boolean {
+        const terminal = this.#terminal();
+        const total = terminal.lines().length;
+        if (!total) return false;
+        this.#replay?.cancel();
+        const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+        this.#replay = playTerminalReplay(
+            terminalReplaySteps(terminal.lines()),
+            (prefix) => terminal.setLines(prefix),
+            {
+                reducedMotion: reduced,
+                onStep: (step, count) => {
+                    if (step === count) this.announce(`Replayed ${count} committed lines`);
+                },
+            },
+        );
+        return true;
     }
 
     private renderLegend(): void {
