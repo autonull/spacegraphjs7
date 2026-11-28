@@ -343,8 +343,26 @@ All six outcomes landed with a pure primitive and unit test in `test/terminal.te
 through `consoleModel`/`lens.ts`/`host.ts`, E2E assertions, and console shots where visual shape
 changed. The §5 verification ladder is green end to end.
 
-Future work should keep the same split: a new capability is a selector or command over the one
-console projection, not a new view slot, renderer, text index, command registry or codec. `logLayout`,
-`chapterPacking`, `LaneLayout` and `diffPositions` remain available for host-specific grouping when
-a real need appears; they were not needed to deliver O6. The §3 fidelity exclusions (PTY, ANSI/SGR,
-a second console store) remain out of scope.
+**Final verification — re-run 2026-11-27 (clean tree, no code changes needed):**
+
+| Check | Result |
+| ----- | ------ |
+| `pnpm run check` | pass — all workspace typechecks |
+| `pnpm test` | 201 files / 1384 tests pass |
+| `pnpm run test:exports` | 6 pass |
+| `pnpm run check:generated` | pass |
+| `pnpm run check:console-shots` | 14 captures match |
+| `pnpm run lint` | pass |
+| `pnpm --filter pi-durable verify:fast` | 21 files / 106 unit tests, 104 E2E pass, 19 capture-only skipped |
+
+`verify:fast` regenerated seven `docs/screenshots/pi-durable/stories/*.png` captures (animation
+timing); those incidental changes were restored, leaving the tree clean. `pnpm run format:check`
+still reports pre-existing Prettier drift across ~400 files (including every `TODO*.md`); it is not
+part of the §5 ladder and was left untouched.
+
+There is no queued implementation work. Do not restart the outcomes — start any new capability from
+the same split: a selector plus one command id over the one console projection, not a new view slot,
+renderer, text index, command registry or codec. `logLayout`, `chapterPacking`, `LaneLayout` and
+`diffPositions` remain available for host-specific grouping when a real need appears; they were not
+needed to deliver O6. The §3 fidelity exclusions (PTY, ANSI/SGR, a second console store) remain out
+of scope.
