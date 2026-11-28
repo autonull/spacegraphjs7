@@ -12,10 +12,12 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js",
             "default": "./dist/index.js"
-        }
+        },
+        "./team.css": "./src/team.css"
     },
     "files": [
         "dist",
+        "src/team.css",
         "README.md"
     ],
     "scripts": {

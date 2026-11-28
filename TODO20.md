@@ -1,10 +1,10 @@
 # TODO20 — From experiments to agentic development surfaces
 
-> **Status: O1 + O2 landed (2026-11-28).** Extends `TODO19.md` (complete). This plan records the
-> experiment methodology developed across seventeen demos and turns the strongest results into a
-> promotion queue. O1 (promotion template + generated labs index) and O2 (`GraphWindow` with a Pi
-> Durable labs-mode consumer) are in place, along with the cheap process upgrades in §12. O3–O8 have
-> not landed. Continue from §11.
+> **Status: O1 + O2 + O3 landed (2026-11-28).** Extends `TODO19.md` (complete). This plan records
+> the experiment methodology developed across seventeen demos and turns the strongest results into a
+> promotion queue. O1 (promotion template + labs index), O2 (`GraphWindow`) and O3 (team view with
+> committed steer/approve facts) are in place, along with the cheap process upgrades in §12. O4–O8
+> have not landed. Continue from §11.
 
 ## 0. Outcome
 
@@ -225,6 +225,10 @@ All seventeen demos are in `app/demo/html/**`; the shared experiment style is
 `docs/console-experiments.md`. The generated registry lists 59 HTML demos (58 experiments/hosts plus
 the labs index). Promotion work lands in small commits; O2 is the first library/package change.
 
+- **O3 (2026-11-28):** `packages/domain/agent/src/team.ts` is the pure team model, scope aggregation
+  and state reducer; demo 16 and Pi Durable labs mode (`t`) are the two consumers. Steer commits an
+  `action` node plus an `orders` edge; approval re-commits the existing `task` fact. Both E2E specs
+  assert committed facts, tab scoping and keyboard paths. Pattern card: `packages/domain/agent/TEAM.md`.
 - **O2 (2026-11-28):** `packages/window-manager/src/graph-window.ts` is the pure shell and reducer;
   `graph-window.css` carries container-query type, square corners and reduced-motion snapping. Demo 14
   and Pi Durable labs mode (`?labs=1`) are the two consumers. Pi Durable derives window tabs from committed
@@ -259,7 +263,7 @@ the labs index). Promotion work lands in small commits; O2 is the first library/
 | - | ------- | ------ | -------------- |
 | 1 | Promotion template + labs index | done (O1) | `docs/promotion-template.md` + labs index |
 | 2 | `GraphWindow` | done (O2) | Pi Durable `?labs=1`, demo 14 |
-| 3 | `AgentTeamView`, `SteerEdge`, `TeamScope` | open | Pi Durable team view, demo 16 |
+| 3 | `AgentTeamView`, `SteerEdge`, `TeamScope` | done (O3) | Pi Durable `?labs=1` team panel, demo 16 |
 | 4 | `SessionAtlas`, `ReplayScrubber` | open | Pi Durable session view, demo 17 |
 | 5 | `InnerWidget`, `FoldableNode` | open | Pi Durable agent card, demos 10/15 |
 | 6 | Density kit (`GatherFocus`, `GraphLens`, `GraphLasso`, `ZoomMorphLayout`) | open | Pi Durable team view, demos 8/9/11/12 |
@@ -283,7 +287,7 @@ Read these first, in order:
    primitives.
 5. `AGENTS.md` at both repo roots for the repository rules.
 
-Suggested first move: **O3** (O1 and O2 are done). Do not start by rewriting Pi Durable's host; extract a
+Suggested first move: **O4** (O1–O3 are done). Do not start by rewriting Pi Durable's host; extract a
 small pure model from demo 14, give it a unit test and a typed component, then wire one Pi Durable
 view. Keep every experiment runnable until its second consumer passes E2E.
 
@@ -316,9 +320,10 @@ Landed with O1: **job statement** (`JOB:` in all seventeen demo headers), **API 
 **rejected-ideas log** (`docs/console-experiments.md`), and **executable docs** (`pnpm run check:labs`).
 Remaining priorities: **keyboard/reduced-motion gate** — needs a real keyboard path and a reduced-motion
 snap per demo, not a source-text assertion, so enforce it when each component is promoted — and **labs
-mode in Pi Durable** — O2 mounted the first pattern (`GraphWindow`) behind `?labs=1` against committed
-kernel facts; a second promoted pattern is still needed before the experiment is retired. The keyboard
-gate must also be extended to the remaining demos rather than inferred from a source-text check.
+mode in Pi Durable** — two promoted patterns now run behind `?labs=1` (`GraphWindow` and the team
+panel), both against committed kernel facts, so labs mode is ready to retire once O4 lands. The
+keyboard gate must still be extended to the remaining demos rather than inferred from a source-text
+check.
 
 ## 13. Closure
 

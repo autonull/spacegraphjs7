@@ -211,6 +211,9 @@ Pi Durable session view where the transcript, graph and time travel share one pr
 | `GraphLens` | 9 | Second-camera magnifier for dense team or session graphs |
 | `EdgeTravel` | 13, 17 | Causal edges are navigable paths, not decoration |
 
+`AgentTeamView`, `SteerEdge` and `TeamScope` are promoted as one read model with a
+[pattern card](../packages/domain/agent/TEAM.md). Steer and approvals reuse existing kernel facts.
+
 `GraphWindow` is promoted: its pure shell and pattern card live in
 `packages/window-manager/src/graph-window.ts` and
 [`GRAPH-WINDOW.md`](../packages/window-manager/GRAPH-WINDOW.md). Demo 14 and Pi Durable labs mode

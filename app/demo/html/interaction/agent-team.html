@@ -178,6 +178,12 @@
                 height: 0.7em;
                 background: var(--tone);
             }
+            @media (prefers-reduced-motion: reduce) {
+                * {
+                    transition: none !important;
+                    animation: none !important;
+                }
+            }
         </style>
     </head>
     <body>
@@ -193,6 +199,11 @@
             import { SpaceGraph } from 'spacegraphjs';
             import { terminalLODFor } from 'spacegraphjs/terminal';
             import { innerPlacements } from 'spacegraphjs/inspect';
+            import {
+                reduceTeam,
+                teamScopeStats,
+                TEAM_EDGE_KINDS,
+            } from '../../../../packages/domain/agent/src/team';
 
             const el = (id) => document.getElementById(id);
             const esc = (value) => String(value).replaceAll('<', '&lt;').replaceAll('&', '&amp;').replaceAll('"', '&quot;');
@@ -217,6 +228,7 @@
             const state = new Map(agents.map((agent) => [agent.id, { tab: 'context', active: false, log: [`${agent.role} started`, `${agent.tool} called`] }]));
             let band = 'detail';
             let active = 'lead';
+            let team = { active, scope: [], log: [] };
 
             const operatorNode = {
                 id: 'operator',
@@ -345,6 +357,7 @@
                     const value = el('steer-input').value.trim();
                     if (!value) return;
                     s.log.push(`operator: ${value}`);
+                    team = reduceTeam(team, { type: 'steer', agentID: agent.id, text: value });
                     agent.status = 'working';
                     sg.addEdge({
                         id: `steer-${s.log.length}`,
@@ -357,6 +370,7 @@
                 });
                 el('approve')?.addEventListener('click', () => {
                     agent.status = 'working';
+                    team = reduceTeam(team, { type: 'approve', agentID: agent.id });
                     s.log.push('operator approved the pending action');
                     refresh();
                     renderInspector();
@@ -366,6 +380,7 @@
 
             const selectAgent = (id, moveCamera = true) => {
                 active = id;
+                team = reduceTeam(team, { type: 'select', agentID: id });
                 state.forEach((value) => (value.active = false));
                 state.get(id).active = true;
                 refresh();
@@ -432,9 +447,10 @@
                         lodThreshold: 5000,
                     },
                 });
-                const tokens = picked.reduce((sum, agent) => sum + agent.tokens, 0);
-                const blocked = picked.filter((agent) => agent.status === 'blocked').length;
-                el('team-stats').innerHTML = `<b>${picked.length} agents</b> · ${tokens.toLocaleString()} tokens · ${blocked} blocked<br />${picked.map((agent) => esc(agent.label)).join(' · ')}`;
+                const ids = picked.map((agent) => agent.id);
+                team = reduceTeam(team, { type: 'scope', ids });
+                const stats = teamScopeStats(agents, ids);
+                el('team-stats').innerHTML = `<b>${stats.count} agents</b> · ${stats.tokens.toLocaleString()} tokens · ${stats.blocked} blocked<br />${stats.labels.map(esc).join(' · ')}`;
             });
 
             sg.events.on('node:click', ({ id }) => {
@@ -447,6 +463,23 @@
                     el('band').textContent = band;
                     refresh();
                 }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    team = reduceTeam(team, { type: 'scope', ids: [] });
+                    if (sg.hasNode('team-scope')) sg.removeNode('team-scope');
+                    el('team-stats').textContent = 'no scope · hover or brush to select';
+                    return;
+                }
+                const index = Number(event.key) - 1;
+                if (Number.isInteger(index) && index >= 0 && index < agents.length) {
+                    selectAgent(agents[index].id);
+                    return;
+                }
+                const key = event.key.toLowerCase();
+                if (key === 's') el('steer-input')?.focus();
+                if (key === 'a') el('approve')?.click();
             });
 
             refresh();

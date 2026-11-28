@@ -1735,6 +1735,14 @@
           "kind": "export"
         },
         {
+          "specifier": "./team",
+          "fileId": "packages/domain/agent/src/team",
+          "names": [
+            "*"
+          ],
+          "kind": "export"
+        },
+        {
           "specifier": "./vocabulary",
           "fileId": "packages/domain/agent/src/vocabulary",
           "names": [
@@ -1870,6 +1878,91 @@
           "kind": "import"
         }
       ]
+    },
+    {
+      "id": "packages/domain/agent/src/team",
+      "path": "packages/domain/agent/src/team.ts",
+      "packageId": "@spacegraphjs/agent",
+      "symbols": [
+        {
+          "name": "TEAM_EDGE_KINDS",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/team",
+          "line": 1,
+          "signature": "TEAM_EDGE_KINDS = ["
+        },
+        {
+          "name": "TeamAgent",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/team",
+          "line": 14,
+          "signature": "export interface TeamAgent {"
+        },
+        {
+          "name": "TeamLink",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/team",
+          "line": 24,
+          "signature": "export interface TeamLink {"
+        },
+        {
+          "name": "TeamModel",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/team",
+          "line": 31,
+          "signature": "export interface TeamModel {"
+        },
+        {
+          "name": "TeamState",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/team",
+          "line": 37,
+          "signature": "export interface TeamState {"
+        },
+        {
+          "name": "TeamEvent",
+          "kind": "type",
+          "fileId": "packages/domain/agent/src/team",
+          "line": 43,
+          "signature": "export type TeamEvent ="
+        },
+        {
+          "name": "reduceTeam",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/team",
+          "line": 49,
+          "signature": "reduceTeam = (state: TeamState, event: TeamEvent): TeamState => {"
+        },
+        {
+          "name": "TeamScopeStats",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/team",
+          "line": 70,
+          "signature": "export interface TeamScopeStats {"
+        },
+        {
+          "name": "teamScopeStats",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/team",
+          "line": 77,
+          "signature": "teamScopeStats = ("
+        },
+        {
+          "name": "TeamPanelProps",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/team",
+          "line": 98,
+          "signature": "export interface TeamPanelProps {"
+        },
+        {
+          "name": "teamPanelHTML",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/team",
+          "line": 104,
+          "signature": "teamPanelHTML = ({ model, state, stats }: TeamPanelProps): string => {"
+        }
+      ],
+      "imports": []
     },
     {
       "id": "packages/domain/agent/src/vocabulary",
@@ -11114,21 +11207,21 @@
           "name": "graphWindowAction",
           "kind": "const",
           "fileId": "packages/window-manager/src/graph-window",
-          "line": 57,
+          "line": 59,
           "signature": "graphWindowAction = (action: string, windowID: string, label: string) =>"
         },
         {
           "name": "graphWindowHTML",
           "kind": "const",
           "fileId": "packages/window-manager/src/graph-window",
-          "line": 60,
+          "line": 62,
           "signature": "graphWindowHTML = (props: GraphWindowProps): string => {"
         },
         {
           "name": "graphWindowTaskbarHTML",
           "kind": "const",
           "fileId": "packages/window-manager/src/graph-window",
-          "line": 77,
+          "line": 79,
           "signature": "graphWindowTaskbarHTML = (cards: readonly WindowCard[]): string =>"
         }
       ],

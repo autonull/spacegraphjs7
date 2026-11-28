@@ -1,0 +1,109 @@
+.team-panel {
+    --team-surface: #111823;
+    --team-border: #28364b;
+    --team-text: #e7edf5;
+    --team-muted: #8ea0b8;
+    --team-accent: #7aa2f7;
+    --team-blocked: #f07178;
+    color: var(--team-text);
+    font: 12px/1.45 var(--team-mono, 'SFMono-Regular', Consolas, monospace);
+}
+
+@media (prefers-color-scheme: light) {
+    .team-panel {
+        --team-surface: #ffffff;
+        --team-border: #b9c6d8;
+        --team-text: #182233;
+        --team-muted: #53637b;
+        --team-accent: #2456b8;
+    }
+}
+
+.team-panel ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.team-panel .team-head {
+    border-bottom: 1px solid var(--team-border);
+    padding: 6px 8px;
+    color: var(--team-muted);
+}
+
+.team-panel .team-head b {
+    color: var(--team-accent);
+}
+
+.team-agents {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 6px;
+    padding: 8px !important;
+}
+
+.team-agent {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--team-surface);
+    border: 1px solid var(--team-border);
+    border-radius: 0;
+    padding: 6px 8px;
+}
+
+.team-agent[data-active='true'] {
+    border-color: var(--team-accent);
+}
+
+.team-agent .team-status {
+    color: var(--team-accent);
+}
+
+.team-agent .team-role,
+.team-agent .team-tokens {
+    color: var(--team-muted);
+}
+
+.team-agent button {
+    align-self: flex-start;
+    background: transparent;
+    color: var(--team-muted);
+    border: 1px solid var(--team-border);
+    border-radius: 0;
+    font: inherit;
+    cursor: pointer;
+}
+
+.team-agent button:hover {
+    border-color: var(--team-accent);
+    color: var(--team-accent);
+}
+
+.team-panel .team-links {
+    border-top: 1px solid var(--team-border);
+    padding: 6px 8px;
+    color: var(--team-muted);
+}
+
+.team-panel .team-links li::before {
+    content: '↳ ';
+}
+
+.team-panel .team-stats {
+    border-top: 1px solid var(--team-border);
+    padding: 6px 8px;
+    color: var(--team-accent);
+}
+
+.team-panel .team-log {
+    padding: 6px 8px !important;
+    color: var(--team-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .team-panel * {
+        transition: none !important;
+        animation: none !important;
+    }
+}

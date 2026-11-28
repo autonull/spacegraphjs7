@@ -1,4 +1,5 @@
 import '../../../packages/window-manager/src/graph-window.css';
+import '../../../packages/domain/agent/src/team.css';
 import { addEdge, addNode } from '@spacegraphjs/kernel';
 import { mountComposer, type ComposerController } from 'spacegraphjs/composer';
 import {
@@ -452,6 +453,7 @@ const KEY_BINDINGS: readonly KeyBinding[] = [
       match: (event) => event.shiftKey && !event.ctrlKey && !event.metaKey && event.key.toLowerCase() === 'f',
       run: () => togglePresentation() },
     { keys: 'g', label: 'Cycle views', match: plainKey('g'), run: () => host.cycleView() },
+    { keys: 't', label: 'Toggle agent team (labs)', match: plainKey('t'), run: () => host.toggleTeam() },
     { keys: 'f', label: 'Focus selection', match: plainKey('f'), run: focusSelection },
     { keys: '0', label: 'Reset view', match: plainKey('0'), run: () => host.resetView() },
     { keys: 'm', label: 'Reset muting filters', match: plainKey('m'), run: () => host.resetFilters() },

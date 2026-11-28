@@ -8,6 +8,8 @@ import {
     type BandTemplate,
 } from '@spacegraphjs/adapter';
 import {
+    addEdge,
+    addNode,
     applyNodeBudget,
     diffKernels,
     Kernel,
@@ -51,6 +53,16 @@ import {
     type GraphWindowBand,
     type GraphWindowState,
 } from '../../../packages/window-manager/src/graph-window';
+import {
+    reduceTeam,
+    teamPanelHTML,
+    teamScopeStats,
+    TEAM_EDGE_KINDS,
+    type TeamAgent,
+    type TeamLink,
+    type TeamModel,
+    type TeamState,
+} from '../../../packages/domain/agent/src/team';
 import { isEditableTarget } from 'spacegraphjs/utils';
 import {
     createInstrumentKit,
@@ -782,6 +794,8 @@ export class DurableHost {
     readonly #labs: boolean;
     #windowState = new Map<string, GraphWindowState>();
     #windowMax = false;
+    #teamEnabled = false;
+    #teamState: TeamState = { active: '', scope: [], log: [] };
     #hoveredLine: string | undefined;
     #consoleModel: RenderModel = { nodes: [], edges: [] };
     #a11yLayer: AccessibilityLayer | undefined;
@@ -882,7 +896,10 @@ export class DurableHost {
                 this.consoleGrow();
             }
         });
-        if (this.#labs) this.#mountLabTaskbar();
+        if (this.#labs) {
+            this.#mountLabTaskbar();
+            this.#mountLabTeam();
+        }
         this.renderGlossary();
         this.renderLegend();
         this.renderRungs();
@@ -1163,7 +1180,10 @@ export class DurableHost {
         this.renderTimeline(kernel.nodes, kernel.edges);
         this.renderView();
         this.renderReader(full);
-        if (this.#labs) this.#renderLabTaskbar(tab.id);
+        if (this.#labs) {
+            this.#renderLabTaskbar(tab.id);
+            this.#renderTeam();
+        }
         if (consoleDiff) this.#renderConsoleDiff(full);
         this.opsCount = kernel.nodes.length + kernel.edges.length;
     }
@@ -2213,6 +2233,156 @@ export class DurableHost {
             return;
         }
         this.refresh();
+    }
+
+    toggleTeam(): boolean {
+        if (!this.#labs) return false;
+        this.#teamEnabled = !this.#teamEnabled;
+        if (!this.#teamState.active) this.#teamState = reduceTeam(this.#teamState, {
+            type: 'select',
+            agentID: this.registry.activeID(),
+        });
+        const panel = document.getElementById('lab-team');
+        if (panel) panel.hidden = !this.#teamEnabled;
+        this.announce(this.#teamEnabled ? 'Agent team view on' : 'Agent team view off');
+        this.#renderTeam();
+        return this.#teamEnabled;
+    }
+
+    #mountLabTeam(): void {
+        const panel = document.createElement('section');
+        panel.id = 'lab-team';
+        panel.hidden = true;
+        panel.setAttribute('aria-label', 'Agent team');
+        el('stage').append(panel);
+        panel.addEventListener('click', (event) => {
+            const target = event.target as HTMLElement;
+            const select = target.closest<HTMLElement>('[data-team-select]');
+            if (select?.dataset['teamSelect']) {
+                const agentID = select.dataset['teamSelect'];
+                this.#teamState = reduceTeam(this.#teamState, { type: 'select', agentID });
+                this.setTab(agentID);
+                this.#renderTeam();
+                return;
+            }
+            const action = target.closest<HTMLElement>('[data-team-action]');
+            if (action?.dataset['teamAction']) this.#teamAction(action.dataset['teamAction']);
+        });
+        panel.addEventListener('change', (event) => {
+            if (!(event.target instanceof HTMLInputElement) || !event.target.dataset['teamScope'])
+                return;
+            const ids = [
+                ...panel.querySelectorAll<HTMLInputElement>('[data-team-scope]'),
+            ]
+                .filter((input) => input.checked)
+                .map((input) => input.dataset['teamScope']!);
+            this.#teamState = reduceTeam(this.#teamState, { type: 'scope', ids });
+            this.#renderTeam();
+        });
+    }
+
+    #teamModel(): TeamModel {
+        const tabs = this.registry.list();
+        const agents: TeamAgent[] = tabs.map((tab) => {
+            const kernel = tab.session.state();
+            const run = kernel.nodes.find(
+                (node) => node.kind === 'run' || node.data?.['role'] === 'agent',
+            );
+            const task = kernel.nodes.find((node) => node.kind === 'task');
+            const pending = kernel.nodes.some((node) => node.data?.['status'] === 'pending');
+            const files = [
+                ...new Set(
+                    kernel.nodes
+                        .map((node) => node.data?.['path'])
+                        .filter((path): path is string => typeof path === 'string'),
+                ),
+            ].slice(0, 3);
+            return {
+                id: tab.id,
+                label: run?.label ?? tab.id,
+                role: String(run?.data?.['role'] ?? 'agent'),
+                status: pending ? 'blocked' : String(task?.data?.['status'] ?? 'working'),
+                tool: String(run?.data?.['tool'] ?? 'run'),
+                tokens: kernel.nodes.length,
+                files,
+            };
+        });
+        const links: TeamLink[] = tabs.flatMap((tab) =>
+            tab.session
+                .state()
+                .edges.filter((edge) => (TEAM_EDGE_KINDS as readonly string[]).includes(edge.kind))
+                .map((edge) => ({
+                    id: edge.id,
+                    source: edge.source,
+                    target: edge.target,
+                    kind: edge.kind,
+                })),
+        );
+        return { operator: this.registry.activeID(), agents, links };
+    }
+
+    #renderTeam(): void {
+        const panel = document.getElementById('lab-team');
+        if (!panel || !this.#teamEnabled) return;
+        const model = this.#teamModel();
+        const stats = teamScopeStats(model.agents, this.#teamState.scope);
+        panel.innerHTML = `<div class="team-controls">
+            <input id="team-steer-input" placeholder="steer this agent…" aria-label="Steer message" />
+            <button type="button" data-sg-interactive="true" data-team-action="steer">STEER</button>
+            <button type="button" data-sg-interactive="true" data-team-action="approve">APPROVE</button>
+        </div>${teamPanelHTML({ model, state: this.#teamState, stats })}`;
+    }
+
+    #teamAction(action: string): void {
+        if (action === 'steer') {
+            const input = document.getElementById('team-steer-input');
+            if (!(input instanceof HTMLInputElement)) return;
+            this.#teamSteer(input.value.trim());
+            input.value = '';
+            return;
+        }
+        if (action === 'approve') this.#teamApprove();
+    }
+
+    #teamSteer(text: string): void {
+        const tabID = this.#teamState.active || this.registry.activeID();
+        const session = this.registry.get(tabID);
+        if (!session || !text) return;
+        const kernel = session.session.state();
+        const conversation = kernel.nodes.find((node) => node.kind === 'conversation');
+        const nodeID = `action:steer-${tabID}-${kernel.nodes.length + 1}`;
+        this.consume(
+            tabID,
+            addNode(nodeID, 'action', `steer: ${text}`, {
+                status: 'complete',
+                role: 'action',
+                target: tabID,
+            }),
+        );
+        if (conversation) this.consume(tabID, addEdge('orders', conversation.id, nodeID));
+        this.#teamState = reduceTeam(this.#teamState, { type: 'steer', agentID: tabID, text });
+        this.#renderTeam();
+        this.announce(`Steered ${tabID}`);
+    }
+
+    #teamApprove(): void {
+        const tabID = this.#teamState.active || this.registry.activeID();
+        const session = this.registry.get(tabID);
+        if (!session) return;
+        const task = session.session
+            .state()
+            .nodes.find((node) => node.kind === 'task' && node.data?.['status'] !== 'complete');
+        if (!task) {
+            this.announce('No pending task to approve');
+            return;
+        }
+        this.consume(
+            tabID,
+            addNode(task.id, 'task', task.label, { ...task.data, status: 'complete' }),
+        );
+        this.#teamState = reduceTeam(this.#teamState, { type: 'approve', agentID: tabID });
+        this.#renderTeam();
+        this.announce(`Approved ${tabID}`);
     }
 
     #syncConsoleOverlays(): void {
