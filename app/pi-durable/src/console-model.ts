@@ -15,7 +15,9 @@ import {
     terminalOverlayGaps,
     terminalPromptHTML,
     terminalRangeIDs,
+    terminalFocusWeights,
     terminalSlots,
+    terminalTokens,
     terminalWrapRows,
     type TerminalGlyphs,
     type TerminalGrid,
@@ -44,6 +46,8 @@ export type ConsoleModelState = {
     readonly lod?: string;
     /** Line under the pointer, for `reveal: 'hover'` overlays. */
     readonly hovered?: string;
+    /** Followed line, used as the focus centre for dimming. */
+    readonly focusID?: string;
 };
 
 const lineStatus = (status: string): RenderNode['status'] =>
@@ -96,6 +100,7 @@ export const consoleModel = (
         const ranges = flags?.highlightMatches ? (rangesByLine.get(entry.id) ?? []) : [];
         const number = (index.get(entry.id) ?? 0) + 1;
         const source = entry.at === undefined ? undefined : new Date(entry.at).toISOString();
+        const tokens = flags?.inlineTokens ? terminalTokens(entry.text) : [];
         const chrome: TerminalLineChrome = {
             ...(flags?.lineNumbers ? { lineNumber: number } : {}),
             ...(flags?.sourceStamp && source ? { source } : {}),
@@ -122,6 +127,7 @@ export const consoleModel = (
                 matches: ranges,
                 band: flags?.zoomLOD ? state.lod : undefined,
                 chrome,
+                tokens,
             })}</div>`,
             position: [
                 placement.position[0],
@@ -208,6 +214,15 @@ export const consoleModel = (
             data: { terminal: true },
         });
     const model: RenderModel = { nodes, edges: [] };
+    if (flags?.focusDimming) {
+        const weights = terminalFocusWeights(
+            lines,
+            state.focusID,
+            selected,
+            new Set(rangesByLine.keys()),
+        );
+        return applyModelEmphasis(model, weights, DIM_MAPPING);
+    }
     if (!state.dimNonMatches || !rangesByLine.size) return model;
     const lineIDs = new Set(lineNodes.map((node) => node.id));
     const emphasis = new Map(

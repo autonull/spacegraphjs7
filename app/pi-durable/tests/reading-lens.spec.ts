@@ -15,7 +15,7 @@ test('profiles replace scattered presentation flags', async ({ page }) => {
     const errors = await bootConsole(page);
     const profiles = await call<readonly { id: string }[]>(page, 'consoleProfiles');
     expect(profiles.map((profile) => profile.id)).toEqual([
-        'logs', 'presentation', 'high-contrast', 'big-text', 'fractal',
+        'logs', 'presentation', 'high-contrast', 'big-text', 'fractal', 'documents',
     ]);
     expect(await call<string>(page, 'consoleProfile', 'big-text')).toBe('big-text');
     await expect(page.locator('#canvas .sg-terminal-wrap').first()).toBeVisible();

@@ -71,6 +71,7 @@ import {
     TERMINAL_PROFILES,
     terminalChapters,
     terminalDetailHTML,
+    terminalDetailSize,
     terminalDiff,
     terminalExport,
     terminalGrid,
@@ -3648,6 +3649,7 @@ export class DurableHost {
                     dimNonMatches: Boolean(this.#consoleSelector.search),
                     lod: this.#consoleLOD,
                     hovered: this.#hoveredLine,
+                    focusID: this.#terminalController?.tail(),
                 }),
             onReveal: (id) => {
                 if (id.startsWith('grow-')) return;
@@ -3759,6 +3761,9 @@ export class DurableHost {
         ];
         const detail = (line: TerminalLine): TerminalOverlay[] => {
             const mode = this.#detailMode;
+            const content = this.#consoleDetail(kernel, line);
+            const format = this.#consolePresentation.markdownDetail ? 'markdown' : 'text';
+            const [width, height] = terminalDetailSize(content, this.#consoleGrid, format, mode);
             return [
                 {
                     id: `detail-${line.id}`,
@@ -3771,9 +3776,9 @@ export class DurableHost {
                         type: 'HtmlNode',
                         label: 'detail',
                         data: {
-                            html: terminalDetailHTML(this.#consoleDetail(kernel, line)),
-                            width: mode === 'inline' ? this.#consoleGrid.maxWidth : 360,
-                            height: mode === 'inline' ? 30 : 84,
+                            html: terminalDetailHTML(content, { format }),
+                            width,
+                            height,
                         },
                     } as NodeSpec,
                 },

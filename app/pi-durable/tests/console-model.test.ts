@@ -120,6 +120,27 @@ describe('consoleModel', () => {
         expect(html).toContain('class="tg-row"');
     });
 
+    it('tokens text and dims lines away from the focused one', () => {
+        const entries: readonly TerminalLine[] = [
+            { ...lines[0]!, text: 'use `alpha` here' },
+            { ...lines[1]!, text: 'beta tail' },
+        ];
+        const model = consoleModel(
+            {
+                ...context(),
+                lines: entries,
+                visible: entries,
+                order: entries.map((entry) => entry.id),
+                index: terminalOrder(entries),
+                presentation: { inlineTokens: true, focusDimming: true },
+            },
+            { ...state, lines: entries, focusID: 'a' },
+        );
+        expect(model.nodes[0]!.html).toContain('<code>alpha</code>');
+        expect(model.nodes[1]!.data?.['opacity']).toBeLessThan(1);
+        expect(model.nodes[0]!.data?.['opacity']).toBe(1);
+    });
+
     it('renders far zoom bands as accessible glyphs with a stable data-lod', () => {
         const model = consoleModel(
             { ...context(), band: 'dot' },

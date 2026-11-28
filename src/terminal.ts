@@ -16,7 +16,8 @@ import {
     type InnerSourceEdge,
     type InnerSourceNode,
 } from './inspect/inner-topology';
-import { escapeHtml } from './markup';
+import { parseDocument, safeDocumentHTML } from './documents';
+import { escapeHtml, SAFE_HREF } from './markup';
 import { DEFAULT_RUNG_IDS } from './representations/ladder';
 import type { ReadingNode } from './reading';
 import type { EdgeSpec, GraphSpec, NodeSpec } from './types';
@@ -616,6 +617,28 @@ export const terminalRangeText = (
     return from === undefined || to === undefined ? '' : flat.text.slice(from, Math.max(from, to));
 };
 
+/** Emphasis weights for focus, selection and matches; suitable for `applyModelEmphasis`. */
+export const terminalFocusWeights = (
+    lines: readonly TerminalLine[],
+    focusID: string | undefined,
+    selectedIDs: ReadonlySet<string> = new Set(),
+    matchIDs: ReadonlySet<string> = new Set(),
+): ReadonlyMap<string, number> => {
+    const order = terminalOrder(lines);
+    const focus = focusID === undefined ? undefined : order.get(focusID);
+    return new Map(
+        lines.map((line, index) => {
+            const weight =
+                matchIDs.has(line.id) || selectedIDs.has(line.id)
+                    ? 1
+                    : focus === undefined
+                      ? 1
+                      : clamp(1 - Math.abs(index - focus) * 0.25, 0.2, 1);
+            return [line.id, weight] as const;
+        }),
+    );
+};
+
 export const TERMINAL_MODES = ['live', 'follow', 'snapshot', 'derived'] as const;
 export type TerminalMode = (typeof TERMINAL_MODES)[number];
 
@@ -639,6 +662,9 @@ export type TerminalPresentation = {
     readonly highlightMatches?: boolean;
     /** Collapse lines to accessible glyphs at far zoom bands. */
     readonly zoomLOD?: boolean;
+    readonly inlineTokens?: boolean;
+    readonly focusDimming?: boolean;
+    readonly markdownDetail?: boolean;
 };
 
 const PRESENTATION_FLAGS = [
@@ -648,6 +674,9 @@ const PRESENTATION_FLAGS = [
     ['sourceStamp', 's'],
     ['highlightMatches', 'h'],
     ['zoomLOD', 'z'],
+    ['inlineTokens', 't'],
+    ['focusDimming', 'f'],
+    ['markdownDetail', 'm'],
 ] as const satisfies readonly (readonly [keyof TerminalPresentation, string])[];
 
 /** Canonical compact key for addressable presentation flags, e.g. `nsw`. */
@@ -1110,6 +1139,18 @@ export const TERMINAL_PROFILES: readonly TerminalProfile[] = [
         grid: {},
         presentation: { zoomLOD: true },
     },
+    {
+        id: 'documents',
+        label: 'Documents',
+        palette: 'classic',
+        grid: {},
+        presentation: {
+            reflow: true,
+            inlineTokens: true,
+            markdownDetail: true,
+            focusDimming: true,
+        },
+    },
 ];
 
 export const terminalProfile = (id: string): TerminalProfile =>
@@ -1350,21 +1391,106 @@ export type TerminalLineChrome = {
     readonly rows?: readonly TerminalWrapRow[];
 };
 
-const markedText = (
+export type TerminalTokenKind = 'code' | 'link' | 'strong' | 'em';
+export type TerminalToken = {
+    readonly kind: TerminalTokenKind;
+    readonly start: number;
+    readonly end: number;
+    /** Inner text without grammar markers; hosts escape before rendering. */
+    readonly text: string;
+    /** Present only when the link href passes the safe-href rule. */
+    readonly href?: string;
+};
+
+/** Inline grammar tokens with source offsets; unsafe links degrade to plain text. */
+export const terminalTokens = (text: string): readonly TerminalToken[] => {
+    const pattern = /`([^`]+)`|\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
+    const tokens: TerminalToken[] = [];
+    for (let match = pattern.exec(text); match; match = pattern.exec(text)) {
+        const [raw, code, label, href, strong, emphasis] = match;
+        const start = match.index;
+        const end = start + raw.length;
+        if (tokens.some((token) => start < token.end && end > token.start)) continue;
+        if (code !== undefined) tokens.push({ kind: 'code', start, end, text: code });
+        else if (label !== undefined)
+            tokens.push({
+                kind: 'link',
+                start,
+                end,
+                text: label,
+                ...(SAFE_HREF.test(href!) ? { href } : {}),
+            });
+        else if (strong !== undefined) tokens.push({ kind: 'strong', start, end, text: strong });
+        else if (emphasis !== undefined) tokens.push({ kind: 'em', start, end, text: emphasis });
+    }
+    return tokens;
+};
+
+type TerminalSegment = {
+    readonly start: number;
+    readonly end: number;
+    readonly text: string;
+    readonly kind?: TerminalTokenKind;
+    readonly href?: string;
+    readonly marked?: boolean;
+};
+
+const segmentHTML = ({ text, kind, href, marked }: TerminalSegment): string => {
+    const escaped = escapeHtml(text);
+    const value =
+        kind === 'code'
+            ? `<code>${escaped}</code>`
+            : kind === 'strong'
+              ? `<strong>${escaped}</strong>`
+              : kind === 'em'
+                ? `<em>${escaped}</em>`
+                : kind === 'link' && href
+                  ? `<a href="${escapeHtml(href)}">${escaped}</a>`
+                  : escaped;
+    return marked ? `<mark>${value}</mark>` : value;
+};
+
+/** Cut at token and match boundaries before escaping, so no tag is ever split or trusted. */
+const composeText = (
     text: string,
-    start: number,
+    from: number,
     matches: readonly (readonly [number, number])[],
+    tokens: readonly TerminalToken[],
 ): string => {
-    let result = '';
-    let at = start;
-    matches.forEach(([from, to]) => {
-        if (from < at || from < start || to > start + text.length) return;
-        result +=
-            escapeHtml(text.slice(at - start, from - start)) +
-            `<mark>${escapeHtml(text.slice(from - start, to - start))}</mark>`;
-        at = to;
+    const localTokens = tokens
+        .filter((token) => token.start >= from && token.end <= from + text.length)
+        .map((token) => ({ ...token, start: token.start - from, end: token.end - from }));
+    const localMatches = matches
+        .map(([start, end]) => [start - from, end - from] as const)
+        .filter(([start, end]) => start >= 0 && end <= text.length && end > start);
+    const cuts = new Set([0, text.length]);
+    localTokens.forEach((token) => {
+        cuts.add(token.start);
+        cuts.add(token.end);
     });
-    return result + escapeHtml(text.slice(at - start));
+    const insideToken = (value: number): boolean =>
+        localTokens.some((token) => value > token.start && value < token.end);
+    localMatches.forEach(([start, end]) => {
+        if (!insideToken(start)) cuts.add(start);
+        if (!insideToken(end)) cuts.add(end);
+    });
+    const sorted = [...cuts].sort((a, b) => a - b);
+    return sorted
+        .slice(0, -1)
+        .map((start, index) => {
+            const end = sorted[index + 1]!;
+            if (end <= start) return '';
+            const token = localTokens.find((entry) => entry.start === start && entry.end === end);
+            const marked = localMatches.some(([a, b]) => a <= start && b >= end);
+            return segmentHTML({
+                start,
+                end,
+                text: token ? token.text : text.slice(start, end),
+                ...(token ? { kind: token.kind, ...(token.href ? { href: token.href } : {}) } : {}),
+                ...(marked ? { marked: true } : {}),
+            });
+        })
+        .join('');
 };
 
 /** Text direction applies to the text span only; the gutter stays in logical (LTR) order. */
@@ -1374,12 +1500,16 @@ export const lineHTML = (
     direction?: 'ltr' | 'rtl',
     matches: readonly (readonly [number, number])[] = [],
     { lineNumber, source, rows }: TerminalLineChrome = {},
+    tokens: readonly TerminalToken[] = [],
 ): string => {
     const body = rows
         ? rows
-              .map((row) => `<span class="tg-row">${markedText(row.text, row.start, matches)}</span>`)
+              .map(
+                  (row) =>
+                      `<span class="tg-row">${composeText(row.text, row.start, matches, tokens)}</span>`,
+              )
               .join('')
-        : markedText(line.text, 0, matches);
+        : composeText(line.text, 0, matches, tokens);
     const number =
         lineNumber === undefined ? '' : `<span class="tg-line-no" aria-hidden="true">${lineNumber}</span>`;
     const stamp =
@@ -1426,6 +1556,7 @@ export type TerminalLineHTMLOptions = {
     readonly labelChars?: number;
     /** Visible reading chrome, applied only in the full-text band. */
     readonly chrome?: TerminalLineChrome;
+    readonly tokens?: readonly TerminalToken[];
 };
 
 /** Zoom fidelity: glyph, short label, or full text. Identity and text stay addressable throughout. */
@@ -1439,6 +1570,7 @@ export const terminalLineHTML = (
         ladder = DEFAULT_RUNG_IDS,
         labelChars = 20,
         chrome = {},
+        tokens = [],
     }: TerminalLineHTMLOptions = {},
 ): string => {
     const at = band ? ladder.indexOf(band) : ladder.length - 1;
@@ -1452,7 +1584,7 @@ export const terminalLineHTML = (
         const suffix = label.length > labelChars ? '…' : '';
         return `${gutter}<span class="tg-glyph-label" aria-label="${escaped}" title="${escaped}">${short}${suffix}</span>`;
     }
-    return lineHTML(line, glyphs, direction, matches, chrome);
+    return lineHTML(line, glyphs, direction, matches, chrome, tokens);
 };
 
 export type TerminalDetail = {
@@ -1461,15 +1593,42 @@ export type TerminalDetail = {
     readonly text?: string;
 };
 
+export type TerminalDetailOptions = {
+    readonly format?: 'text' | 'markdown';
+};
+
 /** Safe, escaped markup for an expandable detail card in any of the overlay slots. */
-export const terminalDetailHTML = (detail: TerminalDetail): string => {
+export const terminalDetailHTML = (
+    detail: TerminalDetail,
+    { format = 'text' }: TerminalDetailOptions = {},
+): string => {
     const rows = detail.fields
         .map(
             ([key, value]) =>
                 `<span class="tg-detail-field"><b>${escapeHtml(key)}</b> ${escapeHtml(value)}</span>`,
         )
         .join('');
-    return `<div class="tg-detail"><strong>${escapeHtml(detail.title)}</strong>${detail.text ? `<p>${escapeHtml(detail.text)}</p>` : ''}<div class="tg-detail-fields">${rows}</div></div>`;
+    const body = detail.text
+        ? format === 'markdown'
+            ? safeDocumentHTML(detail.text)
+            : `<p>${escapeHtml(detail.text)}</p>`
+        : '';
+    return `<div class="tg-detail"><strong>${escapeHtml(detail.title)}</strong>${body}<div class="tg-detail-fields">${rows}</div></div>`;
+};
+
+/** Card geometry from parsed block count; text cards keep the compact host dimensions. */
+export const terminalDetailSize = (
+    detail: TerminalDetail,
+    grid: TerminalGrid = terminalGrid(),
+    format: 'text' | 'markdown' = 'text',
+    mode: 'inline' | 'popup' | 'rail' = 'popup',
+): readonly [number, number] => {
+    if (format === 'text')
+        return [mode === 'inline' ? grid.maxWidth : 360, mode === 'inline' ? 30 : 84];
+    const blocks = parseDocument(detail.text ?? '').length;
+    const width = clamp(grid.maxWidth * 0.55, grid.minWidth, grid.maxWidth);
+    const height = Math.max(mode === 'inline' ? 30 : 84, blocks * grid.lineHeight + grid.gutter);
+    return [width, clamp(height, grid.lineHeight, grid.maxWidth)];
 };
 
 /** Caret and textarea markup for an `HtmlNode` tail node; the host owns the CSS. */

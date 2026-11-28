@@ -5,6 +5,9 @@ import {
     lineGlyph,
     lineHTML,
     terminalLineHTML,
+    terminalTokens,
+    terminalFocusWeights,
+    terminalDetailSize,
     terminalColumns,
     terminalLODFor,
     terminalPresentationFromKey,
@@ -1296,7 +1299,7 @@ describe('reading lens and profiles', () => {
 
     it('exposes named profiles with one presentation contract', () => {
         expect(TERMINAL_PROFILES.map((profile) => profile.id)).toEqual([
-            'logs', 'presentation', 'high-contrast', 'big-text', 'fractal',
+            'logs', 'presentation', 'high-contrast', 'big-text', 'fractal', 'documents',
         ]);
         expect(terminalProfile('big-text').presentation.wrap).toBe(true);
         expect(terminalProfile('missing').id).toBe('logs');
@@ -1311,6 +1314,66 @@ describe('addressable presentation', () => {
         expect(terminalPresentationFromKey(undefined)).toBeUndefined();
         expect(terminalPresentationFromKey('nw')).toBeUndefined();
         expect(terminalPresentationFromKey('q')).toBeUndefined();
+        expect(terminalPresentationFromKey('tfm')).toEqual({
+            inlineTokens: true,
+            focusDimming: true,
+            markdownDetail: true,
+        });
+    });
+});
+
+describe('structured text', () => {
+    it('tokenizes inline grammar with source offsets and safe hrefs', () => {
+        const text = 'use `npm run` and [docs](https://example.com) with **bold** and *soft*';
+        expect(terminalTokens(text)).toEqual([
+            { kind: 'code', start: 4, end: 13, text: 'npm run' },
+            { kind: 'link', start: 18, end: 45, text: 'docs', href: 'https://example.com' },
+            { kind: 'strong', start: 51, end: 59, text: 'bold' },
+            { kind: 'em', start: 64, end: 70, text: 'soft' },
+        ]);
+    });
+
+    it('rejects unsafe hrefs and composes token and match boundaries before escaping', () => {
+        const text = '[bad](javascript:alert(1)) [on](https://ok/?a=1&b=2)';
+        expect(terminalTokens(text).map((token) => token.href)).toEqual([undefined, 'https://ok/?a=1&b=2']);
+        const html = terminalLineHTML(line('a', '`x<y>` tail'), terminalGlyphs(), {
+            tokens: terminalTokens('`x<y>` tail'),
+            matches: [[0, 7]],
+        });
+        expect(html).toContain('<mark><code>x&lt;y&gt;</code></mark>');
+        expect(html).not.toContain('<y>');
+        const unsafe = terminalLineHTML(line('b', '[bad](javascript:alert(1))'), terminalGlyphs(), {
+            tokens: terminalTokens('[bad](javascript:alert(1))'),
+        });
+        expect(unsafe).toContain('bad');
+        expect(unsafe).not.toContain('href=');
+        expect(unsafe).not.toContain('javascript:');
+    });
+
+    it('weights focus, selection and matches without mutating line order', () => {
+        const entries = ['a', 'b', 'c', 'd'].map((id) => line(id, id));
+        const weights = terminalFocusWeights(entries, 'b', new Set(['d']), new Set(['c']));
+        expect(weights.get('b')).toBe(1);
+        expect(weights.get('a')).toBe(0.75);
+        expect(weights.get('c')).toBe(1);
+        expect(weights.get('d')).toBe(1);
+        expect(terminalFocusWeights(entries, undefined).get('a')).toBe(1);
+    });
+
+    it('sizes markdown details from parsed blocks and keeps text cards compact', () => {
+        const detail = {
+            title: '<b>note</b>',
+            fields: [['kind', 'tool']] as const,
+            text: '# Heading\n\n- one\n- two',
+        };
+        expect(terminalDetailSize(detail, terminalGrid(), 'text', 'inline')).toEqual([520, 30]);
+        expect(terminalDetailSize(detail, terminalGrid(), 'text')).toEqual([360, 84]);
+        const long = { ...detail, text: Array.from({ length: 8 }, (_, i) => `# H${i}`).join('\n\n') };
+        expect(terminalDetailSize(long, terminalGrid(), 'markdown')[1]).toBeGreaterThan(84);
+        const html = terminalDetailHTML(detail, { format: 'markdown' });
+        expect(html).toContain('&lt;b&gt;note&lt;/b&gt;');
+        expect(html).toContain('<h1>Heading</h1>');
+        expect(html).not.toContain('<b>note</b>');
     });
 });
 
