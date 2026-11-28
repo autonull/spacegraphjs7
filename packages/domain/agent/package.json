@@ -15,13 +15,15 @@
         },
         "./team.css": "./src/team.css",
         "./atlas.css": "./src/atlas.css",
-        "./inner-widget.css": "./src/inner-widget.css"
+        "./inner-widget.css": "./src/inner-widget.css",
+        "./density.css": "./src/density.css"
     },
     "files": [
         "dist",
         "src/team.css",
         "src/atlas.css",
         "src/inner-widget.css",
+        "src/density.css",
         "README.md"
     ],
     "scripts": {

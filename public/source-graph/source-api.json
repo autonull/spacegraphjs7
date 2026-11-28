@@ -1824,6 +1824,147 @@
       "imports": []
     },
     {
+      "id": "packages/domain/agent/src/density",
+      "path": "packages/domain/agent/src/density.ts",
+      "packageId": "@spacegraphjs/agent",
+      "symbols": [
+        {
+          "name": "DensityPoint",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 1,
+          "signature": "export interface DensityPoint {"
+        },
+        {
+          "name": "DensityNode",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 6,
+          "signature": "export interface DensityNode extends DensityPoint {"
+        },
+        {
+          "name": "DensityEdge",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 11,
+          "signature": "export interface DensityEdge {"
+        },
+        {
+          "name": "DensityRect",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 17,
+          "signature": "export interface DensityRect {"
+        },
+        {
+          "name": "GatheredNode",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 24,
+          "signature": "export interface GatheredNode extends DensityPoint {"
+        },
+        {
+          "name": "gatherLayout",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 32,
+          "signature": "gatherLayout = ("
+        },
+        {
+          "name": "LensScope",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 70,
+          "signature": "export interface LensScope {"
+        },
+        {
+          "name": "lensScope",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 78,
+          "signature": "lensScope = ("
+        },
+        {
+          "name": "lassoScope",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 104,
+          "signature": "lassoScope = ("
+        },
+        {
+          "name": "lassoFrame",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 118,
+          "signature": "lassoFrame = ("
+        },
+        {
+          "name": "internalEdgeCount",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 139,
+          "signature": "internalEdgeCount = ("
+        },
+        {
+          "name": "MorphStop",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 147,
+          "signature": "export interface MorphStop {"
+        },
+        {
+          "name": "morphTarget",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 153,
+          "signature": "morphTarget = (zoom: number, stops: readonly MorphStop[]): string => {"
+        },
+        {
+          "name": "DensityTool",
+          "kind": "type",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 162,
+          "signature": "export type DensityTool = 'off' | 'gather' | 'lens' | 'lasso' | 'morph';"
+        },
+        {
+          "name": "DensityState",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 164,
+          "signature": "export interface DensityState {"
+        },
+        {
+          "name": "DensityAction",
+          "kind": "type",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 173,
+          "signature": "export type DensityAction ="
+        },
+        {
+          "name": "reduceDensity",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 182,
+          "signature": "reduceDensity = (state: DensityState, action: DensityAction): DensityState => {"
+        },
+        {
+          "name": "DensityPanelProps",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 213,
+          "signature": "export interface DensityPanelProps {"
+        },
+        {
+          "name": "densityPanelHTML",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/density",
+          "line": 221,
+          "signature": "densityPanelHTML = ({"
+        }
+      ],
+      "imports": []
+    },
+    {
       "id": "packages/domain/agent/src/facets",
       "path": "packages/domain/agent/src/facets.ts",
       "packageId": "@spacegraphjs/agent",
@@ -1854,6 +1995,14 @@
         {
           "specifier": "./atlas",
           "fileId": "packages/domain/agent/src/atlas",
+          "names": [
+            "*"
+          ],
+          "kind": "export"
+        },
+        {
+          "specifier": "./density",
+          "fileId": "packages/domain/agent/src/density",
           "names": [
             "*"
           ],

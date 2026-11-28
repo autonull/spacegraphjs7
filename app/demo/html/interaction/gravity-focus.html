@@ -52,14 +52,27 @@
             .note b {
                 color: #8ea0b8;
             }
+            .densityhost {
+                top: 18px;
+                right: 18px;
+                width: 270px;
+                pointer-events: auto;
+            }
         </style>
     </head>
     <body>
         <div id="app"></div>
         <div class="panel top"><b id="focus">no focus</b><br /><span id="detail">hover a node — its neighbours move closer</span></div>
         <div class="panel note">Attention is <b>geometry</b>, not only colour. Hover pulls the neighbourhood in; unrelated nodes drift out. The underlying graph never changes.</div>
+        <div class="panel densityhost" id="density"></div>
 
         <script type="module">
+            import '../../../../packages/domain/agent/src/density.css';
+            import {
+                densityPanelHTML,
+                gatherLayout,
+                reduceDensity,
+            } from '../../../../packages/domain/agent/src/density';
             import { Vector3 } from 'three';
             import { SpaceGraph } from 'spacegraphjs';
             import { diffPositions, interpolatedPositions } from 'spacegraphjs/layout';
@@ -142,41 +155,52 @@
             let playback;
             let last = performance.now();
 
+            let density = {
+                tool: 'gather',
+                pinned: false,
+                selection: [],
+                zoom: sg.zoom,
+                layout: 'gather',
+            };
+            const renderDensity = (gathered) => {
+                el('density').innerHTML = densityPanelHTML({
+                    state: { ...density, focus: hovered },
+                    gathered: gathered.filter((node) => node.weight > 0).length,
+                    scoped: 0,
+                    internal: 0,
+                    tools: ['gather'],
+                });
+            };
+
             const gravitate = (id) => {
-                const focus = id ? base.get(id) : undefined;
-                const neighbours = id ? adjacency.get(id) ?? new Set() : new Set();
+                density = reduceDensity(density, { type: 'focus', id });
+                const gathered = gatherLayout(
+                    nodes.map((node) => ({
+                        id: node.id,
+                        label: node.label,
+                        x: base.get(node.id).x,
+                        y: base.get(node.id).y,
+                    })),
+                    edges.map((edge) => ({
+                        source: edge.source,
+                        target: edge.target,
+                        kind: edge.kind ?? 'related',
+                    })),
+                    id,
+                );
+                renderDensity(gathered);
+                const neighbours = new Set(gathered.filter((node) => node.weight === 0.65).map((node) => node.id));
                 const target = new Map(
-                    nodes.map((node, index) => {
-                        if (!focus) return [node.id, base.get(node.id)];
-                        if (node.id === id) return [node.id, { x: 0, y: 0, z: 0 }];
-                        if (neighbours.has(node.id)) {
-                            const a = (index / nodes.length) * Math.PI * 2;
-                            return [node.id, { x: Math.cos(a) * 190, y: Math.sin(a) * 150, z: 0 }];
-                        }
-                        const b = base.get(node.id);
-                        const dx = b.x - focus.x;
-                        const dy = b.y - focus.y;
-                        const length = Math.hypot(dx, dy) || 1;
-                        return [node.id, {
-                            x: focus.x + (dx / length) * (Math.hypot(dx, dy) + 190),
-                            y: focus.y + (dy / length) * (Math.hypot(dx, dy) + 190),
-                            z: 0,
-                        }];
-                    }),
+                    gathered.map((node) => [node.id, { x: node.x, y: node.y, z: 0 }]),
                 );
                 const current = toMap(sg.getPositions());
                 const layout = diffPositions(target, current);
                 const change = { id: `gravity:${id ?? 'reset'}`, from: hovered ?? 'none', to: id ?? 'none', duration: 0.55 };
                 playback = playRepresentationChanges([change], (_, t) => {
                     sg.setPositions(fromMap(interpolatedPositions(layout, t)));
-                }, { ease: 'power2.out' });
+                }, { ease: 'power2.out', reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches });
 
-                const emphasis = new Map(
-                    nodes.map((node) => [
-                        node.id,
-                        !id ? 0 : node.id === id ? 1 : neighbours.has(node.id) ? 0.65 : 0,
-                    ]),
-                );
+                const emphasis = new Map(gathered.map((node) => [node.id, node.weight]));
                 sg.update({
                     nodes: nodes.map((node) => {
                         const weight = emphasis.get(node.id);
@@ -226,6 +250,24 @@
                 requestAnimationFrame(tick);
             };
             requestAnimationFrame(tick);
+            document.addEventListener('keydown', (event) => {
+                const hubs = names.map((_, index) => `hub-${index}`);
+                const hoverIndex = hubs.indexOf(hovered);
+                if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+                    const delta = event.key === 'ArrowRight' ? 1 : -1;
+                    hovered = hubs[(hoverIndex + delta + hubs.length) % hubs.length];
+                    gravitate(hovered);
+                } else if (event.key === 'Escape' && hovered) {
+                    hovered = undefined;
+                    gravitate(undefined);
+                }
+            });
+            renderDensity(gatherLayout(nodes.map((node) => ({
+                id: node.id,
+                label: node.label,
+                x: base.get(node.id).x,
+                y: base.get(node.id).y,
+            })), edges.map((edge) => ({ source: edge.source, target: edge.target }))));
         </script>
     </body>
 </html>

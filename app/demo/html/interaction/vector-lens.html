@@ -69,6 +69,14 @@
                 width: 100%;
                 height: 100%;
             }
+            .densityhost {
+                position: absolute;
+                top: 18px;
+                right: 18px;
+                width: 270px;
+                z-index: 30;
+                pointer-events: auto;
+            }
             .hint {
                 position: absolute;
                 bottom: 20px;
@@ -83,6 +91,7 @@
     <body>
         <div id="app"></div>
         <div class="top" id="status">Hover a node to open its <b>local graph</b> · click to pin</div>
+        <div class="densityhost" id="density"></div>
         <div class="lens" id="lens">
             <div class="label" id="lens-label">scope</div>
             <div id="lens-app"></div>
@@ -90,9 +99,15 @@
         <div class="hint">wheel = zoom · drag = pan · Esc = unpin · the lens has its own camera</div>
 
         <script type="module">
+            import '../../../../packages/domain/agent/src/density.css';
+            import {
+                densityPanelHTML,
+                internalEdgeCount,
+                lensScope,
+                reduceDensity,
+            } from '../../../../packages/domain/agent/src/density';
             import { Vector3 } from 'three';
             import { SpaceGraph } from 'spacegraphjs';
-            import { extractSubgraph } from 'spacegraphjs/overlays';
 
             const el = (id) => document.getElementById(id);
             const palette = [0x7aa2f7, 0x5fd0a0, 0xe0af68, 0xbb9af7, 0xf07178, 0x7dcfff];
@@ -163,6 +178,24 @@
             let hovered;
             let pinned;
             let pending;
+            window._density = () => ({ ...density, hovered, pinned: Boolean(pinned) });
+            let density = {
+                tool: 'lens',
+                pinned: false,
+                selection: [],
+                zoom: sg.zoom,
+                layout: 'lens',
+            };
+            const renderDensity = (scope) => {
+                const chosen = scope?.ids ?? [];
+                el('density').innerHTML = densityPanelHTML({
+                    state: { ...density, focus: hovered, pinned: Boolean(pinned) },
+                    gathered: chosen.length,
+                    scoped: chosen.length,
+                    internal: scope ? internalEdgeCount(model.edges, chosen) : 0,
+                    tools: ['lens'],
+                });
+            };
 
             const screenOf = (node) => {
                 sg.camera.updateMatrixWorld();
@@ -174,29 +207,29 @@
             };
 
             const specFor = (id) => {
-                const scope = extractSubgraph(model, id, { childEdgeKind: 'part-of', limit: 6 });
-                const chosen = new Set(scope.nodes.map((node) => node.id));
+                const scope = lensScope(model.nodes, model.edges, id, 6);
+                const chosen = new Set(scope.ids);
+                const placed = new Map(scope.placements.map((point) => [point.id, point]));
+                renderDensity(scope);
                 return {
                     nodes: nodes
                         .filter((node) => chosen.has(node.id))
-                        .map((node, i) => {
-                            const angle = (i / scope.nodes.length) * Math.PI * 2;
+                        .map((node) => {
+                            const point = placed.get(node.id) ?? { x: 0, y: 0 };
                             return {
                                 id: node.id,
                                 type: 'ShapeNode',
                                 label: node.label,
-                                position: [Math.cos(angle) * 96, Math.sin(angle) * 96, 0],
+                                position: [point.x, point.y, 0],
                                 data: { ...node.data, size: node.id === id ? 52 : 32 },
                             };
                         }),
-                    edges: scope.edges
-                        .filter((edge) => chosen.has(edge.source) && chosen.has(edge.target))
-                        .map((edge) => ({
-                            id: `lens-${edge.source}-${edge.target}`,
-                            source: edge.source,
-                            target: edge.target,
-                            type: 'CurvedEdge',
-                        })),
+                    edges: scope.edges.map((edge) => ({
+                        id: `lens-${edge.source}-${edge.target}`,
+                        source: edge.source,
+                        target: edge.target,
+                        type: 'CurvedEdge',
+                    })),
                 };
             };
 
@@ -219,6 +252,7 @@
             const hideLens = () => {
                 if (pinned) return;
                 el('lens').dataset.open = 'false';
+                renderDensity();
                 el('status').innerHTML = 'Hover a node to open its <b>local graph</b> · click to pin';
             };
 
@@ -257,14 +291,27 @@
             requestAnimationFrame(tick);
 
             el('app').addEventListener('click', () => {
-                if (hovered) pinned = hovered;
+                if (!hovered) return;
+                pinned = hovered;
+                density = reduceDensity(density, { type: 'pin' });
+                renderDensity(lensScope(model.nodes, model.edges, hovered, 6));
             });
             window.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape') {
                     pinned = undefined;
+                    hovered = undefined;
+                    density = reduceDensity(density, { type: 'release' });
                     hideLens();
+                    return;
+                }
+                const index = Number(event.key) - 1;
+                if (index >= 0 && index < names.length) {
+                    const id = `hub-${index}`;
+                    hovered = id;
+                    showLens(id, window.innerWidth / 2, window.innerHeight / 2);
                 }
             });
+            renderDensity();
         </script>
     </body>
 </html>

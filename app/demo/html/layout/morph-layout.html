@@ -91,6 +91,12 @@
             .note b {
                 color: #8ea0b8;
             }
+            .densityhost {
+                top: 18px;
+                right: 18px;
+                width: 270px;
+                pointer-events: auto;
+            }
         </style>
     </head>
     <body>
@@ -101,9 +107,16 @@
             <div class="bar"><i id="layout-bar"></i></div>
         </div>
         <div class="panel choices" id="choices"></div>
+        <div class="panel densityhost" id="density"></div>
         <div class="panel note">Zoom is the only input. <b>diffPositions</b> finds what moved; <b>playRepresentationChanges</b> drives the morph. Layout stays arrangement-only.</div>
 
         <script type="module">
+            import '../../../../packages/domain/agent/src/density.css';
+            import {
+                densityPanelHTML,
+                morphTarget,
+                reduceDensity,
+            } from '../../../../packages/domain/agent/src/density';
             import { SpaceGraph } from 'spacegraphjs';
             import { diffPositions, interpolatedPositions } from 'spacegraphjs/layout';
             import { playRepresentationChanges } from 'spacegraphjs/representations';
@@ -119,7 +132,12 @@
                 lane: (i) => ({ x: (i % 3 - 1) * 300, y: (Math.floor(i / 3) - 1.5) * 160, z: 0 }),
             };
             const names = { ring: 'Ring', grid: 'Two columns', lane: 'Chapter lanes' };
-            const targetFor = (zoom) => (zoom < 0.34 ? 'ring' : zoom < 0.7 ? 'grid' : 'lane');
+            const STOPS = [
+                { id: 'ring', at: 0 },
+                { id: 'grid', at: 0.34 },
+                { id: 'lane', at: 0.7 },
+            ];
+            const targetFor = (zoom) => morphTarget(zoom, STOPS);
             const mapOf = (name) =>
                 new Map(ids.map((id, i) => [id, layouts[name](i)]));
 
@@ -151,6 +169,22 @@
             let previous = mapOf('ring');
             let playback;
             let lastFrame = performance.now();
+            let density = {
+                tool: 'morph',
+                pinned: false,
+                selection: [],
+                zoom: sg.zoom,
+                layout: current,
+            };
+            const renderDensity = () => {
+                el('density').innerHTML = densityPanelHTML({
+                    state: density,
+                    gathered: 0,
+                    scoped: 0,
+                    internal: 0,
+                    tools: ['morph'],
+                });
+            };
 
             const renderChoices = () => {
                 el('choices').innerHTML = Object.keys(layouts)
@@ -181,6 +215,8 @@
                 }, { reducedMotion: reduced, ease: 'power2.inOut' });
                 current = next;
                 previous = target;
+                density = reduceDensity(density, { type: 'layout', id: next });
+                renderDensity();
                 el('layout-name').textContent = names[next];
                 el('layout-detail').textContent = `${layout.moved.size} nodes moved · target ${names[next]}`;
                 renderChoices();
@@ -198,13 +234,21 @@
             requestAnimationFrame(tick);
 
             sg.events.on('zoom:change', ({ zoom }) => {
+                density = reduceDensity(density, { type: 'zoom', value: zoom });
+                renderDensity();
                 const next = targetFor(zoom);
                 el('layout-detail').textContent =
                     `${next === current ? 'stable' : `${targetFor(zoom)} next`} · zoom ${zoom.toFixed(2)}`;
                 morph(next);
             });
 
+            document.addEventListener('keydown', (event) => {
+                const order = Object.keys(layouts);
+                const next = order[Number(event.key) - 1];
+                if (next) morph(next);
+            });
             renderChoices();
+            renderDensity();
             el('layout-detail').textContent = `0 nodes moved · zoom ${sg.zoom.toFixed(2)}`;
         </script>
     </body>

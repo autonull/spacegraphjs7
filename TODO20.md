@@ -1,11 +1,11 @@
 # TODO20 — From experiments to agentic development surfaces
 
-> **Status: O1–O5 landed (2026-11-28).** Extends `TODO19.md` (complete). This plan records the
+> **Status: O1–O6 landed (2026-11-28).** Extends `TODO19.md` (complete). This plan records the
 > experiment methodology developed across seventeen demos and turns the strongest results into a
 > promotion queue. O1 (promotion template + labs index), O2 (`GraphWindow`), O3 (team view with
-> committed steer/approve facts), O4 (session atlas bound to the existing time-travel view) and O5
-> (inner widgets and foldable nodes) are in place, along with the cheap process upgrades in §12.
-> O6–O8 have not landed. Continue from §11.
+> committed steer/approve facts), O4 (session atlas bound to the existing time-travel view), O5
+> (inner widgets and foldable nodes) and O6 (density kit) are in place, along with the cheap process
+> upgrades in §12. O7–O8 have not landed. Continue from §11.
 
 ## 0. Outcome
 
@@ -226,6 +226,10 @@ All seventeen demos are in `app/demo/html/**`; the shared experiment style is
 `docs/console-experiments.md`. The generated registry lists 59 HTML demos (58 experiments/hosts plus
 the labs index). Promotion work lands in small commits; O2 is the first library/package change.
 
+- **O6 (2026-11-28):** `packages/domain/agent/src/density.ts` holds the four pure density policies
+  and a shared panel. Demos 8/9/11/12 and the Pi Durable team view (`d`) are the consumers. Gather
+  feeds the layout focus, lens reuses `toggleFocusLens`, lasso feeds team scope, morph calls
+  `setLayout`; none writes graph facts. Pattern card: `packages/domain/agent/DENSITY.md`.
 - **O5 (2026-11-28):** `packages/domain/agent/src/inner-widget.ts` is the pure inner layout model:
   idempotent fold/detach transitions, derived `contains` edges, derived stats and a fold transform.
   Demos 10/15 and the Pi Durable session window inner tab (`i`) are the consumers. Detach commits a
@@ -277,15 +281,15 @@ the labs index). Promotion work lands in small commits; O2 is the first library/
 | 3 | `AgentTeamView`, `SteerEdge`, `TeamScope` | done (O3) | Pi Durable `?labs=1` team panel, demo 16 |
 | 4 | `SessionAtlas`, `ReplayScrubber` | done (O4) | Pi Durable `?labs=1` atlas panel (`a`), demo 17 |
 | 5 | `InnerWidget`, `FoldableNode` | done (O5) | Pi Durable `?labs=1` window inner tab (`i`), demos 10/15 |
-| 6 | Density kit (`GatherFocus`, `GraphLens`, `GraphLasso`, `ZoomMorphLayout`) | open | Pi Durable team view, demos 8/9/11/12 |
+| 6 | Density kit (`GatherFocus`, `GraphLens`, `GraphLasso`, `ZoomMorphLayout`) | done (O6) | Pi Durable `?labs=1` team view (`d`), demos 8/9/11/12 |
 | 7 | Multi-agent tabs, fork and diff | open | Pi Durable tabs, demo 16 |
 | 8 | Ergonomics and a11y parity | open | every promoted component |
 
 Gate status: `JOB:` lines, Lift links and path resolution are enforced by `check:labs`. Each promoted
-component (`GraphWindow`, the team panel, the session atlas, inner widgets) has native keyboard
-buttons, a reduced-motion CSS snap and E2E coverage in both consumers. Keyboard and reduced-motion
-coverage is **not** universal across the other demos; §12 tracks it as a per-component promotion
-gate. §10 is the authoritative queue status.
+component (`GraphWindow`, the team panel, the session atlas, inner widgets, the density kit) has
+native keyboard buttons, a reduced-motion CSS snap and E2E coverage in both consumers. Keyboard and
+reduced-motion coverage is **not** universal across the other demos; §12 tracks it as a
+per-component promotion gate. §10 is the authoritative queue status.
 
 ## 11. Fresh-session handoff
 
@@ -299,10 +303,10 @@ Read these first, in order:
    primitives.
 5. `AGENTS.md` at both repo roots for the repository rules.
 
-Suggested first move: **O6** (O1–O5 are done). Do not start by rewriting Pi Durable's host; promote
-the density policies from demos 8/9/11/12 as pure read-model policies, give them a unit test, then
-wire one Pi Durable view. Keep every experiment runnable until its second consumer passes E2E. O7
-still needs O4 and O3; O8 stays a per-component gate throughout.
+Suggested first move: **O7** (O1–O6 are done). Extend O3 tab semantics with fork edges at committed
+boundaries, parent/child diff and per-tab time travel; keep one catalog id for tab, fork, diff and
+replay actions. Do not add a second graph store or command registry. O8 stays a per-component gate
+throughout.
 
 Before any promotion, decide explicitly: *which committed fact does this read model derive from?*
 If the answer is "none", the component is decoration and should stay a demo.
@@ -334,15 +338,15 @@ Landed with O1: **job statement** (`JOB:` in all seventeen demo headers), **API 
 Remaining priority: **keyboard/reduced-motion gate** — needs a real keyboard path and a reduced-motion
 snap per demo, not a source-text assertion, so enforce it when each component is promoted. The
 keyboard gate must be extended to the remaining demos rather than inferred from a source-text check.
-**Labs mode in Pi Durable** now runs four promoted patterns behind `?labs=1`: `GraphWindow`, the
-team panel, the session atlas (`a`) and inner widgets (`i`), all against committed kernel facts.
-Labs mode is no longer a prerequisite for promotion; keep it as the host surface for the remaining
-outcomes.
+**Labs mode in Pi Durable** now runs five promoted patterns behind `?labs=1`: `GraphWindow`, the
+team panel, the session atlas (`a`), inner widgets (`i`) and the density kit (`d`), all against
+committed kernel facts. Labs mode is no longer a prerequisite for promotion; keep it as the host
+surface for the remaining outcomes.
 
 ## 13. Closure
 
 This plan closes when each promoted component has two consumers, an E2E test and an a11y path, and
-the lab demos still pass. O1–O5 are complete; §10 is the authoritative queue status. Do not mark a
+the lab demos still pass. O1–O6 are complete; §10 is the authoritative queue status. Do not mark a
 promotion done until its second consumer and E2E exist. To re-verify, run §7 in order. Regenerate
 captures only when visual shape changes; re-check the demo registry after adding or removing any
 HTML page.

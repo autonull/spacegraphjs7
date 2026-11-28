@@ -229,6 +229,11 @@ so replay never creates a second timeline.
 window inner tab (`?labs=1`, `i`) are the consumers. Detach commits a node and a `contains` edge;
 reattach removes both by id, while fold/unfold only changes a view transform.
 
+`GatherFocus`, `GraphLens`, `GraphLasso` and `ZoomMorphLayout` ship as one optional density kit with a
+[pattern card](../packages/domain/agent/DENSITY.md). Demos 8/9/11/12 and the Pi Durable team view
+(`?labs=1`, `d`) are the consumers. All four are read models: gather feeds the layout focus, the lens
+reuses the focus lens, lasso feeds the team scope, and morph calls `setLayout`.
+
 Suggested adoption order for Pi Durable: (1) per-agent graph windows and a team toggle, (2) steer and
 approve edges, (3) the session atlas with replay, (4) team scope and lens as density grows. Each step
 reuses the terminal projection and kernel facts; none introduces a second store.

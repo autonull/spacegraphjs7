@@ -41,6 +41,12 @@
                 pointer-events: none;
                 backdrop-filter: blur(8px);
             }
+            .densityhost {
+                top: 18px;
+                right: 18px;
+                width: 270px;
+                pointer-events: auto;
+            }
             .top {
                 top: 18px;
                 left: 50%;
@@ -100,8 +106,17 @@
         <div class="panel scope"><span>SCOPE</span><div id="scope-list">none</div></div>
         <div class="panel controls"><button id="clear" type="button">Clear scope</button></div>
         <div class="panel hint">brush → frame → click a node to inspect · Esc clears</div>
+        <div class="panel densityhost" id="density"></div>
 
         <script type="module">
+            import '../../../../packages/domain/agent/src/density.css';
+            import {
+                densityPanelHTML,
+                internalEdgeCount,
+                lassoFrame,
+                lassoScope,
+                reduceDensity,
+            } from '../../../../packages/domain/agent/src/density';
             import { Vector3 } from 'three';
             import { SpaceGraph } from 'spacegraphjs';
 
@@ -169,8 +184,28 @@
                 lasso.replaceChildren(rect);
             };
 
+            let density = {
+                tool: 'lasso',
+                pinned: false,
+                selection: [],
+                zoom: sg.zoom,
+                layout: 'lasso',
+            };
+            const renderDensity = (ids, internal) => {
+                el('density').innerHTML = densityPanelHTML({
+                    state: { ...density, selection: ids },
+                    gathered: 0,
+                    scoped: ids.length,
+                    internal,
+                    tools: ['lasso'],
+                });
+            };
+
             const applyScope = (ids) => {
                 selected = ids;
+                density = reduceDensity(density, { type: 'scope', ids });
+                const inside = internalEdgeCount(edges, ids);
+                renderDensity(ids, inside);
                 if (sg.hasNode('lasso-frame')) sg.removeNode('lasso-frame');
                 if (!ids.length) {
                     el('state').textContent = 'drag on empty space to brush';
@@ -178,33 +213,34 @@
                     el('scope-list').textContent = 'none';
                     return;
                 }
-                const picked = nodes.filter((node) => ids.includes(node.id));
-                const xs = picked.map((node) => node.position[0]);
-                const ys = picked.map((node) => node.position[1]);
-                const minX = Math.min(...xs);
-                const maxX = Math.max(...xs);
-                const minY = Math.min(...ys);
-                const maxY = Math.max(...ys);
+                const frame = lassoFrame(
+                    nodes.map((node) => ({
+                        id: node.id,
+                        label: node.label,
+                        x: node.position[0],
+                        y: node.position[1],
+                    })),
+                    ids,
+                );
                 sg.addNode({
                     id: 'lasso-frame',
                     type: 'GroupNode',
                     label: `scope · ${ids.length}`,
-                    position: [(minX + maxX) / 2, (minY + maxY) / 2, -10],
+                    position: [frame.x, frame.y, -10],
                     data: {
                         label: `scope · ${ids.length}`,
-                        width: maxX - minX + 110,
-                        height: maxY - minY + 90,
+                        width: frame.width,
+                        height: frame.height,
                         depth: 20,
                         color: 0x1b2940,
                         lodThreshold: 4000,
                     },
                 });
-                const inside = edges.filter((edge) => ids.includes(edge.source) && ids.includes(edge.target));
                 el('state').textContent = `${ids.length} nodes brushed`;
-                el('detail').textContent = `${inside.length} edges inside the scope · real GroupNode frame`;
+                el('detail').textContent = `${inside} edges inside the scope · real GroupNode frame`;
                 el('scope-list').innerHTML = ids
                     .map((id) => `<div>${id}</div>`)
-                    .join('') + `<div><b>${inside.length} internal edges</b></div>`;
+                    .join('') + `<div><b>${inside} internal edges</b></div>`;
             };
 
             el('app').addEventListener('pointerdown', (event) => {
@@ -237,13 +273,8 @@
                 const right = Math.max(a.x, b.x);
                 const top = Math.min(a.y, b.y);
                 const bottom = Math.max(a.y, b.y);
-                const picked = nodes
-                    .filter((node) => {
-                        const p = screenOf(node);
-                        return p.x >= left && p.x <= right && p.y >= top && p.y <= bottom;
-                    })
-                    .map((node) => node.id);
-                applyScope(picked);
+                const points = nodes.map((node) => ({ id: node.id, ...screenOf(node) }));
+                applyScope(lassoScope(points, { x: left, y: top, width: right - left, height: bottom - top }));
             });
 
             sg.events.on('node:click', (event) => {
@@ -251,9 +282,28 @@
                 if (id && selected.includes(id)) sg.inspect(id);
             });
             el('clear').addEventListener('click', () => applyScope([]));
+            let brushStep = 0;
+            const brushPreset = () => {
+                const width = window.innerWidth / 2;
+                const height = window.innerHeight / 2;
+                const rect = {
+                    x: brushStep % 2 ? width : 0,
+                    y: brushStep > 1 ? height : 0,
+                    width,
+                    height,
+                };
+                const points = nodes.map((node) => ({ id: node.id, ...screenOf(node) }));
+                applyScope(lassoScope(points, rect));
+                brushStep = (brushStep + 1) % 4;
+            };
+            el('density').addEventListener('click', (event) => {
+                if (event.target.closest('[data-density-tool="lasso"]')) brushPreset();
+            });
             window.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape') applyScope([]);
+                else if (event.key === 'ArrowRight') brushPreset();
             });
+            renderDensity([], 0);
         </script>
     </body>
 </html>

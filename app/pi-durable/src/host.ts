@@ -82,6 +82,20 @@ import {
     type InnerWidgetModel,
     type InnerWidgetState,
 } from '../../../packages/domain/agent/src/inner-widget';
+import {
+    densityPanelHTML,
+    gatherLayout,
+    internalEdgeCount,
+    lassoFrame,
+    lassoScope,
+    lensScope,
+    morphTarget,
+    reduceDensity,
+    type DensityEdge,
+    type DensityNode,
+    type DensityState,
+    type DensityTool,
+} from '../../../packages/domain/agent/src/density';
 import { innerPlacements } from 'spacegraphjs/inspect';
 import { isEditableTarget } from 'spacegraphjs/utils';
 import {
@@ -226,6 +240,11 @@ import { asOfFeed, snapshotsOf } from './time-travel';
 const FREE_ZOOM = { min: 0.01, max: 100 } as const;
 /** Core layout hint: how much of the surface the node boxes should cover. */
 const NODES_AREA_DENSITY = 0.6;
+const DENSITY_STOPS = [
+    { id: 'radial', at: 0 },
+    { id: 'grid', at: 0.34 },
+    { id: 'timeline', at: 0.7 },
+] as const;
 const MAX_NODE_SIZE = 1024;
 /** Eased reveal delay per band; reduced motion bypasses the morph entirely. */
 const BAND_DELAY: Readonly<Record<string, number>> = {
@@ -818,6 +837,13 @@ export class DurableHost {
     #innerFolded = new Map<string, boolean>();
     #teamEnabled = false;
     #teamState: TeamState = { active: '', scope: [], log: [] };
+    #densityState: DensityState = {
+        tool: 'off',
+        pinned: false,
+        selection: [],
+        zoom: 1,
+        layout: 'grid',
+    };
     #atlasEnabled = false;
     #atlasState: AtlasState = { total: 1, prefix: 1, playing: false };
     #atlasHandle: TerminalReplayHandle | undefined;
@@ -2414,6 +2440,11 @@ export class DurableHost {
                 this.#renderTeam();
                 return;
             }
+            const tool = target.closest<HTMLElement>('[data-density-tool]');
+            if (tool?.dataset['densityTool']) {
+                this.#densityTool(tool.dataset['densityTool'] as DensityTool);
+                return;
+            }
             const action = target.closest<HTMLElement>('[data-team-action]');
             if (action?.dataset['teamAction']) this.#teamAction(action.dataset['teamAction']);
         });
@@ -2470,6 +2501,111 @@ export class DurableHost {
         return { operator: this.registry.activeID(), agents, links };
     }
 
+    #densityModel(): { readonly nodes: readonly DensityNode[]; readonly edges: readonly DensityEdge[] } {
+        const nodes = this.#presented.nodes.flatMap((node) => {
+            const point = this.#positions.get(node.id);
+            return point
+                ? [{
+                      id: node.id,
+                      label: labelForNode({ ...node, label: node.label ?? node.id }),
+                      x: point.x,
+                      y: point.y,
+                  }]
+                : [];
+        });
+        return {
+            nodes,
+            edges: this.#presented.edges.map((edge) => ({
+                source: edge.source,
+                target: edge.target,
+                kind: edge.kind,
+            })),
+        };
+    }
+
+    #densityFocus(nodes: readonly DensityNode[]): string | undefined {
+        const selected = this.registry.active()?.view.focus;
+        return selected && nodes.some((node) => node.id === selected)
+            ? selected
+            : nodes[0]?.id;
+    }
+
+    #densityPanel(): string {
+        const { nodes, edges } = this.#densityModel();
+        const viewport = this.renderer.getViewport?.() ?? { zoom: 1 };
+        const focus = this.#densityFocus(nodes);
+        let state: DensityState = {
+            ...this.#densityState,
+            zoom: viewport.zoom,
+            focus: focus ?? this.#densityState.focus,
+        };
+        let gathered = 0;
+        let scoped = 0;
+        let internal = 0;
+        if (state.tool === 'gather' && focus)
+            gathered = gatherLayout(nodes, edges, focus).filter((node) => node.weight > 0).length;
+        if (state.tool === 'lens' && focus) {
+            const scope = lensScope(nodes, edges, focus, 6);
+            scoped = scope.ids.length;
+            internal = internalEdgeCount(edges, scope.ids);
+        }
+        if (state.tool === 'lasso') {
+            scoped = state.selection.length;
+            internal = internalEdgeCount(edges, state.selection);
+        }
+        if (state.tool === 'morph') {
+            const layout = morphTarget(viewport.zoom, DENSITY_STOPS);
+            state = reduceDensity(state, { type: 'layout', id: layout });
+        }
+        return densityPanelHTML({ state, gathered, scoped, internal });
+    }
+
+    toggleDensity(): boolean {
+        if (!this.#labs) return false;
+        if (!this.#teamEnabled) this.toggleTeam();
+        const tool: DensityTool = this.#densityState.tool === 'off' ? 'gather' : 'off';
+        this.#densityTool(tool);
+        return tool !== 'off';
+    }
+
+    #densityTool(tool: DensityTool): void {
+        this.#densityState = reduceDensity(this.#densityState, { type: 'tool', tool });
+        const { nodes, edges } = this.#densityModel();
+        const focus = this.#densityFocus(nodes);
+        const viewport = this.renderer.getViewport?.() ?? { zoom: 1 };
+        if (tool === 'gather' && focus) {
+            this.focus(focus);
+        } else if (tool === 'lens' && focus) {
+            this.toggleFocusLens(focus);
+        } else if (tool === 'lasso' && focus) {
+            const point = this.#positions.get(focus);
+            if (point) {
+                const reach = 600 / Math.max(0.25, viewport.zoom);
+                const ids = lassoScope(nodes, {
+                    x: point.x - reach / 2,
+                    y: point.y - reach / 2,
+                    width: reach,
+                    height: reach,
+                });
+                this.#densityState = reduceDensity(this.#densityState, { type: 'scope', ids });
+                const tabs = new Set(this.registry.list().map((tab) => tab.id));
+                const scoped = [...new Set(ids.map((id) => id.split(':')[1] ?? ''))].filter((id) =>
+                    tabs.has(id),
+                );
+                this.#teamState = reduceTeam(this.#teamState, { type: 'scope', ids: scoped });
+            }
+        } else if (tool === 'morph') {
+            const layout = morphTarget(viewport.zoom, DENSITY_STOPS) as LayoutName;
+            this.#densityState = reduceDensity(this.#densityState, { type: 'layout', id: layout });
+            if (LAYOUT_NAMES.includes(layout)) this.setLayout(layout);
+        } else if (tool === 'off') {
+            if (this.focusLensActive()) this.exitFocusLens();
+            this.#densityState = reduceDensity(this.#densityState, { type: 'scope', ids: [] });
+        }
+        this.#renderTeam();
+        this.announce(`Density tool: ${tool}`);
+    }
+
     #renderTeam(): void {
         const panel = document.getElementById('lab-team');
         if (!panel || !this.#teamEnabled) return;
@@ -2479,7 +2615,7 @@ export class DurableHost {
             <input id="team-steer-input" placeholder="steer this agent…" aria-label="Steer message" />
             <button type="button" data-sg-interactive="true" data-team-action="steer">STEER</button>
             <button type="button" data-sg-interactive="true" data-team-action="approve">APPROVE</button>
-        </div>${teamPanelHTML({ model, state: this.#teamState, stats })}`;
+        </div>${this.#densityPanel()}${teamPanelHTML({ model, state: this.#teamState, stats })}`;
     }
 
     #teamAction(action: string): void {
@@ -3687,6 +3823,8 @@ export class DurableHost {
             toggleAtlas: () => this.toggleAtlas(),
             atlasState: () => this.atlasState(),
             openInnerTab: () => this.openInnerTab(),
+            toggleDensity: () => this.toggleDensity(),
+            densityState: () => this.#densityState,
             digest: () => this.digest(),
             instruments: () => this.instruments(),
             density: () => ({ ...this.#density }),

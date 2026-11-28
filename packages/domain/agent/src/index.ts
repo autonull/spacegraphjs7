@@ -5,3 +5,4 @@ export * from './facets';
 export * from './team';
 export * from './atlas';
 export * from './inner-widget';
+export * from './density';
