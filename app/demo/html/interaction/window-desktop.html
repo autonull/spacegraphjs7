@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Window desktop — SpaceGraphJS</title>
+        <link rel="stylesheet" href="../shared-reset.css" />
+        <style>
+            html,
+            body,
+            #app {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+                background: #0a0e15;
+                font-family: 'SFMono-Regular', Consolas, monospace;
+                color: #e7edf5;
+            }
+            .hud {
+                position: absolute;
+                z-index: 30;
+                background: rgb(12 18 28 / 88%);
+                border: 1px solid #223049;
+                border-radius: 0;
+                padding: 8px 14px;
+                font-size: 11px;
+                pointer-events: none;
+                backdrop-filter: blur(8px);
+            }
+            .top {
+                top: 14px;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
+            }
+            .top b {
+                color: #7aa2f7;
+            }
+            .top span {
+                color: #8ea0b8;
+            }
+            .taskbar {
+                bottom: 14px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 6px;
+                pointer-events: auto;
+                max-width: 90vw;
+                overflow-x: auto;
+            }
+            .taskbar button {
+                background: #121b29;
+                color: #9fb1c9;
+                border: 1px solid #28364b;
+                border-radius: 0;
+                padding: 6px 11px;
+                font: 11px 'SFMono-Regular', Consolas, monospace;
+                cursor: pointer;
+                white-space: nowrap;
+            }
+            .taskbar button[data-active='true'] {
+                border-color: #7aa2f7;
+                color: #7aa2f7;
+            }
+            .taskbar button[data-hidden='true'] {
+                opacity: 0.4;
+                text-decoration: line-through;
+            }
+            .hint {
+                bottom: 14px;
+                right: 18px;
+                color: #54657d;
+                font-size: 10px;
+                text-align: right;
+            }
+            /* Node content: type scales with the node's own width, independent of camera zoom. */
+            .win {
+                container-type: inline-size;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                background: linear-gradient(160deg, #152033, #0e1623);
+                border: 1px solid #2b3d58;
+                border-radius: 0;
+                box-shadow: 0 10px 26px rgb(0 0 0 / 35%);
+                overflow: hidden;
+                font-family: 'SFMono-Regular', Consolas, monospace;
+                color: #dce6f4;
+            }
+            .win[data-focused='true'] {
+                border-color: #7aa2f7;
+                box-shadow: 0 12px 34px rgb(0 0 0 / 45%), 0 0 0 1px rgb(122 162 247 / 30%);
+            }
+            .win-head {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 9px;
+                border-bottom: 1px solid #26354c;
+                background: rgb(255 255 255 / 3%);
+                font-size: clamp(9px, 5cqw, 18px);
+            }
+            .win-head .dot {
+                width: 0.7em;
+                height: 0.7em;
+                border-radius: 0;
+                background: var(--tone, #7aa2f7);
+            }
+            .win-head .name {
+                font-weight: 700;
+                letter-spacing: 0.04em;
+            }
+            .win-head .status {
+                margin-left: auto;
+                color: #8ea0b8;
+                font-size: 0.8em;
+            }
+            .tabs {
+                display: flex;
+                gap: 3px;
+                padding: 5px 7px 0;
+                font-size: clamp(8px, 4.2cqw, 15px);
+            }
+            .tabs button {
+                background: #1a2637;
+                color: #8ea0b8;
+                border: 1px solid #2b3d58;
+                border-bottom: none;
+                border-radius: 0;
+                padding: 2px 6px;
+                font: inherit;
+                cursor: pointer;
+            }
+            .tabs button[data-on='true'] {
+                background: #22324a;
+                color: #7aa2f7;
+            }
+            .body {
+                flex: 1;
+                min-height: 0;
+                padding: 7px 9px;
+                overflow: hidden;
+                font-size: clamp(9px, 4.6cqw, 17px);
+                line-height: 1.35;
+            }
+            .rowline {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 2px 0;
+                color: #b8c8dc;
+            }
+            .rowline b {
+                color: #e7edf5;
+            }
+            .pill {
+                border: 1px solid #34506f;
+                border-radius: 0;
+                padding: 0 6px;
+                color: #7aa2f7;
+                font-size: 0.82em;
+            }
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 4px;
+                height: 100%;
+            }
+            .tile {
+                border: 1px solid #2b3d58;
+                border-radius: 0;
+                background: #1a2637;
+                padding: 4px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                overflow: hidden;
+                font-size: 0.85em;
+            }
+            .tile span {
+                color: #8ea0b8;
+            }
+            .bar {
+                height: 4px;
+                border-radius: 0;
+                background: #7aa2f7;
+                margin-top: 3px;
+            }
+            .buttons {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+                margin-top: 6px;
+            }
+            .buttons button {
+                background: #1f2d41;
+                color: #b8c8dc;
+                border: 1px solid #34506f;
+                border-radius: 0;
+                padding: 2px 7px;
+                font: inherit;
+                font-size: 0.85em;
+                cursor: pointer;
+            }
+            .buttons button:hover {
+                border-color: #7aa2f7;
+                color: #7aa2f7;
+            }
+            .compact {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                height: 100%;
+                padding: 0 8px;
+                font-size: clamp(10px, 8cqw, 26px);
+                font-weight: 700;
+            }
+            .compact .dot {
+                width: 0.7em;
+                height: 0.7em;
+                border-radius: 0;
+                background: var(--tone, #7aa2f7);
+            }
+            .resize-handle {
+                border-radius: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app"></div>
+        <div class="hud top"><b id="band">detail</b> · <span id="info">5 windows · 4 edges</span></div>
+        <div class="hud taskbar" id="taskbar"></div>
+        <div class="hud hint">drag a title bar · pull the corner to resize · tabs switch inner layout · click a task to focus</div>
+
+        <script type="module">
+            import { SpaceGraph } from 'spacegraphjs';
+            import { terminalLODFor } from 'spacegraphjs/terminal';
+            import { innerPlacements } from 'spacegraphjs/inspect';
+
+            const el = (id) => document.getElementById(id);
+            const LADDER = ['dot', 'glyph', 'card', 'detail'];
+            const windows = [
+                { id: 'test-failed', title: 'test failed', tone: '#f07178', status: 'FAILED', x: -420, y: -180, w: 520, h: 330, links: ['turn-5', 'incident'] },
+                { id: 'turn-5', title: 'Turn 5', tone: '#7aa2f7', status: 'COMPLETE', x: 260, y: -230, w: 360, h: 220, links: ['test-failed'] },
+                { id: 'incident', title: 'incident.md', tone: '#5fd0a0', status: 'COMPLETE', x: 120, y: 170, w: 380, h: 250, links: ['test-failed'] },
+                { id: 'edit', title: 'edit', tone: '#e0af68', status: 'ACTION', x: -300, y: 250, w: 300, h: 170, links: ['incident'] },
+                { id: 'route', title: 'router.ts', tone: '#bb9af7', status: 'FILE', x: 520, y: 80, w: 330, h: 190, links: ['turn-5'] },
+            ];
+            const tabs = ['detail', 'inner', 'signals', 'actions'];
+            const state = new Map(windows.map((w) => [w.id, { tab: 'detail', focused: false, hidden: false, base: [w.w, w.h] }]));
+            let band = 'detail';
+
+            const esc = (value) => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;');
+
+            const innerWidgets = (win) => {
+                const chips = Array.from({ length: 6 }, (_, i) => ({
+                    id: `${win.id}-w${i}`,
+                    label: `signal ${i + 1}`,
+                    kind: 'signal',
+                }));
+                const placements = innerPlacements(chips, 'grid');
+                const tiles = placements
+                    .map(
+                        ({ chip, left, top, width, height }) =>
+                            `<div class="tile" style="position:absolute;left:${left}%;top:${top}%;width:${width}%;height:${height}%"><b>${esc(chip.label)}</b><span>${Math.round(30 + left)}%</span><div class="bar" style="width:${Math.round(20 + left)}%"></div></div>`,
+                    )
+                    .join('');
+                return `<div style="position:relative;width:100%;height:100%">${tiles}</div>`;
+            };
+
+            const bodyHTML = (win, tab) => {
+                if (tab === 'inner') return innerWidgets(win);
+                if (tab === 'signals')
+                    return Array.from({ length: 4 }, (_, i) => {
+                        const width = 25 + ((i * 37 + win.title.length * 11) % 70);
+                        return `<div class="rowline"><b>${esc(['latency', 'tokens', 'edges', 'focus'][i])}</b><div class="bar" style="flex:1;width:auto;max-width:none;width:${width}%"></div><span>${width}</span></div>`;
+                    }).join('');
+                if (tab === 'actions')
+                    return `<div class="buttons">
+                        ${['center', 'trace', 'follow', 'pin', 'max', 'close']
+                            .map((action) => `<button data-sg-interactive="true" data-action="${action}" data-win="${win.id}">${action.toUpperCase()}</button>`)
+                            .join('')}
+                    </div><div class="rowline" style="margin-top:6px">Window actions live inside the node.</div>`;
+                return `<div class="rowline"><b>${esc(win.status)}</b><span class="pill">${win.links.length} links</span></div>
+                    ${win.links.map((link) => `<div class="rowline">· ${esc(link)}</div>`).join('')}
+                    <div class="buttons">
+                        <button data-sg-interactive="true" data-action="center" data-win="${win.id}">CENTER</button>
+                        <button data-sg-interactive="true" data-action="follow" data-win="${win.id}">FOLLOW</button>
+                    </div>`;
+            };
+
+            const htmlFor = (win) => {
+                const s = state.get(win.id);
+                if (band === 'dot' || band === 'glyph')
+                    return `<div class="compact" style="--tone:${win.tone}"><span class="dot"></span>${esc(win.title)}</div>`;
+                return `<div class="win" data-focused="${s.focused}" style="--tone:${win.tone}">
+                    <div class="win-head"><span class="dot"></span><span class="name">${esc(win.title)}</span><span class="status">${esc(win.status)}</span></div>
+                    <div class="tabs">${tabs
+                        .map(
+                            (tab) =>
+                                `<button data-sg-interactive="true" data-action="tab:${tab}" data-win="${win.id}" data-on="${s.tab === tab}">${tab.toUpperCase()}</button>`,
+                        )
+                        .join('')}</div>
+                    <div class="body">${bodyHTML(win, s.tab)}</div>
+                </div>`;
+            };
+
+            const nodes = windows.map((win) => ({
+                id: win.id,
+                type: 'HtmlNode',
+                label: win.title,
+                position: [win.x, win.y, 0],
+                data: {
+                    html: htmlFor(win),
+                    useRawHtml: true,
+                    width: win.w,
+                    height: win.h,
+                    minWidth: 180,
+                    minHeight: 110,
+                    pointerEvents: 'auto',
+                    backgroundColor: '#111a28',
+                    style: {},
+                },
+            }));
+            const links = [
+                ['test-failed', 'turn-5'],
+                ['test-failed', 'incident'],
+                ['turn-5', 'route'],
+                ['incident', 'edit'],
+            ].map(([source, target], i) => ({ id: `link-${i}`, source, target, type: 'CurvedEdge' }));
+
+            const sg = await SpaceGraph.create(el('app'), { nodes, edges: links }, {
+                chrome: false,
+                plugins: [],
+                render: { projection: 'orthographic', depth: 'flat', backgroundColor: 0x0a0e15 },
+            });
+            window._sg = sg;
+            sg.render();
+            sg.frame(null, { duration: 0.01 });
+
+            const refresh = () => {
+                sg.update({
+                    nodes: windows.map((win) => ({ id: win.id, data: { html: htmlFor(win) } })),
+                });
+                el('taskbar').innerHTML = windows
+                    .map(
+                        (win) =>
+                            `<button type="button" data-focus="${win.id}" data-active="${state.get(win.id).focused}" data-hidden="${state.get(win.id).hidden}">${esc(win.title)}</button>`,
+                    )
+                    .join('');
+                el('taskbar').querySelectorAll('[data-focus]').forEach((button) => {
+                    button.addEventListener('click', () => activate(button.dataset.focus));
+                });
+                const visible = windows.filter((win) => !state.get(win.id).hidden).length;
+                el('info').textContent = `${visible} windows · ${links.length} edges · ${band}`;
+            };
+
+            const activate = (id) => {
+                state.forEach((value) => (value.focused = false));
+                const s = state.get(id);
+                s.focused = true;
+                s.hidden = false;
+                sg.show(id);
+                sg.inspect(id);
+                refresh();
+            };
+
+            el('app').addEventListener('click', (event) => {
+                const button = event.target.closest?.('[data-action]');
+                if (!button) return;
+                event.stopPropagation();
+                const action = button.dataset.action;
+                const id = button.dataset.win;
+                const s = state.get(id);
+                if (action.startsWith('tab:')) {
+                    s.tab = action.slice(4);
+                    refresh();
+                    return;
+                }
+                const node = sg.graph.nodes.get(id);
+                if (action === 'center') sg.inspect(id);
+                if (action === 'trace') sg.select([id, ...windows.filter((w) => w.links.includes(id)).map((w) => w.id)]);
+                if (action === 'follow') {
+                    sg.select(id);
+                    el('info').textContent = `following ${id}`;
+                }
+                if (action === 'pin') node.setPinned(!node.pinned);
+                if (action === 'max') {
+                    const [w, h] = s.base;
+                    const big = node.size.width > w * 1.2;
+                    node.setSize(big ? w : w * 1.4, big ? h : h * 1.4);
+                }
+                if (action === 'close') {
+                    s.hidden = true;
+                    sg.hide(id);
+                }
+                activate(id);
+            });
+
+            sg.events.on('zoom:change', ({ zoom }) => {
+                const next = terminalLODFor(zoom, LADDER);
+                if (next === band) return;
+                band = next;
+                el('band').textContent = band;
+                refresh();
+            });
+            sg.events.on('node:resized', ({ node, size }) => {
+                el('info').textContent = `${node.id} resized to ${Math.round(size.width)}×${Math.round(size.height)} · content scales`;
+            });
+
+            refresh();
+        </script>
+    </body>
+</html>

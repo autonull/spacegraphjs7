@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Lasso scope — SpaceGraphJS</title>
+        <link rel="stylesheet" href="../shared-reset.css" />
+        <style>
+            html,
+            body,
+            #app {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+                background: #070b12;
+                font-family: 'SFMono-Regular', Consolas, monospace;
+                color: #e7edf5;
+            }
+            #lasso {
+                position: absolute;
+                inset: 0;
+                z-index: 5;
+                pointer-events: none;
+            }
+            #lasso rect {
+                fill: rgb(122 162 247 / 8%);
+                stroke: #7aa2f7;
+                stroke-width: 1;
+                stroke-dasharray: 4 3;
+            }
+            .panel {
+                position: absolute;
+                z-index: 10;
+                background: rgb(12 18 28 / 88%);
+                border: 1px solid #223049;
+                border-radius: 0;
+                padding: 10px 15px;
+                font-size: 11px;
+                pointer-events: none;
+                backdrop-filter: blur(8px);
+            }
+            .top {
+                top: 18px;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
+            }
+            .top b {
+                color: #7aa2f7;
+                font-size: 14px;
+            }
+            .top span {
+                color: #8ea0b8;
+            }
+            .scope {
+                top: 18px;
+                right: 18px;
+                width: 280px;
+                max-height: 340px;
+                overflow: hidden;
+            }
+            .scope b {
+                color: #7aa2f7;
+            }
+            .scope div {
+                color: #8ea0b8;
+                margin-top: 5px;
+                line-height: 1.5;
+            }
+            .controls {
+                bottom: 22px;
+                left: 50%;
+                transform: translateX(-50%);
+                pointer-events: auto;
+            }
+            .controls button {
+                background: #121b29;
+                color: #9fb1c9;
+                border: 1px solid #28364b;
+                border-radius: 0;
+                padding: 7px 14px;
+                font: 11px 'SFMono-Regular', Consolas, monospace;
+                cursor: pointer;
+            }
+            .hint {
+                bottom: 22px;
+                right: 20px;
+                color: #54657d;
+                font-size: 11px;
+                text-align: right;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app"></div>
+        <svg id="lasso"></svg>
+        <div class="panel top"><b id="state">drag on empty space to brush</b><br /><span id="detail">selection becomes a real group frame</span></div>
+        <div class="panel scope"><span>SCOPE</span><div id="scope-list">none</div></div>
+        <div class="panel controls"><button id="clear" type="button">Clear scope</button></div>
+        <div class="panel hint">brush → frame → click a node to inspect · Esc clears</div>
+
+        <script type="module">
+            import { Vector3 } from 'three';
+            import { SpaceGraph } from 'spacegraphjs';
+
+            const el = (id) => document.getElementById(id);
+            const NS = 'http://www.w3.org/2000/svg';
+            const palette = [0x7aa2f7, 0x5fd0a0, 0xe0af68, 0xbb9af7];
+            const nodes = [];
+            const edges = [];
+            for (let cluster = 0; cluster < 4; cluster++) {
+                const angle = (cluster / 4) * Math.PI * 2;
+                const center = [Math.cos(angle) * 400, Math.sin(angle) * 270];
+                for (let i = 0; i < 8; i++) {
+                    const id = `n${cluster}-${i}`;
+                    const a = (i / 8) * Math.PI * 2;
+                    nodes.push({
+                        id,
+                        type: 'ShapeNode',
+                        label: `${['route', 'read', 'write', 'commit'][cluster]}:${i}`,
+                        position: [center[0] + Math.cos(a) * 130, center[1] + Math.sin(a) * 110, 0],
+                        data: {
+                            label: `${['route', 'read', 'write', 'commit'][cluster]}:${i}`,
+                            size: 28,
+                            color: palette[cluster],
+                        },
+                    });
+                    if (i > 0) {
+                        edges.push({
+                            id: `e-${id}`,
+                            source: `n${cluster}-${i - 1}`,
+                            target: id,
+                            type: 'CurvedEdge',
+                        });
+                    }
+                }
+            }
+
+            const sg = await SpaceGraph.create(el('app'), { nodes, edges }, {
+                chrome: false,
+                plugins: [],
+                render: { projection: 'orthographic', depth: 'flat', backgroundColor: 0x070b12 },
+            });
+            window._sg = sg;
+            sg.render();
+            sg.frame(null, { duration: 0.01 });
+
+            const screenOf = (node) => {
+                sg.camera.updateMatrixWorld();
+                const v = new Vector3(...node.position).project(sg.camera);
+                return {
+                    x: (v.x * 0.5 + 0.5) * window.innerWidth,
+                    y: (-v.y * 0.5 + 0.5) * window.innerHeight,
+                };
+            };
+
+            let drag;
+            let selected = [];
+            const lasso = el('lasso');
+
+            const draw = (a, b) => {
+                const rect = document.createElementNS(NS, 'rect');
+                rect.setAttribute('x', Math.min(a.x, b.x));
+                rect.setAttribute('y', Math.min(a.y, b.y));
+                rect.setAttribute('width', Math.abs(b.x - a.x));
+                rect.setAttribute('height', Math.abs(b.y - a.y));
+                lasso.replaceChildren(rect);
+            };
+
+            const applyScope = (ids) => {
+                selected = ids;
+                if (sg.hasNode('lasso-frame')) sg.removeNode('lasso-frame');
+                if (!ids.length) {
+                    el('state').textContent = 'drag on empty space to brush';
+                    el('detail').textContent = 'selection becomes a real group frame';
+                    el('scope-list').textContent = 'none';
+                    return;
+                }
+                const picked = nodes.filter((node) => ids.includes(node.id));
+                const xs = picked.map((node) => node.position[0]);
+                const ys = picked.map((node) => node.position[1]);
+                const minX = Math.min(...xs);
+                const maxX = Math.max(...xs);
+                const minY = Math.min(...ys);
+                const maxY = Math.max(...ys);
+                sg.addNode({
+                    id: 'lasso-frame',
+                    type: 'GroupNode',
+                    label: `scope · ${ids.length}`,
+                    position: [(minX + maxX) / 2, (minY + maxY) / 2, -10],
+                    data: {
+                        label: `scope · ${ids.length}`,
+                        width: maxX - minX + 110,
+                        height: maxY - minY + 90,
+                        depth: 20,
+                        color: 0x1b2940,
+                        lodThreshold: 4000,
+                    },
+                });
+                const inside = edges.filter((edge) => ids.includes(edge.source) && ids.includes(edge.target));
+                el('state').textContent = `${ids.length} nodes brushed`;
+                el('detail').textContent = `${inside.length} edges inside the scope · real GroupNode frame`;
+                el('scope-list').innerHTML = ids
+                    .map((id) => `<div>${id}</div>`)
+                    .join('') + `<div><b>${inside.length} internal edges</b></div>`;
+            };
+
+            el('app').addEventListener('pointerdown', (event) => {
+                let near = false;
+                for (const node of nodes) {
+                    const p = screenOf(node);
+                    if ((p.x - event.clientX) ** 2 + (p.y - event.clientY) ** 2 < 40 * 40) {
+                        near = true;
+                        break;
+                    }
+                }
+                if (near) return;
+                sg.setOrbitEnabled(false);
+                drag = { start: { x: event.clientX, y: event.clientY }, current: { x: event.clientX, y: event.clientY } };
+            });
+            el('app').addEventListener('pointermove', (event) => {
+                if (!drag) return;
+                drag.current = { x: event.clientX, y: event.clientY };
+                draw(drag.start, drag.current);
+            });
+            el('app').addEventListener('pointerup', () => {
+                if (!drag) return;
+                const a = drag.start;
+                const b = drag.current;
+                drag = undefined;
+                sg.setOrbitEnabled(true);
+                lasso.replaceChildren();
+                if (Math.abs(b.x - a.x) < 8 || Math.abs(b.y - a.y) < 8) return;
+                const left = Math.min(a.x, b.x);
+                const right = Math.max(a.x, b.x);
+                const top = Math.min(a.y, b.y);
+                const bottom = Math.max(a.y, b.y);
+                const picked = nodes
+                    .filter((node) => {
+                        const p = screenOf(node);
+                        return p.x >= left && p.x <= right && p.y >= top && p.y <= bottom;
+                    })
+                    .map((node) => node.id);
+                applyScope(picked);
+            });
+
+            sg.events.on('node:click', (event) => {
+                const id = 'id' in event ? event.id : event.node?.id;
+                if (id && selected.includes(id)) sg.inspect(id);
+            });
+            el('clear').addEventListener('click', () => applyScope([]));
+            window.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') applyScope([]);
+            });
+        </script>
+    </body>
+</html>

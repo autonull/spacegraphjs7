@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Vector console — SpaceGraphJS</title>
+        <link rel="stylesheet" href="./lab.css" />
+        <style>
+            html,
+            body,
+            #app {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+            }
+            .hud {
+                position: absolute;
+                z-index: 10;
+                pointer-events: none;
+            }
+            .top {
+                top: 14px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 8px;
+                align-items: center;
+                background: rgb(11 15 22 / 84%);
+                border: 1px solid var(--border);
+                border-radius: 0;
+                padding: 7px 12px;
+                backdrop-filter: blur(8px);
+            }
+            .top b {
+                color: var(--accent);
+            }
+            .top span {
+                color: var(--muted);
+                font-size: 11px;
+            }
+            .chapters {
+                top: 62px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 6px;
+                pointer-events: auto;
+            }
+            .chapters button {
+                font-size: 11px;
+                padding: 4px 10px;
+            }
+            .chapters button[data-active='true'] {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+            .status {
+                bottom: 16px;
+                left: 20px;
+                font-size: 11px;
+                color: var(--muted);
+            }
+            .status b {
+                color: var(--text);
+            }
+            .hint {
+                bottom: 16px;
+                right: 20px;
+                font-size: 11px;
+                color: var(--muted);
+                text-align: right;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app"></div>
+        <div class="hud top">
+            <b id="band">detail</b>
+            <span id="zoom">zoom 1.00</span>
+            <span id="focus">focus —</span>
+        </div>
+        <div class="hud chapters" id="chapters"></div>
+        <div class="hud status" id="status"></div>
+        <div class="hud hint">wheel = fly through the log · drag = pan · click a line to focus · 1–4 = jump to chapter</div>
+
+        <script type="module">
+            import { SpaceGraph } from 'spacegraphjs';
+            import {
+                terminalChapters,
+                terminalChapterTargets,
+                terminalGroup,
+                terminalLineHTML,
+                terminalLODFor,
+                terminalPalette,
+                terminalSpec,
+                terminalTokens,
+            } from 'spacegraphjs/terminal';
+
+            const el = (id) => document.getElementById(id);
+            const LADDER = ['dot', 'glyph', 'card', 'detail'];
+            const lines = [
+                ['user', 'complete', 'user', 'How does `router.dispatch()` route?', 1],
+                ['assistant', 'complete', 'assistant', 'Trace the call and cite the file.', 1],
+                ['tool', 'complete', 'tool', '`grep -R dispatch src/` → `src/router.ts`', 1],
+                ['file', 'complete', 'tool', '`src/router.ts:42` maps `intent` → handler.', 1],
+                ['assistant', 'complete', 'assistant', 'It dispatches by `intent`.', 1],
+                ['user', 'complete', 'user', 'Fix the failing route test.', 2],
+                ['tool', 'failed', 'tool', '`bun test route.test.ts` → 1 failed', 2],
+                ['error', 'failed', 'tool', '`handler` is undefined at `src/router.ts:51`.', 2],
+                ['file', 'complete', 'tool', 'Default to `noop` when intent is unknown.', 2],
+                ['tool', 'complete', 'tool', '`bun test route.test.ts` → 5 passed', 2],
+                ['approval', 'complete', 'assistant', 'Apply the patch?', 2],
+                ['user', 'complete', 'user', 'Approved. Commit it.', 3],
+                ['tool', 'complete', 'tool', '`git commit -m fix(router)` → `a1b2c3d`', 3],
+                ['assistant', 'complete', 'assistant', 'One turn, committed.', 3],
+            ].map(([kind, status, role, text, turn], i) => ({
+                id: `line-${String(i + 1).padStart(2, '0')}`,
+                kind,
+                status,
+                role,
+                text,
+                label: text.replaceAll('`', '').slice(0, 32),
+                turn,
+                at: i + 1,
+            }));
+
+            const palette = terminalPalette('classic');
+            const render = (line, band, index) =>
+                `<div style="display:flex;align-items:center;gap:6px;white-space:nowrap;height:100%;width:100%">${terminalLineHTML(line, palette.glyphs, {
+                    band,
+                    ladder: LADDER,
+                    tokens: terminalTokens(line.text),
+                    ...(band === 'detail'
+                        ? { chrome: { lineNumber: index + 1, source: `T${line.turn}` } }
+                        : {}),
+                })}</div>`;
+
+            const specOf = (band) =>
+                terminalSpec(lines, {
+                    band,
+                    render: (line) => render(line, band, lines.indexOf(line)),
+                });
+
+            const base = specOf('detail');
+            const chapters = terminalChapters(lines);
+            const targets = terminalChapterTargets(chapters);
+            const groupNodes = chapters
+                .map((chapter, index) => {
+                    const box = terminalGroup(
+                        targets[index],
+                        base.spec.nodes.map((node) => ({
+                            id: node.id,
+                            position: node.position ?? [0, 0, 0],
+                            size: [node.data?.width ?? 0, node.data?.height ?? 0],
+                        })),
+                    );
+                    if (!box) return undefined;
+                    return {
+                        id: `chapter-frame-${chapter.id}`,
+                        type: 'GroupNode',
+                        label: chapter.label,
+                        position: box.position,
+                        data: {
+                            label: chapter.label,
+                            width: box.size[0] + 80,
+                            height: box.size[1] + 40,
+                            depth: 24,
+                            color: 0x1b2940,
+                            lodThreshold: 1600,
+                        },
+                    };
+                })
+                .filter(Boolean);
+
+            const sg = await SpaceGraph.create(
+                el('app'),
+                { nodes: [...base.spec.nodes, ...groupNodes], edges: base.spec.edges },
+                {
+                    chrome: false,
+                    plugins: [],
+                    render: { projection: 'orthographic', depth: 'flat', backgroundColor: 0x0b0f16 },
+                },
+            );
+            window._sg = sg;
+            sg.render();
+            sg.frame(null, { duration: 0.01 });
+
+            let currentBand = 'detail';
+            let focusID = lines[0].id;
+
+            const applyBand = (band) => {
+                if (band === currentBand) return;
+                currentBand = band;
+                const next = specOf(band);
+                sg.update({
+                    nodes: next.spec.nodes.map((node) => ({
+                        id: node.id,
+                        data: { ...node.data, html: node.data.html },
+                    })),
+                });
+                groupNodes.forEach((node) =>
+                    band === 'glyph' || band === 'card' ? sg.show(node.id) : sg.hide(node.id),
+                );
+                el('band').textContent = band;
+            };
+
+            const renderChapters = () => {
+                el('chapters').innerHTML = chapters
+                    .map(
+                        (chapter, i) =>
+                            `<button type="button" data-chapter="${chapter.startID}" data-active="${lines.find((l) => l.id === focusID)?.turn === chapter.turn}">${i + 1} · ${chapter.label}</button>`,
+                    )
+                    .join('');
+                el('chapters').querySelectorAll('[data-chapter]').forEach((button) => {
+                    button.addEventListener('click', () => focus(button.dataset.chapter));
+                });
+            };
+
+            const focus = (id, moveCamera = true) => {
+                if (!lines.some((line) => line.id === id)) return;
+                focusID = id;
+                if (moveCamera) sg.inspect(id);
+                const line = lines.find((entry) => entry.id === id);
+                el('focus').textContent = `focus ${id} · turn ${line.turn}`;
+                el('status').innerHTML = `<b>${id}</b> · ${line.kind}/${line.status} · camera is the scroll, layout is arrangement`;
+                renderChapters();
+            };
+
+            sg.events.on('zoom:change', ({ zoom }) => {
+                el('zoom').textContent = `zoom ${zoom.toFixed(2)}`;
+                applyBand(terminalLODFor(zoom, LADDER));
+            });
+            sg.events.on('node:click', (event) => {
+                const id = 'id' in event ? event.id : event.node?.id;
+                if (id && id.startsWith('line-')) focus(id);
+            });
+            window.addEventListener('keydown', (event) => {
+                const index = Number(event.key) - 1;
+                const chapter = chapters[index];
+                if (chapter) focus(chapter.startID);
+            });
+
+            groupNodes.forEach((node) => sg.hide(node.id));
+            focus(lines[0].id, false);
+            sg.frame(null, { duration: 0.01 });
+            el('band').textContent = currentBand;
+        </script>
+    </body>
+</html>

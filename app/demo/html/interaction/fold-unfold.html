@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Fold / unfold — SpaceGraphJS</title>
+        <link rel="stylesheet" href="../shared-reset.css" />
+        <style>
+            html,
+            body,
+            #app {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+                background: #070b12;
+                font-family: 'SFMono-Regular', Consolas, monospace;
+                color: #e7edf5;
+            }
+            .panel {
+                position: absolute;
+                z-index: 10;
+                background: rgb(12 18 28 / 86%);
+                border: 1px solid #223049;
+                border-radius: 0;
+                padding: 10px 15px;
+                font-size: 11px;
+                pointer-events: none;
+                backdrop-filter: blur(8px);
+            }
+            .top {
+                top: 18px;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
+            }
+            .top b {
+                color: #7aa2f7;
+                font-size: 14px;
+            }
+            .top span {
+                color: #8ea0b8;
+            }
+            .controls {
+                bottom: 22px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 8px;
+                pointer-events: auto;
+            }
+            .controls button {
+                background: #121b29;
+                color: #9fb1c9;
+                border: 1px solid #28364b;
+                border-radius: 0;
+                padding: 7px 13px;
+                font: 11px 'SFMono-Regular', Consolas, monospace;
+                cursor: pointer;
+            }
+            .controls button:hover {
+                border-color: #7aa2f7;
+                color: #7aa2f7;
+            }
+            .note {
+                bottom: 22px;
+                right: 22px;
+                max-width: 290px;
+                color: #54657d;
+                text-align: right;
+            }
+            .note b {
+                color: #8ea0b8;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app"></div>
+        <div class="panel top"><b id="state">all folded</b><br /><span id="detail">click a cluster to unfold its inner graph</span></div>
+        <div class="panel controls" id="controls"></div>
+        <div class="panel note">A node is a <b>folded subgraph</b>. Unfolding is reversible, keeps the outer edges, and needs no second renderer.</div>
+
+        <script type="module">
+            import { SpaceGraph } from 'spacegraphjs';
+            import { innerTree, innerPlacements } from 'spacegraphjs/inspect';
+            import { playRepresentationChanges } from 'spacegraphjs/representations';
+
+            const el = (id) => document.getElementById(id);
+            const palette = [0x7aa2f7, 0x5fd0a0, 0xe0af68, 0xbb9af7, 0x7dcfff];
+            const names = ['inspect', 'select', 'search', 'grow', 'export'];
+            const clusters = names.map((name, i) => ({
+                id: `cluster-${i}`,
+                label: name,
+                position: [Math.cos((i / names.length) * Math.PI * 2) * 460, Math.sin((i / names.length) * Math.PI * 2) * 300, 0],
+                color: palette[i],
+            }));
+
+            const innerNodes = [];
+            const innerEdges = [];
+            clusters.forEach((cluster) => {
+                innerNodes.push({ id: cluster.id, label: cluster.label, kind: 'cluster' });
+                for (let i = 1; i <= 5; i++) {
+                    const id = `${cluster.id}-${i}`;
+                    innerNodes.push({ id, label: `${cluster.label}:${i}`, kind: 'inner' });
+                    innerEdges.push({ source: id, target: cluster.id, kind: 'contains' });
+                }
+            });
+
+            const mainNodes = clusters.map((cluster) => ({
+                id: cluster.id,
+                type: 'ShapeNode',
+                label: cluster.label,
+                position: cluster.position,
+                data: { label: `${cluster.label} · +`, size: 82, color: cluster.color },
+            }));
+            const mainEdges = clusters.slice(1).map((cluster, i) => ({
+                id: `outer-${i}`,
+                source: clusters[i].id,
+                target: cluster.id,
+                type: 'CurvedEdge',
+            }));
+            mainEdges.push({ id: 'outer-last', source: clusters.at(-1).id, target: clusters[0].id, type: 'DottedEdge' });
+
+            const childSpecs = [];
+            clusters.forEach((cluster) => {
+                const growth = innerTree(cluster.id, innerNodes, innerEdges, 1, 5);
+                const placements = innerPlacements(growth, 'radial');
+                placements.filter(({ chip }) => chip.id !== cluster.id).forEach(({ chip, left, top }) => {
+                    childSpecs.push({
+                        id: chip.id,
+                        parent: cluster.id,
+                        label: chip.label,
+                        color: cluster.color,
+                        expanded: [
+                            cluster.position[0] + (left - 50) * 7,
+                            cluster.position[1] + (top - 50) * 6,
+                            0,
+                        ],
+                        collapsed: [cluster.position[0], cluster.position[1], 0],
+                    });
+                });
+            });
+
+            const sg = await SpaceGraph.create(el('app'), { nodes: mainNodes, edges: mainEdges }, {
+                chrome: false,
+                plugins: [],
+                render: { projection: 'orthographic', depth: 'flat', backgroundColor: 0x070b12 },
+            });
+            window._sg = sg;
+            sg.render();
+            sg.frame(null, { duration: 0.01 });
+
+            const open = new Set();
+            let playback;
+
+            const renderControls = () => {
+                el('controls').innerHTML = clusters
+                    .map(
+                        (cluster) =>
+                            `<button type="button" data-cluster="${cluster.id}" data-active="${open.has(cluster.id)}">${cluster.label} ${open.has(cluster.id) ? '−' : '+'}</button>`,
+                    )
+                    .join('');
+                el('controls').querySelectorAll('[data-cluster]').forEach((button) => {
+                    button.addEventListener('click', () => toggle(button.dataset.cluster));
+                });
+                el('state').textContent = open.size ? `${open.size} unfolded` : 'all folded';
+                el('detail').textContent = `${childSpecs.filter((child) => open.has(child.parent)).length} inner nodes visible · ${mainEdges.length} outer edges kept`;
+            };
+
+            const toggle = (clusterID) => {
+                const expanding = !open.has(clusterID);
+                if (expanding) open.add(clusterID);
+                else open.delete(clusterID);
+
+                const children = childSpecs.filter((child) => child.parent === clusterID);
+                const from = {};
+                const to = {};
+                children.forEach((child) => {
+                    from[child.id] = expanding ? child.collapsed : child.expanded;
+                    to[child.id] = expanding ? child.expanded : child.collapsed;
+                });
+
+                const change = { id: `fold:${clusterID}`, from: expanding ? 'folded' : 'open', to: expanding ? 'open' : 'folded', duration: 0.5 };
+                const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+                playback = playRepresentationChanges([change], (_, t) => {
+                    const positions = Object.fromEntries(
+                        Object.keys(to).map((id) => [
+                            id,
+                            [
+                                from[id][0] + (to[id][0] - from[id][0]) * t,
+                                from[id][1] + (to[id][1] - from[id][1]) * t,
+                                0,
+                            ],
+                        ]),
+                    );
+                    sg.setPositions(positions);
+                }, { reducedMotion: reduced, ease: 'power2.inOut' });
+
+                if (expanding) {
+                    children.forEach((child) => {
+                        sg.addNode({
+                            id: child.id,
+                            type: 'ShapeNode',
+                            label: child.label,
+                            position: child.collapsed,
+                            data: { label: child.label, size: 30, color: child.color },
+                        });
+                        sg.addEdge({
+                            id: `inner-${child.id}`,
+                            source: child.parent,
+                            target: child.id,
+                            type: 'CurvedEdge',
+                        });
+                    });
+                } else {
+                    children.forEach((child) => {
+                        sg.removeEdge(`inner-${child.id}`);
+                        sg.removeNode(child.id);
+                    });
+                }
+                const cluster = clusters.find((entry) => entry.id === clusterID);
+                sg.update({ nodes: [{ id: clusterID, data: { label: `${cluster.label} · ${expanding ? '−' : '+'}` } }] });
+                renderControls();
+            };
+
+            let lastFrame = performance.now();
+            const tick = (now) => {
+                const dt = (now - lastFrame) / 1000;
+                lastFrame = now;
+                if (playback && !playback.done) {
+                    playback.advance(dt);
+                    if (playback.done) playback = undefined;
+                }
+                requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+
+            sg.events.on('node:click', (event) => {
+                const id = 'id' in event ? event.id : event.node?.id;
+                if (id && clusters.some((cluster) => cluster.id === id)) toggle(id);
+            });
+
+            renderControls();
+        </script>
+    </body>
+</html>

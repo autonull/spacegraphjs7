@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Gravity focus — SpaceGraphJS</title>
+        <link rel="stylesheet" href="../shared-reset.css" />
+        <style>
+            html,
+            body,
+            #app {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+                background: #070b12;
+                font-family: 'SFMono-Regular', Consolas, monospace;
+                color: #e7edf5;
+            }
+            .panel {
+                position: absolute;
+                z-index: 10;
+                background: rgb(12 18 28 / 86%);
+                border: 1px solid #223049;
+                border-radius: 0;
+                padding: 9px 15px;
+                font-size: 11px;
+                pointer-events: none;
+                backdrop-filter: blur(8px);
+            }
+            .top {
+                top: 18px;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
+            }
+            .top b {
+                color: #7aa2f7;
+                font-size: 14px;
+            }
+            .top span {
+                color: #8ea0b8;
+            }
+            .note {
+                bottom: 20px;
+                right: 20px;
+                max-width: 300px;
+                color: #54657d;
+                text-align: right;
+            }
+            .note b {
+                color: #8ea0b8;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app"></div>
+        <div class="panel top"><b id="focus">no focus</b><br /><span id="detail">hover a node — its neighbours move closer</span></div>
+        <div class="panel note">Attention is <b>geometry</b>, not only colour. Hover pulls the neighbourhood in; unrelated nodes drift out. The underlying graph never changes.</div>
+
+        <script type="module">
+            import { Vector3 } from 'three';
+            import { SpaceGraph } from 'spacegraphjs';
+            import { diffPositions, interpolatedPositions } from 'spacegraphjs/layout';
+            import { playRepresentationChanges } from 'spacegraphjs/representations';
+
+            const el = (id) => document.getElementById(id);
+            const names = ['route', 'lookup', 'format', 'dispatch', 'render', 'commit', 'search', 'facets'];
+            const palette = [0x7aa2f7, 0x5fd0a0, 0xe0af68, 0xbb9af7];
+            const nodes = [];
+            const edges = [];
+            const adjacency = new Map();
+
+            for (let i = 0; i < 8; i++) {
+                const hub = `hub-${i}`;
+                const angle = (i / 8) * Math.PI * 2;
+                const center = [Math.cos(angle) * 360, Math.sin(angle) * 260];
+                nodes.push({
+                    id: hub,
+                    type: 'ShapeNode',
+                    label: names[i],
+                    position: [center[0], center[1], 0],
+                    data: { label: names[i], size: 52, color: palette[i % palette.length] },
+                });
+                adjacency.set(hub, new Set());
+                for (let j = 1; j <= 3; j++) {
+                    const id = `${hub}-${j}`;
+                    const a = angle + (j - 2) * 0.42;
+                    nodes.push({
+                        id,
+                        type: 'ShapeNode',
+                        label: `${names[i]}:${j}`,
+                        position: [center[0] + Math.cos(a) * 120, center[1] + Math.sin(a) * 120, 0],
+                        data: { label: `${names[i]}:${j}`, size: 26, color: palette[i % palette.length] },
+                    });
+                    adjacency.get(hub).add(id);
+                    adjacency.set(id, new Set([hub]));
+                    edges.push({ id: `e-${id}`, source: hub, target: id, type: 'CurvedEdge' });
+                }
+            }
+            for (let i = 0; i < 8; i++) {
+                edges.push({
+                    id: `ring-${i}`,
+                    source: `hub-${i}`,
+                    target: `hub-${(i + 1) % 8}`,
+                    type: 'DottedEdge',
+                });
+                adjacency.get(`hub-${i}`).add(`hub-${(i + 1) % 8}`);
+                adjacency.get(`hub-${(i + 1) % 8}`).add(`hub-${i}`);
+            }
+
+            const sg = await SpaceGraph.create(el('app'), { nodes, edges }, {
+                chrome: false,
+                plugins: [],
+                render: { projection: 'orthographic', depth: 'flat', backgroundColor: 0x070b12 },
+            });
+            window._sg = sg;
+            sg.render();
+            sg.frame(null, { duration: 0.01 });
+
+            const base = new Map(
+                nodes.map((node) => [node.id, { x: node.position[0], y: node.position[1], z: 0 }]),
+            );
+            const toMap = (positions) =>
+                new Map(
+                    Object.entries(positions).map(([id, p]) => [id, { x: p[0], y: p[1], z: p[2] ?? 0 }]),
+                );
+            const fromMap = (map) =>
+                Object.fromEntries([...map].map(([id, p]) => [id, [p.x, p.y, p.z]]));
+
+            const screenOf = (node) => {
+                sg.camera.updateMatrixWorld();
+                const v = new Vector3(...node.position).project(sg.camera);
+                return {
+                    x: (v.x * 0.5 + 0.5) * window.innerWidth,
+                    y: (-v.y * 0.5 + 0.5) * window.innerHeight,
+                };
+            };
+
+            let hovered;
+            let playback;
+            let last = performance.now();
+
+            const gravitate = (id) => {
+                const focus = id ? base.get(id) : undefined;
+                const neighbours = id ? adjacency.get(id) ?? new Set() : new Set();
+                const target = new Map(
+                    nodes.map((node, index) => {
+                        if (!focus) return [node.id, base.get(node.id)];
+                        if (node.id === id) return [node.id, { x: 0, y: 0, z: 0 }];
+                        if (neighbours.has(node.id)) {
+                            const a = (index / nodes.length) * Math.PI * 2;
+                            return [node.id, { x: Math.cos(a) * 190, y: Math.sin(a) * 150, z: 0 }];
+                        }
+                        const b = base.get(node.id);
+                        const dx = b.x - focus.x;
+                        const dy = b.y - focus.y;
+                        const length = Math.hypot(dx, dy) || 1;
+                        return [node.id, {
+                            x: focus.x + (dx / length) * (Math.hypot(dx, dy) + 190),
+                            y: focus.y + (dy / length) * (Math.hypot(dx, dy) + 190),
+                            z: 0,
+                        }];
+                    }),
+                );
+                const current = toMap(sg.getPositions());
+                const layout = diffPositions(target, current);
+                const change = { id: `gravity:${id ?? 'reset'}`, from: hovered ?? 'none', to: id ?? 'none', duration: 0.55 };
+                playback = playRepresentationChanges([change], (_, t) => {
+                    sg.setPositions(fromMap(interpolatedPositions(layout, t)));
+                }, { ease: 'power2.out' });
+
+                const emphasis = new Map(
+                    nodes.map((node) => [
+                        node.id,
+                        !id ? 0 : node.id === id ? 1 : neighbours.has(node.id) ? 0.65 : 0,
+                    ]),
+                );
+                sg.update({
+                    nodes: nodes.map((node) => {
+                        const weight = emphasis.get(node.id);
+                        const size = node.id.startsWith('hub-') ? 52 : 26;
+                        return {
+                            id: node.id,
+                            data: {
+                                size: size * (1 + 0.55 * weight),
+                                opacity: id ? 0.45 + 0.55 * weight : 1,
+                            },
+                        };
+                    }),
+                });
+                el('focus').textContent = id ?? 'no focus';
+                el('detail').textContent = `${neighbours.size} neighbours pulled in · ${layout.moved.size} nodes moved`;
+            };
+
+            el('app').addEventListener('pointermove', (event) => {
+                let best;
+                let distance = 60 * 60;
+                for (const node of nodes) {
+                    const point = screenOf(node);
+                    const d = (point.x - event.clientX) ** 2 + (point.y - event.clientY) ** 2;
+                    if (d < distance) {
+                        distance = d;
+                        best = node;
+                    }
+                }
+                const next = best?.id;
+                if (next !== hovered) {
+                    hovered = next;
+                    gravitate(hovered);
+                }
+            });
+            el('app').addEventListener('pointerleave', () => {
+                hovered = undefined;
+                gravitate(undefined);
+            });
+
+            const tick = (now) => {
+                const dt = (now - last) / 1000;
+                last = now;
+                if (playback && !playback.done) {
+                    playback.advance(dt);
+                    if (playback.done) playback = undefined;
+                }
+                requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+        </script>
+    </body>
+</html>

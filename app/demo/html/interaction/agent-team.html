@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Agent team — SpaceGraphJS</title>
+        <link rel="stylesheet" href="./lab.css" />
+        <style>
+            html,
+            body,
+            #app {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+            }
+            #lasso {
+                position: absolute;
+                inset: 0;
+                z-index: 5;
+                pointer-events: none;
+            }
+            #lasso rect {
+                fill: rgb(122 162 247 / 8%);
+                stroke: #7aa2f7;
+                stroke-width: 1;
+                stroke-dasharray: 4 3;
+            }
+            .hud {
+                position: absolute;
+                z-index: 30;
+                background: rgb(12 18 28 / 90%);
+                border: 1px solid var(--border);
+                border-radius: 0;
+                padding: 9px 14px;
+                font-size: 11px;
+                backdrop-filter: blur(8px);
+            }
+            .top {
+                top: 14px;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
+            }
+            .top b {
+                color: var(--accent);
+            }
+            .top span {
+                color: var(--muted);
+            }
+            .team {
+                top: 14px;
+                right: 16px;
+                width: 300px;
+            }
+            .team b {
+                color: var(--accent);
+            }
+            .team div {
+                color: var(--muted);
+                margin-top: 4px;
+            }
+            .inspector {
+                top: 60px;
+                right: 16px;
+                width: 300px;
+                max-height: 62vh;
+                overflow: auto;
+                pointer-events: auto;
+            }
+            .inspector h3 {
+                margin: 0 0 6px;
+                color: var(--text);
+                font-size: 13px;
+            }
+            .inspector .tools {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5px;
+                margin: 6px 0;
+            }
+            .inspector input {
+                width: 100%;
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                padding: 4px 6px;
+                margin-bottom: 5px;
+            }
+            .inspector button,
+            .taskbar button {
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                padding: 4px 9px;
+                cursor: pointer;
+                font: inherit;
+            }
+            .inspector button:hover,
+            .taskbar button:hover,
+            .taskbar button[data-active='true'] {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+            .taskbar {
+                bottom: 14px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 5px;
+                pointer-events: auto;
+            }
+            .logline {
+                color: var(--muted);
+                border-left: 2px solid var(--border);
+                padding-left: 6px;
+                margin-top: 3px;
+            }
+            .agent {
+                container-type: inline-size;
+                width: 100%;
+                height: 100%;
+                border: 1px solid var(--border);
+                background: linear-gradient(150deg, #162033, #0e1623);
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                font-family: var(--mono);
+                color: var(--text);
+            }
+            .agent[data-active='true'] {
+                border-color: var(--accent);
+            }
+            .agent .head {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                padding: 5px 7px;
+                border-bottom: 1px solid var(--border);
+                font-size: clamp(9px, 5cqw, 18px);
+            }
+            .agent .head i {
+                width: 0.65em;
+                height: 0.65em;
+                background: var(--tone);
+            }
+            .agent .head b {
+                font-weight: 700;
+            }
+            .agent .head span {
+                margin-left: auto;
+                color: var(--muted);
+                font-size: 0.78em;
+            }
+            .agent .body {
+                flex: 1;
+                padding: 5px 7px;
+                font-size: clamp(8px, 4cqw, 14px);
+                line-height: 1.4;
+                overflow: hidden;
+            }
+            .agent .k {
+                color: var(--muted);
+            }
+            .agent .v {
+                color: var(--accent);
+            }
+            .agent .compact {
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                height: 100%;
+                padding: 0 8px;
+                font-size: clamp(11px, 9cqw, 24px);
+                font-weight: 700;
+            }
+            .agent .compact i {
+                width: 0.7em;
+                height: 0.7em;
+                background: var(--tone);
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app"></div>
+        <svg id="lasso"></svg>
+        <div class="hud top"><b id="band">detail</b> · <span id="info">5 agents · 6 links · 1 operator</span></div>
+        <div class="hud team"><b>TEAM</b><div id="team-stats">no scope · hover or brush to select</div></div>
+        <div class="hud inspector" id="inspector"><h3>Agent</h3><div class="k">Select an agent.</div></div>
+        <div class="hud taskbar" id="taskbar"></div>
+
+        <script type="module">
+            import { Vector3 } from 'three';
+            import { SpaceGraph } from 'spacegraphjs';
+            import { terminalLODFor } from 'spacegraphjs/terminal';
+            import { innerPlacements } from 'spacegraphjs/inspect';
+
+            const el = (id) => document.getElementById(id);
+            const esc = (value) => String(value).replaceAll('<', '&lt;').replaceAll('&', '&amp;').replaceAll('"', '&quot;');
+            const LADDER = ['dot', 'glyph', 'card', 'detail'];
+
+            const agents = [
+                { id: 'lead', label: 'lead', role: 'coordinator', status: 'working', tool: 'plan()', tokens: 12400, files: ['AGENTS.md'], tone: '#7aa2f7', pos: [-420, -210], tasks: ['split work', 'review handoffs'] },
+                { id: 'scout', label: 'scout', role: 'explorer', status: 'working', tool: 'grep()', tokens: 8200, files: ['src/terminal.ts'], tone: '#5fd0a0', pos: [-40, 10], tasks: ['find projection', 'map callers'] },
+                { id: 'writer', label: 'writer', role: 'editor', status: 'waiting', tool: 'edit()', tokens: 6700, files: ['src/terminal.ts'], tone: '#e0af68', pos: [430, -180], tasks: ['patch terminalSpec'] },
+                { id: 'tester', label: 'tester', role: 'verifier', status: 'blocked', tool: 'test()', tokens: 4100, files: ['test/terminal.test.ts'], tone: '#f07178', pos: [360, 210], tasks: ['run unit suite', 'await approval'] },
+                { id: 'review', label: 'review', role: 'reviewer', status: 'done', tool: 'diff()', tokens: 3900, files: ['test/terminal.test.ts'], tone: '#bb9af7', pos: [-260, 240], tasks: ['read diff'] },
+            ];
+            const links = [
+                ['operator', 'lead', 'steer'],
+                ['lead', 'scout', 'delegates'],
+                ['lead', 'writer', 'delegates'],
+                ['scout', 'writer', 'hands-off'],
+                ['writer', 'tester', 'awaits'],
+                ['tester', 'review', 'delegates'],
+                ['review', 'lead', 'reports'],
+            ];
+            const state = new Map(agents.map((agent) => [agent.id, { tab: 'context', active: false, log: [`${agent.role} started`, `${agent.tool} called`] }]));
+            let band = 'detail';
+            let active = 'lead';
+
+            const operatorNode = {
+                id: 'operator',
+                type: 'ShapeNode',
+                label: 'operator',
+                position: [-420, 170, 0],
+                data: { label: 'operator', size: 46, color: 0x7aa2f7 },
+            };
+            const agentNodes = () =>
+                agents.map((agent) => ({
+                    id: agent.id,
+                    type: 'HtmlNode',
+                    label: agent.label,
+                    position: [agent.pos[0], agent.pos[1], 0],
+                    data: {
+                        html: htmlFor(agent),
+                        useRawHtml: true,
+                        width: 300,
+                        height: 190,
+                        minWidth: 170,
+                        minHeight: 110,
+                        pointerEvents: 'auto',
+                        backgroundColor: '#111a28',
+                    },
+                }));
+            const linkEdges = () =>
+                links.map(([source, target, kind], i) => ({
+                    id: `link-${i}`,
+                    source,
+                    target,
+                    data: { kind },
+                    type: kind === 'steer' ? 'DottedEdge' : 'CurvedEdge',
+                }));
+
+            const widgetGrid = (agent) => {
+                const widgets = [
+                    { id: 'tokens', label: 'tokens', value: String(agent.tokens) },
+                    { id: 'files', label: 'files', value: String(agent.files.length) },
+                    { id: 'tasks', label: 'tasks', value: String(agent.tasks.length) },
+                    { id: 'status', label: 'status', value: agent.status },
+                    { id: 'tool', label: 'tool', value: agent.tool },
+                    { id: 'links', label: 'links', value: String(links.filter(([, target]) => target === agent.id).length) },
+                ];
+                return `<div style="position:relative;width:100%;height:100%">${innerPlacements(widgets, 'grid')
+                    .map(
+                        ({ chip, left, top, width, height }) =>
+                            `<div style="position:absolute;left:${left}%;top:${top}%;width:${width}%;height:${height}%;border:1px solid var(--border);background:var(--surface-2);padding:3px;overflow:hidden"><span class="k">${esc(chip.label)}</span><br /><b class="v">${esc(chip.value)}</b></div>`,
+                    )
+                    .join('')}</div>`;
+            };
+
+            const htmlFor = (agent) => {
+                const s = state.get(agent.id);
+                if (band === 'dot' || band === 'glyph')
+                    return `<div class="compact" style="--tone:${agent.tone};height:190px"><i></i>${esc(agent.label)}<span>${esc(agent.status.slice(0, 1).toUpperCase())}</span></div>`;
+                const body =
+                    s.tab === 'tools'
+                        ? widgetGrid(agent)
+                        : s.tab === 'tasks'
+                          ? agent.tasks.map((task) => `<div>· ${esc(task)}</div>`).join('')
+                          : s.tab === 'log'
+                            ? s.log.slice(-4).map((line) => `<div class="logline">${esc(line)}</div>`).join('')
+                            : `<div><span class="k">role</span> <b class="v">${esc(agent.role)}</b></div>
+                               <div><span class="k">tool</span> <b>${esc(agent.tool)}</b></div>
+                               <div><span class="k">files</span> ${agent.files.map((file) => esc(file)).join(', ')}</div>`;
+                return `<div class="agent" data-active="${s.active}" style="--tone:${agent.tone};height:190px">
+                    <div class="head"><i></i><b>${esc(agent.label)}</b><span>${esc(agent.status)} · ${agent.tokens}</span></div>
+                    <div class="body">${body}</div>
+                </div>`;
+            };
+
+            const sg = await SpaceGraph.create(
+                el('app'),
+                { nodes: [operatorNode, ...agentNodes()], edges: linkEdges() },
+                {
+                    chrome: false,
+                    plugins: [],
+                    render: { projection: 'orthographic', depth: 'flat', backgroundColor: 0x0a0e15 },
+                },
+            );
+            window._sg = sg;
+            sg.render();
+            sg.frame(null, { duration: 0.01 });
+
+            const refresh = () => {
+                sg.update({ nodes: agents.map((agent) => ({ id: agent.id, data: { html: htmlFor(agent) } })) });
+                el('taskbar').innerHTML = agents
+                    .map(
+                        (agent) =>
+                            `<button type="button" data-agent="${agent.id}" data-active="${agent.id === active}">${esc(agent.label)} ${esc(agent.status.slice(0, 1).toUpperCase())}</button>`,
+                    )
+                    .join('');
+                el('taskbar').querySelectorAll('[data-agent]').forEach((button) => {
+                    button.addEventListener('click', () => selectAgent(button.dataset.agent));
+                });
+                el('info').textContent = `${agents.length} agents · ${links.length} links · 1 operator · band ${band}`;
+            };
+
+            const renderInspector = () => {
+                const agent = agents.find((entry) => entry.id === active);
+                const s = state.get(agent.id);
+                el('inspector').innerHTML = `<h3>${esc(agent.label)} · ${esc(agent.role)}</h3>
+                    <div class="k">status <b class="v">${esc(agent.status)}</b> · tokens ${agent.tokens}</div>
+                    <div class="tools">${['context', 'tools', 'tasks', 'log']
+                        .map(
+                            (tab) =>
+                                `<button data-inspector-tab="${tab}" data-active="${s.tab === tab}">${tab.toUpperCase()}</button>`,
+                        )
+                        .join('')}</div>
+                    <input id="steer-input" placeholder="steer this agent…" />
+                    <div class="tools">
+                        <button id="steer">STEER</button>
+                        ${agent.status === 'blocked' ? '<button id="approve">APPROVE</button>' : ''}
+                        <button id="focus-agent">FOCUS</button>
+                    </div>
+                    <div class="k">recent log</div>
+                    ${s.log.slice(-3).map((line) => `<div class="logline">${esc(line)}</div>`).join('')}`;
+                el('inspector').querySelectorAll('[data-inspector-tab]').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        state.get(agent.id).tab = button.dataset.inspectorTab;
+                        refresh();
+                        renderInspector();
+                    });
+                });
+                el('steer').addEventListener('click', () => {
+                    const value = el('steer-input').value.trim();
+                    if (!value) return;
+                    s.log.push(`operator: ${value}`);
+                    agent.status = 'working';
+                    sg.addEdge({
+                        id: `steer-${s.log.length}`,
+                        source: 'operator',
+                        target: agent.id,
+                        type: 'DottedEdge',
+                    });
+                    refresh();
+                    renderInspector();
+                });
+                el('approve')?.addEventListener('click', () => {
+                    agent.status = 'working';
+                    s.log.push('operator approved the pending action');
+                    refresh();
+                    renderInspector();
+                });
+                el('focus-agent').addEventListener('click', () => sg.inspect(agent.id));
+            };
+
+            const selectAgent = (id, moveCamera = true) => {
+                active = id;
+                state.forEach((value) => (value.active = false));
+                state.get(id).active = true;
+                refresh();
+                renderInspector();
+                if (moveCamera) sg.inspect(id);
+            };
+
+            const screenOf = (node) => {
+                sg.camera.updateMatrixWorld();
+                const point = new Vector3(...node.position).project(sg.camera);
+                return {
+                    x: (point.x * 0.5 + 0.5) * window.innerWidth,
+                    y: (-point.y * 0.5 + 0.5) * window.innerHeight,
+                };
+            };
+
+            let drag;
+            const lasso = el('lasso');
+            el('app').addEventListener('pointerdown', (event) => {
+                if (event.target.closest?.('.agent')) return;
+                drag = { a: { x: event.clientX, y: event.clientY }, b: { x: event.clientX, y: event.clientY } };
+                sg.setOrbitEnabled(false);
+            });
+            el('app').addEventListener('pointermove', (event) => {
+                if (!drag) return;
+                drag.b = { x: event.clientX, y: event.clientY };
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', Math.min(drag.a.x, drag.b.x));
+                rect.setAttribute('y', Math.min(drag.a.y, drag.b.y));
+                rect.setAttribute('width', Math.abs(drag.b.x - drag.a.x));
+                rect.setAttribute('height', Math.abs(drag.b.y - drag.a.y));
+                lasso.replaceChildren(rect);
+            });
+            el('app').addEventListener('pointerup', () => {
+                if (!drag) return;
+                sg.setOrbitEnabled(true);
+                lasso.replaceChildren();
+                const { a, b } = drag;
+                drag = undefined;
+                if (Math.abs(b.x - a.x) < 8 || Math.abs(b.y - a.y) < 8) return;
+                const picked = agents.filter((agent) => {
+                    const node = sg.graph.nodes.get(agent.id);
+                    const p = screenOf(node);
+                    return p.x >= Math.min(a.x, b.x) && p.x <= Math.max(a.x, b.x) && p.y >= Math.min(a.y, b.y) && p.y <= Math.max(a.y, b.y);
+                });
+                if (sg.hasNode('team-scope')) sg.removeNode('team-scope');
+                if (!picked.length) {
+                    el('team-stats').textContent = 'no scope · hover or brush to select';
+                    return;
+                }
+                const xs = picked.map((agent) => agent.pos[0]);
+                const ys = picked.map((agent) => agent.pos[1]);
+                sg.addNode({
+                    id: 'team-scope',
+                    type: 'GroupNode',
+                    label: `team scope · ${picked.length}`,
+                    position: [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2, -10],
+                    data: {
+                        label: `team scope · ${picked.length}`,
+                        width: Math.max(...xs) - Math.min(...xs) + 360,
+                        height: Math.max(...ys) - Math.min(...ys) + 260,
+                        depth: 20,
+                        color: 0x1b2940,
+                        lodThreshold: 5000,
+                    },
+                });
+                const tokens = picked.reduce((sum, agent) => sum + agent.tokens, 0);
+                const blocked = picked.filter((agent) => agent.status === 'blocked').length;
+                el('team-stats').innerHTML = `<b>${picked.length} agents</b> · ${tokens.toLocaleString()} tokens · ${blocked} blocked<br />${picked.map((agent) => esc(agent.label)).join(' · ')}`;
+            });
+
+            sg.events.on('node:click', ({ id }) => {
+                if (typeof id === 'string' && agents.some((agent) => agent.id === id)) selectAgent(id);
+            });
+            sg.events.on('zoom:change', ({ zoom }) => {
+                const next = terminalLODFor(zoom, LADDER);
+                if (next !== band) {
+                    band = next;
+                    el('band').textContent = band;
+                    refresh();
+                }
+            });
+
+            refresh();
+            selectAgent('lead', false);
+            sg.frame(null, { duration: 0.01 });
+        </script>
+    </body>
+</html>

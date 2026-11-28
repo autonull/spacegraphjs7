@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Breadcrumb console — SpaceGraphJS</title>
+        <link rel="stylesheet" href="./lab.css" />
+        <style>
+            .workspace {
+                grid-template-columns: 1fr 320px;
+            }
+            .crumb {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                flex-wrap: wrap;
+                padding: 9px 14px;
+                border-bottom: 1px solid var(--border);
+            }
+            .crumb button {
+                font-size: 11px;
+                padding: 2px 8px;
+            }
+            .crumb .sep {
+                color: var(--border);
+            }
+            .crumb .current {
+                color: var(--accent);
+            }
+            .row {
+                display: flex;
+                gap: 9px;
+                padding: 7px 14px;
+                border-bottom: 1px solid #16202e;
+                cursor: pointer;
+                white-space: nowrap;
+            }
+            .row:hover {
+                background: var(--surface);
+            }
+            .row[data-descend='true']::after {
+                content: '›';
+                margin-left: auto;
+                color: var(--accent);
+            }
+            .path svg {
+                width: 100%;
+                height: 100%;
+            }
+            .hint {
+                padding: 10px 14px;
+                color: var(--muted);
+                font-size: 11px;
+                border-top: 1px solid var(--border);
+            }
+        </style>
+    </head>
+    <body>
+        <header class="topbar">
+            <h1>Breadcrumb console <span>the trail is the navigation model; the console is its current scope</span></h1>
+            <span class="spacer"></span>
+            <button id="back" type="button">← Up</button>
+            <button id="forward" type="button">Into →</button>
+            <button id="reset" type="button">Root</button>
+        </header>
+
+        <main class="workspace">
+            <section class="pane">
+                <div class="pane-head"><span>Scope</span><b id="scope-label"></b></div>
+                <div class="crumb" id="crumb"></div>
+                <div class="scroll" id="lines"></div>
+                <div class="hint">Click a line with › to descend. Alt+← moves up; Alt+→ moves down.</div>
+            </section>
+            <section class="pane path">
+                <div class="pane-head"><span>Trail as graph</span><b id="depth"></b></div>
+                <svg id="trail" viewBox="0 0 320 480"></svg>
+            </section>
+        </main>
+
+        <footer class="statusbar">
+            <span id="status">Ready</span>
+            <span class="spacer"></span>
+            <span>Lift: <b>Trail</b> is already renderer-agnostic; only the console scope binding is new.</span>
+        </footer>
+
+        <script type="module">
+            import { Trail } from 'spacegraphjs/navigation';
+            import { terminalLineHTML } from 'spacegraphjs/terminal';
+
+            const NS = 'http://www.w3.org/2000/svg';
+            const svg = (tag, attrs = {}) => {
+                const el = document.createElementNS(NS, tag);
+                Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, String(v)));
+                return el;
+            };
+            const el = (id) => document.getElementById(id);
+
+            const scopes = {
+                repo: {
+                    label: 'spacegraphjs',
+                    lines: [
+                        { id: 'r1', text: 'Root package with 28 published packages.', child: 'src' },
+                        { id: 'r2', text: '`README.md` describes the vector-first model.' },
+                        { id: 'r3', text: '`test/` holds 201 unit files.', child: 'test' },
+                    ],
+                },
+                src: {
+                    label: 'src/',
+                    lines: [
+                        { id: 's1', text: '`terminal.ts` — console projection primitives.', child: 'terminal' },
+                        { id: 's2', text: '`inspect/inner-topology.ts` — bounded inner graphs.' },
+                        { id: 's3', text: '`zoom/ScaleDomain.ts` — continuous fidelity.', child: 'zoom' },
+                    ],
+                },
+                terminal: {
+                    label: 'src/terminal.ts',
+                    lines: [
+                        { id: 't1', text: '`terminalGrow` grows a graph from one line.', child: 'grow' },
+                        { id: 't2', text: '`terminalFacets` counts committed fields.' },
+                        { id: 't3', text: '`terminalDiff` compares two projections.', child: 'diff' },
+                    ],
+                },
+                grow: {
+                    label: 'terminalGrow()',
+                    lines: [
+                        { id: 'g1', text: '`innerTree(seed, depth, limit)` collects chips.' },
+                        { id: 'g2', text: '`innerPlacements` lays them out radially.' },
+                        { id: 'g3', text: '`innerConnectors` draws spokes from the seed.' },
+                    ],
+                },
+                zoom: {
+                    label: 'ScaleDomain',
+                    lines: [
+                        { id: 'z1', text: '`sample(normalized).importance` is continuous.' },
+                        { id: 'z2', text: '`terminalLODFor` maps it onto band ids.' },
+                        { id: 'z3', text: '`terminalFidelity` adds opacity and stagger.' },
+                    ],
+                },
+                diff: {
+                    label: 'terminalDiff()',
+                    lines: [
+                        { id: 'd1', text: 'Returns added, removed and changed line ids.' },
+                        { id: 'd2', text: 'Committed ids survive both snapshots.' },
+                    ],
+                },
+                test: {
+                    label: 'test/',
+                    lines: [
+                        { id: 'e1', text: '`terminal.test.ts` covers the pure primitives.' },
+                        { id: 'e2', text: 'E2E suites cover host wiring.' },
+                    ],
+                },
+            };
+
+            const trail = new Trail({ maxDepth: 12 });
+            trail.push({ id: 'repo', label: scopes.repo.label, kind: 'scope' });
+
+            const renderCrumb = () => {
+                el('crumb').replaceChildren();
+                trail.entries.forEach((entry, i) => {
+                    const last = i === trail.entries.length - 1;
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.textContent = entry.label ?? entry.id;
+                    button.className = last ? 'current' : '';
+                    button.addEventListener('click', () => go(i - trail.entries.length + 1));
+                    el('crumb').append(button);
+                    if (!last) {
+                        const sep = document.createElement('span');
+                        sep.className = 'sep';
+                        sep.textContent = '›';
+                        el('crumb').append(sep);
+                    }
+                });
+                el('back').disabled = !trail.canGoBack;
+                el('forward').disabled = !trail.canGoForward;
+            };
+
+            const renderLines = () => {
+                const id = trail.current.id;
+                const scope = scopes[id];
+                el('scope-label').textContent = scope.label;
+                el('lines').innerHTML = scope.lines
+                    .map((line, i) => {
+                        const entry = {
+                            id: line.id,
+                            kind: line.child ? 'file' : 'assistant',
+                            status: 'complete',
+                            label: line.id,
+                            text: line.text,
+                        };
+                        return `<div class="row" data-child="${line.child ?? ''}"><span class="tg-line-no">${i + 1}</span>${terminalLineHTML(entry, undefined, { band: 'detail' })}</div>`;
+                    })
+                    .join('');
+                el('lines').querySelectorAll('[data-child]').forEach((row) => {
+                    row.addEventListener('click', () => {
+                        const child = row.dataset.child;
+                        if (child && scopes[child]) {
+                            trail.push({ id: child, label: scopes[child].label, kind: 'scope' });
+                            render();
+                        }
+                    });
+                });
+            };
+
+            const renderTrail = () => {
+                const root = el('trail');
+                root.replaceChildren();
+                const entries = trail.entries.map((entry, i) => ({
+                    ...entry,
+                    x: 60 + i * 34,
+                    y: 40 + i * 62,
+                }));
+                entries.forEach((entry, i) => {
+                    const next = entries[i + 1];
+                    if (next) {
+                        root.append(
+                            svg('path', {
+                                class: 'link',
+                                d: `M ${entry.x} ${entry.y} L ${next.x} ${next.y}`,
+                                stroke: 'var(--accent)',
+                            }),
+                        );
+                    }
+                });
+                entries.forEach((entry, i) => {
+                    const last = i === entries.length - 1;
+                    const group = svg('g', {
+                        class: 'node',
+                        'data-active': String(last),
+                        'data-index': i,
+                    });
+                    group.append(svg('rect', { x: 22, y: entry.y - 15, width: 262, height: 30, rx: 6 }));
+                    const text = svg('text', { x: 34, y: entry.y + 4 });
+                    text.textContent = entry.label ?? entry.id;
+                    group.append(text);
+                    group.addEventListener('click', () => go(i - entries.length + 1));
+                    root.append(group);
+                });
+                el('depth').textContent = `${trail.depth} / ${trail.entries.length}`;
+            };
+
+            const go = (delta) => {
+                for (let i = 0; i < Math.abs(delta); i++) {
+                    const node = delta < 0 ? trail.back() : trail.forward();
+                    if (!node) break;
+                }
+                render();
+            };
+
+            const render = () => {
+                renderCrumb();
+                renderLines();
+                renderTrail();
+                el('status').innerHTML = `scope <b>${trail.current?.id}</b> · depth <b>${trail.depth}</b> · ${scopes[trail.current.id].lines.length} lines`;
+            };
+
+            el('back').addEventListener('click', () => go(-1));
+            el('forward').addEventListener('click', () => go(1));
+            el('reset').addEventListener('click', () => {
+                while (trail.canGoBack) trail.back();
+                render();
+            });
+            window.addEventListener('keydown', (event) => {
+                if (!event.altKey) return;
+                if (event.key === 'ArrowLeft') {
+                    event.preventDefault();
+                    go(-1);
+                }
+                if (event.key === 'ArrowRight') {
+                    event.preventDefault();
+                    go(1);
+                }
+            });
+
+            render();
+        </script>
+    </body>
+</html>

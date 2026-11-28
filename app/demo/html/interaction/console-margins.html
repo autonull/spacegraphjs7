@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Console margins — SpaceGraphJS</title>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            :root {
+                --bg: #0b0f16;
+                --surface: #111823;
+                --surface-2: #172131;
+                --surface-3: #1d293b;
+                --border: #28364b;
+                --border-soft: #1f2b3d;
+                --text: #e7edf5;
+                --muted: #8ea0b8;
+                --accent: #7aa2f7;
+                --success: #5fd0a0;
+                --warning: #f5bf6b;
+                --error: #f07178;
+                --user: #bb9af7;
+                --tool: #7dcfff;
+                --file: #e0af68;
+                --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+                --row: 34px;
+            }
+
+            :root[data-palette='amber'] {
+                --accent: #f5bf6b;
+            }
+            :root[data-palette='green'] {
+                --accent: #5fd0a0;
+            }
+            :root[data-palette='retro'] {
+                --accent: #e0af68;
+            }
+
+            body {
+                margin: 0;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                background: var(--bg);
+                color: var(--text);
+                font: 13px/1.5 var(--mono);
+                overflow: hidden;
+            }
+
+            button,
+            select,
+            input {
+                font: inherit;
+                color: inherit;
+            }
+
+            .topbar {
+                display: flex;
+                align-items: center;
+                gap: 18px;
+                padding: 10px 16px;
+                border-bottom: 1px solid var(--border);
+                background: var(--surface);
+                flex: none;
+            }
+
+            .brand {
+                font-weight: 700;
+                letter-spacing: 0.02em;
+                white-space: nowrap;
+            }
+
+            .brand span {
+                color: var(--muted);
+                font-weight: 400;
+                margin-left: 8px;
+            }
+
+            .controls {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                margin-left: auto;
+            }
+
+            .controls label {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                color: var(--muted);
+            }
+
+            input[type='range'] {
+                width: 190px;
+                accent-color: var(--accent);
+            }
+
+            .readout {
+                min-width: 78px;
+                padding: 3px 8px;
+                border: 1px solid var(--border);
+                border-radius: 0;
+                background: var(--surface-2);
+                color: var(--accent);
+                text-transform: uppercase;
+                font-size: 11px;
+                letter-spacing: 0.08em;
+                text-align: center;
+            }
+
+            button,
+            select {
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                border-radius: 0;
+                padding: 4px 10px;
+                cursor: pointer;
+            }
+
+            button:hover,
+            select:hover {
+                border-color: var(--accent);
+            }
+
+            button[aria-pressed='true'] {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+
+            .stage {
+                position: relative;
+                flex: 1;
+                min-height: 0;
+                display: grid;
+                grid-template-columns: 232px minmax(360px, 1fr) 322px;
+                gap: 22px;
+                padding: 0 10px;
+                background: var(--bg);
+            }
+
+            .rail,
+            .console {
+                position: relative;
+                min-width: 0;
+                min-height: 0;
+                background: var(--bg);
+                display: flex;
+                flex-direction: column;
+            }
+
+            .rail-head {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 8px;
+                padding: 10px 12px 8px;
+                border-bottom: 1px solid var(--border-soft);
+                flex: none;
+            }
+
+            .rail-head h2 {
+                margin: 0;
+                font-size: 11px;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+
+            .rail-head small {
+                color: var(--accent);
+                font-size: 11px;
+            }
+
+            .rail-scroll {
+                flex: 1;
+                min-height: 0;
+                overflow: hidden;
+            }
+
+            .rail-note {
+                padding: 8px 12px;
+                border-top: 1px solid var(--border-soft);
+                color: var(--muted);
+                font-size: 11px;
+                flex: none;
+            }
+
+            .spine-node,
+            .grow-chip {
+                cursor: pointer;
+            }
+
+            .spine-node text,
+            .grow-chip text {
+                fill: var(--text);
+                font: 10px var(--mono);
+                pointer-events: none;
+            }
+
+            .spine-node rect,
+            .grow-chip rect {
+                fill: var(--surface-2);
+                stroke: var(--border);
+            }
+
+            .spine-node:hover rect,
+            .grow-chip:hover rect {
+                stroke: var(--accent);
+            }
+
+            .spine-node[data-active='true'] rect,
+            .grow-chip[data-active='true'] rect {
+                fill: var(--surface-3);
+                stroke: var(--accent);
+            }
+
+            .spine-node[data-active='true'] text,
+            .grow-chip[data-active='true'] text {
+                fill: var(--accent);
+            }
+
+            .grow-view {
+                flex: none;
+                height: 268px;
+                border-bottom: 1px solid var(--border-soft);
+            }
+
+            .grow-view svg {
+                display: block;
+                width: 100%;
+                height: 100%;
+            }
+
+            .facets {
+                flex: 1;
+                min-height: 0;
+                overflow: auto;
+                padding: 10px 12px;
+                display: flex;
+                flex-wrap: wrap;
+                align-content: flex-start;
+                gap: 6px;
+            }
+
+            .facet {
+                border: 1px solid var(--border);
+                background: var(--surface-2);
+                border-radius: 0;
+                padding: 2px 9px;
+                font-size: 11px;
+                color: var(--muted);
+                cursor: pointer;
+            }
+
+            .facet b {
+                color: var(--text);
+                font-weight: 500;
+            }
+
+            .facet[data-active='true'] {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+
+            .console-head {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 14px 8px;
+                border-bottom: 1px solid var(--border-soft);
+                color: var(--muted);
+                font-size: 11px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                flex: none;
+            }
+
+            .console-head b {
+                color: var(--text);
+            }
+
+            .console-head .dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 0;
+                background: var(--success);
+            }
+
+            .lines {
+                flex: 1;
+                min-height: 0;
+                overflow: auto;
+                padding: 8px 0 18px;
+                outline: none;
+                scrollbar-color: var(--border) transparent;
+            }
+
+            .line {
+                height: var(--row);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 0 16px;
+                border-left: 2px solid transparent;
+                cursor: pointer;
+                white-space: nowrap;
+                overflow: hidden;
+                transition: opacity 140ms ease, background 140ms ease;
+            }
+
+            .line:hover {
+                background: var(--surface);
+            }
+
+            .line[data-focused='true'] {
+                background: var(--surface-2);
+                border-left-color: var(--accent);
+            }
+
+            .line[data-kind='user'] .tg-gutter {
+                color: var(--user);
+            }
+            .line[data-kind='tool'] .tg-gutter,
+            .line[data-kind='file'] .tg-gutter {
+                color: var(--tool);
+            }
+            .line[data-kind='error'] .tg-gutter,
+            .line[data-status='failed'] .tg-gutter {
+                color: var(--error);
+            }
+            .line[data-kind='approval'] .tg-gutter {
+                color: var(--warning);
+            }
+
+            .tg-gutter {
+                flex: none;
+                width: 34px;
+                color: var(--muted);
+            }
+
+            .tg-line-no {
+                flex: none;
+                width: 24px;
+                color: var(--border);
+                text-align: right;
+            }
+
+            .tg-text {
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .tg-text code {
+                color: var(--file);
+            }
+
+            .tg-text mark {
+                background: var(--surface-3);
+                color: var(--accent);
+            }
+
+            .tg-source {
+                flex: none;
+                color: var(--border);
+                font-size: 10px;
+            }
+
+            .tg-glyph-only {
+                color: var(--muted);
+                font-size: 16px;
+            }
+
+            .tg-glyph-label {
+                color: var(--text);
+            }
+
+            .bridges {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 4;
+            }
+
+            .statusbar {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+                padding: 7px 16px;
+                border-top: 1px solid var(--border);
+                background: var(--surface);
+                color: var(--muted);
+                font-size: 11px;
+                flex: none;
+            }
+
+            .statusbar b {
+                color: var(--text);
+                font-weight: 500;
+            }
+
+            .statusbar .spacer {
+                margin-left: auto;
+            }
+
+            details.lift {
+                max-width: 780px;
+                color: var(--muted);
+            }
+
+            details.lift summary {
+                cursor: pointer;
+                color: var(--accent);
+            }
+
+            details.lift p {
+                margin: 6px 0 0;
+            }
+        </style>
+    </head>
+    <body>
+        <header class="topbar">
+            <div class="brand">Console margins <span>graph-connected terminal reading</span></div>
+            <div class="controls">
+                <label>
+                    Zoom
+                    <input id="zoom" type="range" min="0" max="100" value="95" aria-label="Console zoom" />
+                </label>
+                <output class="readout" id="band">detail</output>
+                <label>
+                    Palette
+                    <select id="palette" aria-label="Console palette">
+                        <option value="classic">Classic</option>
+                        <option value="amber">Amber</option>
+                        <option value="green">Phosphor</option>
+                        <option value="retro">Retro</option>
+                    </select>
+                </label>
+                <button id="follow" type="button" aria-pressed="false">Follow tail</button>
+                <button id="reset" type="button">Reset</button>
+            </div>
+        </header>
+
+        <main class="stage" id="stage">
+            <aside class="rail" aria-label="Causal spine">
+                <div class="rail-head"><h2>Causal spine</h2><small id="spine-count"></small></div>
+                <div class="rail-scroll" id="spine-scroll">
+                    <svg id="spine" aria-label="Chapter graph aligned to console lines"></svg>
+                </div>
+                <div class="rail-note">Chapters are committed turns. Click a node to jump.</div>
+            </aside>
+
+            <section class="console" aria-label="Console transcript">
+                <div class="console-head">
+                    <span class="dot"></span>
+                    <span>Transcript</span>
+                    <b id="line-count"></b>
+                    <span class="spacer" style="margin-left: auto"></span>
+                    <span>Click a line to grow its graph →</span>
+                </div>
+                <div class="lines" id="lines" tabindex="0" role="listbox" aria-label="Console lines"></div>
+            </section>
+
+            <aside class="rail" aria-label="Local graph and facets">
+                <div class="grow-view">
+                    <div class="rail-head"><h2>Local graph</h2><small id="grow-source">—</small></div>
+                    <svg id="grow" viewBox="0 0 300 232" aria-label="Graph grown from the focused line"></svg>
+                </div>
+                <div class="rail-head"><h2>Facets</h2><small id="filter-readout">all</small></div>
+                <div class="facets" id="facets" aria-label="Committed-field filters"></div>
+                <div class="rail-note">A chip is a line. Click it to focus that line in the transcript.</div>
+            </aside>
+
+            <svg class="bridges" id="bridges" aria-hidden="true"></svg>
+        </main>
+
+        <footer class="statusbar">
+            <span id="status">Ready</span>
+            <span id="fidelity"></span>
+            <span class="spacer"></span>
+            <details class="lift">
+                <summary>Why this is a lift candidate</summary>
+                <p>
+                    The rails are derived from the same committed lines as the console — no second
+                    graph store, renderer or command registry. <code>terminalChapters</code> and
+                    <code>terminalGrow</code> are already library primitives; only rail layout and the
+                    bridge DOM live here. The next lift is a pure
+                    <code>terminalRailModel(lines, focus, band)</code> plus a
+                    <code>GraphConsoleRails</code> component that shares one fidelity sample with the
+                    transcript.
+                </p>
+            </details>
+        </footer>
+
+        <script type="module" src="./console-margins.ts"></script>
+    </body>
+</html>

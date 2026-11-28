@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Edge travel — SpaceGraphJS</title>
+        <link rel="stylesheet" href="../shared-reset.css" />
+        <style>
+            html,
+            body,
+            #app {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+                background: #070b12;
+                font-family: 'SFMono-Regular', Consolas, monospace;
+                color: #e7edf5;
+            }
+            .panel {
+                position: absolute;
+                z-index: 10;
+                background: rgb(12 18 28 / 88%);
+                border: 1px solid #223049;
+                border-radius: 0;
+                padding: 10px 15px;
+                font-size: 11px;
+                pointer-events: none;
+                backdrop-filter: blur(8px);
+            }
+            .top {
+                top: 18px;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
+                min-width: 340px;
+            }
+            .top b {
+                color: #7aa2f7;
+                font-size: 14px;
+            }
+            .top span {
+                color: #8ea0b8;
+            }
+            .route {
+                top: 18px;
+                right: 18px;
+                max-width: 300px;
+                color: #8ea0b8;
+            }
+            .route b {
+                color: #7aa2f7;
+            }
+            .controls {
+                bottom: 22px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 8px;
+                pointer-events: auto;
+            }
+            .controls button {
+                background: #121b29;
+                color: #9fb1c9;
+                border: 1px solid #28364b;
+                border-radius: 0;
+                padding: 7px 13px;
+                font: 11px 'SFMono-Regular', Consolas, monospace;
+                cursor: pointer;
+            }
+            .controls button:hover {
+                border-color: #7aa2f7;
+                color: #7aa2f7;
+            }
+            .hint {
+                bottom: 22px;
+                right: 20px;
+                color: #54657d;
+                text-align: right;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app"></div>
+        <div class="panel top"><b id="current">route:lookup</b><br /><span id="detail">click an edge to travel it · Shift+click to follow a route</span></div>
+        <div class="panel route"><span>ROUTE</span><div id="route-list">—</div></div>
+        <div class="panel controls">
+            <button id="back" type="button">← Previous</button>
+            <button id="auto" type="button">Auto tour</button>
+            <button id="stop" type="button">Stop</button>
+        </div>
+        <div class="panel hint">Backspace = previous · edges are roads, the camera is the vehicle</div>
+
+        <script type="module">
+            import { SpaceGraph } from 'spacegraphjs';
+            import { Trail } from 'spacegraphjs/navigation';
+            import { edgePath } from 'spacegraphjs/navigation';
+            import { playRepresentationChanges } from 'spacegraphjs/representations';
+
+            const el = (id) => document.getElementById(id);
+            const names = ['route', 'lookup', 'format', 'dispatch', 'render', 'commit', 'export', 'inspect'];
+            const palette = [0x7aa2f7, 0x5fd0a0, 0xe0af68, 0xbb9af7];
+            const nodes = names.map((name, i) => {
+                const angle = (i / names.length) * Math.PI * 2;
+                return {
+                    id: name,
+                    type: 'ShapeNode',
+                    label: name,
+                    position: [Math.cos(angle) * 520, Math.sin(angle) * 340, 0],
+                    data: { label: name, size: 64, color: palette[i % palette.length] },
+                };
+            });
+            const pairs = [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[0,3],[1,5],[2,6]];
+            const edges = pairs.map(([a,b], i) => ({
+                id: `edge-${i}`,
+                source: names[a],
+                target: names[b],
+                kind: 'related',
+                type: i > 7 ? 'DottedEdge' : 'CurvedEdge',
+            }));
+
+            const sg = await SpaceGraph.create(el('app'), { nodes, edges }, {
+                chrome: false,
+                plugins: [],
+                render: { projection: 'orthographic', depth: 'flat', backgroundColor: 0x070b12 },
+            });
+            window._sg = sg;
+            sg.render();
+            sg.frame(null, { duration: 0.01 });
+
+            const trail = new Trail({ maxDepth: 20 });
+            trail.push({ id: nodes[0].id, label: nodes[0].id });
+            let playback;
+            let tourTimer;
+            let last = performance.now();
+
+            const nodeAt = (id) => sg.graph.nodes.get(id);
+
+            const travel = (fromID, toID, duration = 0.7) => {
+                const from = nodeAt(fromID);
+                const to = nodeAt(toID);
+                if (!from || !to) return Promise.resolve();
+                sg.addNode({
+                    id: 'traveler',
+                    type: 'ShapeNode',
+                    label: '•',
+                    position: [from.position.x, from.position.y, 12],
+                    data: { label: '•', size: 22, color: 0xffffff },
+                });
+                const a = [from.position.x, from.position.y];
+                const b = [to.position.x, to.position.y];
+                const change = { id: `travel:${fromID}:${toID}`, from: fromID, to: toID, duration };
+                return new Promise((resolve) => {
+                    playback = playRepresentationChanges([change], (_, t) => {
+                        const x = a[0] + (b[0] - a[0]) * t;
+                        const y = a[1] + (b[1] - a[1]) * t;
+                        sg.center(x, y);
+                        const traveler = nodeAt('traveler');
+                        if (traveler) traveler.updatePosition(x, y, 12);
+                    }, { ease: 'power2.inOut' });
+                    const finish = () => {
+                        if (sg.hasNode('traveler')) sg.removeNode('traveler');
+                        el('current').textContent = toID;
+                        resolve();
+                    };
+                    let previousFrame = performance.now();
+                    const watch = () => {
+                        const now = performance.now();
+                        const dt = (now - previousFrame) / 1000;
+                        previousFrame = now;
+                        if (playback && !playback.done) {
+                            playback.advance(dt);
+                            requestAnimationFrame(watch);
+                        } else finish();
+                    };
+                    requestAnimationFrame(watch);
+                });
+            };
+
+            const setRoute = (steps) => {
+                el('route-list').innerHTML = steps.length
+                    ? steps.map((step) => `<div>${step.id} <b>via ${step.via}</b></div>`).join('')
+                    : '—';
+            };
+
+            const follow = async (id, via) => {
+                if (id === trail.current?.id) return;
+                const from = trail.current.id;
+                setRoute([{ id, via: via ?? from, kind: 'related', forward: true }]);
+                await travel(from, id);
+                trail.push({ id, label: id });
+                el('detail').textContent = `travelled ${from} → ${id} · depth ${trail.depth}`;
+            };
+
+            sg.events.on('edge:click', ({ id }) => {
+                const edge = edges.find((entry) => entry.id === id);
+                if (!edge) return;
+                follow(edge.target, edge.source);
+            });
+
+            const tour = async () => {
+                tourTimer = setInterval(async () => {
+                    if (!trail.current) return;
+                    const path = edgePath({ nodes, edges }, trail.current.id, { directed: true });
+                    if (!path.length) return;
+                    const step = path[Math.floor(Math.random() * Math.min(4, path.length))];
+                    setRoute(path.slice(0, 4));
+                    await follow(step.id, step.via);
+                }, 1600);
+            };
+
+            el('back').addEventListener('click', async () => {
+                const previous = trail.back();
+                if (!previous) return;
+                await travel(trail.current?.id ?? previous.id, previous.id, 0.5);
+                el('current').textContent = previous.id;
+                el('detail').textContent = `back to ${previous.id} · depth ${trail.depth}`;
+            });
+            el('auto').addEventListener('click', () => {
+                clearInterval(tourTimer);
+                tour();
+            });
+            el('stop').addEventListener('click', () => clearInterval(tourTimer));
+            window.addEventListener('keydown', (event) => {
+                if (event.key === 'Backspace') el('back').click();
+            });
+
+            el('current').textContent = trail.current.id;
+        </script>
+    </body>
+</html>

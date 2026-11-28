@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Morph layout — SpaceGraphJS</title>
+        <link rel="stylesheet" href="../shared-reset.css" />
+        <style>
+            html,
+            body,
+            #app {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+                background: #070b12;
+                font-family: 'SFMono-Regular', Consolas, monospace;
+                color: #e7edf5;
+            }
+            .panel {
+                position: absolute;
+                z-index: 10;
+                background: rgb(12 18 28 / 86%);
+                border: 1px solid #223049;
+                border-radius: 0;
+                padding: 12px 16px;
+                backdrop-filter: blur(8px);
+                pointer-events: none;
+            }
+            .head {
+                top: 18px;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
+                min-width: 320px;
+            }
+            .head b {
+                display: block;
+                font-size: 17px;
+                letter-spacing: 0.08em;
+                color: #7aa2f7;
+            }
+            .head span {
+                font-size: 11px;
+                color: #8ea0b8;
+            }
+            .bar {
+                height: 4px;
+                margin-top: 9px;
+                background: #172131;
+                border-radius: 0;
+                overflow: hidden;
+            }
+            .bar i {
+                display: block;
+                height: 100%;
+                width: 0;
+                background: linear-gradient(90deg, #7aa2f7, #5fd0a0);
+            }
+            .choices {
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 8px;
+                pointer-events: auto;
+            }
+            .choices button {
+                background: #121b29;
+                color: #9fb1c9;
+                border: 1px solid #28364b;
+                border-radius: 0;
+                padding: 7px 14px;
+                font: 11px 'SFMono-Regular', Consolas, monospace;
+                cursor: pointer;
+            }
+            .choices button[data-active='true'],
+            .choices button:hover {
+                border-color: #7aa2f7;
+                color: #7aa2f7;
+            }
+            .note {
+                bottom: 24px;
+                right: 24px;
+                font-size: 10px;
+                color: #54657d;
+                max-width: 300px;
+                text-align: right;
+            }
+            .note b {
+                color: #8ea0b8;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app"></div>
+        <div class="panel head">
+            <b id="layout-name">Ring</b>
+            <span id="layout-detail">0 nodes moved · zoom 0.50</span>
+            <div class="bar"><i id="layout-bar"></i></div>
+        </div>
+        <div class="panel choices" id="choices"></div>
+        <div class="panel note">Zoom is the only input. <b>diffPositions</b> finds what moved; <b>playRepresentationChanges</b> drives the morph. Layout stays arrangement-only.</div>
+
+        <script type="module">
+            import { SpaceGraph } from 'spacegraphjs';
+            import { diffPositions, interpolatedPositions } from 'spacegraphjs/layout';
+            import { playRepresentationChanges } from 'spacegraphjs/representations';
+
+            const el = (id) => document.getElementById(id);
+            const count = 12;
+            const ids = Array.from({ length: count }, (_, i) => `n${i + 1}`);
+            const labels = ['inspect', 'select', 'search', 'facets', 'grow', 'embed', 'frame', 'focus', 'trail', 'lod', 'quality', 'export'];
+
+            const layouts = {
+                ring: (i) => ({ x: Math.cos((i / count) * Math.PI * 2) * 430, y: Math.sin((i / count) * Math.PI * 2) * 430, z: 0 }),
+                grid: (i) => ({ x: (i % 2 ? 1 : -1) * 320, y: (Math.floor(i / 2) - 3) * 105, z: 0 }),
+                lane: (i) => ({ x: (i % 3 - 1) * 300, y: (Math.floor(i / 3) - 1.5) * 160, z: 0 }),
+            };
+            const names = { ring: 'Ring', grid: 'Two columns', lane: 'Chapter lanes' };
+            const targetFor = (zoom) => (zoom < 0.34 ? 'ring' : zoom < 0.7 ? 'grid' : 'lane');
+            const mapOf = (name) =>
+                new Map(ids.map((id, i) => [id, layouts[name](i)]));
+
+            const nodes = ids.map((id, i) => ({
+                id,
+                type: 'ShapeNode',
+                label: labels[i],
+                position: [layouts.ring(i).x, layouts.ring(i).y, 0],
+                data: { label: labels[i], size: 46, color: [0x7aa2f7, 0x5fd0a0, 0xe0af68][i % 3] },
+            }));
+            const edges = ids.slice(1).map((id, i) => ({
+                id: `e${i}`,
+                source: ids[i],
+                target: id,
+                type: 'CurvedEdge',
+            }));
+            edges.push({ id: 'bridge', source: 'n1', target: 'n7', type: 'DottedEdge' });
+
+            const sg = await SpaceGraph.create(el('app'), { nodes, edges }, {
+                chrome: false,
+                plugins: [],
+                render: { projection: 'orthographic', depth: 'flat', backgroundColor: 0x070b12 },
+            });
+            window._sg = sg;
+            sg.render();
+            sg.frame(null, { duration: 0.01 });
+
+            let current = 'ring';
+            let previous = mapOf('ring');
+            let playback;
+            let lastFrame = performance.now();
+
+            const renderChoices = () => {
+                el('choices').innerHTML = Object.keys(layouts)
+                    .map(
+                        (name) =>
+                            `<button type="button" data-layout="${name}" data-active="${name === current}">${names[name]}</button>`,
+                    )
+                    .join('');
+                el('choices').querySelectorAll('[data-layout]').forEach((button) => {
+                    button.addEventListener('click', () => morph(button.dataset.layout));
+                });
+            };
+
+            const morph = (next) => {
+                if (next === current) return;
+                const target = mapOf(next);
+                const layout = diffPositions(target, previous);
+                const change = { id: `layout:${next}`, from: current, to: next, duration: 0.62 };
+                const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+                playback = playRepresentationChanges([change], (_, t) => {
+                    const positions = interpolatedPositions(layout, t);
+                    sg.setPositions(
+                        Object.fromEntries(
+                            [...positions].map(([id, p]) => [id, [p.x, p.y, p.z ?? 0]]),
+                        ),
+                    );
+                    el('layout-bar').style.width = `${Math.round(t * 100)}%`;
+                }, { reducedMotion: reduced, ease: 'power2.inOut' });
+                current = next;
+                previous = target;
+                el('layout-name').textContent = names[next];
+                el('layout-detail').textContent = `${layout.moved.size} nodes moved · target ${names[next]}`;
+                renderChoices();
+            };
+
+            const tick = (now) => {
+                const dt = (now - lastFrame) / 1000;
+                lastFrame = now;
+                if (playback && !playback.done) {
+                    playback.advance(dt);
+                    if (playback.done) playback = undefined;
+                }
+                requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+
+            sg.events.on('zoom:change', ({ zoom }) => {
+                const next = targetFor(zoom);
+                el('layout-detail').textContent =
+                    `${next === current ? 'stable' : `${targetFor(zoom)} next`} · zoom ${zoom.toFixed(2)}`;
+                morph(next);
+            });
+
+            renderChoices();
+            el('layout-detail').textContent = `0 nodes moved · zoom ${sg.zoom.toFixed(2)}`;
+        </script>
+    </body>
+</html>

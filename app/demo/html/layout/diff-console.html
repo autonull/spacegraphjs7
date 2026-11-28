@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Diff console — SpaceGraphJS</title>
+        <link rel="stylesheet" href="../interaction/lab.css" />
+        <style>
+            .workspace {
+                grid-template-columns: 360px 1fr 1fr;
+            }
+            .row {
+                display: flex;
+                gap: 8px;
+                padding: 5px 12px;
+                border-bottom: 1px solid #16202e;
+                cursor: pointer;
+                white-space: nowrap;
+            }
+            .row:hover {
+                background: var(--surface);
+            }
+            .row[data-active='true'] {
+                background: var(--surface-2);
+            }
+            .row .mark {
+                flex: none;
+                width: 14px;
+                font-weight: 700;
+            }
+            .row[data-tone='added'] .mark {
+                color: var(--success);
+            }
+            .row[data-tone='removed'] .mark {
+                color: var(--error);
+            }
+            .row[data-tone='changed'] .mark {
+                color: var(--warning);
+            }
+            .graph svg {
+                width: 100%;
+                height: 100%;
+            }
+            .node[data-active='true'] rect,
+            .node[data-active='true'] circle {
+                stroke-width: 2.5;
+            }
+            .node[data-tone='added'] rect,
+            .node[data-tone='added'] circle {
+                stroke: var(--success);
+            }
+            .node[data-tone='removed'] rect,
+            .node[data-tone='removed'] circle {
+                stroke: var(--error);
+            }
+            .node[data-tone='changed'] rect,
+            .node[data-tone='changed'] circle {
+                stroke: var(--warning);
+            }
+        </style>
+    </head>
+    <body>
+        <header class="topbar">
+            <h1>Diff console <span>committed ids stay addressable across snapshots</span></h1>
+            <span class="spacer"></span>
+            <button id="clear" type="button">Clear selection</button>
+        </header>
+
+        <main class="workspace">
+            <section class="pane">
+                <div class="pane-head"><span>Console diff</span><b id="diff-count"></b></div>
+                <div class="scroll" id="diff"></div>
+            </section>
+            <section class="pane graph">
+                <div class="pane-head"><span>Before</span><b id="before-count"></b></div>
+                <div class="scroll"><svg id="before" viewBox="0 0 460 520"></svg></div>
+            </section>
+            <section class="pane graph">
+                <div class="pane-head"><span>After</span><b id="after-count"></b></div>
+                <div class="scroll"><svg id="after" viewBox="0 0 460 520"></svg></div>
+            </section>
+        </main>
+
+        <footer class="statusbar">
+            <span id="status">Ready</span>
+            <span class="spacer"></span>
+            <span>Lift: <b>terminalDiff</b> drives graph tone; no second diff model.</span>
+        </footer>
+
+        <script type="module">
+            import { terminalDiff, terminalLineHTML } from 'spacegraphjs/terminal';
+
+            const NS = 'http://www.w3.org/2000/svg';
+            const svg = (tag, attrs = {}) => {
+                const el = document.createElementNS(NS, tag);
+                Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, String(v)));
+                return el;
+            };
+            const el = (id) => document.getElementById(id);
+
+            const line = (id, text, kind = 'assistant', status = 'complete') => ({
+                id,
+                kind,
+                status,
+                label: id,
+                text,
+            });
+
+            const before = [
+                line('n1', 'Session opened.'),
+                line('n2', '`lookup("intent")` called.', 'tool'),
+                line('n3', '`router.ts` read.', 'file'),
+                line('n4', '`handler` is undefined.', 'error', 'failed'),
+                line('n5', 'Wait for approval.', 'approval'),
+                line('n6', 'Draft answer.'),
+            ];
+            const after = [
+                line('n1', 'Session opened.'),
+                line('n2', '`lookup("intent")` called.', 'tool'),
+                line('n3', '`router.ts` read and patched.', 'file'),
+                line('n4', '`handler` defaults to `noop`.', 'file'),
+                line('n6', 'Draft answer.'),
+                line('n7', 'Committed as `a1b2c3d`.', 'commit'),
+                line('n8', 'Docs updated.', 'file'),
+            ];
+
+            const diff = terminalDiff(before, after);
+            const rows = [
+                ...diff.added.map((id) => ({ id, tone: 'added', text: after.find((l) => l.id === id)?.text ?? '' })),
+                ...diff.removed.map((id) => ({ id, tone: 'removed', text: before.find((l) => l.id === id)?.text ?? '' })),
+                ...diff.changed.map((id) => ({ id, tone: 'changed', text: after.find((l) => l.id === id)?.text ?? '' })),
+            ];
+            const toneOf = (id) => rows.find((row) => row.id === id)?.tone;
+            const textOf = (id) => after.find((l) => l.id === id)?.text ?? before.find((l) => l.id === id)?.text ?? id;
+            let selected;
+
+            const positions = (count) =>
+                Array.from({ length: count }, (_, i) => ({
+                    x: 90 + (i % 2) * 250,
+                    y: 60 + Math.floor(i / 2) * 120,
+                }));
+
+            const drawGraph = (target, lines) => {
+                const root = el(target);
+                root.replaceChildren();
+                const points = positions(lines.length);
+                lines.forEach((entry, i) => {
+                    const next = points[i + 1];
+                    if (next) {
+                        root.append(
+                            svg('path', {
+                                class: 'link',
+                                d: `M ${points[i].x} ${points[i].y} L ${next.x} ${next.y}`,
+                            }),
+                        );
+                    }
+                });
+                lines.forEach((entry, i) => {
+                    const point = points[i];
+                    const tone = toneOf(entry.id);
+                    const group = svg('g', {
+                        class: 'node',
+                        'data-id': entry.id,
+                        'data-tone': tone ?? '',
+                        'data-active': String(entry.id === selected),
+                    });
+                    group.append(svg('rect', { x: point.x - 46, y: point.y - 16, width: 92, height: 32, rx: 6 }));
+                    const text = svg('text', { x: point.x, y: point.y + 4, 'text-anchor': 'middle' });
+                    text.textContent = entry.id;
+                    group.append(text);
+                    group.addEventListener('click', () => select(entry.id));
+                    root.append(group);
+                });
+                el(`${target}-count`).textContent = `${lines.length} lines`;
+            };
+
+            const renderDiff = () => {
+                el('diff').innerHTML = rows
+                    .map((row) => {
+                        const base = { id: row.id, kind: row.tone === 'removed' ? 'error' : 'assistant', status: 'complete', label: row.id, text: row.text };
+                        const mark = row.tone === 'added' ? '+' : row.tone === 'removed' ? '−' : '~';
+                        return `<div class="row" data-tone="${row.tone}" data-id="${row.id}" data-active="${row.id === selected}"><span class="mark">${mark}</span>${terminalLineHTML(base, undefined, { band: 'detail' })}</div>`;
+                    })
+                    .join('');
+                el('diff').querySelectorAll('[data-id]').forEach((row) => {
+                    row.addEventListener('click', () => select(row.dataset.id));
+                });
+                el('diff-count').textContent = `${rows.length} changes`;
+            };
+
+            const select = (id) => {
+                selected = selected === id ? undefined : id;
+                renderDiff();
+                drawGraph('before', before);
+                drawGraph('after', after);
+                el('status').innerHTML = selected
+                    ? `${selected} · <b>${toneOf(selected) ?? 'stable'}</b> · ${textOf(selected)}`
+                    : `${rows.length} changes across ${before.length} → ${after.length} lines`;
+            };
+
+            el('clear').addEventListener('click', () => {
+                selected = undefined;
+                renderDiff();
+                drawGraph('before', before);
+                drawGraph('after', after);
+                el('status').innerHTML = `${rows.length} changes across ${before.length} → ${after.length} lines`;
+            });
+
+            renderDiff();
+            drawGraph('before', before);
+            drawGraph('after', after);
+            el('status').innerHTML = `${rows.length} changes across ${before.length} → ${after.length} lines`;
+        </script>
+    </body>
+</html>

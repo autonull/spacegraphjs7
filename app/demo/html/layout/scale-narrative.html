@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Scale narrative — SpaceGraphJS</title>
+        <link rel="stylesheet" href="../shared-reset.css" />
+        <style>
+            html,
+            body,
+            #app {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+                background: #070b12;
+                font-family: 'SFMono-Regular', Consolas, monospace;
+                color: #e7edf5;
+            }
+            .hud {
+                position: absolute;
+                z-index: 10;
+                pointer-events: none;
+            }
+            .ruler {
+                top: 50%;
+                left: 24px;
+                transform: translateY(-50%);
+                display: grid;
+                gap: 4px;
+            }
+            .tick {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                color: #54657d;
+                font-size: 11px;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                transition: color 180ms ease;
+            }
+            .tick i {
+                display: block;
+                width: 16px;
+                height: 1px;
+                background: currentColor;
+            }
+            .tick[data-active='true'] {
+                color: #7aa2f7;
+            }
+            .tick[data-active='true'] i {
+                width: 30px;
+                box-shadow: 0 0 10px currentColor;
+            }
+            .readout {
+                top: 18px;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
+                background: rgb(12 18 28 / 78%);
+                border: 1px solid #223049;
+                border-radius: 0;
+                padding: 10px 18px;
+                backdrop-filter: blur(8px);
+            }
+            .readout b {
+                display: block;
+                font-size: 17px;
+                letter-spacing: 0.06em;
+                color: #7aa2f7;
+            }
+            .readout span {
+                font-size: 10px;
+                color: #8ea0b8;
+            }
+            .bar {
+                width: 240px;
+                height: 4px;
+                margin-top: 8px;
+                background: #172131;
+                border-radius: 0;
+                overflow: hidden;
+            }
+            .bar i {
+                display: block;
+                height: 100%;
+                background: linear-gradient(90deg, #7aa2f7, #5fd0a0);
+            }
+            .controls {
+                bottom: 22px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 8px;
+                pointer-events: auto;
+            }
+            .controls button {
+                background: rgb(18 25 37 / 90%);
+                color: #c9d6e8;
+                border: 1px solid #28364b;
+                border-radius: 0;
+                padding: 7px 13px;
+                font: 11px 'SFMono-Regular', Consolas, monospace;
+                cursor: pointer;
+            }
+            .controls button:hover,
+            .controls button[data-active='true'] {
+                border-color: #7aa2f7;
+                color: #7aa2f7;
+            }
+            .trail {
+                bottom: 22px;
+                left: 24px;
+                font-size: 10px;
+                color: #54657d;
+                max-width: 260px;
+            }
+            .trail b {
+                color: #8ea0b8;
+            }
+            .hint {
+                bottom: 22px;
+                right: 24px;
+                font-size: 10px;
+                color: #54657d;
+                text-align: right;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app"></div>
+        <div class="hud ruler" id="ruler"></div>
+        <div class="hud readout">
+            <b id="scale-name">System</b>
+            <span id="scale-detail">importance 0.20 · dot</span>
+            <div class="bar"><i id="scale-bar" style="width: 0%"></i></div>
+        </div>
+        <div class="hud controls" id="controls"></div>
+        <div class="hud trail" id="trail"></div>
+        <div class="hud hint">wheel = zoom · drag = pan · click a node to descend · Esc = back</div>
+
+        <script type="module">
+            import { SpaceGraph } from 'spacegraphjs';
+            import { ScaleDomain } from 'spacegraphjs/zoom';
+            import { terminalLODFor } from 'spacegraphjs/terminal';
+            import { Trail } from 'spacegraphjs/navigation';
+
+            const NS = 'http://www.w3.org/2000/svg';
+            const el = (id) => document.getElementById(id);
+            const stops = [
+                { at: 0, id: 'system', label: 'System', importance: 0.15 },
+                { at: 0.22, id: 'service', label: 'Service', importance: 0.35 },
+                { at: 0.48, id: 'module', label: 'Module', importance: 0.55 },
+                { at: 0.74, id: 'function', label: 'Function', importance: 0.78 },
+                { at: 1, id: 'line', label: 'Line', importance: 1 },
+            ];
+            const scale = new ScaleDomain({
+                stops,
+                range: { min: 0.2, max: 6, closerIsLarger: true },
+            });
+
+            const group = (id, position, width, height, label, color, lodThreshold = 2400) => ({
+                id,
+                type: 'GroupNode',
+                position,
+                label,
+                data: { label, width, height, depth: 40, color, lodThreshold },
+            });
+            const shape = (id, position, label, color, size = 34) => ({
+                id,
+                type: 'ShapeNode',
+                position,
+                label,
+                data: { label, color, size },
+            });
+            const html = (id, position, text, width = 380) => ({
+                id,
+                type: 'HtmlNode',
+                position,
+                label: text,
+                data: {
+                    width,
+                    height: 34,
+                    useRawHtml: true,
+                    showControls: false,
+                    pointerEvents: 'auto',
+                    html: `<div style="font:12px 'SFMono-Regular',Consolas,monospace;color:#dce6f4;padding:8px 10px;background:#162031;border-left:2px solid #7aa2f7;white-space:nowrap">${text}</div>`,
+                },
+            });
+
+            const nodes = [
+                group('system', [0, 0, 0], 1500, 900, 'spacegraphjs', 0x141d2b, 9000),
+                group('service-terminal', [-420, 0, 0], 580, 520, 'terminal', 0x1b2940, 4200),
+                group('service-render', [420, 0, 0], 580, 520, 'renderer', 0x1b2940, 4200),
+                shape('module-spec', [-560, 60, 10], 'terminalSpec', 0x7aa2f7, 60),
+                shape('module-grow', [-300, -80, 10], 'terminalGrow', 0x7aa2f7, 60),
+                shape('module-camera', [300, 60, 10], 'CameraController', 0x5fd0a0, 60),
+                shape('module-lod', [560, -80, 10], 'LODPlugin', 0x5fd0a0, 60),
+                shape('fn-grow-inner', [-300, -80, 60], 'innerTree()', 0xe0af68, 26),
+                shape('fn-spec-edges', [-560, 60, 60], 'terminalEdges()', 0xe0af68, 26),
+                html('line-1', [-300, -80, 110], 'const chips = innerTree(seed, 2, 6);'),
+                html('line-2', [-300, -110, 110], 'const placements = innerPlacements(chips);'),
+            ];
+
+            const link = (source, target, type = 'CurvedEdge') => ({
+                id: `e_${source}_${target}`,
+                source,
+                target,
+                type,
+            });
+            const edges = [
+                link('system', 'service-terminal'),
+                link('system', 'service-render'),
+                link('service-terminal', 'module-spec'),
+                link('service-terminal', 'module-grow'),
+                link('service-render', 'module-camera'),
+                link('service-render', 'module-lod'),
+                link('module-grow', 'fn-grow-inner'),
+                link('module-spec', 'fn-spec-edges'),
+                link('fn-grow-inner', 'line-1'),
+                link('fn-grow-inner', 'line-2'),
+                link('module-spec', 'module-grow', 'DottedEdge'),
+            ];
+
+            const sg = await SpaceGraph.create(el('app'), { nodes, edges }, {
+                chrome: false,
+                plugins: [],
+                render: { projection: 'orthographic', depth: 'flat', backgroundColor: 0x070b12 },
+            });
+            window._sg = sg;
+            sg.render();
+            sg.frame(null, { duration: 0.01 });
+
+            const trail = new Trail({ maxDepth: 10 });
+            trail.push({ id: 'system', label: 'System' });
+
+            const anchors = {
+                system: null,
+                service: 'service-terminal',
+                module: 'module-grow',
+                function: 'fn-grow-inner',
+                line: 'line-1',
+            };
+
+            let rulerActive = 'system';
+            const renderRuler = (active) => {
+                rulerActive = active;
+                el('ruler').innerHTML = stops
+                    .map(
+                        (stop) =>
+                            `<div class="tick" data-active="${stop.id === active}"><i></i>${stop.label}</div>`,
+                    )
+                    .join('');
+                el('controls').innerHTML = stops
+                    .map(
+                        (stop) =>
+                            `<button type="button" data-stop="${stop.id}" data-active="${stop.id === active}">${stop.label}</button>`,
+                    )
+                    .join('');
+                el('controls').querySelectorAll('[data-stop]').forEach((button) => {
+                    button.addEventListener('click', () => visit(button.dataset.stop));
+                });
+                el('trail').innerHTML = `path: <b>${trail.entries.map((entry) => entry.label).join(' › ')}</b>`;
+            };
+
+            const visit = (stopID) => {
+                trail.push({ id: stopID, label: stops.find((stop) => stop.id === stopID).label });
+                const stop = stops.find((entry) => entry.id === stopID);
+                const target = anchors[stopID];
+                sg.setZoom(scale.rawAt(stop.at + 0.08));
+                if (target) {
+                    const node = sg.getNode(target);
+                    if (node) sg.center(node.position.x, node.position.y, node.position.z);
+                } else sg.center(0, 0, 0);
+                renderRuler(stopID);
+            };
+
+            let lastBand = '';
+            sg.events.on('zoom:change', ({ zoom }) => {
+                const sample = scale.sample(zoom);
+                const band = terminalLODFor(zoom, ['dot', 'glyph', 'card', 'detail']);
+                el('scale-name').textContent = sample.label ?? sample.stop;
+                el('scale-detail').textContent = `importance ${sample.importance.toFixed(2)} · ${band} · zoom ${zoom.toFixed(2)}`;
+                el('scale-bar').style.width = `${Math.round(sample.importance * 100)}%`;
+                if (band !== lastBand) {
+                    lastBand = band;
+                    document.body.dataset.band = band;
+                }
+                if (sample.stop !== rulerActive) renderRuler(sample.stop);
+            });
+
+            sg.events.on('node:click', (event) => {
+                const id = 'id' in event ? event.id : event.node?.id;
+                if (!id) return;
+                const stop = stops.find((entry) => anchors[entry.id] === id);
+                if (stop) {
+                    trail.push({ id: stop.id, label: stop.label });
+                    renderRuler(stop.id);
+                }
+            });
+
+            window.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && trail.canGoBack) {
+                    const node = trail.back();
+                    visit(node.id);
+                }
+                const index = Number(event.key) - 1;
+                if (index >= 0 && index < stops.length) visit(stops[index].id);
+            });
+
+            renderRuler('system');
+            el('scale-name').textContent = 'System';
+        </script>
+    </body>
+</html>

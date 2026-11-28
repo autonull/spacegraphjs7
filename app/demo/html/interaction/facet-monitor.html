@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Facet monitor — SpaceGraphJS</title>
+        <link rel="stylesheet" href="./lab.css" />
+        <style>
+            .workspace {
+                grid-template-columns: 1fr 300px;
+            }
+            .controls {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .facets {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                padding: 10px 14px;
+                border-bottom: 1px solid var(--border);
+            }
+            .facet {
+                border-radius: 0;
+                padding: 2px 9px;
+                font-size: 11px;
+                color: var(--muted);
+            }
+            .facet b {
+                color: var(--text);
+            }
+            .row {
+                display: flex;
+                gap: 8px;
+                padding: 5px 14px;
+                border-bottom: 1px solid #16202e;
+                white-space: nowrap;
+            }
+            .row[data-kind='error'] .tg-gutter,
+            .row[data-status='failed'] .tg-gutter {
+                color: var(--error);
+            }
+            .row[data-kind='tool'] .tg-gutter {
+                color: var(--accent);
+            }
+            .spark {
+                flex: none;
+                padding: 12px;
+                border-bottom: 1px solid var(--border);
+            }
+            .spark svg {
+                width: 100%;
+                height: 110px;
+                display: block;
+            }
+            .meter {
+                padding: 12px 14px;
+                display: grid;
+                gap: 8px;
+            }
+            .meter div {
+                display: flex;
+                justify-content: space-between;
+                color: var(--muted);
+                font-size: 11px;
+            }
+            .meter b {
+                color: var(--text);
+            }
+            .bar {
+                height: 4px;
+                background: var(--surface-2);
+                border-radius: 0;
+                overflow: hidden;
+            }
+            .bar span {
+                display: block;
+                height: 100%;
+                background: var(--accent);
+            }
+        </style>
+    </head>
+    <body>
+        <header class="topbar">
+            <h1>Facet monitor <span>one selector drives the log, the meter and the sparkline</span></h1>
+            <span class="spacer"></span>
+            <div class="controls">
+                <button id="play" type="button">▶ Replay</button>
+                <button id="stop" type="button">■ Stop</button>
+                <label><input id="reduced" type="checkbox" /> reduced motion</label>
+            </div>
+        </header>
+
+        <main class="workspace">
+            <section class="pane">
+                <div class="pane-head"><span>Committed log</span><b id="count"></b></div>
+                <div class="facets" id="facets"></div>
+                <div class="scroll" id="lines"></div>
+            </section>
+            <section class="pane">
+                <div class="pane-head"><span>Event rate by facet</span><b id="spark-label">all</b></div>
+                <div class="spark"><svg id="spark" viewBox="0 0 276 110"></svg></div>
+                <div class="meter" id="meter"></div>
+                <div class="pane-head"><span>Why this lifts</span></div>
+                <div class="meter">
+                    <div><span>Source</span><b>terminalFacets</b></div>
+                    <div><span>Filter</span><b>terminalFacetExprs + facetMatch</b></div>
+                    <div><span>Replay</span><b>playTerminalReplay</b></div>
+                    <div><span>Text</span><b>terminalLineHTML</b></div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="statusbar">
+            <span id="status">Ready</span>
+            <span class="spacer"></span>
+            <span>Click a facet pill to filter. Replay reveals committed prefixes, not new facts.</span>
+        </footer>
+
+        <script type="module">
+            import {
+                terminalFacets,
+                terminalFacetExprs,
+                terminalFacetMatch,
+                terminalLineHTML,
+                terminalTokens,
+                terminalReplaySteps,
+                playTerminalReplay,
+            } from 'spacegraphjs/terminal';
+
+            const NS = 'http://www.w3.org/2000/svg';
+            const svg = (tag, attrs = {}) => {
+                const el = document.createElementNS(NS, tag);
+                Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, String(v)));
+                return el;
+            };
+            const el = (id) => document.getElementById(id);
+
+            const events = [
+                ['user', 'complete', 'Deploy the route fix.'],
+                ['assistant', 'complete', 'I will run the test first.'],
+                ['tool', 'complete', '`bun test route.test.ts`'],
+                ['tool', 'failed', '1 test failed'],
+                ['error', 'failed', '`handler` is undefined'],
+                ['file', 'complete', '`src/router.ts` edited'],
+                ['tool', 'complete', '`bun test route.test.ts` → 5 passed'],
+                ['approval', 'complete', 'Apply patch?'],
+                ['user', 'complete', 'Approved.'],
+                ['tool', 'complete', '`git commit -m fix(router)`'],
+                ['assistant', 'complete', 'Committed as `a1b2c3d`'],
+                ['user', 'complete', 'Document the change.'],
+                ['assistant', 'complete', 'Writing [docs](https://example.dev/router).'],
+                ['file', 'complete', '`docs/router.md` added'],
+                ['tool', 'complete', '`bun test docs.test.ts`'],
+                ['assistant', 'complete', 'Docs verified.'],
+                ['error', 'failed', 'lint warns on `docs/router.md`'],
+                ['tool', 'complete', 'lint fixed'],
+            ].map(([kind, status, text], i) => ({
+                id: `e${String(i + 1).padStart(2, '0')}`,
+                kind,
+                status,
+                label: kind,
+                text,
+                at: i + 1,
+            }));
+
+            const facets = [...terminalFacets(events).entries()].filter(
+                ([key]) => key.startsWith('kind:') || key.startsWith('status:'),
+            );
+            let active = '';
+            let shown = events;
+            let handle;
+
+            const renderFacets = () => {
+                el('facets').innerHTML =
+                    `<button type="button" class="facet" data-facet="" data-active="${active === ''}" aria-pressed="${active === ''}">all <b>${events.length}</b></button>` +
+                    facets
+                        .map(
+                            ([key, value]) =>
+                                `<button type="button" class="facet" data-facet="${key}" data-active="${active === key}" aria-pressed="${active === key}">${key} <b>${value}</b></button>`,
+                        )
+                        .join('');
+                el('facets').querySelectorAll('[data-facet]').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        active = button.dataset.facet;
+                        update();
+                    });
+                });
+            };
+
+            const renderLines = () => {
+                el('lines').innerHTML = shown
+                    .map(
+                        (line) =>
+                            `<div class="row" data-kind="${line.kind}" data-status="${line.status}"><span class="tg-line-no">${line.at}</span>${terminalLineHTML(line, undefined, { band: 'detail', tokens: terminalTokens(line.text) })}</div>`,
+                    )
+                    .join('');
+                el('count').textContent = `${shown.length} / ${events.length} events`;
+            };
+
+            const renderSpark = () => {
+                const buckets = 6;
+                const counts = Array.from({ length: buckets }, () => 0);
+                shown.forEach((line) => {
+                    counts[Math.min(buckets - 1, Math.floor(((line.at - 1) / events.length) * buckets))] += 1;
+                });
+                const max = Math.max(1, ...counts);
+                const root = el('spark');
+                root.replaceChildren();
+                root.append(svg('path', { d: 'M 8 92 H 268', stroke: 'var(--border)', fill: 'none' }));
+                counts.forEach((value, i) => {
+                    const height = (value / max) * 74;
+                    root.append(
+                        svg('rect', {
+                            x: 12 + i * 44,
+                            y: 92 - height,
+                            width: 28,
+                            height: Math.max(2, height),
+                            rx: 3,
+                            fill: value ? 'var(--accent)' : 'var(--surface-3)',
+                            opacity: value ? 0.45 + 0.55 * (value / max) : 1,
+                        }),
+                    );
+                    const label = svg('text', { x: 26 + i * 44, y: 106, 'text-anchor': 'middle' });
+                    label.textContent = String(value);
+                    label.setAttribute('fill', 'var(--muted)');
+                    root.append(label);
+                });
+                el('spark-label').textContent = active || 'all';
+            };
+
+            const renderMeter = () => {
+                const counts = new Map(facets);
+                el('meter').innerHTML = [...counts.entries()]
+                    .slice(0, 6)
+                    .map(
+                        ([key, value]) =>
+                            `<div><span>${key}</span><b>${value}</b></div><div class="bar"><span style="width:${Math.round((value / events.length) * 100)}%"></span></div>`,
+                    )
+                    .join('');
+            };
+
+            const update = () => {
+                const exprs = terminalFacetExprs(active);
+                shown = exprs.length ? events.filter((line) => terminalFacetMatch(line, exprs)) : events;
+                renderFacets();
+                renderLines();
+                renderSpark();
+                el('status').innerHTML = `filter <b>${active || 'all'}</b> · showing <b>${shown.length}</b> events`;
+            };
+
+            const replay = () => {
+                handle?.cancel();
+                const steps = terminalReplaySteps(events);
+                handle = playTerminalReplay(
+                    steps,
+                    (prefix) => {
+                        const exprs = terminalFacetExprs(active);
+                        shown = exprs.length ? prefix.filter((line) => terminalFacetMatch(line, exprs)) : prefix;
+                        renderLines();
+                        renderSpark();
+                    },
+                    {
+                        intervalMs: 110,
+                        reducedMotion: el('reduced').checked,
+                        onStep: (step, total) => {
+                            el('status').innerHTML = `replay <b>${step}/${total}</b> · filter <b>${active || 'all'}</b>`;
+                        },
+                    },
+                );
+            };
+
+            el('play').addEventListener('click', replay);
+            el('stop').addEventListener('click', () => {
+                handle?.cancel();
+                update();
+            });
+            el('reduced').addEventListener('change', update);
+
+            renderMeter();
+            update();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,197 @@
+:root {
+    --bg: #0b0f16;
+    --surface: #111823;
+    --surface-2: #172131;
+    --surface-3: #1d293b;
+    --border: #28364b;
+    --text: #e7edf5;
+    --muted: #8ea0b8;
+    --accent: #7aa2f7;
+    --success: #5fd0a0;
+    --warning: #f5bf6b;
+    --error: #f07178;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.5 var(--mono);
+    overflow: hidden;
+}
+
+button,
+select,
+input {
+    font: inherit;
+    color: inherit;
+}
+
+button,
+select {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    padding: 4px 10px;
+    cursor: pointer;
+}
+
+button:hover,
+select:hover,
+button[aria-pressed='true'] {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex: none;
+}
+
+.topbar h1 {
+    margin: 0;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+}
+
+.topbar h1 span {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 12px;
+    margin-left: 8px;
+}
+
+.topbar .spacer,
+.statusbar .spacer {
+    margin-left: auto;
+}
+
+.workspace {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+}
+
+.pane {
+    min-width: 0;
+    min-height: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+}
+
+.pane-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    flex: none;
+}
+
+.pane-head b {
+    color: var(--accent);
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    scrollbar-color: var(--border) transparent;
+}
+
+.statusbar {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 7px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 11px;
+    flex: none;
+}
+
+.statusbar b {
+    color: var(--text);
+    font-weight: 500;
+}
+
+.tg-gutter {
+    color: var(--muted);
+    flex: none;
+    width: 30px;
+}
+
+.tg-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tg-text code {
+    color: var(--warning);
+}
+
+.tg-line-no {
+    color: var(--border);
+    width: 22px;
+    text-align: right;
+    flex: none;
+}
+
+svg text {
+    font: 11px var(--mono);
+    fill: var(--text);
+    pointer-events: none;
+}
+
+svg .node rect,
+svg .node circle {
+    fill: var(--surface-2);
+    stroke: var(--border);
+}
+
+svg .node {
+    cursor: pointer;
+}
+
+svg .node:hover rect,
+svg .node:hover circle {
+    stroke: var(--accent);
+}
+
+svg .node[data-active='true'] rect,
+svg .node[data-active='true'] circle {
+    fill: var(--surface-3);
+    stroke: var(--accent);
+}
+
+svg .link {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 1.2;
+}

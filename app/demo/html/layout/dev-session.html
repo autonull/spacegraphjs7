@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Dev session atlas — SpaceGraphJS</title>
+        <link rel="stylesheet" href="../shared-reset.css" />
+        <style>
+            html,
+            body,
+            #app {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+                background: #0a0e15;
+                font-family: 'SFMono-Regular', Consolas, monospace;
+                color: #e7edf5;
+            }
+            .hud {
+                position: absolute;
+                z-index: 30;
+                background: rgb(12 18 28 / 90%);
+                border: 1px solid #223049;
+                padding: 9px 14px;
+                font-size: 11px;
+                pointer-events: none;
+                backdrop-filter: blur(8px);
+            }
+            .top {
+                top: 14px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                pointer-events: auto;
+            }
+            .top b {
+                color: #7aa2f7;
+            }
+            .top span {
+                color: #8ea0b8;
+            }
+            input[type='range'] {
+                width: 220px;
+                accent-color: #7aa2f7;
+            }
+            .top button {
+                background: #121b29;
+                color: #9fb1c9;
+                border: 1px solid #28364b;
+                padding: 4px 9px;
+                font: inherit;
+                cursor: pointer;
+            }
+            .inspector {
+                top: 60px;
+                right: 16px;
+                width: 360px;
+                max-height: 70vh;
+                overflow: auto;
+                pointer-events: auto;
+            }
+            .inspector h3 {
+                margin: 0 0 7px;
+                font-size: 13px;
+                color: #7aa2f7;
+            }
+            .inspector .meta {
+                color: #8ea0b8;
+                margin-bottom: 8px;
+            }
+            .inspector .text {
+                border-left: 2px solid #7aa2f7;
+                background: #111a28;
+                padding: 8px;
+                line-height: 1.6;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+            .inspector .tools {
+                display: flex;
+                gap: 6px;
+                margin-top: 8px;
+            }
+            .inspector button {
+                background: #121b29;
+                color: #9fb1c9;
+                border: 1px solid #28364b;
+                padding: 4px 9px;
+                font: inherit;
+                cursor: pointer;
+            }
+            .hint {
+                bottom: 18px;
+                left: 50%;
+                transform: translateX(-50%);
+                color: #54657d;
+                text-align: center;
+            }
+            .event {
+                container-type: inline-size;
+                width: 100%;
+                height: 100%;
+                border: 1px solid #2b3d58;
+                background: #111a28;
+                display: flex;
+                align-items: center;
+                padding: 0 8px;
+                overflow: hidden;
+                font-family: var(--mono, 'SFMono-Regular', Consolas, monospace);
+                font-size: clamp(9px, 6cqw, 20px);
+            }
+            .event[data-kind='error'],
+            .event[data-status='failed'] {
+                border-color: #7a3540;
+            }
+            .event[data-kind='approval'] {
+                border-color: #7a6235;
+            }
+            .event .tg-gutter {
+                color: #8ea0b8;
+                width: 2em;
+                flex: none;
+            }
+            .event .tg-text {
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .event .tg-text code {
+                color: #e0af68;
+            }
+            .event .tg-line-no {
+                color: #41536d;
+                width: 2em;
+                flex: none;
+            }
+            .event .tg-source {
+                color: #41536d;
+                font-size: 0.75em;
+                flex: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app"></div>
+        <div class="hud top">
+            <b>dev session</b>
+            <span id="band">detail</span>
+            <input id="scrub" type="range" min="1" max="14" value="14" aria-label="Replay prefix" />
+            <button id="play" type="button">▶ replay</button>
+            <button id="stop" type="button">■ stop</button>
+            <span id="step">14/14</span>
+        </div>
+        <div class="hud inspector" id="inspector"><h3>Event</h3><div class="meta">Click a node or an edge.</div></div>
+        <div class="hud hint">wheel = fly through the session · click an edge to travel it · replay reveals committed prefixes</div>
+
+        <script type="module">
+            import { SpaceGraph } from 'spacegraphjs';
+            import {
+                terminalChapters,
+                terminalFacets,
+                terminalLineHTML,
+                terminalLODFor,
+                terminalReplaySteps,
+                terminalTokens,
+                playTerminalReplay,
+            } from 'spacegraphjs/terminal';
+            import { playRepresentationChanges } from 'spacegraphjs/representations';
+
+            const el = (id) => document.getElementById(id);
+            const esc = (value) => String(value).replaceAll('<', '&lt;').replaceAll('&', '&amp;').replaceAll('"', '&quot;');
+            const LADDER = ['dot', 'glyph', 'card', 'detail'];
+
+            const lines = [
+                ['user', 'complete', 'user', 'Refactor `router.dispatch()` and fix the failing test.', 1],
+                ['assistant', 'complete', 'assistant', 'I will trace the call, patch it, then verify.', 1],
+                ['tool', 'complete', 'tool', '`grep -R dispatch src/`', 1],
+                ['file', 'complete', 'tool', '`src/router.ts:42` maps intents to handlers.', 1],
+                ['assistant', 'complete', 'assistant', 'The failure comes from a missing default.', 1],
+                ['user', 'complete', 'user', 'Patch it.', 2],
+                ['file', 'complete', 'tool', '`src/router.ts` — default to `noop`.', 2],
+                ['tool', 'failed', 'tool', '`bun test route.test.ts` → 1 failed', 2],
+                ['error', 'failed', 'tool', '`handler` is undefined at `src/router.ts:51`.', 2],
+                ['file', 'complete', 'tool', 'Add a guard before dispatch.', 2],
+                ['tool', 'complete', 'tool', '`bun test route.test.ts` → 5 passed', 2],
+                ['approval', 'complete', 'assistant', 'Apply the patch?', 2],
+                ['user', 'complete', 'user', 'Approved. Commit.', 3],
+                ['tool', 'complete', 'tool', '`git commit -m fix(router)` → `a1b2c3d`', 3],
+            ].map(([kind, status, role, text, turn], index) => ({
+                id: `event-${String(index + 1).padStart(2, '0')}`,
+                kind,
+                status,
+                role,
+                text,
+                turn,
+                at: index + 1,
+                label: text.replaceAll('`', '').slice(0, 40),
+                parent: index > 0 ? `event-${String(index).padStart(2, '0')}` : undefined,
+            }));
+
+            let band = 'detail';
+            const renderText = (line) =>
+                `<div style="display:flex;align-items:center;gap:6px;width:100%;height:64px">${terminalLineHTML(line, undefined, {
+                    band,
+                    ladder: LADDER,
+                    tokens: terminalTokens(line.text),
+                    ...(band === 'detail' ? { chrome: { lineNumber: line.at, source: `T${line.turn}` } } : {}),
+                })}</div>`;
+
+            const nodes = lines.map((line, i) => ({
+                id: line.id,
+                type: 'HtmlNode',
+                label: line.label,
+                position: [(i % 4 - 1.5) * 430, (Math.floor(i / 4) - 1.5) * 150, 0],
+                data: {
+                    html: renderText(line),
+                    useRawHtml: true,
+                    width: 380,
+                    height: 64,
+                    pointerEvents: 'auto',
+                    backgroundColor: '#111a28',
+                },
+            }));
+            const edges = lines.slice(1).map((line, i) => ({
+                id: `edge-${i}`,
+                source: line.parent,
+                target: line.id,
+                type: line.status === 'failed' ? 'DottedEdge' : 'CurvedEdge',
+            }));
+
+            const chapters = terminalChapters(lines);
+            const frames = chapters
+                .map((chapter) => {
+                    const members = lines.filter((line) => line.turn === chapter.turn);
+                    if (!members.length) return undefined;
+                    const positions = members.map((line) => nodes.find((node) => node.id === line.id).position);
+                    const xs = positions.map((p) => p[0]);
+                    const ys = positions.map((p) => p[1]);
+                    return {
+                        id: `frame-${chapter.turn}`,
+                        type: 'GroupNode',
+                        label: chapter.label,
+                        position: [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2, -8],
+                        data: {
+                            label: chapter.label,
+                            width: Math.max(...xs) - Math.min(...xs) + 460,
+                            height: Math.max(...ys) - Math.min(...ys) + 200,
+                            depth: 18,
+                            color: 0x1b2940,
+                            lodThreshold: 3000,
+                        },
+                    };
+                })
+                .filter(Boolean);
+
+            const sg = await SpaceGraph.create(
+                el('app'),
+                { nodes: [...nodes, ...frames], edges },
+                {
+                    chrome: false,
+                    plugins: [],
+                    render: { projection: 'orthographic', depth: 'flat', backgroundColor: 0x0a0e15 },
+                },
+            );
+            window._sg = sg;
+            sg.render();
+            sg.frame(null, { duration: 0.01 });
+            frames.forEach((frame) => sg.hide(frame.id));
+
+            let prefix = lines.length;
+            let handle;
+
+            const setPrefix = (count) => {
+                prefix = Math.max(1, Math.min(lines.length, count));
+                lines.forEach((line, index) => {
+                    if (index < prefix) sg.show(line.id);
+                    else sg.hide(line.id);
+                });
+                el('scrub').value = String(prefix);
+                el('step').textContent = `${prefix}/${lines.length}`;
+            };
+
+            const inspect = (id) => {
+                const line = lines.find((entry) => entry.id === id);
+                if (!line) return;
+                el('inspector').innerHTML = `<h3>${esc(line.id)} · ${esc(line.kind)}/${esc(line.status)}</h3>
+                    <div class="meta">turn ${line.turn} · role ${esc(line.role)} · at ${line.at}</div>
+                    <div class="text">${terminalLineHTML(line, undefined, { band: 'detail', tokens: terminalTokens(line.text) })}</div>
+                    <div class="tools"><button data-action="focus">FOCUS</button><button data-action="window">OPEN WINDOW</button></div>`;
+                el('inspector').querySelector('[data-action="focus"]').addEventListener('click', () => sg.inspect(id));
+                el('inspector').querySelector('[data-action="window"]').addEventListener('click', () => {
+                    const windowID = `window-${id}`;
+                    if (sg.hasNode(windowID)) return;
+                    const source = sg.graph.nodes.get(id);
+                    sg.addNode({
+                        id: windowID,
+                        type: 'HtmlNode',
+                        label: line.label,
+                        position: [source.position.x + 220, source.position.y + 120, 20],
+                        data: {
+                            html: `<div style="height:120px;border:1px solid #7aa2f7;background:#111a28;padding:10px;font:13px 'SFMono-Regular',Consolas,monospace"><b>${esc(line.id)}</b><br />${terminalLineHTML(line, undefined, { band: 'detail', tokens: terminalTokens(line.text) })}<button data-sg-interactive="true" data-close="${windowID}" style="margin-top:8px;background:#1f2d41;color:#b8c8dc;border:1px solid #34506f;font:inherit">CLOSE</button></div>`,
+                            useRawHtml: true,
+                            width: 420,
+                            height: 120,
+                            pointerEvents: 'auto',
+                            backgroundColor: '#111a28',
+                        },
+                    });
+                });
+            };
+
+            const travel = (fromID, toID) => {
+                const from = sg.graph.nodes.get(fromID);
+                const to = sg.graph.nodes.get(toID);
+                if (!from || !to) return;
+                const a = [from.position.x, from.position.y];
+                const b = [to.position.x, to.position.y];
+                const change = { id: `travel:${fromID}:${toID}`, from: fromID, to: toID, duration: 0.65 };
+                let previous = performance.now();
+                playback = playRepresentationChanges([change], (_, t) => {
+                    sg.center(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t);
+                }, { ease: 'power2.inOut' });
+                const step = (now) => {
+                    const dt = (now - previous) / 1000;
+                    previous = now;
+                    if (playback && !playback.done) {
+                        playback.advance(dt);
+                        requestAnimationFrame(step);
+                    } else playback = undefined;
+                };
+                requestAnimationFrame(step);
+            };
+            let playback;
+
+            sg.events.on('node:click', ({ id }) => {
+                if (typeof id === 'string' && id.startsWith('event-')) inspect(id);
+            });
+            sg.events.on('edge:click', ({ id }) => {
+                const edge = edges.find((entry) => entry.id === id);
+                if (edge) {
+                    travel(edge.source, edge.target);
+                    inspect(edge.target);
+                }
+            });
+            sg.events.on('zoom:change', ({ zoom }) => {
+                const next = terminalLODFor(zoom, LADDER);
+                if (next === band) return;
+                band = next;
+                el('band').textContent = band;
+                frames.forEach((frame) => (band === 'glyph' || band === 'card' ? sg.show(frame.id) : sg.hide(frame.id)));
+                sg.update({ nodes: nodes.map((node) => ({ id: node.id, data: { html: renderText(lines.find((line) => line.id === node.id)) } })) });
+            });
+
+            el('app').addEventListener('click', (event) => {
+                const close = event.target.closest?.('[data-close]');
+                if (close) sg.removeNode(close.dataset.close);
+            });
+
+            el('scrub').addEventListener('input', () => {
+                handle?.cancel();
+                setPrefix(Number(el('scrub').value));
+            });
+            el('play').addEventListener('click', () => {
+                handle?.cancel();
+                const steps = terminalReplaySteps(lines);
+                handle = playTerminalReplay(steps, (visible) => {
+                    setPrefix(visible.length);
+                }, { intervalMs: 140, onStep: (step, total) => (el('step').textContent = `${step}/${total}`) });
+            });
+            el('stop').addEventListener('click', () => {
+                handle?.cancel();
+                setPrefix(lines.length);
+            });
+
+            const facets = terminalFacets(lines);
+            el('band').textContent = `${band} · ${[...facets].filter(([key]) => key === 'status:failed').map(([, count]) => `${count} failed`).join('')}`;
+            inspect(lines.at(-1).id);
+            setPrefix(lines.length);
+        </script>
+    </body>
+</html>

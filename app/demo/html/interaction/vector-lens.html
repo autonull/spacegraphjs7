@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Vector lens — SpaceGraphJS</title>
+        <link rel="stylesheet" href="../shared-reset.css" />
+        <style>
+            html,
+            body,
+            #app {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+                background: #070b12;
+                font-family: 'SFMono-Regular', Consolas, monospace;
+                color: #e7edf5;
+            }
+            .top {
+                position: absolute;
+                top: 18px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 10;
+                background: rgb(12 18 28 / 86%);
+                border: 1px solid #223049;
+                border-radius: 0;
+                padding: 8px 16px;
+                font-size: 12px;
+                pointer-events: none;
+                backdrop-filter: blur(8px);
+            }
+            .top b {
+                color: #7aa2f7;
+            }
+            .lens {
+                position: absolute;
+                z-index: 20;
+                width: 320px;
+                height: 320px;
+                border: 1px solid #3c5a86;
+                border-radius: 0;
+                background: #0b1119;
+                box-shadow: 0 18px 50px rgb(0 0 0 / 55%), 0 0 0 1px rgb(122 162 247 / 12%) inset;
+                overflow: hidden;
+                pointer-events: none;
+                opacity: 0;
+                transform: scale(0.96);
+                transition: opacity 140ms ease, transform 140ms ease;
+            }
+            .lens[data-open='true'] {
+                opacity: 1;
+                transform: scale(1);
+            }
+            .lens .label {
+                position: absolute;
+                top: 8px;
+                left: 10px;
+                z-index: 2;
+                font-size: 10px;
+                letter-spacing: 0.08em;
+                color: #7aa2f7;
+                text-transform: uppercase;
+                pointer-events: none;
+            }
+            .lens #lens-app {
+                width: 100%;
+                height: 100%;
+            }
+            .hint {
+                position: absolute;
+                bottom: 20px;
+                left: 20px;
+                z-index: 10;
+                font-size: 11px;
+                color: #54657d;
+                pointer-events: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app"></div>
+        <div class="top" id="status">Hover a node to open its <b>local graph</b> · click to pin</div>
+        <div class="lens" id="lens">
+            <div class="label" id="lens-label">scope</div>
+            <div id="lens-app"></div>
+        </div>
+        <div class="hint">wheel = zoom · drag = pan · Esc = unpin · the lens has its own camera</div>
+
+        <script type="module">
+            import { Vector3 } from 'three';
+            import { SpaceGraph } from 'spacegraphjs';
+            import { extractSubgraph } from 'spacegraphjs/overlays';
+
+            const el = (id) => document.getElementById(id);
+            const palette = [0x7aa2f7, 0x5fd0a0, 0xe0af68, 0xbb9af7, 0xf07178, 0x7dcfff];
+            const names = ['inspect', 'select', 'search', 'facets', 'grow', 'embed'];
+
+            const nodes = [];
+            const edges = [];
+            names.forEach((name, cluster) => {
+                const hub = `hub-${cluster}`;
+                const center = [
+                    Math.cos((cluster / names.length) * Math.PI * 2) * 520,
+                    Math.sin((cluster / names.length) * Math.PI * 2) * 340,
+                ];
+                nodes.push({
+                    id: hub,
+                    type: 'ShapeNode',
+                    label: name,
+                    position: [center[0], center[1], 0],
+                    data: { label: name, size: 56, color: palette[cluster] },
+                });
+                for (let i = 0; i < 5; i++) {
+                    const id = `${name}-${i + 1}`;
+                    const angle = (i / 5) * Math.PI * 2;
+                    nodes.push({
+                        id,
+                        type: 'ShapeNode',
+                        label: `${name}:${i + 1}`,
+                        position: [
+                            center[0] + Math.cos(angle) * 130,
+                            center[1] + Math.sin(angle) * 130,
+                            0,
+                        ],
+                        data: { label: `${name}:${i + 1}`, size: 26, color: palette[cluster] },
+                    });
+                    edges.push({
+                        id: `part-${id}`,
+                        source: id,
+                        target: hub,
+                        kind: 'part-of',
+                        type: 'CurvedEdge',
+                    });
+                }
+            });
+            edges.push({ id: 'cross-1', source: 'inspect-2', target: 'select-1', type: 'DottedEdge' });
+            edges.push({ id: 'cross-2', source: 'grow-3', target: 'embed-2', type: 'DottedEdge' });
+
+            const model = {
+                nodes: nodes.map((node) => ({ id: node.id, label: node.label, kind: node.data.label })),
+                edges: edges.map((edge) => ({ source: edge.source, target: edge.target, kind: edge.kind ?? 'related' })),
+            };
+
+            const sg = await SpaceGraph.create(el('app'), { nodes, edges }, {
+                chrome: false,
+                plugins: [],
+                render: { projection: 'orthographic', depth: 'flat', backgroundColor: 0x070b12 },
+            });
+            const lens = await SpaceGraph.create(el('lens-app'), { nodes: [], edges: [] }, {
+                chrome: false,
+                plugins: [],
+                render: { projection: 'orthographic', depth: 'flat', backgroundColor: 0x0b1119 },
+            });
+            window._sg = sg;
+            window._lens = lens;
+            sg.render();
+            lens.render();
+            sg.frame(null, { duration: 0.01 });
+
+            let hovered;
+            let pinned;
+            let pending;
+
+            const screenOf = (node) => {
+                sg.camera.updateMatrixWorld();
+                const v = new Vector3(...node.position).project(sg.camera);
+                return {
+                    x: (v.x * 0.5 + 0.5) * window.innerWidth,
+                    y: (-v.y * 0.5 + 0.5) * window.innerHeight,
+                };
+            };
+
+            const specFor = (id) => {
+                const scope = extractSubgraph(model, id, { childEdgeKind: 'part-of', limit: 6 });
+                const chosen = new Set(scope.nodes.map((node) => node.id));
+                return {
+                    nodes: nodes
+                        .filter((node) => chosen.has(node.id))
+                        .map((node, i) => {
+                            const angle = (i / scope.nodes.length) * Math.PI * 2;
+                            return {
+                                id: node.id,
+                                type: 'ShapeNode',
+                                label: node.label,
+                                position: [Math.cos(angle) * 96, Math.sin(angle) * 96, 0],
+                                data: { ...node.data, size: node.id === id ? 52 : 32 },
+                            };
+                        }),
+                    edges: scope.edges
+                        .filter((edge) => chosen.has(edge.source) && chosen.has(edge.target))
+                        .map((edge) => ({
+                            id: `lens-${edge.source}-${edge.target}`,
+                            source: edge.source,
+                            target: edge.target,
+                            type: 'CurvedEdge',
+                        })),
+                };
+            };
+
+            const showLens = (id, x, y) => {
+                const spec = specFor(id);
+                lens.clear();
+                lens.loadSpec(spec);
+                lens.frame(null, { duration: 0.01 });
+                lens.render();
+                el('lens-label').textContent = `${id} · ${spec.nodes.length} nodes`;
+                const panel = el('lens');
+                panel.dataset.open = 'true';
+                const left = Math.min(window.innerWidth - 340, Math.max(8, x + 38));
+                const top = Math.min(window.innerHeight - 340, Math.max(8, y - 150));
+                panel.style.left = `${left}px`;
+                panel.style.top = `${top}px`;
+                el('status').innerHTML = `lens on <b>${id}</b> · ${spec.nodes.length} nodes · ${spec.edges.length} edges`;
+            };
+
+            const hideLens = () => {
+                if (pinned) return;
+                el('lens').dataset.open = 'false';
+                el('status').innerHTML = 'Hover a node to open its <b>local graph</b> · click to pin';
+            };
+
+            el('app').addEventListener('pointermove', (event) => {
+                if (pinned) return;
+                pending = { x: event.clientX, y: event.clientY };
+            });
+
+            const tick = () => {
+                if (pending && !pinned) {
+                    const { x, y } = pending;
+                    pending = undefined;
+                    let best;
+                    let distance = 62 * 62;
+                    for (const node of nodes) {
+                        const point = screenOf(node);
+                        if (!point) continue;
+                        const d = (point.x - x) ** 2 + (point.y - y) ** 2;
+                        if (d < distance) {
+                            distance = d;
+                            best = node;
+                        }
+                    }
+                    if (best && best.id !== hovered) {
+                        hovered = best.id;
+                        showLens(best.id, x, y);
+                    } else if (!best) hideLens();
+                    else {
+                        const panel = el('lens');
+                        panel.style.left = `${Math.min(window.innerWidth - 340, Math.max(8, x + 38))}px`;
+                        panel.style.top = `${Math.min(window.innerHeight - 340, Math.max(8, y - 150))}px`;
+                    }
+                }
+                requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+
+            el('app').addEventListener('click', () => {
+                if (hovered) pinned = hovered;
+            });
+            window.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    pinned = undefined;
+                    hideLens();
+                }
+            });
+        </script>
+    </body>
+</html>

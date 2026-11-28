@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Graph portal — SpaceGraphJS</title>
+        <link rel="stylesheet" href="./lab.css" />
+        <style>
+            .workspace {
+                grid-template-columns: 300px 1fr 360px;
+            }
+            #scope {
+                width: 100%;
+                height: 100%;
+            }
+            .crumb {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                flex-wrap: wrap;
+                padding: 10px 14px;
+                border-bottom: 1px solid var(--border);
+            }
+            .crumb button {
+                padding: 2px 8px;
+                font-size: 11px;
+            }
+            .crumb .sep {
+                color: var(--border);
+            }
+            .crumb .current {
+                color: var(--accent);
+            }
+            .row {
+                padding: 6px 14px;
+                border-bottom: 1px solid #16202e;
+                display: flex;
+                gap: 8px;
+                cursor: pointer;
+            }
+            .row:hover {
+                background: var(--surface);
+            }
+            .row[data-active='true'] {
+                background: var(--surface-2);
+                border-left: 2px solid var(--accent);
+                padding-left: 12px;
+            }
+            .hint {
+                padding: 8px 14px;
+                color: var(--muted);
+                font-size: 11px;
+            }
+            #scope-wrap {
+                position: relative;
+                flex: 1;
+                min-height: 0;
+            }
+            #scope-note {
+                position: absolute;
+                left: 14px;
+                bottom: 12px;
+                color: var(--muted);
+                font-size: 11px;
+            }
+        </style>
+    </head>
+    <body>
+        <header class="topbar">
+            <h1>Graph portal <span>click a node to open its console; the console links back</span></h1>
+            <span class="spacer"></span>
+            <button id="back" type="button">← Back</button>
+            <button id="forward" type="button">Forward →</button>
+            <button id="reset" type="button">Reset</button>
+        </header>
+
+        <main class="workspace">
+            <section class="pane">
+                <div class="pane-head"><span>Graph</span><b id="node-count"></b></div>
+                <div class="scroll"><svg id="graph" viewBox="0 0 380 480"></svg></div>
+            </section>
+
+            <section class="pane">
+                <div class="pane-head"><span>Scoped neighbourhood</span><b id="scope-label">—</b></div>
+                <div id="scope-wrap">
+                    <svg id="scope" viewBox="0 0 600 400"></svg>
+                    <div id="scope-note">extractSubgraph(model, focus, { childEdgeKind: 'part-of' })</div>
+                </div>
+                <div class="crumb" id="crumb"></div>
+            </section>
+
+            <section class="pane">
+                <div class="pane-head"><span>Console of the focused node</span><b id="line-count"></b></div>
+                <div class="scroll" id="lines"></div>
+                <div class="hint">Enter/click a line to descend. Backspace returns along the trail.</div>
+            </section>
+        </main>
+
+        <footer class="statusbar">
+            <span id="status">Ready</span>
+            <span class="spacer"></span>
+            <span>Lift: <b>Trail</b> + <b>extractSubgraph</b> + <b>terminalLineHTML</b> → one portal component</span>
+        </footer>
+
+        <script type="module">
+            import { Trail } from 'spacegraphjs/navigation';
+            import { extractSubgraph } from 'spacegraphjs/overlays';
+            import { terminalLineHTML, terminalTokens } from 'spacegraphjs/terminal';
+
+            const NS = 'http://www.w3.org/2000/svg';
+            const svg = (tag, attrs = {}) => {
+                const el = document.createElementNS(NS, tag);
+                Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, String(v)));
+                return el;
+            };
+            const el = (id) => document.getElementById(id);
+            const nodes = [
+                { id: 'session', label: 'session', kind: 'session', x: 150, y: 40 },
+                { id: 'turn1', label: 'Turn 1', kind: 'turn', x: 80, y: 130 },
+                { id: 'turn2', label: 'Turn 2', kind: 'turn', x: 220, y: 130 },
+                { id: 'lookup', label: 'lookup()', kind: 'tool', x: 50, y: 230 },
+                { id: 'format', label: 'format()', kind: 'tool', x: 120, y: 230 },
+                { id: 'router', label: 'router.ts', kind: 'file', x: 190, y: 230 },
+                { id: 'test', label: 'route.test.ts', kind: 'file', x: 260, y: 230 },
+                { id: 'commit', label: 'a1b2c3d', kind: 'commit', x: 150, y: 340 },
+                { id: 'docs', label: 'docs/router', kind: 'doc', x: 220, y: 400 },
+            ];
+            const edges = [
+                ...nodes.slice(1).map((n) => ({ source: n.id, target: 'session', kind: 'part-of' })),
+                { source: 'lookup', target: 'turn1', kind: 'part-of' },
+                { source: 'format', target: 'turn1', kind: 'part-of' },
+                { source: 'router', target: 'turn2', kind: 'part-of' },
+                { source: 'test', target: 'turn2', kind: 'part-of' },
+                { source: 'router', target: 'commit', kind: 'related' },
+                { source: 'test', target: 'commit', kind: 'related' },
+                { source: 'commit', target: 'docs', kind: 'related' },
+            ];
+            const lines = {
+                session: [
+                    { id: 's1', kind: 'session', status: 'complete', label: 'session', text: 'Session `sg-19` opened.' },
+                    { id: 's2', kind: 'assistant', status: 'complete', label: 'Two turns', text: 'Two turns, one commit.' },
+                ],
+                turn1: [
+                    { id: 'a1', kind: 'user', status: 'complete', label: 'Question', text: 'How is a route chosen?' },
+                    { id: 'a2', kind: 'tool', status: 'complete', label: 'lookup', text: '`lookup("intent")` → handler' },
+                    { id: 'a3', kind: 'assistant', status: 'complete', label: 'Answer', text: 'By `intent`, then format.' },
+                ],
+                turn2: [
+                    { id: 'b1', kind: 'user', status: 'complete', label: 'Fix', text: 'The test fails; fix `router.ts`.' },
+                    { id: 'b2', kind: 'error', status: 'failed', label: 'TypeError', text: '`handler` is `undefined`.' },
+                    { id: 'b3', kind: 'file', status: 'complete', label: 'router.ts', text: 'Default to `noop`.' },
+                    { id: 'b4', kind: 'approval', status: 'complete', label: 'Approve', text: 'Commit the patch.' },
+                ],
+            };
+            const forNode = (id) => {
+                if (lines[id]) return lines[id];
+                const node = nodes.find((n) => n.id === id);
+                return [
+                    {
+                        id: `${id}-1`,
+                        kind: node.kind,
+                        status: 'complete',
+                        label: node.label,
+                        text: `\`${node.label}\` is part of the committed session.`,
+                    },
+                ];
+            };
+
+            const trail = new Trail({ maxDepth: 8 });
+            let focusID = 'session';
+            let focusLine = undefined;
+
+            const renderGraph = () => {
+                const root = el('graph');
+                root.replaceChildren();
+                edges.forEach((edge) => {
+                    const from = nodes.find((n) => n.id === edge.source);
+                    const to = nodes.find((n) => n.id === edge.target);
+                    root.append(
+                        svg('path', {
+                            class: 'link',
+                            d: `M ${from.x} ${from.y} L ${to.x} ${to.y}`,
+                            stroke: edge.kind === 'part-of' ? 'var(--border)' : 'var(--surface-3)',
+                        }),
+                    );
+                });
+                nodes.forEach((node) => {
+                    const group = svg('g', {
+                        class: 'node',
+                        'data-id': node.id,
+                        'data-active': String(node.id === focusID),
+                    });
+                    group.append(svg('circle', { cx: node.x, cy: node.y, r: 16 }));
+                    const text = svg('text', { x: node.x + 22, y: node.y + 4 });
+                    text.textContent = node.label.slice(0, 11);
+                    group.append(text);
+                    group.addEventListener('click', () => open(node.id));
+                    root.append(group);
+                });
+                el('node-count').textContent = `${nodes.length} nodes`;
+            };
+
+            const renderScope = () => {
+                const scope = extractSubgraph(
+                    { nodes, edges },
+                    focusID,
+                    { childEdgeKind: 'part-of', limit: 5 },
+                );
+                const root = el('scope');
+                root.replaceChildren();
+                el('scope-label').textContent = `${scope.nodes.length} nodes · ${scope.edges.length} edges`;
+                const byID = new Map(scope.nodes.map((n) => [n.id, n]));
+                const positions = new Map(
+                    scope.nodes.map((n, i) => [
+                        n.id,
+                        {
+                            x: 300 + Math.cos((i / scope.nodes.length) * Math.PI * 2) * 180,
+                            y: 200 + Math.sin((i / scope.nodes.length) * Math.PI * 2) * 140,
+                        },
+                    ]),
+                );
+                scope.edges.forEach((edge) => {
+                    const a = positions.get(edge.source);
+                    const b = positions.get(edge.target);
+                    if (!a || !b) return;
+                    root.append(
+                        svg('path', {
+                            class: 'link',
+                            d: `M ${a.x} ${a.y} Q 300 200 ${b.x} ${b.y}`,
+                            stroke: edge.kind === 'part-of' ? 'var(--accent)' : 'var(--border)',
+                        }),
+                    );
+                });
+                scope.nodes.forEach((node) => {
+                    const p = positions.get(node.id);
+                    const group = svg('g', {
+                        class: 'node',
+                        'data-id': node.id,
+                        'data-active': String(node.id === focusID),
+                    });
+                    group.append(svg('rect', { x: p.x - 46, y: p.y - 13, width: 92, height: 26, rx: 6 }));
+                    const text = svg('text', { x: p.x, y: p.y + 4, 'text-anchor': 'middle' });
+                    text.textContent = node.label.slice(0, 14);
+                    group.append(text);
+                    group.addEventListener('click', () => open(node.id));
+                    root.append(group);
+                });
+            };
+
+            const renderCrumb = () => {
+                el('crumb').replaceChildren();
+                trail.entries.forEach((entry, index) => {
+                    const last = index === trail.entries.length - 1;
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.textContent = entry.label ?? entry.id;
+                    button.className = last ? 'current' : '';
+                    button.addEventListener('click', () => open(entry.id, false));
+                    el('crumb').append(button);
+                    if (!last) {
+                        const sep = document.createElement('span');
+                        sep.className = 'sep';
+                        sep.textContent = '›';
+                        el('crumb').append(sep);
+                    }
+                });
+                el('back').disabled = !trail.canGoBack;
+                el('forward').disabled = !trail.canGoForward;
+            };
+
+            const renderLines = () => {
+                const rows = forNode(focusID);
+                el('lines').innerHTML = rows
+                    .map(
+                        (line, i) =>
+                            `<div class="row" data-line="${line.id}" data-active="${line.id === focusLine}"><span class="tg-line-no">${i + 1}</span>${terminalLineHTML(line, undefined, { band: 'detail', tokens: terminalTokens(line.text) })}</div>`,
+                    )
+                    .join('');
+                el('line-count').textContent = `${rows.length} lines`;
+                el('lines').querySelectorAll('[data-line]').forEach((row) => {
+                    row.addEventListener('click', () => {
+                        focusLine = row.dataset.line;
+                        renderLines();
+                        const child = nodes.find((n) => n.label.toLowerCase().includes(row.dataset.line.replace(/-\d$/, '')));
+                        if (child && child.id !== focusID) open(child.id);
+                    });
+                });
+            };
+
+            const renderStatus = () => {
+                el('status').innerHTML = `focus <b>${focusID}</b> · trail depth <b>${trail.depth}</b> · console <b>${forNode(focusID).length}</b> lines`;
+            };
+
+            const open = (id, push = true) => {
+                if (!nodes.some((n) => n.id === id)) return;
+                focusID = id;
+                focusLine = undefined;
+                if (push) {
+                    const node = nodes.find((n) => n.id === id);
+                    trail.push({ id, label: node.label, kind: node.kind });
+                }
+                renderGraph();
+                renderScope();
+                renderCrumb();
+                renderLines();
+                renderStatus();
+            };
+
+            el('back').addEventListener('click', () => {
+                const node = trail.back();
+                if (node) open(node.id, false);
+            });
+            el('forward').addEventListener('click', () => {
+                const node = trail.forward();
+                if (node) open(node.id, false);
+            });
+            el('reset').addEventListener('click', () => {
+                trail.push({ id: 'session', label: 'session', kind: 'session' });
+                open('session', false);
+            });
+            window.addEventListener('keydown', (event) => {
+                if (event.key === 'Backspace') {
+                    const node = trail.back();
+                    if (node) open(node.id, false);
+                }
+            });
+
+            trail.push({ id: 'session', label: 'session', kind: 'session' });
+            open('session', false);
+        </script>
+    </body>
+</html>
