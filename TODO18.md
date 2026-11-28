@@ -360,9 +360,10 @@ timing); those incidental changes were restored, leaving the tree clean. `pnpm r
 still reports pre-existing Prettier drift across ~400 files (including every `TODO*.md`); it is not
 part of the §5 ladder and was left untouched.
 
-There is no queued implementation work. Do not restart the outcomes — start any new capability from
-the same split: a selector plus one command id over the one console projection, not a new view slot,
-renderer, text index, command registry or codec. `logLayout`, `chapterPacking`, `LaneLayout` and
+There is no queued implementation work in this plan. Do not restart the outcomes — subsequent work
+is tracked in `TODO19.md` (zoom-progressive text and graphs within graphs). Start any new capability
+from the same split: a selector plus one command id over the one console projection, not a new view
+slot, renderer, text index, command registry or codec. `logLayout`, `chapterPacking`, `LaneLayout` and
 `diffPositions` remain available for host-specific grouping when a real need appears; they were not
 needed to deliver O6. The §3 fidelity exclusions (PTY, ANSI/SGR, a second console store) remain out
 of scope.
