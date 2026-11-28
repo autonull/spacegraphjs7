@@ -23,7 +23,11 @@ import {
     type RenderTheme,
 } from '@spacegraphjs/renderer';
 import { rankedSearch } from '@spacegraphjs/search';
-import { createAnnouncer } from 'spacegraphjs/a11y';
+import {
+    AccessibilityLayer,
+    bindA11yFocus,
+    createAnnouncer,
+} from 'spacegraphjs/a11y';
 import { CommandRegistry, matchCommand, type Command } from 'spacegraphjs/commands';
 import type { GraphViewData } from '@spacegraphjs/shared';
 import { defaultTokens, themeFromDesignTokens, type DesignTokens } from '@spacegraphjs/shared/tokens';
@@ -36,7 +40,8 @@ import {
     Trail,
     type MinimapProjection,
 } from 'spacegraphjs/navigation';
-import type { NodeSpec } from 'spacegraphjs';
+import { EventEmitter, type NodeSpec, type SpaceGraphEvents } from 'spacegraphjs';
+import { HtmlNode } from 'spacegraphjs/nodes';
 import { ScopedOverlay } from 'spacegraphjs/overlays';
 import {
     createInstrumentKit,
@@ -45,6 +50,7 @@ import {
 } from 'spacegraphjs/widgets';
 import {
     mountReading,
+    readingHTML,
     readingOrder,
     type ReadingController,
     type ReadingNode,
@@ -60,6 +66,7 @@ import {
     playTerminalReplay,
     TERMINAL_MODES,
     TERMINAL_PALETTES,
+    TERMINAL_PROFILES,
     terminalChapters,
     terminalDetailHTML,
     terminalDiff,
@@ -76,13 +83,19 @@ import {
     terminalLensFromKey,
     terminalLensKey,
     terminalLensRect,
+    terminalOrder,
     terminalPlace,
+    terminalRangeIDs,
+    terminalProfile,
+    terminalReadingLens,
     terminalReplaySteps,
     terminalSearch,
     terminalVisibleAt,
     type TerminalBookmark,
     type TerminalLensRect,
+    type TerminalGrid,
     type TerminalLensTarget,
+    type TerminalReadingScope,
     type TerminalSpan,
     type TerminalReplayHandle,
     type TerminalCameraController,
@@ -728,6 +741,11 @@ export class DurableHost {
     #consoleKit: InstrumentKit | undefined;
     #lensTrail = new Trail({ maxDepth: 20 });
     #bookmarks = new Map<string, TerminalBookmark>();
+    #consoleGrid: TerminalGrid = CONSOLE_GRID;
+    #a11yLayer: AccessibilityLayer | undefined;
+    #a11yEvents = new EventEmitter<SpaceGraphEvents>();
+    #unbindA11yFocus: (() => void) | undefined;
+    #readingScope: ScopedOverlay | undefined;
     #mutedEdges = 0;
     #activeGroups = new Set<string>();
     #scopeKey = '';
@@ -1940,16 +1958,15 @@ export class DurableHost {
             else this.announce('Usage: /bookmark <0-9>');
         });
         action('profile', (rest) => {
-            const profiles: Readonly<Record<string, TerminalPresentation>> = {
-                logs: { lineNumbers: true },
-                presentation: { reflow: true, lineNumbers: true },
-                'high-contrast': { highlightMatches: true, sourceStamp: true },
-                'big-text': { wrap: true },
-            };
-            const preset = profiles[rest];
-            if (!preset) return this.announce(`Unknown console profile: ${rest || '(none)'}`);
-            this.consolePresentation(preset);
-            this.announce(`Console profile: ${rest}`);
+            this.setConsoleProfile(rest);
+        });
+        action('read.lens', (rest) => {
+            const scopes: readonly TerminalReadingScope[] = [
+                'all', 'selection', 'current', 'last', 'filtered',
+            ];
+            this.readConsole(scopes.includes(rest as TerminalReadingScope)
+                ? (rest as TerminalReadingScope)
+                : 'all');
         });
         action('asOf', (rest) => {
             const seq = Number(rest);
@@ -2334,6 +2351,75 @@ export class DurableHost {
         this.#lensTrail.reconcile(kept);
     }
 
+    setConsoleProfile(id: string): string {
+        const profile = terminalProfile(id);
+        this.#consoleGrid = { ...CONSOLE_GRID, ...profile.grid };
+        Object.assign(this.#consolePresentation, profile.presentation);
+        this.#terminal()?.setPalette(profile.palette);
+        this.refresh();
+        this.announce(`Console profile: ${profile.label}`);
+        return profile.id;
+    }
+
+    readConsole(scope: TerminalReadingScope = 'all'): number {
+        const lines = this.#terminalController?.lines() ?? [];
+        const nodes = terminalReadingLens(
+            lines,
+            this.#consoleSelector,
+            this.#consolePresentation,
+            scope,
+        );
+        const sections = readingOrder(nodes, []);
+        el('console-reading-body').innerHTML = readingHTML(sections, {
+            title: `Console — ${scope}`,
+        });
+        el('console-reading').hidden = false;
+        this.#readingScope?.dispose();
+        this.#readingScope = new ScopedOverlay({
+            container: el('console-reading'),
+            initialFocus: el<HTMLButtonElement>('console-reading-close'),
+            onClose: () => this.closeConsoleReading(),
+        });
+        this.announce(`Reading ${sections.length} console lines`);
+        return sections.length;
+    }
+
+    closeConsoleReading(): void {
+        el('console-reading').hidden = true;
+        this.#readingScope?.dispose();
+        this.#readingScope = undefined;
+    }
+
+    #syncConsoleA11y(): void {
+        const layer = this.#a11yLayer;
+        if (!layer) return;
+        const lines = this.#terminalController?.lines() ?? [];
+        layer.setItems(
+            lines.map((line) => ({
+                id: line.id,
+                label: `${line.label}: ${line.text}`,
+                kind: line.kind,
+                status: line.status,
+            })),
+        );
+        const range = this.#terminalController?.selection();
+        layer.setSelected(range ? terminalRangeIDs(range, terminalOrder(lines)) : null);
+    }
+
+    #consoleFocusRole(): 'camera' | 'view' | 'node' | 'input' {
+        const active = document.activeElement;
+        if (!active) return 'camera';
+        const element = active as HTMLElement;
+        if (
+            element.isContentEditable ||
+            ['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName)
+        )
+            return 'input';
+        if (element.closest('#chapter-rail, #trail, [role="menuitem"]')) return 'view';
+        if (element.closest('[data-node-id]')) return 'node';
+        return 'camera';
+    }
+
     applyAddress(address: Address): boolean {
         this.#history.suppress(true);
         if (address.shot) this.applyShot(address.shot);
@@ -2424,6 +2510,10 @@ export class DurableHost {
             consoleTrailBack: () => this.consoleTrailBack(),
             consoleTrailForward: () => this.consoleTrailForward(),
             consoleBreadcrumbs: (id?: string) => this.consoleBreadcrumbs(id),
+            consoleProfile: (id: string) => this.setConsoleProfile(id),
+            consoleProfiles: () => TERMINAL_PROFILES.map(({ id, label }) => ({ id, label })),
+            consoleRead: (scope?: TerminalReadingScope) => this.readConsole(scope),
+            consoleFocusRole: () => this.#consoleFocusRole(),
             exportConsole: (format: 'markdown' | 'json') => {
                 const terminal = this.#terminal();
                 return terminalExport(terminal.lines(), terminal.selection(), format);
@@ -3252,7 +3342,7 @@ export class DurableHost {
 
     #terminal(): TerminalController {
         if (this.#terminalController) return this.#terminalController;
-        const grid = CONSOLE_GRID;
+        const grid = this.#consoleGrid;
         const sink: TerminalSink<RenderModel> = {
             render: (model) => this.renderer.setModel(model),
             show: () => undefined,
@@ -3286,12 +3376,25 @@ export class DurableHost {
                 );
                 this.reveal(id);
             },
-            onFocus: (id) =>
+            onFocus: (id) => {
                 requestAnimationFrame(() =>
                     el('canvas')
                         .querySelector<HTMLElement>(`[data-node-id="${id}"]`)
                         ?.focus({ preventScroll: true }),
-                ),
+                );
+                const line = this.#terminalController?.lines().find((entry) => entry.id === id);
+                if (line)
+                    this.#a11yEvents.emit('focus:changed', {
+                        node: new HtmlNode(undefined, {
+                            id: line.id,
+                            type: 'HtmlNode',
+                            label: line.label,
+                            position: [0, 0, 0],
+                            data: { html: '' },
+                        }),
+                        focused: true,
+                    });
+            },
             announce: (message) => this.announce(message),
         });
         mountTerminalA11y(el('canvas'), {
@@ -3299,8 +3402,19 @@ export class DurableHost {
             announce: (message) => this.announce(message),
             onFocus: (id) => this.#terminalController?.focusLine(id),
             selection: () => this.#terminalController?.selection(),
-            onSelect: (range) => this.#terminalController?.select(range),
+            onSelect: (range) => {
+                this.#terminalController?.select(range);
+                this.#syncConsoleA11y();
+            },
         });
+        this.#a11yLayer = new AccessibilityLayer(el('console-a11y'), {
+            label: 'Console lines',
+            onSelect: (id) => this.consoleFocus(`line:${id}`),
+            onEscape: () => this.closeConsoleReading(),
+        });
+        this.#unbindA11yFocus?.();
+        this.#unbindA11yFocus = bindA11yFocus(this.#a11yEvents, this.#a11yLayer);
+        this.#syncConsoleA11y();
         this.#terminalCamera = mountTerminalCamera(el('canvas'), this.#terminalController, {
             badge: el('follow-badge'),
             onFollowChange: (enabled) =>
@@ -3398,6 +3512,7 @@ export class DurableHost {
         terminal.setOverlays(this.#consoleOverlays(kernel, lines));
         terminal.setLines(lines);
         this.#reconcileLensTrail();
+        this.#syncConsoleA11y();
         this.#renderChapterRail();
         if (!this.#consoleFramed) this.#frameConsole();
         if (this.#replayPending) {

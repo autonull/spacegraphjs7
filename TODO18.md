@@ -1,7 +1,7 @@
 # TODO18 — Terminal 2: one projection, one command surface, many lenses
 
-> **Status: implementing (2026-11-27).** Supersedes the first 12-item draft. **O1–O4 have
-> landed**; O5–O6 remain `spec`. Ideas are harvested from [autonull/fracterm](https://github.com/autonull/fracterm)
+> **Status: implementing (2026-11-27).** Supersedes the first 12-item draft. **O1–O5 have
+> landed**; O6 remains `spec`. Ideas are harvested from [autonull/fracterm](https://github.com/autonull/fracterm)
 > (`README.md`, `README3.md`, `TODO.md`) and adapted to the vector console delivered by `TODO17.md`.
 > The fidelity decision in TODO17 §3 still stands: no PTY, VT/ANSI/SGR or second console store.
 > §8 records delivered work; §9 turns the remaining outcomes into an executable queue.
@@ -64,7 +64,7 @@ the published `spacegraphjs/*` subpaths are the SDK.
 
 ## 3. Consolidated outcomes
 
-O1–O4 have landed; O5–O6 are `spec`. `E#` = TODO17 enhancement. Effort is relative.
+O1–O5 have landed; O6 is `spec`. `E#` = TODO17 enhancement. Effort is relative.
 
 ### O1 — One projection contract (foundation) — **Done, see §8**
 
@@ -131,7 +131,7 @@ round-trip through permalinks and name ids, never coordinates.
   and zoom-to-selection under reduced motion.
 - Effort: medium. Depends on: O1, O2. Reuses: E4/E8, `navigation`, `view-state`, `motion`, `policy`.
 
-### O5 — Reading lens, profiles and focus polish
+### O5 — Reading lens, profiles and focus polish — **Done, see §8**
 
 **Outcome:** the console can become a readable document (reflow, line focus, ruler, spacing, high
 contrast, hidden chrome) with quick reads, and a profile preset replaces several scattered hooks.
@@ -207,7 +207,8 @@ Implemented O1: added `TerminalSelector`, `terminalSelect`, `TerminalPresentatio
 `TerminalSelection`, `TERMINAL_MODES` and `terminalSnapshot` to `src/terminal.ts`; ported
 `consoleModel` to consume selector output; verified the twelve `shots:console` captures. O2 then
 landed the shared command catalog and slash prompt; O3 added search, derived views and a sidecar;
-O4 added lens targets, a trail and bookmarks. O5 is next. See §8 and §9.
+O4 added lens targets, a trail and bookmarks; O5 added the reading lens, profiles and an assistive
+mirror. O6 is next. See §8 and §9.
 
 ## 8. Progress
 
@@ -299,14 +300,30 @@ O4 added lens targets, a trail and bookmarks. O5 is next. See §8 and §9.
   `check:generated`, `check:console-shots` (13), Pi Durable 21 files / 106 unit tests and
   `verify:fast` (98 E2E passing, 18 capture-only skipped). No shot changed.
 
+### O5 — landed (2026-11-27)
+
+- **Library.** `terminalReadingLens(lines, selector, presentation, scope)` maps quick reads
+  (`all`, `selection`, `current`, `last`, `filtered`) to safe `ReadingNode[]` with line numbers and
+  source stamps behind presentation flags. `TERMINAL_PROFILES` and `terminalProfile(id)` replace
+  scattered flags with four named presets (`logs`, `presentation`, `high-contrast`, `big-text`).
+- **Host.** `setConsoleProfile` applies a profile's palette, grid and presentation in one call;
+  `readConsole(scope)` renders `readingOrder` sections through the escape-first `readingHTML` in a
+  focus-trapped dialog. `AccessibilityLayer` mirrors console lines, `bindA11yFocus` keeps the mirror
+  synced through a host-owned emitter and concrete `HtmlNode` focus events, and
+  `consoleFocusRole()` reports camera/view/node/input for assistive feedback. `read.lens` joins the
+  catalog; reduced-motion fly-to from O4 is unchanged.
+- **Proof.** Quick-read scope and profile unit tests, plus three `reading-lens.spec.ts` E2E tests
+  for the reading dialog, profile flags and the assistive mirror/focus roles.
+- **Verification.** Root `pnpm run check`, `pnpm test` (201 files / 1380 tests), `test:exports`,
+  `check:generated`, `check:console-shots` (13), Pi Durable 21 files / 106 unit tests and
+  `verify:fast` (101 E2E passing, 18 capture-only skipped). No default chrome changed, so no shot
+  was regenerated.
+
 ## 9. Remaining work — executable queue
 
 Each outcome follows §5: pure primitive + unit test in `test/terminal.test.ts`, host wiring through
 `consoleModel`/`lens.ts`/`host.ts`, E2E assertion, console shot only on a visual shape change.
 
-- **O5 — reading lens and profiles (next).** `TerminalPresentation` and the `consoleModel` presentation
-  attributes are the foundation; add `terminalReadingLens`, quick-read scopes and `TerminalProfile`
-  presets, then layer focus roles through `AccessibilityLayer`/`bindA11yFocus`. Shots change here.
-- **O6 — regions and scale (last).** Infer regions from kind/role runs and gaps; add auto-zoom
+- **O6 — regions and scale (next, last).** Infer regions from kind/role runs and gaps; add auto-zoom
   ranking, dirty-gated projection, `logLayout`/`chapterPacking` groups, `diffPositions` and a
   fixed-seed property suite. Depends on O1–O5 being stable.

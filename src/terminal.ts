@@ -7,6 +7,7 @@ import { mountComposer, type ComposerController, type ComposerOptions } from './
 import { transcriptLane, type TranscriptLaneOptions } from './layout/transcript';
 import { escapeHtml } from './markup';
 import { DEFAULT_RUNG_IDS } from './representations/ladder';
+import type { ReadingNode } from './reading';
 import type { EdgeSpec, GraphSpec, NodeSpec } from './types';
 import { isEditableTarget } from './utils/DOMUtils';
 import { clamp } from './utils/math';
@@ -710,6 +711,7 @@ export const terminalConsoleCommands = (
         entry('fork', 'fork', '/fork [line]', ['branch'], gate(gates.fork, 'Nothing to fork')),
         entry('why', 'why', '/why', ['provenance']),
         entry('monitor', 'monitor', '/monitor', ['sidecar', 'logtail']),
+        entry('read.lens', 'read lens', '/read lens [scope]', ['document', 'reading']),
         entry('lens.focus', 'lens focus', '/lens focus <target>', ['bookmark', 'zoom']),
         entry('bookmark', 'bookmark', '/bookmark <0-9>', ['bm', 'recall']),
         entry('help', 'help', '/help', ['?']),
@@ -952,6 +954,87 @@ export const terminalBookmark = {
     encode: (bookmark: TerminalBookmark): string => bookmarkCodec.encode(bookmark),
     decode: (value: string | undefined): TerminalBookmark | undefined => bookmarkCodec.decode(value),
 };
+
+export type TerminalReadingScope = 'all' | 'selection' | 'current' | 'last' | 'filtered';
+
+/** Convert a selector into safe reading nodes; text and meta stay committed host facts. */
+export const terminalReadingLens = (
+    lines: readonly TerminalLine[],
+    selector: TerminalSelector = {},
+    presentation: TerminalPresentation = {},
+    scope: TerminalReadingScope = 'all',
+): readonly ReadingNode[] => {
+    const selection = terminalSelect(lines, selector);
+    const matched = new Set(selection.matches.map((match) => match.lineID));
+    const order = terminalOrder(lines);
+    const chosen =
+        scope === 'current'
+            ? lines.slice(-1)
+            : scope === 'last'
+              ? lines.slice(-Math.max(1, selector.maxLines ?? 8))
+              : scope === 'filtered'
+                ? lines.filter((line) => matched.has(line.id))
+                : scope === 'selection'
+                  ? selection.lines
+                  : lines;
+    return chosen.map((line) => ({
+        id: line.id,
+        label: line.label || line.kind,
+        text: line.text,
+        format: presentation.reflow ? 'markdown' : 'text',
+        meta: {
+            kind: line.kind,
+            status: line.status,
+            ...(presentation.lineNumbers ? { line: String((order.get(line.id) ?? 0) + 1) } : {}),
+            ...(presentation.sourceStamp && line.at !== undefined
+                ? { at: new Date(line.at).toISOString() }
+                : {}),
+        },
+    }));
+};
+
+export type TerminalProfile = {
+    readonly id: string;
+    readonly label: string;
+    readonly palette: string;
+    readonly grid: Partial<TerminalGrid>;
+    readonly presentation: TerminalPresentation;
+};
+
+/** Named presets replace scattered host flags; the host still owns palette application. */
+export const TERMINAL_PROFILES: readonly TerminalProfile[] = [
+    {
+        id: 'logs',
+        label: 'Logs',
+        palette: 'classic',
+        grid: {},
+        presentation: { lineNumbers: true },
+    },
+    {
+        id: 'presentation',
+        label: 'Presentation',
+        palette: 'classic',
+        grid: { charWidth: 9.6, lineHeight: 18 },
+        presentation: { reflow: true, lineNumbers: true },
+    },
+    {
+        id: 'high-contrast',
+        label: 'High contrast',
+        palette: 'amber',
+        grid: {},
+        presentation: { highlightMatches: true, sourceStamp: true, lineNumbers: true },
+    },
+    {
+        id: 'big-text',
+        label: 'Big text',
+        palette: 'classic',
+        grid: { charWidth: 11, lineHeight: 22 },
+        presentation: { wrap: true },
+    },
+];
+
+export const terminalProfile = (id: string): TerminalProfile =>
+    TERMINAL_PROFILES.find((profile) => profile.id === id) ?? TERMINAL_PROFILES[0]!;
 
 export type TerminalExportFormat = 'markdown' | 'json';
 

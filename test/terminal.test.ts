@@ -39,7 +39,10 @@ import {
     terminalLineSize,
     terminalMoveLine,
     terminalOrder,
+    TERMINAL_PROFILES,
     terminalPlace,
+    terminalProfile,
+    terminalReadingLens,
     terminalRangeFromIndices,
     terminalOverlays,
     terminalRange,
@@ -1000,8 +1003,8 @@ describe('console command catalog', () => {
         });
         expect(commands.list().map((command) => command.id)).toEqual([
             'copy', 'export', 'search', 'filter', 'read', 'zoom', 'pin.live', 'pin.snapshot',
-            'pin.matches', 'profile', 'asOf', 'fork', 'why', 'monitor', 'lens.focus',
-            'bookmark', 'help',
+            'pin.matches', 'profile', 'asOf', 'fork', 'why', 'monitor', 'read.lens',
+            'lens.focus', 'bookmark', 'help',
         ]);
         expect(commands.get('copy')?.disabledReason).toBe('Select lines first');
         expect(commands.get('fork')?.disabledReason).toBe('Nothing to fork');
@@ -1106,5 +1109,33 @@ describe('lens targets and bookmarks', () => {
         expect(terminalBookmark.decode(terminalBookmark.encode(bookmark))).toEqual(bookmark);
         expect(terminalBookmark.key(12)).toBe('bm9');
         expect(terminalBookmark.decode('not-a-bookmark')).toBeUndefined();
+    });
+});
+
+describe('reading lens and profiles', () => {
+    const sample = [line('a', 'alpha'), line('b', 'beta'), line('c', 'gamma')];
+
+    it('maps quick-read scopes to safe reading nodes', () => {
+        expect(terminalReadingLens(sample, {}, {}, 'current').map((node) => node.id)).toEqual([
+            'c',
+        ]);
+        expect(
+            terminalReadingLens(sample, { maxLines: 2 }, {}, 'last').map((node) => node.id),
+        ).toEqual(['b', 'c']);
+        expect(
+            terminalReadingLens(sample, { search: 'beta' }, {}, 'filtered').map((node) => node.id),
+        ).toEqual(['b']);
+        expect(terminalReadingLens(sample, {}, { reflow: true }, 'all')[0]?.format).toBe('markdown');
+        expect(terminalReadingLens(sample, {}, { lineNumbers: true }, 'all')[1]?.meta?.['line']).toBe(
+            '2',
+        );
+    });
+
+    it('exposes named profiles with one presentation contract', () => {
+        expect(TERMINAL_PROFILES.map((profile) => profile.id)).toEqual([
+            'logs', 'presentation', 'high-contrast', 'big-text',
+        ]);
+        expect(terminalProfile('big-text').presentation.wrap).toBe(true);
+        expect(terminalProfile('missing').id).toBe('logs');
     });
 });

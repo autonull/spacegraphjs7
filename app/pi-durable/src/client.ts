@@ -474,6 +474,7 @@ const bindPanelChrome = (): void => {
         });
     }
     el('drawer-close').addEventListener('click', closeDrawer);
+    el('console-reading-close').addEventListener('click', () => host.closeConsoleReading());
     el('menu-button').addEventListener('click', () => toggleRailMenu());
     el('present-exit').addEventListener('click', () => togglePresentation(false));
 };

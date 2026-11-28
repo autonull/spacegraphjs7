@@ -390,6 +390,14 @@
             #console-sidecar[hidden] { display: none; }
             .instrument-logtail { display: flex; flex-direction: column; gap: 2px;
                 font: 11px/1.4 monospace; color: var(--muted); }
+            #console-reading { position: absolute; inset: 0; z-index: 28; display: grid;
+                place-items: center; background: #0b0a08e6; }
+            #console-reading[hidden] { display: none; }
+            #console-reading > div { max-width: 680px; max-height: 70vh; overflow: auto;
+                padding: 20px; border: 1px solid var(--line); border-radius: 14px;
+                background: var(--panel); }
+            #console-reading-body .reading-sections { padding-left: 20px; }
+            #console-reading-body .reading-text { white-space: pre-wrap; }
             kbd { padding: 2px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); }
             @media (max-width: 900px) {
                 main { grid-template-columns: 1fr; }
@@ -601,8 +609,15 @@
             </footer>
             <div id="console-completions" hidden role="listbox" aria-label="Console command completions"></div>
         </div>
+        <div id="console-a11y"></div>
         <div id="console-menu" hidden role="menu" aria-label="Console commands">
             <div id="console-menu-items"></div>
+        </div>
+        <div id="console-reading" hidden role="dialog" aria-modal="true" aria-label="Console reading view">
+            <div>
+                <div id="console-reading-body"></div>
+                <button type="button" class="action" id="console-reading-close">Close</button>
+            </div>
         </div>
         <button id="present-exit" type="button" class="action" aria-label="Exit presentation mode" title="Exit presentation mode (Shift+F)">Exit presentation</button>
         <div id="announcer" role="status" aria-live="polite"></div>
