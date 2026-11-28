@@ -72,6 +72,17 @@ import {
     type AtlasEvent,
     type AtlasState,
 } from '../../../packages/domain/agent/src/atlas';
+import {
+    foldableNodeHTML,
+    innerWidgetEdgeID,
+    innerWidgetNodeID,
+    innerWidgetStats,
+    reduceInnerWidgets,
+    type InnerWidgetItem,
+    type InnerWidgetModel,
+    type InnerWidgetState,
+} from '../../../packages/domain/agent/src/inner-widget';
+import { innerPlacements } from 'spacegraphjs/inspect';
 import { isEditableTarget } from 'spacegraphjs/utils';
 import {
     createInstrumentKit,
@@ -804,6 +815,7 @@ export class DurableHost {
     readonly #labs: boolean;
     #windowState = new Map<string, GraphWindowState>();
     #windowMax = false;
+    #innerFolded = new Map<string, boolean>();
     #teamEnabled = false;
     #teamState: TeamState = { active: '', scope: [], log: [] };
     #atlasEnabled = false;
@@ -897,6 +909,12 @@ export class DurableHost {
             if (action?.dataset['gwAction']) {
                 event.stopPropagation();
                 this.#windowAction(action.dataset['gwAction'], action.dataset['gwWindow'] ?? '');
+                return;
+            }
+            const inner = target.closest<HTMLElement>('[data-inner-action]');
+            if (inner?.dataset['innerAction']) {
+                event.stopPropagation();
+                this.#innerAction(inner.dataset['innerAction']);
                 return;
             }
             const chip = target.closest<HTMLElement>('[data-grow-id]');
@@ -2116,9 +2134,63 @@ export class DurableHost {
             : 'detail';
     }
 
+    #innerModel(kernel: Kernel): InnerWidgetModel {
+        const container = kernel.nodes.find((node) => node.kind === 'conversation')?.id ?? 'session';
+        const widgets = kernel.nodes
+            .filter(
+                (node) =>
+                    !node.id.startsWith('inner:') &&
+                    (node.kind === 'artifact' ||
+                        node.kind === 'config' ||
+                        node.kind === 'state' ||
+                        typeof node.data?.['path'] === 'string'),
+            )
+            .slice(0, 6);
+        const items: InnerWidgetItem[] = innerPlacements(
+            widgets.map((node) => ({
+                id: node.id,
+                label: node.label,
+                kind: node.kind,
+                role: node.kind,
+                children: [],
+            })),
+            'grid',
+        ).map(({ chip, left, top, width, height }) => ({
+            id: chip.id,
+            label: chip.label,
+            kind: chip.kind,
+            detail: chip.kind,
+            x: left,
+            y: top,
+            width,
+            height,
+        }));
+        return { container, items };
+    }
+
+    #innerState(kernel: Kernel, windowID: string): InnerWidgetState {
+        const prefix = `inner:${this.#innerModel(kernel).container}:`;
+        return {
+            folded: this.#innerFolded.get(windowID) ?? false,
+            detached: kernel.nodes
+                .filter((node) => node.id.startsWith(prefix))
+                .map((node) => node.id.slice(prefix.length)),
+        };
+    }
+
     #windowBody(tab: string, kernel: Kernel, title: string, windowID: string): string {
         const rows = (items: readonly string[]) =>
             items.map((item) => `<div class="gw-row">· ${escapeHTML(item)}</div>`).join('');
+        if (tab === 'inner') {
+            const model = this.#innerModel(kernel);
+            const state = this.#innerState(kernel, windowID);
+            return foldableNodeHTML({
+                label: title,
+                model,
+                state,
+                stats: innerWidgetStats(model, state),
+            });
+        }
         if (tab === 'facts')
             return rows(kernel.nodes.slice(0, 6).map((node) => `${node.kind} · ${node.label}`));
         if (tab === 'edges') {
@@ -2161,7 +2233,7 @@ export class DurableHost {
                 id,
                 title: parent.label,
                 status: `${kernel.nodes.length} facts`,
-                tabs: ['detail', 'facts', 'edges', 'actions'],
+                tabs: ['detail', 'facts', 'edges', 'inner', 'actions'],
                 activeTab: state.tab,
                 focused: state.focused,
                 band: this.#windowBand(),
@@ -2250,6 +2322,66 @@ export class DurableHost {
             return;
         }
         this.refresh();
+    }
+
+    openInnerTab(): boolean {
+        if (!this.#labs) return false;
+        const id = `lab-window:${this.registry.activeID()}`;
+        const state = this.#windowState.get(id) ?? {
+            tab: 'detail',
+            focused: false,
+            hidden: false,
+        };
+        const tab = state.tab === 'inner' ? 'detail' : 'inner';
+        this.#windowState.set(id, reduceGraphWindow(state, { type: 'tab', tab }));
+        this.announce(tab === 'inner' ? 'Inner widgets shown' : 'Inner widgets hidden');
+        this.refresh();
+        return tab === 'inner';
+    }
+
+    #innerAction(action: string): void {
+        if (!this.#labs) return;
+        const tab = this.registry.active();
+        if (!tab) return;
+        const separator = action.indexOf(':');
+        const kind = separator < 0 ? action : action.slice(0, separator);
+        const id = separator < 0 ? '' : action.slice(separator + 1);
+        const kernel = tabKernel(tab);
+        const model = this.#innerModel(kernel);
+        const windowID = `lab-window:${tab.id}`;
+        const state = this.#innerState(kernel, windowID);
+
+        if (kind === 'fold' || kind === 'unfold' || kind === 'toggle') {
+            const next = reduceInnerWidgets(state, { type: kind });
+            this.#innerFolded.set(windowID, next.folded);
+            this.announce(next.folded ? 'Inner widgets folded' : 'Inner widgets unfolded');
+            this.refresh();
+            return;
+        }
+        const item = model.items.find((entry) => entry.id === id);
+        if (!item) return;
+        const nodeID = innerWidgetNodeID(model.container, id);
+        if (kind === 'detach' && !state.detached.includes(id)) {
+            this.consume(
+                tab.id,
+                addNode(nodeID, 'state', item.label, {
+                    role: 'widget',
+                    detail: item.detail,
+                    source: id,
+                }),
+            );
+            this.consume(tab.id, addEdge('contains', model.container, nodeID));
+            this.announce(`Detached ${item.label} into the graph`);
+            return;
+        }
+        if (kind === 'reattach' && state.detached.includes(id)) {
+            const ops: KernelOp[] = [
+                { op: 'remove-edge', id: innerWidgetEdgeID(model.container, id) },
+                { op: 'remove-node', id: nodeID },
+            ];
+            ops.forEach((op) => this.consume(tab.id, op));
+            this.announce(`Reattached ${item.label}`);
+        }
     }
 
     toggleTeam(): boolean {
@@ -3554,6 +3686,7 @@ export class DurableHost {
             scrubTo: (seq?: number) => this.scrubTo(seq),
             toggleAtlas: () => this.toggleAtlas(),
             atlasState: () => this.atlasState(),
+            openInnerTab: () => this.openInnerTab(),
             digest: () => this.digest(),
             instruments: () => this.instruments(),
             density: () => ({ ...this.#density }),

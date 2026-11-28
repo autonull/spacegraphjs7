@@ -224,6 +224,11 @@ Pi Durable session view where the transcript, graph and time travel share one pr
 are its two consumers. The prefix is a view over committed entries: the host binds it to `scrubTo`,
 so replay never creates a second timeline.
 
+`InnerWidget` + `FoldableNode` are promoted with a
+[pattern card](../packages/domain/agent/INNER-WIDGET.md). Demos 10 and 15 and the Pi Durable session
+window inner tab (`?labs=1`, `i`) are the consumers. Detach commits a node and a `contains` edge;
+reattach removes both by id, while fold/unfold only changes a view transform.
+
 Suggested adoption order for Pi Durable: (1) per-agent graph windows and a team toggle, (2) steer and
 approve edges, (3) the session atlas with replay, (4) team scope and lens as density grows. Each step
 reuses the terminal projection and kernel facts; none introduces a second store.

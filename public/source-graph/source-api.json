@@ -1868,6 +1868,14 @@
           "kind": "export"
         },
         {
+          "specifier": "./inner-widget",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "names": [
+            "*"
+          ],
+          "kind": "export"
+        },
+        {
           "specifier": "./mapping",
           "fileId": "packages/domain/agent/src/mapping",
           "names": [
@@ -1900,6 +1908,140 @@
           "kind": "export"
         }
       ]
+    },
+    {
+      "id": "packages/domain/agent/src/inner-widget",
+      "path": "packages/domain/agent/src/inner-widget.ts",
+      "packageId": "@spacegraphjs/agent",
+      "symbols": [
+        {
+          "name": "InnerWidgetItem",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 1,
+          "signature": "export interface InnerWidgetItem {"
+        },
+        {
+          "name": "InnerWidgetModel",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 12,
+          "signature": "export interface InnerWidgetModel {"
+        },
+        {
+          "name": "InnerWidgetState",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 17,
+          "signature": "export interface InnerWidgetState {"
+        },
+        {
+          "name": "InnerWidgetAction",
+          "kind": "type",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 22,
+          "signature": "export type InnerWidgetAction ="
+        },
+        {
+          "name": "reduceInnerWidgets",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 29,
+          "signature": "reduceInnerWidgets = ("
+        },
+        {
+          "name": "innerWidgetNodeID",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 51,
+          "signature": "innerWidgetNodeID = (container: string, id: string) => `inner:${container}:${id}`"
+        },
+        {
+          "name": "innerWidgetEdgeID",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 53,
+          "signature": "innerWidgetEdgeID = (container: string, id: string) =>"
+        },
+        {
+          "name": "InnerWidgetEdge",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 56,
+          "signature": "export interface InnerWidgetEdge {"
+        },
+        {
+          "name": "innerWidgetEdges",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 64,
+          "signature": "innerWidgetEdges = ("
+        },
+        {
+          "name": "InnerWidgetStats",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 75,
+          "signature": "export interface InnerWidgetStats {"
+        },
+        {
+          "name": "innerWidgetStats",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 82,
+          "signature": "innerWidgetStats = ("
+        },
+        {
+          "name": "FoldPoint",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 95,
+          "signature": "export interface FoldPoint {"
+        },
+        {
+          "name": "foldPosition",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 100,
+          "signature": "foldPosition = (from: FoldPoint, to: FoldPoint, t: number): FoldPoint => {"
+        },
+        {
+          "name": "foldPlacement",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 106,
+          "signature": "foldPlacement = ("
+        },
+        {
+          "name": "InnerWidgetProps",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 130,
+          "signature": "export interface InnerWidgetProps {"
+        },
+        {
+          "name": "innerWidgetHTML",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 136,
+          "signature": "innerWidgetHTML = ({ model, state, stats }: InnerWidgetProps): string => {"
+        },
+        {
+          "name": "FoldableNodeProps",
+          "kind": "interface",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 156,
+          "signature": "export interface FoldableNodeProps extends InnerWidgetProps {"
+        },
+        {
+          "name": "foldableNodeHTML",
+          "kind": "const",
+          "fileId": "packages/domain/agent/src/inner-widget",
+          "line": 160,
+          "signature": "foldableNodeHTML = ({ label, ...props }: FoldableNodeProps): string =>"
+        }
+      ],
+      "imports": []
     },
     {
       "id": "packages/domain/agent/src/mapping",

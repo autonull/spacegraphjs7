@@ -1,0 +1,119 @@
+.inner-widgets,
+.foldable-node {
+    --inner-surface: #111823;
+    --inner-border: #28364b;
+    --inner-text: #e7edf5;
+    --inner-muted: #8ea0b8;
+    --inner-accent: #7aa2f7;
+    container-type: inline-size;
+    color: var(--inner-text);
+    font: 11px/1.45 var(--inner-mono, 'SFMono-Regular', Consolas, monospace);
+}
+
+@media (prefers-color-scheme: light) {
+    .inner-widgets,
+    .foldable-node {
+        --inner-surface: #ffffff;
+        --inner-border: #b9c6d8;
+        --inner-text: #182233;
+        --inner-muted: #53637b;
+        --inner-accent: #2456b8;
+    }
+}
+
+.inner-widgets button {
+    border-radius: 0;
+    border: 1px solid var(--inner-border);
+    background: var(--inner-surface);
+    color: var(--inner-muted);
+    font: inherit;
+    padding: 2px 6px;
+    cursor: pointer;
+    transition:
+        color 120ms ease,
+        border-color 120ms ease;
+}
+
+.inner-widgets button:hover {
+    color: var(--inner-accent);
+    border-color: var(--inner-accent);
+}
+
+.inner-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    border-bottom: 1px solid var(--inner-border);
+    padding: 5px 7px;
+}
+
+.inner-controls span {
+    color: var(--inner-muted);
+    font-size: clamp(9px, 4cqw, 13px);
+}
+
+.inner-grid {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    min-height: 90px;
+}
+
+.inner-widget {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+    border: 1px solid var(--inner-border);
+    background: var(--inner-surface);
+    padding: 4px 6px;
+    transition:
+        top 180ms ease,
+        height 180ms ease,
+        opacity 180ms ease;
+}
+
+.inner-widget[data-detached='true'] {
+    opacity: 0.3;
+    border-style: dashed;
+}
+
+.inner-widget[data-kind='artifact'] {
+    border-left: 2px solid var(--inner-accent);
+}
+
+.inner-widget b {
+    color: var(--inner-accent);
+    font-weight: 600;
+    font-size: clamp(9px, 5cqw, 14px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.inner-widget span {
+    color: var(--inner-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.foldable-head {
+    border-bottom: 1px solid var(--inner-border);
+    padding: 6px 8px;
+    color: var(--inner-muted);
+    font-size: clamp(9px, 4cqw, 13px);
+}
+
+.foldable-node[data-folded='true'] .inner-grid {
+    min-height: 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .inner-widgets *,
+    .foldable-node * {
+        transition: none !important;
+        animation: none !important;
+    }
+}

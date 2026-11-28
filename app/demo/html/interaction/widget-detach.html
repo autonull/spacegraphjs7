@@ -78,47 +78,12 @@
                 flex: 1;
                 min-height: 0;
             }
-            .widget {
-                position: absolute;
-                border: 1px solid #2b3d58;
-                border-radius: 0;
-                background: #1a2637;
-                padding: 3px 5px;
-                overflow: hidden;
-                font-size: clamp(8px, 3.6cqw, 14px);
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
+            .field .inner-widgets {
+                height: 100%;
+                aspect-ratio: auto;
             }
-            .widget b {
-                color: #dce6f4;
-                font-weight: 600;
-            }
-            .widget .value {
-                color: #7aa2f7;
-                font-size: 1.25em;
-            }
-            .widget button {
-                position: absolute;
-                right: 3px;
-                top: 3px;
-                background: #22324a;
-                color: #8ea0b8;
-                border: 1px solid #34506f;
-                border-radius: 0;
-                font: inherit;
-                font-size: 0.85em;
-                padding: 0 4px;
-                cursor: pointer;
-            }
-            .widget button:hover {
-                color: #7aa2f7;
-                border-color: #7aa2f7;
-            }
-            .spark {
-                height: 3px;
-                border-radius: 0;
-                background: linear-gradient(90deg, #7aa2f7 60%, #2b3d58 60%);
+            .inner-widget[data-kind='artifact'] {
+                border-left-color: #5fd0a0;
             }
             .widget-card {
                 container-type: inline-size;
@@ -159,7 +124,14 @@
         <div class="hud hint">click ↗ on a widget · drag detached cards · click REATTACH to fold them back</div>
 
         <script type="module">
-            import { Vector3 } from 'three';
+            import '../../../../packages/domain/agent/src/inner-widget.css';
+            import {
+                innerWidgetEdgeID,
+                innerWidgetHTML,
+                innerWidgetNodeID,
+                innerWidgetStats,
+                reduceInnerWidgets,
+            } from '../../../../packages/domain/agent/src/inner-widget';
             import { SpaceGraph } from 'spacegraphjs';
             import { innerPlacements } from 'spacegraphjs/inspect';
 
@@ -173,26 +145,34 @@
                 { id: 'health', label: 'health', value: '17/18' },
                 { id: 'replay', label: 'replay', value: '3/5' },
             ];
-            const placements = innerPlacements(widgetDefs, 'grid');
-            const detached = new Map();
+            const model = {
+                container: 'dashboard',
+                items: innerPlacements(widgetDefs, 'grid').map(({ chip, left, top, width, height }) => ({
+                    id: chip.id,
+                    label: chip.label,
+                    kind: 'artifact',
+                    detail: String(chip.value ?? chip.label),
+                    x: left,
+                    y: top,
+                    width,
+                    height,
+                })),
+            };
+            let innerState = { folded: false, detached: [] };
+            const lifted = new Map();
             let hostSize = [620, 430];
+            window._inner = () => innerState;
 
-            const hostHTML = () => `<div class="hostwin" style="height:${hostSize[1]}px">
-                <div class="cap">session dashboard <span>${widgetDefs.length - detached.size} inner widgets</span></div>
-                <div class="field">${placements
-                    .map(({ chip, left, top, width, height }) => {
-                        const hidden = detached.has(chip.id);
-                        return `<div class="widget" data-widget="${chip.id}" style="left:${left}%;top:${top}%;width:${width}%;height:${height}%;${hidden ? 'visibility:hidden' : ''}">
-                            <button data-sg-interactive="true" data-action="detach" data-id="${chip.id}">↗</button>
-                            <b>${esc(chip.label)}</b><div class="value">${esc(chip.value ?? chip.label)}</div>
-                            <div class="spark"></div>
-                        </div>`;
-                    })
-                    .join('')}</div>
-            </div>`;
+            const hostHTML = () => {
+                const stats = innerWidgetStats(model, innerState);
+                return `<div class="hostwin" style="height:${hostSize[1]}px">
+                    <div class="cap">session dashboard <span>${stats.shown} inner widgets</span></div>
+                    <div class="field">${innerWidgetHTML({ model, state: innerState, stats })}</div>
+                </div>`;
+            };
 
             const cardHTML = (widget, size = [210, 130]) => `<div class="widget-card" style="height:${size[1]}px"><b>${esc(widget.label)}</b><span class="value">${esc(widget.value)}</span>
-                <button data-sg-interactive="true" data-action="reattach" data-id="${widget.id}">REATTACH</button></div>`;
+                <button data-sg-interactive="true" data-inner-action="reattach:${esc(widget.id)}">REATTACH</button></div>`;
 
             const sg = await SpaceGraph.create(
                 el('app'),
@@ -228,42 +208,37 @@
             sg.render();
             sg.frame(null, { duration: 0.01 });
 
-            const worldOf = (clientX, clientY) => {
-                const point = new Vector3(
-                    (clientX / window.innerWidth) * 2 - 1,
-                    -(clientY / window.innerHeight) * 2 + 1,
-                    0,
-                );
-                point.unproject(sg.camera);
-                return [point.x, point.y, 0];
-            };
-
             const updateHost = () => {
                 sg.update({ nodes: [{ id: 'dashboard', data: { html: hostHTML() } }] });
-                el('state').textContent = `${widgetDefs.length - detached.size} widgets enfolded`;
-                el('detail').textContent = `${detached.size} promoted to graph nodes · ${detached.size} contains edges`;
+                el('state').textContent = `${innerWidgetStats(model, innerState).shown} widgets enfolded`;
+                el('detail').textContent = `${innerState.detached.length} promoted to graph nodes · ${innerState.detached.length} contains edges`;
             };
 
-            el('app').addEventListener('click', (event) => {
-                const button = event.target.closest?.('[data-action]');
-                if (!button) return;
-                const id = button.dataset.id;
-                const widget = widgetDefs.find((entry) => entry.id === id);
-                if (!widget) return;
+            document.addEventListener('click', (event) => {
+                const value = event.target.closest?.('[data-inner-action]')?.dataset.innerAction;
+                if (!value) return;
                 event.stopPropagation();
+                const separator = value.indexOf(':');
+                const kind = separator < 0 ? value : value.slice(0, separator);
+                const id = separator < 0 ? '' : value.slice(separator + 1);
+                const widget = widgetDefs.find((entry) => entry.id === id);
 
-                if (button.dataset.action === 'detach' && !detached.has(id)) {
-                    const chip = button.closest('[data-widget]');
-                    const rect = chip.getBoundingClientRect();
-                    const position = worldOf(rect.left + rect.width / 2, rect.top + rect.height / 2);
-                    const rank = detached.size;
-                    const lifted = [330 + rank * 60, 60 - rank * 40, 0];
-                    detached.set(id, lifted);
+                if (kind === 'fold' || kind === 'unfold' || kind === 'toggle') {
+                    innerState = reduceInnerWidgets(innerState, { type: kind });
+                    updateHost();
+                    return;
+                }
+                if (!widget) return;
+                if (kind === 'detach' && !innerState.detached.includes(id)) {
+                    const rank = lifted.size;
+                    const position = [330 + rank * 60, 60 - rank * 40, 0];
+                    const nodeID = innerWidgetNodeID(model.container, id);
+                    lifted.set(id, position);
                     sg.addNode({
-                        id: `widget-${id}`,
+                        id: nodeID,
                         type: 'HtmlNode',
                         label: widget.label,
-                        position: lifted,
+                        position,
                         data: {
                             html: cardHTML(widget),
                             useRawHtml: true,
@@ -277,18 +252,20 @@
                         },
                     });
                     sg.addEdge({
-                        id: `contains-${id}`,
-                        source: 'dashboard',
-                        target: `widget-${id}`,
+                        id: innerWidgetEdgeID(model.container, id),
+                        source: model.container,
+                        target: nodeID,
                         type: 'DottedEdge',
                     });
+                    innerState = reduceInnerWidgets(innerState, { type: 'detach', id });
                     updateHost();
+                    return;
                 }
-
-                if (button.dataset.action === 'reattach' && detached.has(id)) {
-                    sg.removeEdge(`contains-${id}`);
-                    sg.removeNode(`widget-${id}`);
-                    detached.delete(id);
+                if (kind === 'reattach' && innerState.detached.includes(id)) {
+                    sg.removeEdge(innerWidgetEdgeID(model.container, id));
+                    sg.removeNode(innerWidgetNodeID(model.container, id));
+                    lifted.delete(id);
+                    innerState = reduceInnerWidgets(innerState, { type: 'reattach', id });
                     updateHost();
                 }
             });
@@ -299,8 +276,27 @@
                 updateHost();
             });
             sg.events.on('node:click', ({ id }) => {
-                if (typeof id === 'string' && id.startsWith('widget-')) {
+                if (typeof id === 'string' && id.startsWith('inner:dashboard:')) {
                     sg.inspect(id);
+                }
+            });
+            document.addEventListener('keydown', (event) => {
+                if (
+                    event.target instanceof HTMLInputElement ||
+                    event.target instanceof HTMLTextAreaElement
+                )
+                    return;
+                if (event.key === 'f') {
+                    innerState = reduceInnerWidgets(innerState, { type: 'toggle' });
+                    updateHost();
+                } else if (event.key === 'Escape' && innerState.detached.length) {
+                    const id = innerState.detached.at(-1);
+                    if (!id) return;
+                    sg.removeEdge(innerWidgetEdgeID(model.container, id));
+                    sg.removeNode(innerWidgetNodeID(model.container, id));
+                    lifted.delete(id);
+                    innerState = reduceInnerWidgets(innerState, { type: 'reattach', id });
+                    updateHost();
                 }
             });
         </script>

@@ -73,6 +73,12 @@
             .note b {
                 color: #8ea0b8;
             }
+            .foldpane {
+                top: 18px;
+                right: 18px;
+                width: 290px;
+                pointer-events: auto;
+            }
         </style>
     </head>
     <body>
@@ -80,8 +86,16 @@
         <div class="panel top"><b id="state">all folded</b><br /><span id="detail">click a cluster to unfold its inner graph</span></div>
         <div class="panel controls" id="controls"></div>
         <div class="panel note">A node is a <b>folded subgraph</b>. Unfolding is reversible, keeps the outer edges, and needs no second renderer.</div>
+        <div class="panel foldpane" id="fold-panel"></div>
 
         <script type="module">
+            import '../../../../packages/domain/agent/src/inner-widget.css';
+            import {
+                foldPosition,
+                foldableNodeHTML,
+                innerWidgetStats,
+                reduceInnerWidgets,
+            } from '../../../../packages/domain/agent/src/inner-widget';
             import { SpaceGraph } from 'spacegraphjs';
             import { innerTree, innerPlacements } from 'spacegraphjs/inspect';
             import { playRepresentationChanges } from 'spacegraphjs/representations';
@@ -151,27 +165,60 @@
             sg.render();
             sg.frame(null, { duration: 0.01 });
 
-            const open = new Set();
+            const states = new Map(
+                clusters.map((cluster) => [cluster.id, { folded: true, detached: [] }]),
+            );
+            let focused = clusters[0].id;
             let playback;
+            window._fold = () => Object.fromEntries(states);
+
+            const renderFoldPanel = () => {
+                const cluster = clusters.find((entry) => entry.id === focused);
+                const model = {
+                    container: cluster.id,
+                    items: childSpecs
+                        .filter((child) => child.parent === cluster.id)
+                        .map((child, index) => ({
+                            id: child.id,
+                            label: child.label,
+                            kind: 'inner',
+                            detail: `inner ${index + 1}`,
+                            x: 50 + (child.expanded[0] - cluster.position[0]) / 7,
+                            y: 50 + (child.expanded[1] - cluster.position[1]) / 6,
+                            width: 18,
+                            height: 12,
+                        })),
+                };
+                const state = states.get(cluster.id);
+                el('fold-panel').innerHTML = foldableNodeHTML({
+                    label: `${cluster.label} · ${state.folded ? 'folded' : 'unfolded'}`,
+                    model,
+                    state,
+                    stats: innerWidgetStats(model, state),
+                });
+            };
 
             const renderControls = () => {
                 el('controls').innerHTML = clusters
-                    .map(
-                        (cluster) =>
-                            `<button type="button" data-cluster="${cluster.id}" data-active="${open.has(cluster.id)}">${cluster.label} ${open.has(cluster.id) ? '−' : '+'}</button>`,
-                    )
+                    .map((cluster) => {
+                        const unfolded = !states.get(cluster.id).folded;
+                        return `<button type="button" data-cluster="${cluster.id}" data-active="${unfolded}">${cluster.label} ${unfolded ? '−' : '+'}</button>`;
+                    })
                     .join('');
                 el('controls').querySelectorAll('[data-cluster]').forEach((button) => {
                     button.addEventListener('click', () => toggle(button.dataset.cluster));
                 });
-                el('state').textContent = open.size ? `${open.size} unfolded` : 'all folded';
-                el('detail').textContent = `${childSpecs.filter((child) => open.has(child.parent)).length} inner nodes visible · ${mainEdges.length} outer edges kept`;
+                const unfolded = clusters.filter((cluster) => !states.get(cluster.id).folded).length;
+                el('state').textContent = unfolded ? `${unfolded} unfolded` : 'all folded';
+                el('detail').textContent = `${childSpecs.filter((child) => !states.get(child.parent).folded).length} inner nodes visible · ${mainEdges.length} outer edges kept`;
+                renderFoldPanel();
             };
 
             const toggle = (clusterID) => {
-                const expanding = !open.has(clusterID);
-                if (expanding) open.add(clusterID);
-                else open.delete(clusterID);
+                focused = clusterID;
+                const previous = states.get(clusterID);
+                const expanding = previous.folded;
+                states.set(clusterID, reduceInnerWidgets(previous, { type: 'toggle' }));
 
                 const children = childSpecs.filter((child) => child.parent === clusterID);
                 const from = {};
@@ -185,14 +232,14 @@
                 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
                 playback = playRepresentationChanges([change], (_, t) => {
                     const positions = Object.fromEntries(
-                        Object.keys(to).map((id) => [
-                            id,
-                            [
-                                from[id][0] + (to[id][0] - from[id][0]) * t,
-                                from[id][1] + (to[id][1] - from[id][1]) * t,
-                                0,
-                            ],
-                        ]),
+                        Object.keys(to).map((id) => {
+                            const point = foldPosition(
+                                { x: from[id][0], y: from[id][1] },
+                                { x: to[id][0], y: to[id][1] },
+                                t,
+                            );
+                            return [id, [point.x, point.y, 0]];
+                        }),
                     );
                     sg.setPositions(positions);
                 }, { reducedMotion: reduced, ease: 'power2.inOut' });
@@ -239,6 +286,11 @@
             sg.events.on('node:click', (event) => {
                 const id = 'id' in event ? event.id : event.node?.id;
                 if (id && clusters.some((cluster) => cluster.id === id)) toggle(id);
+            });
+            el('fold-panel').addEventListener('click', (event) => {
+                const action = event.target.closest?.('[data-inner-action]')?.dataset.innerAction;
+                if (!action) return;
+                if (action === 'fold' || action === 'unfold' || action === 'toggle') toggle(focused);
             });
 
             renderControls();

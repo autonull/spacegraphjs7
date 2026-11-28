@@ -99,7 +99,12 @@ export default defineConfig({
         pool: 'vmThreads',
         // Only run unit tests here (keep Playwright E2E specs out of Vitest). The framework bindings carry
         // their own lifecycle tests beside their source (P8.2).
-        include: ['test/**/*.test.ts', 'packages/*/test/**/*.test.ts', 'app/*/tests/**/*.test.ts'],
+        include: [
+            'test/**/*.test.ts',
+            'packages/*/test/**/*.test.ts',
+            'packages/domain/*/test/**/*.test.ts',
+            'app/*/tests/**/*.test.ts',
+        ],
         exclude: [...configDefaults.exclude],
         globals: false,
         // Provides node-canvas and DOM shims for jsdom. jest-dom matchers are registered by vite-plugin-solid.

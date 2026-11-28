@@ -14,12 +14,14 @@
             "default": "./dist/index.js"
         },
         "./team.css": "./src/team.css",
-        "./atlas.css": "./src/atlas.css"
+        "./atlas.css": "./src/atlas.css",
+        "./inner-widget.css": "./src/inner-widget.css"
     },
     "files": [
         "dist",
         "src/team.css",
         "src/atlas.css",
+        "src/inner-widget.css",
         "README.md"
     ],
     "scripts": {
